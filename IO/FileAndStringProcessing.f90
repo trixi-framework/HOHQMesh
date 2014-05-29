@@ -244,7 +244,7 @@
 !!    if it cannot find an unused unit number.
 !     ----------------------------------------------------------------
 !
-      INTEGER FUNCTION UnusedUnit(  )
+      INTEGER FUNCTION UnusedUnit()
 !
          IMPLICIT NONE
          INTEGER :: j
