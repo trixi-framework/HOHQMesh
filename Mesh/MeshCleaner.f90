@@ -40,10 +40,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER                                 :: nodeID, k
          INTEGER                                 :: numberOfValenceChanges, numberOfDiamondsRemoved
-         CLASS(SMNode)             , POINTER     :: node
-         INTEGER     , DIMENSION(:), ALLOCATABLE :: localNumElementsForNode
          LOGICAL                                 :: valenceHasChanged, diamondsHaveBeenRemoved
          
          valenceHasChanged       = .false.
@@ -104,8 +101,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER                                 :: nodeID, k
-         CLASS(SMNode)             , POINTER     :: node
+         INTEGER                                 :: nodeID
          INTEGER     , DIMENSION(:), ALLOCATABLE :: localNumElementsForNode
 
          numberOfValenceChanges = 0
@@ -224,12 +220,12 @@
 !
          INTEGER                     :: k, localID, localIDForTarget
          INTEGER                     :: j, newID
-         INTEGER                     :: cnt, localEdgeNodeID(2)
+         INTEGER                     :: cnt
          REAL(KIND=RP)               :: theta, thetaMax
          INTEGER, DIMENSION(4)       :: diagonalMap = [3,4,1,2]
          REAL(KIND=RP)               :: x1(3), x2(3), x(3)
          
-         CLASS(SMNode)     , POINTER :: node1, node2, node, nodeForThisID
+         CLASS(SMNode)     , POINTER :: node, nodeForThisID
          CLASS(SMElement)  , POINTER :: e, eTarget
          CLASS(SMEdge)     , POINTER :: edge
          CLASS(FTObject)   , POINTER :: obj
@@ -416,16 +412,16 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                           :: id
+         INTEGER                :: id
          CLASS(SMMesh), POINTER :: mesh
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                  :: k
-         CLASS(SMElement), POINTER :: e
-         REAL(KIND=RP)            :: theta
+!         INTEGER                  :: k
+!         CLASS(SMElement), POINTER :: e
+!         REAL(KIND=RP)            :: theta
 !
 !        ----------------------------------------
 !        Find the element with the smallest angle
@@ -453,14 +449,12 @@
 !        ---------------
 !
          CLASS(FTMutableObjectArray) , POINTER     :: badElements
-         CLASS(SMElement)            , POINTER     :: e, eNbr
+         CLASS(SMElement)            , POINTER     :: e
          CLASS(FTObject)             , POINTER     :: obj
          REAL(KIND=RP)               , ALLOCATABLE :: shapeMeasures(:,:)
-         REAL(KIND=RP)                             :: angles(4)
          LOGICAL                     , ALLOCATABLE :: badElementMeasure(:,:)
          INTEGER                                   :: numberOfBadElements
-         INTEGER                                   :: k, j, badNodeID, lastSharedNodeID
-         INTEGER                                   :: nbrNodeLocalID , badNodeLocalID, lastSharedNodeLocalID
+         INTEGER                                   :: k
          INTEGER                                   :: numberOfChevrons
 !
 !        -----------------------
@@ -599,6 +593,11 @@
          CLASS(FTObject)            , POINTER :: obj
          TYPE (FTLinkedListIterator)          :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator
+         
+         numBoundaries = model % numberOfInnerCurves &
+                       + model % numberOfOuterCurves &
+                       + model % numberOfInterfaceCurves
+         IF (numBoundaries == 0)     RETURN
 !
 !        ------------------------------------------------
 !        Gather boundary Edges, etc in the following call
@@ -611,9 +610,6 @@
 !        and split them as necessary
 !        -------------------------------------------
 !
-         numBoundaries = model % numberOfInnerCurves &
-                       + model % numberOfOuterCurves &
-                       + model % numberOfInterfaceCurves
 
          IF ( model % numberOfInterfaceCurves > 0 )     THEN
          
@@ -864,6 +860,7 @@
       SUBROUTINE CleanUpBoundaryElement( e, model )
          USE SMModelClass
          USE ErrorTypesModule
+         USE fMinModule
          IMPLICIT NONE 
 !
 !        ---------
@@ -887,7 +884,6 @@
          
          REAL(KIND=RP)  , DIMENSION(3)    :: p
          REAL(KIND=RP)                    :: tStart, tEnd, t, tSav
-         REAL(KIND=RP)                    :: d
          
          CLASS(SMCurve)       , POINTER   :: c
          CLASS(SMChainedCurve), POINTER   :: chain       ! Returned also so that it, too can be used.
@@ -896,7 +892,6 @@
          LOGICAL                          :: badArrayOriginal(6), badArrayNew(6)      ! Node valence <= 6
          LOGICAL                          :: failed
          INTEGER                          :: nodeID
-         DOUBLE PRECISION, EXTERNAL       :: fmin
          
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
 !
@@ -982,7 +977,7 @@
             tStart = MAX(tStart, 0.0_RP)
             tEnd   = MIN(tEnd, 1.0_RP)
 !
-            t = fmin(tStart, tEnd, c, p, (/0.0_RP,0.0_RP/), minimizationTolerance )
+            t = fmin(tStart, tEnd, c, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
 
             node % whereOnBoundary  = t
             node % distToBoundary   = 0.0_RP !This is a boundary node
@@ -1044,7 +1039,6 @@
          INTEGER                   :: k, j, id, idNbr, localIds(2)
          LOGICAL                   :: hasA3ValenceNode, isDiamond
          REAL(KIND=RP)             :: x(3), corners(3,4)
-         TYPE(SMNodePtr)           :: newNodePtr
          CLASS(SMElement), POINTER :: eNbr
          CLASS(FTObject) , POINTER :: obj
          CLASS(SMNode)   , POINTER :: node
