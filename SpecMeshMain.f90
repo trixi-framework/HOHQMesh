@@ -17,13 +17,16 @@
          USE MeshOutputMethods
          USE FTTimerClass
          USE MeshCleaner
+         USE MeshQualityAnalysisClass
          IMPLICIT NONE
 !
 !        --------------------
 !        Mesh project storage
 !        --------------------
 !
-         CLASS( MeshProject ), POINTER :: project
+         CLASS( MeshProject )        , POINTER :: project
+         CLASS(FTMutableObjectArray) , POINTER :: badElements
+         TYPE( MeshStatistics )                :: stats
 !
 !        ----
 !        File
@@ -43,9 +46,15 @@
 !        Other
 !        -----
 !
+         CLASS(FTObject) , POINTER :: obj
+         CLASS(SMElement), POINTER :: e
+         
          CHARACTER(LEN=8) :: version = "10.08.12"
          LOGICAL          :: debug = .FALSE.
-         TYPE(FTTimer)   :: stopWatch
+         INTEGER          :: k
+         INTEGER          :: statsFileUnit
+         TYPE(FTTimer)    :: stopWatch
+         CHARACTER(LEN=16):: namesFmt = "(   7A16 )", valuesFmt = '(  7F16.3)', numb = "9"
 !
 !        ***********************************************
 !                             Start
@@ -99,7 +108,7 @@
 !
          ALLOCATE(project)
          fUnit   = StdInFileUnitCopy( )
-         IF( fUnit > 0 )     THEN
+         IF( fUnit /= NONE )     THEN
          
             CALL project % initWithContentsOfFileUnit( fUnit )
             CLOSE( fUnit )
@@ -122,7 +131,6 @@
                IF ( errorSeverity > FT_ERROR_WARNING )     THEN
                   STOP "The Errors were Fatal. Cannot generate mesh." 
                END IF 
-               
             END IF 
             
          ELSE
@@ -190,6 +198,65 @@
          PRINT *, "Number of nodes    = ", project % mesh % nodes    % COUNT()
          PRINT *, "Number of Edges    = ", project % mesh % edges    % COUNT()
          PRINT *, "Number of Elements = ", project % mesh % elements % COUNT()
+!
+!        ---------------------------------------
+!        Write mesh quality statistics to a file
+!        ---------------------------------------
+!
+         
+         IF ( project % runParams % statsFileName /= "None" )     THEN
+         
+            statsFileUnit = UnusedUnit()
+            OPEN(FILE=project % runParams % statsFileName,UNIT=statsFileUnit)
+            badElements => BadElementsInMesh( mesh  = project % mesh)
+            
+            IF ( ASSOCIATED(POINTER = badElements) )     THEN
+               PRINT *, badElements % COUNT()," Bad element(s) Found"
+               WRITE(statsFileUnit,*) " "
+               WRITE(statsFileUnit,*) "----------------"
+               WRITE(statsFileUnit,*) "Bad Element Info"
+               WRITE(statsFileUnit,*) "----------------"
+               WRITE(statsFileUnit,*) " "
+               
+               DO k = 1, badElements % COUNT()
+                  obj => badElements % objectAtIndex(indx = k)
+                  CALL cast(obj,e)
+                  CALL PrintBadElementInfo( e, statsFileUnit )
+               END DO
+               CALL badElements % release()
+               IF(badElements % isUnreferenced()) DEALLOCATE(badElements)
+               
+            ELSE IF (PrintMessage)     THEN 
+               PRINT *, "********* Elements are OK *********"
+            END IF 
+            
+            WRITE(statsFileUnit,*) " "
+            WRITE(statsFileUnit,*) "---------------------"
+            WRITE(statsFileUnit,*) "Mesh Quality Measures"
+            WRITE(statsFileUnit,*) "---------------------"
+            WRITE(statsFileUnit,*) " "
+            CALL OutputMeshQualityMeasures( mesh = project % mesh, fUnit  = statsFileUnit )
+            CLOSE(statsFileUnit)
+         END IF
+!
+!        ---------------------------------
+!        Write averages to standard output
+!        ---------------------------------
+!
+         CALL ComputeMeshQualityStatistics( stats = stats, mesh  = project % mesh)
+      
+         WRITE(numb,FMT='(I3)') SIZE(stats % avgValues)
+         namesFmt  = "(" // TRIM(numb) // "A16)"
+         valuesFmt = "(A16," // TRIM(numb) // "(F16.8))"
+         
+         PRINT *, " "
+         PRINT *, "Mesh Quality:"
+         WRITE(6,namesFmt) "Measure", "Minimum", "Maximum", "Average", "Acceptable Low", "Acceptable High", "Reference"
+         DO k = 1, SIZE(measureNames)       
+            WRITE(6,valuesFmt) TRIM(measureNames(k)), stats % minValues(k), stats % maxValues(k), stats % avgValues(k),&
+                                    acceptableLow(k), acceptableHigh(k), refValues(k)
+         END DO
+         PRINT *, " "
 !
 !        -----------------------------------
 !        Write the mesh in requested formats
