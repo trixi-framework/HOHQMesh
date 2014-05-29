@@ -564,7 +564,7 @@
          CALL castToSegmentedCurveNode(objectPtr,node)
          
          CALL setInvScale(node,s) !Gets around an optimizer bug in gfortran 4.8.0
-!         node % invScale = s
+!         node % invScale = s ! Yes, it took a long time to find it.
 
       END SUBROUTINE setCurveInvScaleForIndex
 !
