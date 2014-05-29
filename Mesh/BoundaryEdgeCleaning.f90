@@ -51,8 +51,8 @@
 !
          DO j = 1, numBoundaries
             IF( boundaryEdgesType(j) == BOUNDARY_EDGES ) THEN
-               obj => boundaryEdgesArray % objectAtIndex(j)
-               CALL cast(obj,list)
+               obj  => boundaryEdgesArray % objectAtIndex(j)
+               list => linkedListFromObject(obj)
                CALL CleanUpBoundaryEdges( list, mesh, model )
             END IF
          END DO
