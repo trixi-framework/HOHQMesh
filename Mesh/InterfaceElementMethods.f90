@@ -52,7 +52,7 @@
          CLASS(FTObject)            , POINTER :: obj
          CLASS(SMNode)              , POINTER :: node
          CLASS(FTLinkedListIterator), POINTER :: elementIterator
-         INTEGER                              :: interfaceNodeCount, k, c
+         INTEGER                              :: interfaceNodeCount, k
          INTEGER                              :: boundaryNodeNumber, oppositeNodeNumber
          
          INTEGER, EXTERNAL                    :: Loop
@@ -190,14 +190,12 @@
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes
          TYPE(SMNodePtr)               :: newNodePtr1, newNodePtr2
-         CLASS(SMElement), POINTER     :: eNew
          CLASS(SMEdge)   , POINTER     :: edge
          CLASS(SMNode)   , POINTER     :: swapNodePtr, node
          CLASS(FTObject), POINTER      :: obj
          
          INTEGER                       :: side, id, k
          INTEGER                       :: sideP, sideM
-         INTEGER                       :: elementID
          REAL(KIND=RP)                 :: x(3)
          INTEGER, EXTERNAL             :: Loop
 !
@@ -348,14 +346,12 @@
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes
          CLASS(SMNode)   , POINTER     :: nodeP, nodeM, nodeC
-         CLASS(SMElement), POINTER     :: eNew
          CLASS(SMEdge)   , POINTER     :: edge
-         CLASS(SMNode)   , POINTER     :: swapNodePtr, node
+         CLASS(SMNode)   , POINTER     :: node
          CLASS(FTObject) , POINTER     :: obj
          
-         INTEGER                       :: side, id, k
+         INTEGER                       :: id, k
          INTEGER                       :: sideP, sideM
-         INTEGER                       :: elementID
          REAL(KIND=RP)                 :: x(3), corners(3,4)
          INTEGER, EXTERNAL             :: Loop
 !
