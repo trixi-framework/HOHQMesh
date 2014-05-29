@@ -15,6 +15,7 @@
          INTEGER, PARAMETER :: TEMPLATE0 = 0, TEMPLATE1 = 1, TEMPLATE2A = 21, TEMPLATE2B = 22
          INTEGER, PARAMETER :: TEMPLATE3 = 3, TEMPLATE4 = 4 !See Schneiders' papers
          
+         nodeLocs = 0
          SELECT CASE ( templateType )
             CASE( TEMPLATE0, TEMPLATE4 )
                 nodeLocs(:,1) = (/i-1,j-1/)
@@ -30,6 +31,7 @@
             CASE( TEMPLATE3 )
                CALL NodeLocs_ForTemplate3_at( nodeLocs, i, j, rotation )
             CASE DEFAULT
+!               PRINT *, "Undetermined templateType: ", templateType, " for i,j = ", i, j
          END SELECT
         
       END SUBROUTINE NodeLocs_ForTemplate_At
