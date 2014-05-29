@@ -764,10 +764,9 @@
          REAL(KIND=RP)                         :: segmentInvScale
          CLASS(FTLinkedListIterator) , POINTER :: iterator
          CLASS(FTObject)             , POINTER :: obj
-         INTEGER                               :: k
+         INTEGER                               :: k, j
 !
          IF ( self % noOfInterfaceBoundaries == 0 )     RETURN
-         PRINT *, "ComputeInterfaceCurveScales is not complete yet"
          
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(self % interfaceBoundariesList)
@@ -786,7 +785,12 @@
 !
             cScale = cSize/ minNumberOfElementsInsideArea
             DO k = 1, chain % curveCount()
-               segment => chain % segmentedCurveAtIndex(k) 
+               segment => chain % segmentedCurveAtIndex(k)
+               DO j = 1, segment % COUNT()
+                  segmentInvScale = segment % invScaleAtIndex(j) 
+                  invScale        = MAX(1.0_RP/cScale,segmentInvScale)
+                  CALL segment % setCurveInvScaleForIndex(invScale,j)
+               END DO
             END DO  
             
             CALL iterator % moveToNext()
