@@ -223,11 +223,11 @@
       
       CLASS(QuadTreeGrid), POINTER :: self, newGrid
       
-      INTEGER                   :: level, i, j, k, N, M
-      INTEGER                   :: templateType, rotation
-      REAL(KIND=RP)             :: dx(3), x0(3)
-      INTEGER , DIMENSION(4)    :: nodeLevels, activeStatus
-      INTEGER , DIMENSION(2,4)  :: nodeLocs
+      INTEGER                      :: level, i, j, k, N, M
+      INTEGER                      :: templateType, rotation
+      REAL(KIND=RP)                :: dx(3), x0(3)
+      INTEGER , DIMENSION(4)       :: nodeLevels, activeStatus
+      INTEGER , DIMENSION(2,4)     :: nodeLocs
             
       N     = self % N(1); M = self % N(2)
       level = self % level
@@ -247,7 +247,7 @@
 !               -------------------------------------------------
 !
                 CALL NodeLocs_ForTemplate_At( nodeLocs, self % templateType, i, j, self % rotation )
-                IF( SUM(nodeLocs) == 0 )     CYCLE
+                IF( SUM(nodeLocs) == 0 )     CYCLE ! Template type 2 has no nodelocs??
                 
                 DO k = 1, 4 
                    nodeLevels(k)   = self % nodes(nodeLocs(1,k),nodeLocs(2,k)) % node % level
@@ -271,7 +271,6 @@
                 newGrid => self % children(i,j) % grid
                 CALL newGrid % initWithTemplateType( templateType, dx, x0, self, &
                                    (/i,j,0/), self % level+1, rotation )
-!                CALL TemplateInit
                 CALL ConstructNodesWithTemplate( newGrid, rotation )
                 CALL SetNeighborPointers( newGrid )
          END DO
@@ -481,7 +480,7 @@
 !     Mark the nodes for their level
 !     ------------------------------
 !
-      nodeLevels = nodeLevels - level
+      nodeLevels          = nodeLevels - level
       numberOfMarkedNodes = 0
       DO k = 1,4 
          IF( activeStatus(k) == ACTIVE .AND. nodeLevels(k) == 1 )  &
@@ -517,8 +516,12 @@
 !
       SUBROUTINE SetNodeActivation( self, s )
 !
-!     For 2-Refinement, alternatively activate and deactivate nodes
-!     on the top level mesh. s is either ACTIVE or INACTIVE
+!     -------------------------------------------------------------------
+!     !
+!     !     For 2-Refinement, alternatively activate and deactivate nodes
+!     !     on the top level mesh. s is either ACTIVE or INACTIVE
+!     !
+!     -------------------------------------------------------------------
 !
          IMPLICIT NONE
 !
@@ -527,7 +530,7 @@
 !        ---------
 !
          CLASS(QuadTreeGrid), POINTER :: self
-         INTEGER                   :: s
+         INTEGER                      :: s
 !
 !        ---------------
 !        local variables
