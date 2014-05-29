@@ -14,7 +14,6 @@
       IMPLICIT NONE 
       
       TYPE :: MeshSmoother
-         INTEGER :: numSteps
 !         
 !        ========
          CONTAINS
