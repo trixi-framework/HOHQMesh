@@ -953,8 +953,9 @@
          IF( ASSOCIATED( self % children ) )    THEN
             DO j = 1, M
                DO i = 1, N
-                  IF( ASSOCIATED( self % children(i,j) % grid ) ) &
+                  IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN 
                       CALL FindNumberOfGridsIn_AtLevel_( self % children(i,j) % grid, level )
+                  END IF 
                END DO
             END DO
          END IF
@@ -967,9 +968,9 @@
 !
       RECURSIVE SUBROUTINE GatherGridsAtLevel_FromRtGrid_( level, self ) 
       IMPLICIT NONE 
-      INTEGER                   :: level
+      INTEGER                      :: level
       CLASS(QuadTreeGrid), POINTER :: self
-      INTEGER                   :: N,M, i, j
+      INTEGER                      :: N,M, i, j
      
       N = self % N(1); M = self % N(2)
      
