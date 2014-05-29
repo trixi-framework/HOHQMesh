@@ -83,6 +83,7 @@
 !
       IF(PrintMessage) PRINT *, "   Generate nodes and elements..."
          CALL GenerateNodesAndElements( mesh, grid )
+      IF(PrintMessage) PRINT *, "   Nodes and elements were generated..."
 !
 !     ---------------------------------------------
 !     Free up memory since grid is no longer needed
@@ -175,6 +176,7 @@
       IF( ASSOCIATED( sizer % outerBoundary ) ) idOfOuterBoundary = sizer % outerBoundary % id
       
       CALL LocateEdgeImagesOnBoundaries( mesh, model, idOfOuterBoundary, skipInterfaces = .FALSE. )
+
       IF ( catch(FATAL_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
          CALL destroyTemporaryBoundaryArrays
          exception => errorObject()
@@ -260,7 +262,6 @@
 !
       INTEGER                        :: i, j, k, N, M
       INTEGER                        :: elementID
-      CLASS(SMNode)   , POINTER      :: node
       CLASS(SMElement), POINTER      :: e
       CLASS(FTObject) , POINTER      :: obj
       TYPE( SMNodePtr), DIMENSION(4) :: eNodes
@@ -346,6 +347,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE GenerateBoundaryElements( mesh, model, list ) 
+         USE fMinModule
          IMPLICIT NONE
 !
 !        ---------
@@ -386,7 +388,6 @@
 !        Externals
 !        ---------
 !
-         DOUBLE PRECISION, EXTERNAL  :: fmin
 !
 !        ---------------------------------------
 !        Step through each edge on this boundary
@@ -496,7 +497,7 @@
                   tEnd   = 1.0_RP
                   cStart => model % curveWithID(nodeArray(k) % node % bCurveID, chain)
 
-                  t      = fMin( tStart, tEnd, cStart, p, (/0.0_RP, 0.0_RP/), minimizationTolerance )
+                  t      = fMin( tStart, tEnd, cStart, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
                   
                   ALLOCATE(node)
                   CALL initBoundaryNode( cStart, chain, t, bCurveSide, mesh % newNodeID(), node )
@@ -1057,7 +1058,7 @@
          CLASS(FTLinkedList)        , POINTER :: elements
          CLASS(SMElement)           , POINTER :: e
          CLASS(SegmentedCurveArray) , POINTER :: curveArray
-         CLASS(SMNode)              , POINTER :: node1, node2, node
+         CLASS(SMNode)              , POINTER :: node
          CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          
