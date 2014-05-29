@@ -156,7 +156,7 @@
       IMPLICIT NONE 
       CLASS(SegmentedCurveArray)                   :: self
       INTEGER                                      :: j, N
-      REAL(KIND=RP), DIMENSION(2)                  :: xp, xpp
+      REAL(KIND=RP), DIMENSION(3)                  :: xp, xpp
       REAL(KIND=RP), DIMENSION(0:self % nSegments) :: dt
       
       N = self % nSegments
