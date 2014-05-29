@@ -11,6 +11,7 @@
    USE MeshSizerClass
    USE SMMeshClass
    USE ConectionsModule
+   USE fMinModule
    IMPLICIT NONE
 !
 !-------------------------------------------------------------------
@@ -158,7 +159,7 @@
 !
       CLASS(FTLinkedList), POINTER :: list
       CLASS(FTobject)    , POINTER :: obj
-      INTEGER                      :: j, k
+      INTEGER                      :: k
 !
 !     --------------------------------
 !     Clear out old values old present
@@ -249,8 +250,11 @@
                IF( IsOnBoundaryCurve(edge % nodes(1) % node) .OR. &
                    IsOnBoundaryCurve(edge % nodes(2) % node) )    THEN
                   
-                  obj => boundaryEdgesArray % objectAtIndex(curveID)
-                  CALL cast(obj,edgeList)
+                  obj      => boundaryEdgesArray % objectAtIndex(curveID)
+                  edgeList => linkedListFromObject(obj)
+                  IF ( .NOT.ASSOCIATED(edgeList) )     THEN
+                     PRINT *, "edge list not associated" !DEBUGPRINT
+                  END IF 
                   obj => edge
                   CALL edgeList % add(obj)
                   boundaryEdgesType(curveID) = BOUNDARY_EDGES
@@ -523,7 +527,6 @@
 !           Now actually find the orientation of this edge
 !           ----------------------------------------------
 !
-
             sortedNodes => GatheredNodes( sortedEdges )
             ALLOCATE( sortedNodeLocations(3,SIZE(sortedNodes)) )
             DO m = 1, SIZE(sortedNodes) 
@@ -553,7 +556,6 @@
                DEALLOCATE(sortedEdges)
             END IF 
          END DO 
-         
          DEALLOCATE(nodeArray)
          
       END SUBROUTINE OrderBoundaryEdges
@@ -787,6 +789,7 @@
 !     ---------------------------------------------------------------------
 !
          USE ProgramGlobals, ONLY:edgeLengthFactor
+         USE fMinModule, ONLY : DistanceSquaredBetweenPoints
          USE Geometry
          IMPLICIT NONE
 !
@@ -813,7 +816,6 @@
          REAL(KIND=RP)                            :: tmpTol = 1.d-9 !DEBUG
          INTEGER                                  :: j, k, M
          INTEGER                                  :: totalCurvePoints
-         DOUBLE PRECISION, EXTERNAL               :: fmin, distanceSquaredBetweenPoints, distanceSquared
          
          nodePtrs => GatheredNodes( list )
 !
@@ -845,7 +847,7 @@
 !        Now find the point along the curve
 !        ----------------------------------
 !
-         totalCurvePoints = numCurvePoints*chain % numberOfCurvesInChain !TODO compute this quantity
+         totalCurvePoints = 2*numCurvePoints*chain % numberOfCurvesInChain !TODO compute this quantity
          tStart  = 0.0
          tEnd    = 1.0_RP
          dt      = (tEnd - tStart)/totalCurvePoints
@@ -1088,10 +1090,8 @@
          CLASS(SMElement)   , POINTER :: e
          CLASS(SMNode)      , POINTER :: node
          CLASS(FTObject)    , POINTER :: obj
-
+         
          CLASS(FTLinkedListIterator), POINTER :: iterator
-         ALLOCATE(iterator)
-         CALL iterator % init()
 !
 !        ---------------------
 !        Gather boundary Edges
@@ -1099,7 +1099,13 @@
 !
          numBoundaries = model % numberOfInnerCurves + model % numberOfOuterCurves &
                        + model % numberOfInterfaceCurves
+                       
+         IF ( numBoundaries == 0 )     RETURN 
+         
          CALL AllocateBoundaryEdgesArray(numBoundaries)
+
+         ALLOCATE(iterator)
+         CALL iterator % init()
    
          CALL CollectBoundaryEdges( mesh )
          CALL MakeNodeToElementConnections( mesh )
