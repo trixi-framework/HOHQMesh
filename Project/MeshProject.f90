@@ -270,6 +270,7 @@
          
          REAL(KIND=RP)                  :: h, xMax(3)
          INTEGER                        :: curveID
+         LOGICAL                        :: smootherWasRead = .FALSE.
          
          NULLIFY( self % grid )
          NULLIFY( self % sizer )
@@ -433,10 +434,18 @@
 !                               Construct Smoother
 !-------------------------------------------------------------------------------
 !
+         smootherWasRead = .FALSE.
+         NULLIFY(self % smoother)
+!
+!        --------------------
+!        Spring-Mass smoother
+!        --------------------
+!
          rewind(fUnit)
          CALL MoveToBlock("\begin{Smoother}", fUnit, iOS )
          IF( ios == 0 )     THEN
             CALL ReadSmootherBlock( fUnit, smootherParams )
+            smootherWasRead = .TRUE.
             IF( smootherParams%smoothingOn )     THEN
                ALLOCATE(self % smoother)
                CALL self % smoother % init( smootherParams % springConstant, &
@@ -446,12 +455,9 @@
                                             smootherParams % springType, &
                                             smootherParams % deltaT, &
                                             smootherParams % numSteps)
-            ELSE
-               NULLIFY( self % smoother )
             END IF
-         ELSE
-            NULLIFY( self % smoother )
          END IF
+         IF(smootherWasRead) RETURN 
          
       END SUBROUTINE BuildProjectWithContentsOfFile
 !
@@ -663,8 +669,8 @@
          ELSE IF( fileFormat == "ISM-MM" )     THEN
             params % meshFileFormat = ISM_MM
          ELSE
-            PRINT *, "Unknown mesh file format"
-            !TODO error handling
+            CALL ThrowProjectReadException(FT_ERROR_FATAL, "ReadRunParametersBlock",&
+                                           "Unknown mesh file format")
          END IF
    
          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
