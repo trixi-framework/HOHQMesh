@@ -31,8 +31,8 @@
 !        ========
 !
          PROCEDURE, NON_OVERRIDABLE :: initWithNameAndID
-         PROCEDURE                  :: destruct => destructBaseCurve
-         PROCEDURE                  :: printDescription => printCurveDescription
+         PROCEDURE                  :: destruct           => destructBaseCurve
+         PROCEDURE                  :: printDescription   => printCurveDescription
          PROCEDURE                  :: positionAt
          PROCEDURE                  :: tangentAt
          PROCEDURE                  :: setID
