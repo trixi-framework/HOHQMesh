@@ -87,7 +87,7 @@
 !
         INTEGER                                     :: i
         CHARACTER(LEN=COMMAND_LINE_ARGUMENT_LENGTH) :: arg
-        INTEGER                                     :: argumentLength
+        INTEGER                                     :: argumentLength, substringLength
 !        
         lastArgumentID               = 0
         CommandLineArgumentIsPresent = .false.
@@ -98,8 +98,9 @@
           CALL GET_COMMAND_ARGUMENT(i, arg, LENGTH = argumentLength)
           IF (argumentLength == 0) EXIT
           
+          substringLength = MIN(argumentLength,LEN_TRIM(argument))
           IF ( TRIM(arg) == TRIM(argument) .OR.&
-               TRIM(arg) == argument(1:argumentLength) )      THEN
+               TRIM(arg) == argument(1:substringLength) )      THEN
              CommandLineArgumentIsPresent = .true.
              lastArgumentID = i
              RETURN
