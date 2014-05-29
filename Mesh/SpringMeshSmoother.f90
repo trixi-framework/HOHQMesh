@@ -1,19 +1,30 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-!      MeshSmoother.f90
+!      SpringMeshSmoother.f90
 !      Created: 2010-10-05 09:54:22 -0400 
 !      By: David Kopriva  
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      Module MeshSmootherClass 
+      Module SpringMeshSmootherClass 
       USE SMMeshClass
       USE SMModelClass
       USE MeshBoundaryMethodsModule
+      USE MeshSmootherClass
       IMPLICIT NONE 
 !
-      TYPE MeshSmoother
+!     ---------
+!     Constants
+!     ---------
+!
+      INTEGER, PARAMETER :: LINEAR_SPRING = 0, CROSS_SPRING = 1, BOTH = 2
+!
+!     ---------------------
+!     Class type definition
+!     ---------------------
+!
+      TYPE, EXTENDS(MeshSmoother) :: SpringMeshSmoother
          REAL(KIND=RP) :: springConstant     ! Spring constant
          REAL(KIND=RP) :: restLength         ! Natural LENGTH
          REAL(KIND=RP) :: dampingCoefficient ! Damping coefficient
@@ -26,11 +37,25 @@
          CONTAINS
 !        ========
 !
-         PROCEDURE :: init     => initSmoother
-         PROCEDURE :: destruct => DestructMeshSmoother
-      END TYPE MeshSmoother
-      
-      INTEGER, PARAMETER :: LINEAR_SPRING = 0, CROSS_SPRING = 1, BOTH = 2
+         PROCEDURE :: init       => initSmoother
+         PROCEDURE :: destruct   => DestructSpringMeshSmoother
+         PROCEDURE :: smoothMesh => SpringSmoothMesh
+      END TYPE SpringMeshSmoother
+!
+!     ----------------------
+!     Other type definitions
+!     ----------------------
+!
+      TYPE SpringSmootherParameters
+         LOGICAL       :: smoothingOn
+         REAL(KIND=RP) :: springConstant     ! Spring constant
+         REAL(KIND=RP) :: restLength         ! Natural length
+         REAL(KIND=RP) :: dampingCoefficient ! Damping coefficient
+         REAL(KIND=RP) :: mass               ! Node mass
+         REAL(KIND=RP) :: deltaT
+         INTEGER       :: numSteps
+         INTEGER       :: springType
+      END TYPE SpringSmootherParameters
 !
 !     ---------------------------
 !     Module arrays for smoothing
@@ -47,10 +72,10 @@
       SUBROUTINE initSmoother( self, springConstant, mass, restLength, &
                                dampingCoefficient, springType, deltaT, numSteps  )
          IMPLICIT NONE  
-         CLASS(MeshSmoother) :: self
-         REAL(KIND=RP)       :: springConstant, restLength
-         REAL(KIND=RP)       :: dampingCoefficient, mass, deltaT
-         INTEGER             :: springType, numSteps
+         CLASS(SpringMeshSmoother) :: self
+         REAL(KIND=RP)             :: springConstant, restLength
+         REAL(KIND=RP)             :: dampingCoefficient, mass, deltaT
+         INTEGER                   :: springType, numSteps
          
          self % springConstant     = springConstant
          self % restLength         = restLength
@@ -63,22 +88,22 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE DestructMeshSmoother( self ) 
+      SUBROUTINE DestructSpringMeshSmoother( self ) 
          IMPLICIT NONE 
-         CLASS(MeshSmoother) :: self
+         CLASS(SpringMeshSmoother) :: self
          !Do nothing
-      END SUBROUTINE DestructMeshSmoother
+      END SUBROUTINE DestructSpringMeshSmoother
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE SmoothMesh( self, mesh, model )
+      SUBROUTINE SpringSmoothMesh( self, mesh, model )
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         TYPE  (MeshSmoother)          :: self
+         CLASS  (SpringMeshSmoother)   :: self
          CLASS (SMMesh)      , POINTER :: mesh
          CLASS (SMModel)     , POINTER :: model
 !
@@ -135,7 +160,7 @@
                CALL mesh % nodesIterator % moveToNext()
                maxV = MAX(maxV, ABS(nodeVelocity(1,nodeID)), ABS(nodeVelocity(2,nodeID)) )
             END DO
-!            PRINT *, k, maxV
+
          END DO
 !
 !        ---------------------------
@@ -157,7 +182,7 @@
          CALL boundaryNodesList % release()
          DEALLOCATE(boundaryNodesList)
       
-      END SUBROUTINE SmoothMesh
+      END SUBROUTINE SpringSmoothMesh
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -189,7 +214,7 @@
 !
       SUBROUTINE AccumulateAcceleration( self, mesh ) 
          IMPLICIT NONE
-         TYPE (MeshSmoother) :: self
+         TYPE (SpringMeshSmoother) :: self
          TYPE (SMMesh)       :: mesh
          
          IF ( self % springType == LINEAR_SPRING )     THEN
@@ -212,7 +237,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE (MeshSmoother) :: self
+         TYPE (SpringMeshSmoother) :: self
          TYPE (SMMesh)       :: mesh
 !
 !        ---------------
@@ -259,7 +284,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE (MeshSmoother) :: self
+         TYPE (SpringMeshSmoother) :: self
          TYPE (SMMesh)       :: mesh
 !
 !        ---------------
@@ -309,7 +334,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS (MeshSmoother)                  :: self
+         CLASS (SpringMeshSmoother)                  :: self
          CLASS (FTLinkedListIterator), POINTER :: nodeIterator
          CLASS (SMModel)             , POINTER :: model
 !
@@ -344,42 +369,81 @@
          
       END SUBROUTINE ConstrainBoundaryNodes
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE CollectBoundaryAndInterfaceNodes(allNodesIterator,boundaryNodesList)
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ReadSpringSmootherBlock( fUnit, smp ) 
+!
+!        Example block is:
+!
+!         \begin{Smoother}
+!            smoothing            = "ON"
+!            smoothing type       = "linearSpring"
+!            spring constant      = 1.0
+!            mass                 = 1.0
+!            rest length          = 1.0
+!            damping coefficient  = 5.0
+!            number of iterations = 25
+!            time step            = 0.1
+!         \end{Smoother}
+!
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(FTLinkedListIterator), POINTER :: allNodesIterator
-         CLASS(FTLinkedList)        , POINTER :: boundaryNodesList
+         INTEGER                        :: fUnit
+         TYPE(SpringSmootherParameters) :: smp
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)  , POINTER :: currentNode
-         CLASS(FTObject), POINTER :: obj
-!
-!        ------------------------------------------------------
-!        Loop through all the nodes and add those whose
-!        distance to a boundary is zero to the boundaryNodeList
-!        ------------------------------------------------------
-!
-         CALL allNodesIterator % setToStart()
-         DO WHILE ( .NOT.allNodesIterator % isAtEnd() )
-            obj => allNodesIterator % object()
-            CALL cast(obj,currentNode)
-            IF ( IsOnBoundaryCurve(currentNode) .AND. &
-                 currentNode%distToBoundary == 0.0_RP )     THEN
-               CALL boundaryNodesList % add(obj)
-            END IF 
-            CALL allNodesIterator % moveToNext()
-         END DO
+         INTEGER                    :: ios
+         CHARACTER(LEN=32)          :: str
+         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
+         REAL(KIND=RP), EXTERNAL    :: GetRealValue
+         INTEGER      , EXTERNAL    :: GetIntValue
+         
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         str = GetStringValue( inputLine )
+         
+         IF( str == "ON" )     THEN
+            smp%smoothingON = .true.
+         ELSE
+            smp%smoothingON = .false.
+         END IF
+         
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         str = GetStringValue( inputLine )
+         
+         IF( str == "LinearSpring" )     THEN
+            smp%springType = LINEAR_SPRING
+         ELSE IF (str == "CrossBarSpring" )     THEN
+            smp%springType = CROSS_SPRING
+         ELSE
+            smp%springType = BOTH
+         END IF
+   
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         smp%springConstant = GetRealValue( inputLine )
+   
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         smp%mass = GetRealValue( inputLine )
+   
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         smp%restLength = GetRealValue( inputLine )
+   
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         smp%dampingCoefficient = GetRealValue( inputLine )
+   
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         smp%numSteps = GetIntValue( inputLine )
+   
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         smp%deltaT = GetRealValue( inputLine )
 
-      END SUBROUTINE CollectBoundaryAndInterfaceNodes
+      END SUBROUTINE ReadSpringSmootherBlock
       
-      END Module MeshSmootherClass
+      END Module SpringMeshSmootherClass
       

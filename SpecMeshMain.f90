@@ -164,7 +164,7 @@
 !
             IF(Associated(project % smoother))     THEN
                IF(PrintMessage) PRINT *, "   Begin Smoothing..."
-               CALL SmoothMesh( project % smoother, project % mesh, project % model )
+               CALL project % smoother % smoothMesh(  project % mesh, project % model )
                IF(PrintMessage) PRINT *, "   Smoothing done."
             END IF
 !
@@ -180,7 +180,7 @@
 !
             IF(Associated(project % smoother))     THEN
                IF(PrintMessage) PRINT *, "   Begin Smoothing..."
-               CALL SmoothMesh( project % smoother, project % mesh, project % model )
+               CALL project % smoother % smoothMesh(  project % mesh, project % model )
                IF(PrintMessage) PRINT *, "   Smoothing done."
             END IF
             

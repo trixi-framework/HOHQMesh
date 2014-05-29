@@ -63,18 +63,6 @@
          INTEGER       :: lineControlType
       END TYPE lineParameters
       PRIVATE :: lineParameters
-      
-      TYPE SmootherParameters
-         LOGICAL       :: smoothingOn
-         REAL(KIND=RP) :: springConstant     ! Spring constant
-         REAL(KIND=RP) :: restLength         ! Natural length
-         REAL(KIND=RP) :: dampingCoefficient ! Damping coefficient
-         REAL(KIND=RP) :: mass               ! Node mass
-         REAL(KIND=RP) :: deltaT
-         INTEGER       :: numSteps
-         INTEGER       :: springType
-      END TYPE SmootherParameters
-      PRIVATE SmootherParameters
 !
 !     ------------------------
 !     Project class definition
@@ -85,7 +73,7 @@
          CLASS(SMMesh)            , POINTER :: mesh
          CLASS(MeshSizer)         , POINTER :: sizer
          CLASS(QuadTreeGrid)      , POINTER :: grid
-         TYPE(MeshSmoother)       , POINTER :: smoother
+         CLASS(MeshSmoother)      , POINTER :: smoother
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
@@ -228,6 +216,11 @@
             END IF
          END IF 
          
+         IF ( ASSOCIATED(self % smoother) )     THEN
+            CALL self % smoother % destruct()
+            DEALLOCATE(self % smoother) 
+         END IF 
+         
       END SUBROUTINE DestructMeshProject
 !@mark -
 !
@@ -238,6 +231,7 @@
          USE SizerControls
          USE SMChainedCurveClass
          USE CurveConversionsModule
+         USE SpringMeshSmootherClass
          IMPLICIT NONE
 !
 !        ---------
@@ -258,6 +252,7 @@
          CLASS(FTLinkedListIterator) , POINTER :: iterator
          CLASS(FTObject)             , POINTER :: obj
          CLASS(QuadTreeGrid)         , POINTER :: parent
+         CLASS(SpringMeshSmoother)   , POINTER :: springSmoother
          
          CLASS(SizerCentercontrol), POINTER :: c
          CLASS(SizerLineControl)  , POINTER :: L
@@ -265,7 +260,7 @@
          INTEGER                        :: iOS
          TYPE(BackgroundGridParameters) :: backgroundGrid
          TYPE(CentersParameters)        :: centerParams
-         TYPE(SmootherParameters)       :: smootherParams
+         TYPE(SpringSmootherParameters) :: smootherParams
          TYPE(LineParameters)           :: lineParams
          
          REAL(KIND=RP)                  :: h, xMax(3)
@@ -444,18 +439,19 @@
          rewind(fUnit)
          CALL MoveToBlock("\begin{Smoother}", fUnit, iOS )
          IF( ios == 0 )     THEN
-            CALL ReadSmootherBlock( fUnit, smootherParams )
-            smootherWasRead = .TRUE.
+            CALL ReadSpringSmootherBlock( fUnit, smootherParams )
             IF( smootherParams%smoothingOn )     THEN
-               ALLOCATE(self % smoother)
-               CALL self % smoother % init( smootherParams % springConstant, &
+               ALLOCATE(springSmoother)
+               CALL springSmoother % init( smootherParams % springConstant, &
                                             smootherParams % mass, &
                                             smootherParams % restLength, &
                                             smootherParams % dampingCoefficient, &
                                             smootherParams % springType, &
                                             smootherParams % deltaT, &
                                             smootherParams % numSteps)
+               self % smoother => springSmoother
             END IF
+            smootherWasRead = .TRUE.
          END IF
          IF(smootherWasRead) RETURN 
          
@@ -513,14 +509,6 @@
 !           Find the bounds on the outer curve
 !           ----------------------------------
 !
-!            N = segmentedOuterBoundary % numberOfCurvesInChain
-!            DO j = 1, N
-!               p       = segmentedOuterBoundary % positionAtIndex(j)
-!               leftB   = MIN( leftB  , p(1) )
-!               rightB  = MAX( rightB , p(1) )
-!               topB    = MAX( topB   , p(2) )
-!               bottomB = MIN( bottomB, p(2) )
-!            END DO  
             leftB   = segmentedOuterBoundary % boundingBox(BBOX_LEFT)
             rightB  = segmentedOuterBoundary % boundingBox(BBOX_RIGHT)
             topB    = segmentedOuterBoundary % boundingBox(BBOX_TOP)
@@ -904,82 +892,6 @@
          lineParams % lineExtent = GetRealValue( inputLine )
          
       END SUBROUTINE ReadLineMeshSizerBlock
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE ReadSmootherBlock( fUnit, smp ) 
-!
-!        Example block is:
-!
-!         \begin{Smoother}
-!            smoothing            = "ON"
-!            smoothing type       = "linearSpring"
-!            spring constant      = 1.0
-!            mass                 = 1.0
-!            rest length          = 1.0
-!            damping coefficient  = 5.0
-!            number of iterations = 25
-!            time step            = 0.1
-!         \end{Smoother}
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         INTEGER                  :: fUnit
-         TYPE(SmootherParameters) :: smp
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER                    :: ios
-         CHARACTER(LEN=32)          :: str
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
-         REAL(KIND=RP), EXTERNAL    :: GetRealValue
-         INTEGER      , EXTERNAL    :: GetIntValue
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         str = GetStringValue( inputLine )
-         
-         IF( str == "ON" )     THEN
-            smp%smoothingON = .true.
-         ELSE
-            smp%smoothingON = .false.
-         END IF
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         str = GetStringValue( inputLine )
-         
-         IF( str == "LinearSpring" )     THEN
-            smp%springType = LINEAR_SPRING
-         ELSE IF (str == "CrossBarSpring" )     THEN
-            smp%springType = CROSS_SPRING
-         ELSE
-            smp%springType = BOTH
-         END IF
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%springConstant = GetRealValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%mass = GetRealValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%restLength = GetRealValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%dampingCoefficient = GetRealValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%numSteps = GetIntValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%deltaT = GetRealValue( inputLine )
-
-      END SUBROUTINE ReadSmootherBlock
       
 
    END MODULE MeshProjectClass
