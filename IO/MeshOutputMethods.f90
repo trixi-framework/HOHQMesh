@@ -301,8 +301,85 @@
          self%bCurveName = "---"
          self%bCurveFlag = OFF
          
-!         PRINT *, "*** Curve connection must be implemented for ISM mesh output"
+         DO k = 1, 4 
+            obj => e % nodes % objectAtIndex(edgeMap(1,k))
+            CALL cast(obj,node1) 
+            obj => e % nodes % objectAtIndex(edgeMap(2,k))
+            CALL cast(obj,node2)
+!
+!           ---------------------------------------------------------------------------
+!           See if this edge is on a boundary. One of the two nodes should be
+!           a ROW_SIDE, and that one is on a curve rather than the joint of two curves.
+!           The edge could be on an outer box, in which case it is a straight line, but
+!           still needs boundary name information
+!           ---------------------------------------------------------------------------
+!
+            IF( IsOnBoundaryCurve(node1) .AND. IsOnBoundaryCurve(node2) )     THEN
+!
+!              -----------------------------------------------------------
+!              Mark as on a boundary curve needing interpolant information
+!              -----------------------------------------------------------
+!
+               self % bCurveFlag(k) = ON
+               IF( node1 % nodeType == ROW_SIDE )     THEN
+                  curveID(k)    = node1 % bCurveID
+                  c             => model % curveWithID(node1 % bCurveID, chain)
+               ELSE
+                  curveID(k)    = node2 % bCurveID
+                  c             => model % curveWithID(node2 % bCurveID, chain)
+               END IF
+               
+               self % bCurveName(k) = c % curveName()
+               tStart(k)            = node1 % gWhereOnBoundary
+               tEnd(k)              = node2 % gWhereOnBoundary
+               
+            ELSE IF ( IsOnOuterBox(node1) .AND. IsOnOuterBox(node2) )     THEN
+!
+!              --------------------------------------------------------------
+!              Only mark the boundary names for output, no interpolant needed
+!              --------------------------------------------------------------
+!
+               IF( node1 % nodeType == CORNER_NODE )     THEN
+                  self % bCurveName(k) = noCurveName(node2 % bCurveID)
+               ELSE
+                  self % bCurveName(k) = noCurveName(node1 % bCurveID)
+               END IF
+               
+            END IF
+         END DO
+!
+!        --------------------------------------------
+!        Construct boundary information
+!        Use a Chebyshev interpolant for the points.
+!        --------------------------------------------
+!
+         DO k = 1, 4
          
+            IF( self%bCurveFlag(k) == ON )     THEN
+              c      => model % curveWithID(curveID(k), chain)
+              
+              deltaT = tEnd(k) - tStart(k)
+              IF( deltaT > maxParameterChange )     THEN !Crossing over the start
+                 deltaT = deltaT - 1.0_RP
+              ELSE IF (deltaT < -maxParameterChange ) THEN
+                 deltaT = 1.0_RP + deltaT
+              END IF
+              
+              DO j = 0, N 
+              
+                  t_j = tStart(k) + deltaT*(1.0_RP - COS(j*PI/N))/2.0_RP
+                  IF( t_j > 1.0_RP )     THEN
+                     t_j = t_j - 1.0_RP
+                  ELSE IF( t_j < 0.0_RP )     THEN
+                     t_j = t_j + 1.0_RP
+                  END IF
+                  
+                  self%x(:,j,k) = chain % PositionAt( t_j )
+                  
+                END DO
+             END IF
+         END DO
+
       END SUBROUTINE gatherElementOutputInfo
 !
 !////////////////////////////////////////////////////////////////////////
