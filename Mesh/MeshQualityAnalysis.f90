@@ -110,7 +110,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE(SMMesh), POINTER :: mesh
+         CLASS(SMMesh), POINTER :: mesh
          INTEGER               :: fUnit
 !
 !        ---------------
@@ -168,8 +168,8 @@
          CLASS(FTLinkedListIterator), POINTER :: elementIterator
          CLASS(SMElement)           , POINTER :: e
          CLASS(FTObject)            , POINTER :: obj
-         REAL(KIND=RP)              :: shapeMeasures(NUMBER_OF_SHAPE_MEASURES)
-         INTEGER                    :: k, nValues
+         REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_SHAPE_MEASURES)
+         INTEGER                              :: k, nValues
          
          stats % avgValues  = 0.0_RP
          stats % maxValues  = 0.0_RP
