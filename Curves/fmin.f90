@@ -1,21 +1,21 @@
-                             
-!  To get d1mach, mail netlib
-!       send d1mach from core
-      double precision function fmin(ax, bx, crve, pnt, nHat, tol)
+MODULE fMinModule
+CONTAINS
+
+      DOUBLE PRECISION FUNCTION fmin(ax, bx, crve, pnt, nHat, tol)
       USE SMCurveClass
       IMPLICIT NONE
-      double precision ax,bx,tol,pnt(2), nHat(2)
+      double precision ax,bx,tol,pnt(3), nHat(3)
       !EXTERNAL    :: f
       TYPE(SMCurve) :: crve
-      INTERFACE 
-         DOUBLE PRECISION FUNCTION distanceSquared(x, crv, p, nHat)
-         USE SMCurveClass
-         IMPLICIT NONE
-         DOUBLE PRECISION :: x, p(2), nHat(2)
-         TYPE(SMCurve)      :: crv
-         DOUBLE PRECISION :: directionPenalty = 1.d-3
-         END FUNCTION distanceSquared
-      END INTERFACE
+!      INTERFACE 
+!         DOUBLE PRECISION FUNCTION distanceSquared(x, crv, p, nHat)
+!         USE SMCurveClass
+!         IMPLICIT NONE
+!         DOUBLE PRECISION :: x, p(3), nHat(3)
+!         TYPE(SMCurve)      :: crv
+!         DOUBLE PRECISION :: directionPenalty = 1.d-3
+!         END FUNCTION distanceSquared
+!      END INTERFACE
 !                            
 !      an approximation  x  to the point where  f  attains a minimum  on
 !  the interval  (ax,bx)  is determined.                                
@@ -172,7 +172,7 @@
 !                            
   190 fmin=x 
       return 
-      END
+      END FUNCTION fMin 
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -180,10 +180,9 @@
          USE SMCurveClass
          IMPLICIT NONE
          DOUBLE PRECISION :: x, p(3), z(3), nHat(3)
-         CLASS(SMCurve)      :: c
-         DOUBLE PRECISION, EXTERNAL :: DistanceSquaredBetweenPoints
+         CLASS(SMCurve)   :: c
          
-         z = c % positionAt(x)
+         z               = c % positionAt(x)
          distanceSquared = DistanceSquaredBetweenPoints(z,p,nHat)
       END FUNCTION distanceSquared
 !
@@ -193,8 +192,8 @@
          USE ProgramGlobals, ONLY: directionPenalty
          IMPLICIT NONE
          DOUBLE PRECISION ::  p(3), z(3), nHat(3)
-         !DOUBLE PRECISION :: directionPenalty = 1.d-4
          
          DistanceSquaredBetweenPoints = (z(1) - p(1))**2 + (z(2) - p(2))**2 &
                            - MIN((z(1)-p(1))*nHat(1) + (z(2) - p(2))*nHat(2),0.0d0)/directionPenalty
       END FUNCTION DistanceSquaredBetweenPoints
+END MODULE fMinModule
