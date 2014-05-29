@@ -68,19 +68,8 @@
 !
       CLASS(QuadTreeGrid), POINTER :: grid
       CLASS(MeshSizer)             :: sizer
-      INTEGER                      :: k
       
-      CALL RefineGrid_ToSizeFunction_( grid, sizer )
-      CALL DeleteDuplicateNodesForGrid( grid )
-      
-      IF( refinementType == REFINEMENT_2 )     THEN
-         DO k = 1, highestLevel-1
-            CALL DoLevelOperation( grid, FLATTEN_NODE_LEVELS_OPERATION )
-            CALL DeleteDuplicateNodesForGrid( grid )
-         END DO
-         CALL DeleteDuplicateNodesForGrid( grid )
-      END IF
-      
+      CALL generateNonconformingQuadTree(grid = grid,sizer = sizer)
       CALL ConstructQuads( grid )
       
       END SUBROUTINE GenerateNCGridWithSizer
@@ -96,20 +85,31 @@
 !
       CLASS(QuadTreeGrid), POINTER :: grid
       CLASS(MeshSizer)             :: sizer
-      INTEGER :: k
-!
-!     ------------------
-!     NonConforming part
-!     ------------------
-!
-      CALL RefineGrid_ToSizeFunction_( grid, sizer )
+      
+      CALL generateNonconformingQuadTree(grid = grid,sizer = sizer)
+      CALL DoLevelOperation( grid, REMOVE_HANGING_NODES_OPERATION )
       CALL DeleteDuplicateNodesForGrid( grid )
+      CALL ConstructQuadsWithTemplates( grid )
+      
+      END SUBROUTINE GenerateConformingGridWithSizer
 !
-!     ------------------
-!     Make it conforming
-!     ------------------
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE generateNonconformingQuadTree(grid,sizer)  
+         IMPLICIT NONE  
 !
-      IF( refinementType == REFINEMENT_2 )     THEN
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(QuadTreeGrid), POINTER :: grid
+         CLASS(MeshSizer)             :: sizer
+         INTEGER :: k
+      
+         CALL RefineGrid_ToSizeFunction_( grid, sizer )
+         CALL DeleteDuplicateNodesForGrid( grid )
+         
+         IF( refinementType == REFINEMENT_2 )     THEN
 !
 !        -----------------------------------------------------------------------------------------------
 !        TODO: The following is a hack to make sure that grids differ at most by one level. It is redone
@@ -117,17 +117,13 @@
 !        the tree would be more efficient. So far, this doesn't affect the cpu time much.
 !        -----------------------------------------------------------------------------------------------
 !
-         DO k = 1, highestLevel-1
-            CALL DoLevelOperation( grid, FLATTEN_NODE_LEVELS_OPERATION )
+            DO k = 1, highestLevel-1
+               CALL DoLevelOperation( grid, FLATTEN_NODE_LEVELS_OPERATION )
+               CALL DeleteDuplicateNodesForGrid( grid )
+            END DO
             CALL DeleteDuplicateNodesForGrid( grid )
-         END DO
-      END IF
+         END IF
       
-      CALL DoLevelOperation( grid, REMOVE_HANGING_NODES_OPERATION )
-      CALL DeleteDuplicateNodesForGrid( grid )
-      CALL ConstructQuadsWithTemplates( grid )
-      
-      END SUBROUTINE GenerateConformingGridWithSizer
+      END SUBROUTINE generateNonconformingQuadTree
 
    END MODULE QuadTreeGridGeneratorModule
-
