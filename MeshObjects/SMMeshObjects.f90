@@ -279,7 +279,11 @@
             CALL p % node % printDescription(6)
             STOP
          END IF
-         
+!
+!        -----------------------------------------------------------
+!        REM: This block of code causes a crash under gfortran 4.9.0
+!        -----------------------------------------------------------
+!
          IF ( ASSOCIATED(p % node) )     THEN
             CALL p % node % release()
             IF ( p % node % isUnreferenced() )     THEN
@@ -287,7 +291,11 @@
                p % node => NULL() 
             END IF 
          END IF 
-      
+!
+!        ----------------------
+!        End of offending block
+!        ----------------------
+!
          p % node => q % node
          CALL p % node % retain()
          
@@ -306,13 +314,25 @@
 !
       LOGICAL FUNCTION isOnBoundaryCurve( node ) 
          IMPLICIT NONE 
-         CLASS(SMNode)        , POINTER :: node
+         CLASS(SMNode), POINTER :: node
          IF( node % bCurveChainID > UNDEFINED )     THEN
             IsOnBoundaryCurve = .true.
          ELSE
             IsOnBoundaryCurve = .false.
          END IF
       END FUNCTION isOnBoundaryCurve
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION IsOnOuterBox( node ) 
+         IMPLICIT NONE 
+         CLASS(SMNode), POINTER :: node
+         IF( node % bCurveChainID < UNDEFINED )     THEN
+            IsOnOuterBox = .true.
+         ELSE
+            IsOnOuterBox = .false.
+         END IF
+      END FUNCTION IsOnOuterBox
 !
 !////////////////////////////////////////////////////////////////////////
 !
