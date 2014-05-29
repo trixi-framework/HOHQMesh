@@ -17,7 +17,7 @@
 !
          INTEGER, PARAMETER :: NONE      = 0
          LOGICAL, PARAMETER :: FAIL      = .false.
-         INTEGER, PARAMETER :: UNDEFINED = -1
+         INTEGER, PARAMETER :: UNDEFINED = 0
          INTEGER, PARAMETER :: ON        = 1, OFF = 0
 !
 !        -----------------------------
