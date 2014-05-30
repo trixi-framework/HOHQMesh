@@ -232,6 +232,7 @@
          USE SMChainedCurveClass
          USE CurveConversionsModule
          USE SpringMeshSmootherClass
+         USE LaplaceMeshSmootherClass
          IMPLICIT NONE
 !
 !        ---------
@@ -253,6 +254,7 @@
          CLASS(FTObject)             , POINTER :: obj
          CLASS(QuadTreeGrid)         , POINTER :: parent
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother
+         CLASS(LaplaceMeshSmoother)  , POINTER :: laplaceSmoother
          
          CLASS(SizerCentercontrol), POINTER :: c
          CLASS(SizerLineControl)  , POINTER :: L
@@ -261,6 +263,7 @@
          TYPE(BackgroundGridParameters) :: backgroundGrid
          TYPE(CentersParameters)        :: centerParams
          TYPE(SpringSmootherParameters) :: smootherParams
+         TYPE(LaplaceSmootherParameters):: laplaceParameters
          TYPE(LineParameters)           :: lineParams
          
          REAL(KIND=RP)                  :: h, xMax(3)
@@ -426,7 +429,7 @@
          END DO
 !
 !-------------------------------------------------------------------------------
-!                               Construct Smoother
+!                          Construct Smoother, if requested
 !-------------------------------------------------------------------------------
 !
          smootherWasRead = .FALSE.
@@ -437,22 +440,39 @@
 !        --------------------
 !
          rewind(fUnit)
-         CALL MoveToBlock("\begin{Smoother}", fUnit, iOS )
+         CALL MoveToBlock("\begin{SpringSmoother}", fUnit, iOS )
          IF( ios == 0 )     THEN
             CALL ReadSpringSmootherBlock( fUnit, smootherParams )
-            IF( smootherParams%smoothingOn )     THEN
+            IF( smootherParams % smoothingOn )     THEN
                ALLOCATE(springSmoother)
-               CALL springSmoother % init( smootherParams % springConstant, &
+               CALL springSmoother % init(  smootherParams % springConstant, &
                                             smootherParams % mass, &
                                             smootherParams % restLength, &
                                             smootherParams % dampingCoefficient, &
                                             smootherParams % springType, &
                                             smootherParams % deltaT, &
-                                            smootherParams % numSteps)
+                                            smootherParams % numSteps )
                self % smoother => springSmoother
+               smootherWasRead = .TRUE.
             END IF
-            smootherWasRead = .TRUE.
          END IF
+         IF(smootherWasRead) RETURN 
+!
+!        ------------------
+!        Laplacian Smoother
+!        ------------------
+!
+         rewind(fUnit)
+         CALL MoveToBlock("\begin{LaplaceSmoother}", fUnit, iOS )
+         IF ( ios == 0 )     THEN
+            CALL ReadLaplaceSmootherBlock( fUnit, laplaceParameters )
+            IF ( laplaceParameters % smoothingOn )     THEN
+               ALLOCATE(laplaceSmoother)
+               CALL laplaceSmoother % init(laplaceParameters)
+               self % smoother => laplaceSmoother
+               smootherWasRead = .TRUE.
+            END IF 
+         END IF 
          IF(smootherWasRead) RETURN 
          
       END SUBROUTINE BuildProjectWithContentsOfFile
