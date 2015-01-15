@@ -32,8 +32,8 @@
          INTEGER                                  :: boundaryTest ! takes on INSIDE, OUTSIDE, ON_BONDARY, UNDETERMINED
          INTEGER                                  :: rotation     ! For template construction
          
-         TYPE(SMNodePtr), DIMENSION(:,:), POINTER :: nodes        ! Nodes are numbered (0:N(1),0:N(2))
-         TYPE(SMQuadPtr), DIMENSION(:,:), POINTER :: quads        ! Quads are numbered (1:N(1),1:N(2))
+         TYPE(SMNodePtr), DIMENSION(:,:), POINTER :: nodes => NULL()        ! Nodes are numbered (0:N(1),0:N(2))
+         TYPE(SMQuadPtr), DIMENSION(:,:), POINTER :: quads => NULL()       ! Quads are numbered (1:N(1),1:N(2))
 !
 !        ------
 !        Parent
@@ -46,13 +46,13 @@
 !        Children
 !        --------
 !
-         TYPE( NestedQuadTreeGridPtr ), DIMENSION(:,:), POINTER :: children ! Children are numbered (1:N(1),1:N(2))
+         TYPE( NestedQuadTreeGridPtr ), DIMENSION(:,:), POINTER :: children => NULL() ! Children are numbered (1:N(1),1:N(2))
 !
 !        ----------------------------
 !        References to Neighbor grids
 !        ----------------------------
 !
-         CLASS(QuadTreeGrid), POINTER :: neighborL, neighborR, neighborT, neighborB
+         CLASS(QuadTreeGrid), POINTER :: neighborL => NULL(), neighborR => NULL(), neighborT => NULL(), neighborB => NULL()
 !
 !        ========
          CONTAINS
@@ -70,7 +70,7 @@
 !     -----------------
 !
       TYPE NestedQuadTreeGridPtr
-         CLASS(QuadTreeGrid), POINTER :: grid
+         CLASS(QuadTreeGrid), POINTER :: grid => NULL()
       END TYPE NestedQuadTreeGridPtr
 !
 !     --------------
@@ -109,8 +109,8 @@
 !         
          INTEGER                 :: i,j
          REAL(KIND=RP)           :: x(3)
-         CLASS(SMNode) , POINTER :: node
-         CLASS(SMQuad) , POINTER :: quad
+         CLASS(SMNode) , POINTER :: node => NULL()
+         CLASS(SMQuad) , POINTER :: quad => NULL()
 !
 !        -------------------
 !        Self initialization
@@ -307,9 +307,8 @@
          IMPLICIT NONE 
          CLASS(QuadTreeGrid)          :: self
          INTEGER                      :: i,j, N, M
-         CLASS(QuadTreeGrid), POINTER :: grid
-         CLASS(SMQuad)      , POINTER :: quad
-         CLASS(SMNode)      , POINTER :: node
+         CLASS(SMQuad)      , POINTER :: quad => NULL()
+         CLASS(SMNode)      , POINTER :: node => NULL()
          
          N = self % N(1)
          M = self % N(2)
@@ -321,10 +320,9 @@
          IF( ASSOCIATED( self % children ) )     THEN
             DO j = 1, M
                DO i = 1, N 
-                  grid => self % children(i,j) % grid
-                  IF( ASSOCIATED( grid ) ) THEN
-                     CALL grid % release()
-                     IF ( grid % isUnreferenced() )     THEN
+                  IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN
+                     CALL self % children(i,j) % grid % release()
+                     IF ( self % children(i,j) % grid % isUnreferenced() )     THEN
                         DEALLOCATE(self % children(i,j) % grid)
                         self % children(i,j) % grid => NULL()
                      END IF 
@@ -396,9 +394,9 @@
 !     Local Variables
 !     ---------------
 !
-      INTEGER                     :: i, j, nX, nY
-      INTEGER                     :: N(3) = 3
-      REAL(KIND=RP)               :: hMin, xMin(3), xMax(3), dX(3)
+      INTEGER                      :: i, j, nX, nY
+      INTEGER                      :: N(3) = 3
+      REAL(KIND=RP)                :: hMin, xMin(3), xMax(3), dX(3)
       CLASS(QuadTreeGrid), POINTER :: childGrid
 !
       N  = refinementType
@@ -409,6 +407,8 @@
 !     Do for each quad
 !     ----------------
 !
+      NULLIFY(childGrid)
+      
       DO j = 1, nY
          DO i = 1, nX
 !
@@ -546,7 +546,7 @@
 !
       FUNCTION ChildGridAt_InGrid_(i,j,grid) RESULT(p) 
          IMPLICIT NONE
-         INTEGER                     :: i, j
+         INTEGER                      :: i, j
          CLASS(QuadTreeGrid), POINTER :: grid, p
          
          IF( ASSOCIATED(grid) .AND. ASSOCIATED(grid % children) )     THEN
@@ -577,7 +577,7 @@
 !
       FUNCTION QuadAt_InGrid_(i,j,grid) RESULT(p) 
       IMPLICIT NONE
-      INTEGER                     :: i, j
+      INTEGER                      :: i, j
       CLASS(QuadTreeGrid), POINTER :: grid
       CLASS(SMQuad)    , POINTER   :: p
       
