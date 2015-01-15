@@ -154,9 +154,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement)           , POINTER :: currentElement
-         CLASS(FTLinkedListIterator), POINTER :: elementIterator
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMElement)           , POINTER :: currentElement  => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj             => NULL()
 !
          numberOfDiamondsRemoved = 0
          CALL MakeNodeToElementConnections( mesh )
@@ -225,10 +225,10 @@
          INTEGER, DIMENSION(4)       :: diagonalMap = [3,4,1,2]
          REAL(KIND=RP)               :: x1(3), x2(3), x(3)
          
-         CLASS(SMNode)     , POINTER :: node, nodeForThisID
-         CLASS(SMElement)  , POINTER :: e, eTarget
-         CLASS(SMEdge)     , POINTER :: edge
-         CLASS(FTObject)   , POINTER :: obj
+         CLASS(SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL()
+         CLASS(SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
+         CLASS(SMEdge)     , POINTER :: edge => NULL()
+         CLASS(FTObject)   , POINTER :: obj => NULL()
          
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes
          TYPE(SMElementPtr)            :: eNeighbors(2)
@@ -448,9 +448,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTMutableObjectArray) , POINTER     :: badElements
-         CLASS(SMElement)            , POINTER     :: e
-         CLASS(FTObject)             , POINTER     :: obj
+         CLASS(FTMutableObjectArray) , POINTER     :: badElements => NULL()
+         CLASS(SMElement)            , POINTER     :: e => NULL()
+         CLASS(FTObject)             , POINTER     :: obj => NULL()
          REAL(KIND=RP)               , ALLOCATABLE :: shapeMeasures(:,:)
          LOGICAL                     , ALLOCATABLE :: badElementMeasure(:,:)
          INTEGER                                   :: numberOfBadElements
@@ -550,7 +550,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject), POINTER :: obj2, obj4         
+         CLASS(FTObject), POINTER :: obj2 => NULL(), obj4 => NULL()      
          
          obj2 => e % nodes % objectAtIndex(2)
          obj4 => e % nodes % objectAtIndex(4)
@@ -585,14 +585,14 @@
 !
          INTEGER                              :: numBoundaries
          INTEGER                              :: j, k, nodeCount
-         CLASS(FTLinkedList)        , POINTER :: currentEdgeList
-         CLASS(FTLinkedList)        , POINTER :: interfaceElements
-         CLASS(SMEDGE)              , POINTER :: currentEdge
-         CLASS(SMElement)           , POINTER :: e
-         CLASS(SMNode)              , POINTER :: elementNode, meshNode
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
+         CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
+         CLASS(SMEDGE)              , POINTER :: currentEdge => NULL()
+         CLASS(SMElement)           , POINTER :: e => NULL()
+         CLASS(SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          TYPE (FTLinkedListIterator)          :: edgeListIterator
-         CLASS(FTLinkedListIterator), POINTER :: nodesIterator
+         CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
          
          numBoundaries = model % numberOfInnerCurves &
                        + model % numberOfOuterCurves &
@@ -605,12 +605,42 @@
 !
          CALL SetNodeActiveStatus(mesh,model)
 !
+!        -----------------------------------------------
+!        Run through physical boundary elements and make
+!        the boundary angles 90 degrees.
+!        -----------------------------------------------
+!
+         CALL makeNodeToElementConnections(mesh)
+         DO j = 1, numBoundaries
+            IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
+            
+            obj  => boundaryEdgesArray % objectAtIndex(j)
+            CALL cast(obj,currentEdgeList)
+            
+            CALL edgeListIterator % initWithFTLinkedList(currentEdgeList)
+            CALL edgeListIterator % setToStart()
+            
+            DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
+               obj => EdgeListIterator % object()
+               CALL cast(obj,currentEdge)
+               IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
+                  e   => currentEdge % elements(1) % element
+!               BUG: puts boundary points in the wrong place.
+                  CALL CleanUpBoundaryElement( e, model )
+               END IF 
+
+               CALL EdgeListIterator % moveToNext()
+            END DO
+            
+            CALL edgeListIterator % release()
+         END DO
+         CALL deallocateNodeToEdgeConnections
+!
 !        -------------------------------------------
 !        Run through the interface elements
 !        and split them as necessary
 !        -------------------------------------------
 !
-
          IF ( model % numberOfInterfaceCurves > 0 )     THEN
          
            ALLOCATE(interfaceElements)
@@ -743,9 +773,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement), POINTER :: e, eNbr
-         CLASS(FTObject) , POINTER :: obj
-         CLASS(SMNode)   , POINTER :: node
+         CLASS(SMElement), POINTER :: e => NULL(), eNbr => NULL()
+         CLASS(FTObject) , POINTER :: obj => NULL()
+         CLASS(SMNode)   , POINTER :: node => NULL()
          REAL(KIND=RP)             :: angles(4)
          INTEGER                   :: numberOfBadElements
          INTEGER                   :: k, j, badNodeID, lastSharedNodeID
@@ -855,7 +885,7 @@
          
       END SUBROUTINE CleanUpChevronElements 
 !
-!//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+!///////////////////////////////////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE CleanUpBoundaryElement( e, model )
          USE SMModelClass
@@ -875,8 +905,8 @@
 !        ---------------
 !
          INTEGER, PARAMETER               :: ON_BOUNDARY = 1, OFF_BOUNDARY = 0
-         CLASS(SMNode)  , POINTER         :: sourceNode, node
-         CLASS(FTObject), POINTER         :: obj
+         CLASS(SMNode)  , POINTER         :: sourceNode => NULL(), node => NULL()
+         CLASS(FTObject), POINTER         :: obj => NULL()
          TYPE(SMNodePtr)                  :: elementNodes(4)  !Temp container for this procedure
          INTEGER                          :: boundaryNodeCount
          INTEGER                          :: k, m, j
@@ -885,10 +915,10 @@
          REAL(KIND=RP)  , DIMENSION(3)    :: p
          REAL(KIND=RP)                    :: tStart, tEnd, t, tSav
          
-         CLASS(SMCurve)       , POINTER   :: c
-         CLASS(SMChainedCurve), POINTER   :: chain       ! Returned also so that it, too can be used.
+         CLASS(SMCurve)       , POINTER   :: c => NULL()
+         CLASS(SMChainedCurve), POINTER   :: chain  => NULL()      ! Returned also so that it, too can be used.
          TYPE(SMNode)                     :: nodeCopy(4) ! Two extra but not a big deal.
-         CLASS(SMElement)     , POINTER   :: eTest
+         CLASS(SMElement)     , POINTER   :: eTest => NULL()
          LOGICAL                          :: badArrayOriginal(6), badArrayNew(6)      ! Node valence <= 6
          LOGICAL                          :: failed
          INTEGER                          :: nodeID
@@ -905,7 +935,7 @@
             obj => e % nodes % objectAtIndex(k)
             CALL cast(obj, node)
             elementNodes(k) % node => node
-            IF ( node % bCurveID > UNDEFINED )     THEN
+            IF ( node % bCurveID > UNDEFINED .AND. node % distToBoundary == 0.0_RP )     THEN
                boundaryNodeCount = boundaryNodeCount + 1
                mark(k) = ON_BOUNDARY 
             END IF
@@ -932,8 +962,14 @@
 !              -------------------------------------------
 !
                nodeID = elementNodes(k) % node % id
+
                DO j = 1, numElementsForNode(nodeID)
                   eTest => elementsForNodes(j,nodeID) % element
+                  IF(.NOT.ASSOCIATED(etest))     THEN
+                     WRITE(msg,*) "Neighbors to node ", node % x, "Not associated. Aborting cleanup."
+                     CALL ThrowErrorExceptionOfType("CleanUpBoundaryElement",msg,FT_ERROR_WARNING)
+                     RETURN
+                  END IF 
                   badArrayOriginal(j) = elementIsBad(eTest)
                END DO
             END IF
@@ -944,7 +980,7 @@
 !        ---------------------
 !
          DO k = 1, 4
-            IF( mark(k) == OFF_BOUNDARY            )     CYCLE
+            IF( mark(k) == OFF_BOUNDARY            )              CYCLE
             IF(elementNodes(k) % node % activeStatus == INACTIVE) CYCLE
             IF(elementNodes(k) % node % nodeType /= ROW_SIDE)     CYCLE
 !
@@ -952,7 +988,7 @@
 !           Find which node is off the boundary
 !           -----------------------------------
 !
-            IF      ( mark(sourceNodeLocalID(1,k)) == OFF_BOUNDARY )     THEN
+            IF ( mark(sourceNodeLocalID(1,k)) == OFF_BOUNDARY )          THEN
                m = sourceNodeLocalID(1,k)
             ELSE IF ( mark(sourceNodeLocalID(2,k)) == OFF_BOUNDARY )     THEN
                m = sourceNodeLocalID(2,k)
@@ -970,15 +1006,16 @@
             p      = sourceNode % x
             t      = node % whereOnBoundary
             tSav   = t
-
-            c => model % curveWithID(node % bCurveID, chain)
-            tStart = t - 0.49_RP
-            tEnd   = t + 0.49_RP
-            tStart = MAX(tStart, 0.0_RP)
-            tEnd   = MIN(tEnd, 1.0_RP)
 !
-            t = fmin(tStart, tEnd, c, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
-
+            c => model % curveWithID(node % bCurveID, chain)
+            t = ParametrizationAtPointNear(c,p,t)
+!            tStart = t - 0.49_RP
+!            tEnd   = t + 0.49_RP
+!            tStart = MAX(tStart, 0.0_RP)
+!            tEnd   = MIN(tEnd, 1.0_RP)
+!!
+!            t = fmin(tStart, tEnd, c, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
+            
             node % whereOnBoundary  = t
             node % distToBoundary   = 0.0_RP !This is a boundary node
             node % gWhereOnBoundary = chain % ChainTForCurveTInCurve(t,c)
@@ -992,31 +1029,30 @@
 !        original.
 !        ----------------------------------------------------------------
 !
-         badArrayNew = .false.
-         DO k = 1, 4
-            IF( mark(k) == OFF_BOUNDARY )     CYCLE
-            IF(elementNodes(k) % node % activeStatus == INACTIVE) CYCLE
-            IF(elementNodes(k) % node % nodeType /= ROW_SIDE)     CYCLE
-!
-!              -----------------------------------
-!              Check the elements around this node
-!              -----------------------------------
-!
-               nodeID   = elementNodes(k) % node % id
-               failed = .false.
-               DO j = 1, numElementsForNode(nodeID)
-                  eTest          => elementsForNodes(j,nodeID) % element
-                  badArrayNew(j) = elementIsBad(eTest)
-                  IF(badArrayNew(j) .AND. (.NOT.badArrayOriginal(j))) failed = .true.
-               END DO
-               IF(failed) THEN
-                  nodeCopy(k) % activeStatus = INACTIVE
-                  obj => e % nodes % objectAtIndex(k)
-                  CALL cast(obj,node)
-                  CALL copyOfNodeType(nodeCopy(k),node)
-               END IF 
-
-         END DO
+!         badArrayNew = .false.
+!         DO k = 1, 4
+!            IF( mark(k) == OFF_BOUNDARY )     CYCLE
+!            IF(elementNodes(k) % node % activeStatus == INACTIVE) CYCLE
+!            IF(elementNodes(k) % node % nodeType /= ROW_SIDE)     CYCLE
+!!
+!!           -----------------------------------
+!!           Check the elements around this node
+!!           -----------------------------------
+!!
+!            nodeID   = elementNodes(k) % node % id
+!            failed = .false.
+!            DO j = 1, numElementsForNode(nodeID)
+!               eTest          => elementsForNodes(j,nodeID) % element
+!               badArrayNew(j) = elementIsBad(eTest)
+!               IF(badArrayNew(j) .AND. (.NOT.badArrayOriginal(j))) failed = .true.
+!            END DO
+!            IF(failed) THEN
+!               nodeCopy(k) % activeStatus = INACTIVE
+!               obj => e % nodes % objectAtIndex(k)
+!               CALL cast(obj,node)
+!               CALL copyOfNodeType(nodeCopy(k),node)
+!            END IF 
+!         END DO
       END SUBROUTINE CleanUpBoundaryElement
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1039,9 +1075,9 @@
          INTEGER                   :: k, j, id, idNbr, localIds(2)
          LOGICAL                   :: hasA3ValenceNode, isDiamond
          REAL(KIND=RP)             :: x(3), corners(3,4)
-         CLASS(SMElement), POINTER :: eNbr
-         CLASS(FTObject) , POINTER :: obj
-         CLASS(SMNode)   , POINTER :: node
+         CLASS(SMElement), POINTER :: eNbr => NULL()
+         CLASS(FTObject) , POINTER :: obj => NULL()
+         CLASS(SMNode)   , POINTER :: node => NULL()
          TYPE(SMNodePtr)           :: elementNodes(4)  !Temp container for this procedure
 !
 !        --------------------------------------------

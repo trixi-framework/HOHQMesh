@@ -5,6 +5,8 @@
 !      Created: May 29, 2014 at 3:38 PM 
 !      By: David Kopriva  
 !
+!      BASE CLASS FOR SMOOTHERS
+!
 !////////////////////////////////////////////////////////////////////////
 !
       Module MeshSmootherClass
@@ -43,8 +45,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)  , POINTER :: currentNode
-         CLASS(FTObject), POINTER :: obj
+         CLASS(SMNode)  , POINTER :: currentNode => NULL()
+         CLASS(FTObject), POINTER :: obj => NULL()
 !
 !        ------------------------------------------------------
 !        Loop through all the nodes and add those whose

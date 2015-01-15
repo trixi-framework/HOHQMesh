@@ -113,9 +113,9 @@
 !
          INTEGER                      :: k, nodeID, N
          REAL(KIND=RP)                :: maxV
-         CLASS(SMNode)      , POINTER :: node
-         CLASS(FTObject)    , POINTER :: obj
-         CLASS(FTLinkedList), POINTER :: boundaryNodesList
+         CLASS(SMNode)      , POINTER :: node => NULL()
+         CLASS(FTObject)    , POINTER :: obj => NULL()
+         CLASS(FTLinkedList), POINTER :: boundaryNodesList => NULL()
 !
 !        -------------------------
 !        Allocate temporary memory
@@ -246,9 +246,9 @@
 !
          INTEGER                              :: id1, id2
          REAL(KIND=RP)                        :: force(3), x1(3), x2(3)
-         CLASS(SMEdge)              , POINTER :: edge
-         CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMEdge)              , POINTER :: edge => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          
          iterator => mesh % edgesIterator
          CALL iterator % setToStart()
@@ -293,10 +293,10 @@
 !
          INTEGER                              :: k, cK, nID
          REAL(KIND=RP)                        :: force(3), x1(3), x2(3)
-         CLASS(SMNode)              , POINTER :: node1, node2
-         CLASS(SMElement)           , POINTER :: e
-         CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMNode)              , POINTER :: node1 => NULL(), node2 => NULL()
+         CLASS(SMElement)           , POINTER :: e => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          
          iterator => mesh % elementsIterator
          CALL iterator % setToStart()
@@ -334,7 +334,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS (SpringMeshSmoother)                  :: self
+         CLASS (SpringMeshSmoother)            :: self
          CLASS (FTLinkedListIterator), POINTER :: nodeIterator
          CLASS (SMModel)             , POINTER :: model
 !
@@ -342,10 +342,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)        , POINTER :: node
-         CLASS(SMChainedCurve), POINTER :: chain
-         CLASS(SMCurve)       , POINTER :: c
-         CLASS(FTObject)      , POINTER :: obj
+         CLASS(SMNode)        , POINTER :: node => NULL()
+         CLASS(SMChainedCurve), POINTER :: chain => NULL()
+         CLASS(SMCurve)       , POINTER :: c => NULL()
+         CLASS(FTObject)      , POINTER :: obj => NULL()
          INTEGER                        :: id
          REAL(KIND=RP)                  :: tangent(3)
 

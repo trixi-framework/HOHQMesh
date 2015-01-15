@@ -69,11 +69,11 @@
 !     ------------------------
 !
       TYPE, EXTENDS(FTObject) ::  MeshProject
-         CLASS(SMModel)           , POINTER :: model
-         CLASS(SMMesh)            , POINTER :: mesh
-         CLASS(MeshSizer)         , POINTER :: sizer
-         CLASS(QuadTreeGrid)      , POINTER :: grid
-         CLASS(MeshSmoother)      , POINTER :: smoother
+         CLASS(SMModel)           , POINTER :: model    => NULL()
+         CLASS(SMMesh)            , POINTER :: mesh     => NULL()
+         CLASS(MeshSizer)         , POINTER :: sizer    => NULL()
+         CLASS(QuadTreeGrid)      , POINTER :: grid     => NULL()
+         CLASS(MeshSmoother)      , POINTER :: smoother => NULL()
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
@@ -109,7 +109,7 @@
 !
          INTEGER                     :: iOS
          CHARACTER(LEN=LINE_LENGTH)  :: inputLine = " ", msg
-         CLASS(FTException), POINTER :: exception
+         CLASS(FTException), POINTER :: exception => NULL()
 !
 !        ---------------------------
 !        Call superclass initializer
@@ -246,18 +246,18 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary
-         CLASS(SMChainedCurve)       , POINTER :: chain
-         CLASS(FTException)          , POINTER :: exception
-         CLASS(FTLinkedListIterator) , POINTER :: iterator
-         CLASS(FTObject)             , POINTER :: obj
-         CLASS(QuadTreeGrid)         , POINTER :: parent
-         CLASS(SpringMeshSmoother)   , POINTER :: springSmoother
-         CLASS(LaplaceMeshSmoother)  , POINTER :: laplaceSmoother
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary => NULL()
+         CLASS(SMChainedCurve)       , POINTER :: chain => NULL()
+         CLASS(FTException)          , POINTER :: exception => NULL()
+         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(QuadTreeGrid)         , POINTER :: parent => NULL()
+         CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
+         CLASS(LaplaceMeshSmoother)  , POINTER :: laplaceSmoother => NULL()
          
-         CLASS(SizerCentercontrol), POINTER :: c
-         CLASS(SizerLineControl)  , POINTER :: L
+         CLASS(SizerCentercontrol), POINTER :: c => NULL()
+         CLASS(SizerLineControl)  , POINTER :: L => NULL()
          
          INTEGER                        :: iOS
          TYPE(BackgroundGridParameters) :: backgroundGrid
@@ -501,8 +501,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary
-         CLASS(FTObject)             , POINTER :: obj
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
+         CLASS(FTObject)             , POINTER :: obj => NULL()
          INTEGER                               :: curveID
          CHARACTER(LEN=128)                    :: msg
          
@@ -575,10 +575,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTException)   , POINTER :: exception
-         CLASS(FTDictionary)  , POINTER :: userDictionary
-         CLASS(FTObject)      , POINTER :: obj
-         CLASS(FTValue)       , POINTER :: v
+         CLASS(FTException)   , POINTER :: exception => NULL()
+         CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
+         CLASS(FTObject)      , POINTER :: obj => NULL()
+         CLASS(FTValue)       , POINTER :: v => NULL()
 !
 !        -----------------------------------------------------
 !        The userDictionary for this exception contains the

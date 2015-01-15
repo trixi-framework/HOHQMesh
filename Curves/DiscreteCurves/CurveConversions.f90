@@ -40,8 +40,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMCurve)         , POINTER :: cCurve
-         CLASS(FRSegmentedCurve), POINTER :: frsCurve
+         CLASS(SMCurve)         , POINTER :: cCurve   => NULL()
+         CLASS(FRSegmentedCurve), POINTER :: frsCurve => NULL()
          INTEGER                          :: k
          
          ALLOCATE(segmentedChain)
@@ -85,8 +85,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTobject)        , POINTER           :: obj
-         CLASS(FRSegmentedCurve), POINTER           :: frsCurve
+         CLASS(FTobject)        , POINTER           :: obj      => NULL()
+         CLASS(FRSegmentedCurve), POINTER           :: frsCurve => NULL()
          INTEGER                                    :: nCurves, nSegmentedPoints, nSegments
          INTEGER                                    :: j, k, n
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: t

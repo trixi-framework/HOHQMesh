@@ -29,8 +29,8 @@
 !        ---------------
 !
          INTEGER                  :: k
-         CLASS(FTobject), POINTER :: obj
-         CLASS(SMNode)  , POINTER :: node
+         CLASS(FTobject), POINTER :: obj  => NULL()
+         CLASS(SMNode)  , POINTER :: node => NULL()
          
          localID = NONE
          DO k = 1, e % nodes % COUNT()
@@ -65,8 +65,8 @@
          REAL(KIND=RP)               :: LNorm1, Lnorm2 ! lengths of the edge vectors
          REAL(KIND=RP), EXTERNAL     :: Norm2
          
-         CLASS(FTObject), POINTER :: obj
-         CLASS(SMNode)  , POINTER :: node
+         CLASS(FTObject), POINTER :: obj  => NULL()
+         CLASS(SMNode)  , POINTER :: node => NULL()
 !
 !        -------------------------------------------------------------
 !        Grab the two sides. They are ordered counter-clockwise, so to

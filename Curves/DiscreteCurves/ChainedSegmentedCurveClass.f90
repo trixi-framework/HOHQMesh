@@ -36,7 +36,7 @@
          INTEGER                                            :: numberOfCurvesInChain
          LOGICAL                                            :: isCircular
          REAL(KIND=RP)                                      :: boundingBox(6)
-         CLASS(FTMutableobjectArray), POINTER               :: chain
+         CLASS(FTMutableobjectArray), POINTER               :: chain  => NULL()
          INTEGER, DIMENSION(:), ALLOCATABLE                 :: curveStartIndices
 !
 !        ========
@@ -114,8 +114,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)             , POINTER :: obj
-         CLASS(FRSegmentedCurve)     , POINTER :: prevCurve, curve
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(FRSegmentedCurve)     , POINTER :: prevCurve => NULL(), curve => NULL()
          REAL(KIND=RP)                         :: xStart(3), xEnd(3), d
          INTEGER                               :: nChain
          
@@ -198,8 +198,8 @@
 !        ---------------
 !
          INTEGER                          :: j, N, m
-         CLASS(FTObject)        , POINTER :: obj
-         CLASS(FRSegmentedCurve), POINTER :: curve
+         CLASS(FTObject)        , POINTER :: obj   => NULL()
+         CLASS(FRSegmentedCurve), POINTER :: curve => NULL()
 !
 !        ----------------------------------------
 !        Save indices where curvest start and end
@@ -238,7 +238,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)             , POINTER :: obj
+         CLASS(FTObject)             , POINTER :: obj => NULL()
          
          obj => self % chain % objectAtIndex(indx)
          CALL castToSegmentedCurve(obj,c)
@@ -292,8 +292,8 @@
 !        ---------------
 !
          INTEGER                          :: j, N
-         CLASS(FTObject)        , POINTER :: obj
-         CLASS(FRSegmentedCurve), POINTER :: curve
+         CLASS(FTObject)        , POINTER :: obj => NULL()
+         CLASS(FRSegmentedCurve), POINTER :: curve => NULL()
          
          
          
@@ -331,8 +331,8 @@
 !        ---------------
 !
          INTEGER                          :: j, N
-         CLASS(FTobject), POINTER         :: obj
-         CLASS(FRSegmentedCurve), POINTER :: curve
+         CLASS(FTobject), POINTER         :: obj   => NULL()
+         CLASS(FRSegmentedCurve), POINTER :: curve => NULL()
          
          N = self % numberOfCurvesInChain
          WRITE(iUnit,*) "Chain ",TRIM(self % curveName)
@@ -363,7 +363,7 @@
 !        ---------------
 !
          INTEGER                          :: curveNumber, j
-         CLASS(FRSegmentedCurve), POINTER :: c
+         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
          
          
          curveNumber =  self % chainNumberForIndex(indx)
@@ -391,7 +391,7 @@
 !        ---------------
 !
          INTEGER                          :: curveNumber, j
-         CLASS(FRSegmentedCurve), POINTER :: c
+         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
          
          
          curveNumber =  self % chainNumberForIndex(indx)
@@ -419,7 +419,7 @@
 !        ---------------
 !
          INTEGER                          :: curveNumber, j
-         CLASS(FRSegmentedCurve), POINTER :: c
+         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
          
          
          curveNumber =  self % chainNumberForIndex(indx)
@@ -448,7 +448,7 @@
 !        ---------------
 !
          INTEGER                          :: curveNumber, j
-         CLASS(FRSegmentedCurve), POINTER :: c
+         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
          
          
          curveNumber =  self % chainNumberForIndex(indx)
@@ -477,7 +477,7 @@
          
          CLASS(ChainedSegmentedCurve)     :: self
          
-         CLASS(FRSegmentedCurve), POINTER :: c
+         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
          REAL(KIND=RP)                    :: xMin, xMax, yMin, yMax, x(3)
          INTEGER                          :: j, k
          
@@ -564,11 +564,11 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTException)   , POINTER     :: exception
-         CLASS(FTDictionary)  , POINTER     :: userDictionary
-         CLASS(FTObject)      , POINTER     :: obj
-         CLASS(FTValue)       , POINTER     :: v
-         CLASS(FTData)        , POINTER     :: d
+         CLASS(FTException)   , POINTER     :: exception      => NULL()
+         CLASS(FTDictionary)  , POINTER     :: userDictionary => NULL()
+         CLASS(FTObject)      , POINTER     :: obj            => NULL()
+         CLASS(FTValue)       , POINTER     :: v              => NULL()
+         CLASS(FTData)        , POINTER     :: d              => NULL()
          CHARACTER(LEN=1)     , ALLOCATABLE :: dat(:)
          INTEGER                            :: dataLength
 !

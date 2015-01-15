@@ -37,7 +37,7 @@
          INTEGER                     :: listSize
          INTEGER                     :: j
          TYPE(FTLinkedListIterator)  :: iterator
-         CLASS(FTObject), POINTER    :: obj
+         CLASS(FTObject), POINTER    :: obj => NULL()
 !
 !        ----------------------------
 !        Allocate the required memory

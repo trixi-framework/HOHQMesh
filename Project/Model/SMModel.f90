@@ -37,11 +37,11 @@
          INTEGER                                  :: numberOfInnerCurves
          INTEGER                                  :: numberOfInterfaceCurves
          CHARACTER(LEN=32)                        :: modelName
-         CLASS(SMChainedCurve)      , POINTER     :: outerBoundary
-         CLASS(FTLinkedList)        , POINTER     :: innerBoundaries
-         CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries
-         CLASS(FTLinkedListIterator), POINTER     :: innerBoundariesIterator
-         CLASS(FTLinkedListIterator), POINTER     :: interfaceBoundariesIterator
+         CLASS(SMChainedCurve)      , POINTER     :: outerBoundary => NULL()
+         CLASS(FTLinkedList)        , POINTER     :: innerBoundaries => NULL()
+         CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: innerBoundariesIterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: interfaceBoundariesIterator => NULL()
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
 !
@@ -50,7 +50,7 @@
 !        ========
 !
          PROCEDURE :: initWithContentsOfFile         
-         PROCEDURE :: destruct => destructModel
+         PROCEDURE :: destruct    => destructModel
          PROCEDURE :: chainWithID
          PROCEDURE :: curveWithID => curveInModelWithID
       END TYPE SMModel
@@ -164,9 +164,9 @@
 !
          INTEGER                        :: ios
          INTEGER, EXTERNAL              :: UnusedUnit
-         CLASS(SMChainedCurve), POINTER :: chain, currentChain
-         CLASS(SMCurve)       , POINTER :: currentCurve
-         CLASS(FTException)   , POINTER :: exception
+         CLASS(SMChainedCurve), POINTER :: chain => NULL(), currentChain => NULL()
+         CLASS(SMCurve)       , POINTER :: currentCurve => NULL()
+         CLASS(FTException)   , POINTER :: exception => NULL()
          INTEGER                        :: chainCount
 !
 !        -----------------------------
@@ -275,7 +275,7 @@
          INTEGER                                 :: cStart, cEnd
          CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: blockName
          CHARACTER(LEN=LINE_LENGTH)              :: inputLine = " "
-         CLASS(FTException), POINTER             :: exception
+         CLASS(FTException), POINTER             :: exception => NULL()
          
          DO WHILE( INDEX(inputLine,"\end{OuterBoundary}") == 0 )
          
@@ -328,8 +328,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMChainedCurve), POINTER          :: chain
-         CLASS(FTObject)      , POINTER          :: obj
+         CLASS(SMChainedCurve), POINTER          :: chain => NULL()
+         CLASS(FTObject)      , POINTER          :: obj => NULL()
          INTEGER                                 :: ios
          INTEGER                                 :: cStart, cEnd
          CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: blockName, chainName
@@ -471,7 +471,7 @@
          INTEGER                        :: fUnit
          CLASS(SMChainedCurve), POINTER :: chain
          CHARACTER(LEN=*)               :: equationType
-         CLASS(FTException)   , POINTER :: exception
+         CLASS(FTException)   , POINTER :: exception => NULL()
 
          SELECT CASE ( equationType )
             CASE("ParametricEquationCurve")
@@ -523,9 +523,9 @@
          CHARACTER(LEN=SM_CURVE_NAME_LENGTH)       :: curveName
          CHARACTER(LEN=EQUATION_STRING_LENGTH)     :: eqnX, eqnY, eqnZ
          INTEGER                                   :: ios
-         CLASS(SMParametricEquationCurve), POINTER :: cCurve
-         CLASS(FTException)              , POINTER :: exception
-         CLASS(SMCurve)                  , POINTER :: curvePtr
+         CLASS(SMParametricEquationCurve), POINTER :: cCurve => NULL()
+         CLASS(FTException)              , POINTER :: exception => NULL()
+         CLASS(SMCurve)                  , POINTER :: curvePtr => NULL()
 !
 !        ------------
 !        Get the data
@@ -591,8 +591,8 @@
          CHARACTER(LEN=LINE_LENGTH)                :: inputLine = " "
          CHARACTER(LEN=SM_CURVE_NAME_LENGTH)       :: curveName
          INTEGER                                   :: ios
-         CLASS(SMSplineCurve)         , POINTER    :: cCurve
-         CLASS(SMCurve)               , POINTER    :: curvePtr
+         CLASS(SMSplineCurve)         , POINTER    :: cCurve => NULL()
+         CLASS(SMCurve)               , POINTER    :: curvePtr => NULL()
          REAL(KIND=RP) , DIMENSION(:), ALLOCATABLE :: t, x, y, z
          INTEGER                                   :: numKnots, j
          
@@ -656,8 +656,8 @@
          CHARACTER(LEN=SM_CURVE_NAME_LENGTH)   :: curveName
          REAL(KIND=RP), DIMENSION(3)           :: xStart, xEnd
          INTEGER                               :: ios
-         CLASS(SMLine)          , POINTER      :: cCurve
-         CLASS(SMCurve)         , POINTER      :: curvePtr
+         CLASS(SMLine)          , POINTER      :: cCurve => NULL()
+         CLASS(SMCurve)         , POINTER      :: curvePtr => NULL()
          
          INTERFACE
             FUNCTION GetRealArray( inputLine ) RESULT(x)
@@ -734,10 +734,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMChainedCurve), POINTER :: chain
-         CLASS(SMCurve)       , POINTER :: currentCurve
-         CLASS(FTObject)      , POINTER :: obj
-         CLASS(FTLinkedListIterator), POINTER    :: iterator
+         CLASS(SMChainedCurve), POINTER :: chain => NULL()
+         CLASS(SMCurve)       , POINTER :: currentCurve => NULL()
+         CLASS(FTObject)      , POINTER :: obj => NULL()
+         CLASS(FTLinkedListIterator), POINTER    :: iterator => NULL()
          
          INTEGER                        :: chainCount
          INTEGER                        :: j
@@ -865,10 +865,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTException)   , POINTER :: exception
-         CLASS(FTDictionary)  , POINTER :: userDictionary
-         CLASS(FTObject)      , POINTER :: obj
-         CLASS(FTValue)       , POINTER :: v
+         CLASS(FTException)   , POINTER :: exception => NULL()
+         CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
+         CLASS(FTObject)      , POINTER :: obj => NULL()
+         CLASS(FTValue)       , POINTER :: v => NULL()
 !
 !        -----------------------------------------------------
 !        The userDictionary for this exception contains the
@@ -929,8 +929,8 @@
 !        Local Variables
 !        ---------------
 !         
-         CLASS(FTObject)            , POINTER :: obj
-         CLASS(FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          
          chain => NULL()
 
@@ -988,8 +988,8 @@
 !        ---------------
 !         
          INTEGER                              :: chainID
-         CLASS(FTObject)            , POINTER :: obj
-         CLASS(FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          
          chain   => NULL()
          curve   => NULL()

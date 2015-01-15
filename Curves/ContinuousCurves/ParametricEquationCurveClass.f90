@@ -137,10 +137,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTException)   , POINTER :: exception
-         CLASS(FTDictionary)  , POINTER :: userDictionary
-         CLASS(FTObject)      , POINTER :: obj
-         CLASS(FTValue)       , POINTER :: v
+         CLASS(FTException)   , POINTER :: exception => NULL()
+         CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
+         CLASS(FTObject)      , POINTER :: obj => NULL()
+         CLASS(FTValue)       , POINTER :: v => NULL()
 !
 !        -----------------------------------------------------
 !        The userDictionary for this exception contains the

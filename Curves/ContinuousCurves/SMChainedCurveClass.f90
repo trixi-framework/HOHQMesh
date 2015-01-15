@@ -76,7 +76,7 @@
 !     ---------------------
 !
       TYPE, EXTENDS(SMCurve) :: SMChainedCurve
-         CLASS(FTMutableObjectArray), POINTER     :: curvesArray
+         CLASS(FTMutableObjectArray), POINTER     :: curvesArray  => NULL()
          
          INTEGER      , DIMENSION(:), ALLOCATABLE :: myCurveIDs
          INTEGER      , DIMENSION(:), ALLOCATABLE :: jointClassification
@@ -160,7 +160,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject), POINTER :: obj
+         CLASS(FTObject), POINTER :: obj => NULL()
 !
 !        --------------------------
 !        Add the curve to the chain
@@ -187,10 +187,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMCurve)             , POINTER :: curve, nextCurve, previousCurve
+         CLASS(SMCurve)             , POINTER :: curve => NULL(), nextCurve => NULL(), previousCurve => NULL()
          TYPE(FTLinkedListIterator)           :: iterator
-         CLASS(FTObject)            , POINTER :: objectPtr
-         CLASS(FTLinkedListRecord)  , POINTER :: recordPtr
+         CLASS(FTObject)            , POINTER :: objectPtr => NULL()
+         CLASS(FTLinkedListRecord)  , POINTER :: recordPtr => NULL()
          
          REAL(KIND=RP)            :: xEnd(3), x0(3), xN(3)
          LOGICAL                  :: swap
@@ -341,7 +341,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject), POINTER :: obj
+         CLASS(FTObject), POINTER :: obj => NULL()
          INTEGER                  :: l, k
          
          l   =  self % CurveNumberForLocation(t)
@@ -405,7 +405,7 @@
 !        ---------------
 !
          INTEGER                  :: k
-         CLASS(FTObject), POINTER :: obj
+         CLASS(FTObject), POINTER :: obj => NULL()
          
          obj => self % curvesArray % objectAtIndex(k)
          CALL cast(obj,c)
@@ -428,8 +428,8 @@
          INTEGER               :: id
          INTEGER               :: k
          
-         CLASS(SMCurve) , POINTER :: c
-         CLASS(FTObject), POINTER :: obj
+         CLASS(SMCurve) , POINTER :: c => NULL()
+         CLASS(FTObject), POINTER :: obj => NULL()
          
          DO k = 1, self % numberOfCurvesInChain
             obj => self % curvesArray % objectAtIndex(k)
@@ -509,8 +509,8 @@
 !
          INTEGER                  :: curveNumber
          REAL(KIND=RP)            :: s
-         CLASS(SMCurve) , POINTER :: c
-         CLASS(FTobject), POINTER :: obj
+         CLASS(SMCurve) , POINTER :: c => NULL()
+         CLASS(FTobject), POINTER :: obj => NULL()
 !
 !        ----------------------------------------------------
 !        Find which curve (by order) the point corresponds to
@@ -565,8 +565,8 @@
 !
          INTEGER                  :: curveNumber
          REAL(KIND=RP)            :: s
-         CLASS(SMCurve) , POINTER :: c
-         CLASS(FTobject), POINTER :: obj
+         CLASS(SMCurve) , POINTER :: c => NULL()
+         CLASS(FTobject), POINTER :: obj => NULL()
 !
 !        ----------------------------------------------------
 !        Find which curve (by order) the point corresponds to
@@ -627,10 +627,10 @@
          CLASS(SMChainedCurve)          :: self
          CLASS(SMCurve)       , POINTER :: curve, nextCurve
          CHARACTER(LEN=*)               :: msg
-         CLASS(FTException)   , POINTER :: exception
-         CLASS(FTDictionary)  , POINTER :: userDictionary
-         CLASS(FTObject)      , POINTER :: obj
-         CLASS(FTValue)       , POINTER :: v
+         CLASS(FTException)   , POINTER :: exception => NULL()
+         CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
+         CLASS(FTObject)      , POINTER :: obj => NULL()
+         CLASS(FTValue)       , POINTER :: v => NULL()
 !
 !        -----------------------------------------------------
 !        The userDictionary for this exception contains the

@@ -32,8 +32,8 @@
 !
          INTEGER                       :: j, k
          INTEGER                       :: numBoundaries
-         CLASS(FTLinkedList), POINTER  :: list
-         CLASS(FTObject)    , POINTER  :: obj
+         CLASS(FTLinkedList), POINTER  :: list => NULL()
+         CLASS(FTObject)    , POINTER  :: obj  => NULL()
 !
 !        ----------------
 !        Make connections
@@ -125,9 +125,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges
-         CLASS(FTLinkedListIterator), POINTER :: iterator, newElementsIterator
-         CLASS(SMElement)           , POINTER :: e
+         CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges  => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL(), newElementsIterator => NULL()
+         CLASS(SMElement)           , POINTER :: e => NULL()
          CLASS(SMEdge)              , POINTER :: currentEdge, newBoundaryEdge, edge
          CLASS(SMNode)              , POINTER :: node1, node2
          CLASS(FTObject)            , POINTER :: obj
@@ -272,11 +272,11 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges
-         CLASS(SMElement)           , POINTER :: e
-         CLASS(SMEdge)              , POINTER :: currentEdge, newBoundaryEdge
-         CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges => NULL()
+         CLASS(SMElement)           , POINTER :: e => NULL()
+         CLASS(SMEdge)              , POINTER :: currentEdge => NULL(), newBoundaryEdge => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          INTEGER                              :: k, nB, interiorEdgeNumber
 !
 !        ---------------------------------------------
@@ -396,12 +396,12 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)            , POINTER :: obj
-         CLASS(SMEdge)              , POINTER :: currentEdge
-         CLASS(SMNode)              , POINTER :: node
-         CLASS(SMCurve)             , POINTER :: cEnd
-         CLASS(SMChainedCurve)      , POINTER :: chain
-         CLASS(FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj         => NULL()
+         CLASS(SMEdge)              , POINTER :: currentEdge => NULL()
+         CLASS(SMNode)              , POINTER :: node        => NULL()
+         CLASS(SMCurve)             , POINTER :: cEnd        => NULL()
+         CLASS(SMChainedCurve)      , POINTER :: chain       => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator    => NULL()
          INTEGER                              :: k
          REAL(KIND=RP)                        :: t
          
@@ -442,8 +442,8 @@
 !        ----------------------------------------------
 !
          CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTobject)            , POINTER :: obj
-         CLASS(SMEdge)              , POINTER :: currentEdge
+         CLASS(FTobject)            , POINTER :: obj         => NULL()
+         CLASS(SMEdge)              , POINTER :: currentEdge => NULL()
          LOGICAL                              :: takeStep
 
          CALL iterator % setToStart()
@@ -466,8 +466,8 @@
          USE MeshBoundaryMethodsModule 
          IMPLICIT NONE
          INTEGER :: j
-         CLASS(FTObject)    , POINTER :: obj
-         CLASS(FTLinkedList), POINTER :: list
+         CLASS(FTObject)    , POINTER :: obj  => NULL()
+         CLASS(FTLinkedList), POINTER :: list => NULL()
          
          IF ( boundarySmoothingPasses > 0 )     THEN
             DO j = 1, SIZE(boundaryEdgesType)

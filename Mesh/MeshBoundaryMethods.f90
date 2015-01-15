@@ -48,10 +48,10 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(FTObject) , POINTER             :: obj
+         CLASS(FTObject) , POINTER             :: obj => NULL()
          INTEGER                               :: N, k
-         CLASS(FTLinkedListIterator) , POINTER :: iterator
-         CLASS(ChainedSegmentedCurve), POINTER :: chain
+         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER :: chain => NULL()
 !
 !        --------------
 !        Outer boundary
@@ -157,8 +157,8 @@
 !     Local variables
 !     ---------------
 !
-      CLASS(FTLinkedList), POINTER :: list
-      CLASS(FTobject)    , POINTER :: obj
+      CLASS(FTLinkedList), POINTER :: list => NULL()
+      CLASS(FTobject)    , POINTER :: obj  => NULL()
       INTEGER                      :: k
 !
 !     --------------------------------
@@ -218,10 +218,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMEdge)              , POINTER :: edge
-         CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTObject)            , POINTER :: obj
-         CLASS(FTLinkedList)        , POINTER :: edgeList
+         CLASS(SMEdge)              , POINTER :: edge     => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj      => NULL()
+         CLASS(FTLinkedList)        , POINTER :: edgeList => NULL()
          INTEGER                              :: curveID, curveSide
 !
 !        --------------------------------
@@ -339,11 +339,13 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMEdge)              , POINTER     :: edge, currentEdge, edge1, edge2
-         CLASS(FTLinkedList)        , POINTER     :: sortedEdges, edgeList, reorientedEdges, list
-         TYPE (SMNodePtr)           , POINTER     :: sortedNodes(:)
-         CLASS(FTobject)            , POINTER     :: obj
-         CLASS(FTLinkedListIterator), POINTER     :: iterator
+         CLASS(SMEdge)              , POINTER     :: edge => NULL(), currentEdge => NULL(), &
+                                                     edge1 => NULL(), edge2 => NULL()
+         CLASS(FTLinkedList)        , POINTER     :: sortedEdges => NULL(), edgeList => NULL(), &
+                                                     reorientedEdges => NULL(), list => NULL()
+         TYPE (SMNodePtr)           , POINTER     :: sortedNodes(:) => NULL()
+         CLASS(FTobject)            , POINTER     :: obj            => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: iterator       => NULL()
          TYPE (SMEdgePtr)           , ALLOCATABLE :: edgeArray(:)
          INTEGER                    , ALLOCATABLE :: nodeArray(:,:)
          REAL(KIND=RP)              , ALLOCATABLE :: sortedNodeLocations(:,:)
@@ -583,11 +585,11 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedListIterator)  , POINTER :: iterator
-         CLASS(FTLinkedListRecord)    , POINTER :: cr
-         CLASS(SMEdge)                , POINTER :: currentEdge, prevEdge
+         CLASS(FTLinkedListIterator)  , POINTER :: iterator => NULL()
+         CLASS(FTLinkedListRecord)    , POINTER :: cr => NULL()
+         CLASS(SMEdge)                , POINTER :: currentEdge => NULL(), prevEdge => NULL()
          INTEGER                                :: nNodes, id, idP1, idP2, j
-         CLASS(FTObject)              , POINTER :: obj
+         CLASS(FTObject)              , POINTER :: obj => NULL()
          
          NULLIFY(GatheredNodes)
          IF ( .NOT.ASSOCIATED(list) )     RETURN
@@ -649,7 +651,7 @@
 !        Local variables
 !        ---------------
 !
-         TYPE(SMNodePtr), POINTER     :: nodeArray(:)
+         TYPE(SMNodePtr), POINTER     :: nodeArray(:) => NULL()
          REAL(KIND=RP)  , ALLOCATABLE :: x(:,:)
          INTEGER                      :: nNodes, j, k
          
@@ -706,11 +708,11 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMChainedCurve)      , POINTER     :: chain
-         CLASS(SMEdge)              , POINTER     :: edge
-         CLASS(FTObject)            , POINTER     :: obj
-         CLASS(FTLinkedList)        , POINTER     :: edgeList
-         CLASS(FTLinkedListIterator), POINTER     :: edgeListIterator
+         CLASS(SMChainedCurve)      , POINTER     :: chain            => NULL()
+         CLASS(SMEdge)              , POINTER     :: edge             => NULL()
+         CLASS(FTObject)            , POINTER     :: obj              => NULL()
+         CLASS(FTLinkedList)        , POINTER     :: edgeList         => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: edgeListIterator => NULL()
    
          LOGICAL                                  :: isInnerBoundaryCurve
          INTEGER                                  :: j, k
@@ -805,11 +807,11 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMCurve)                 , POINTER :: c, c2
-         TYPE(SMNodePtr), DIMENSION(:)  , POINTER :: nodePtrs
-         CLASS(SMNode)                  , POINTER :: node
-         REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: nHat
-         REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: xCurve
+         CLASS(SMCurve)                 , POINTER :: c => NULL(), c2 => NULL()
+         TYPE(SMNodePtr), DIMENSION(:)  , POINTER :: nodePtrs => NULL()
+         CLASS(SMNode)                  , POINTER :: node => NULL()
+         REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: nHat => NULL()
+         REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: xCurve => NULL()
          REAL(KIND=RP)  , DIMENSION(3)            :: z, p
          REAL(KIND=RP)                            :: tStart, tEnd, t
          REAL(KIND=RP)                            :: d, dMin, dt
@@ -955,10 +957,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMChainedCurve)        , POINTER :: chain
-         TYPE(SMNodePtr), DIMENSION(:), POINTER :: nodeArray
-         CLASS(SMNode)                , POINTER :: node
-         CLASS(SMCurve)               , POINTER :: c
+         CLASS(SMChainedCurve)        , POINTER :: chain => NULL()
+         TYPE(SMNodePtr), DIMENSION(:), POINTER :: nodeArray => NULL()
+         CLASS(SMNode)                , POINTER :: node => NULL()
+         CLASS(SMCurve)               , POINTER :: c => NULL()
          INTEGER                                :: nodeArraySize, j
          REAL(KIND=RP)                          :: t0, tm, tp, tmpTol = 1.0d-2
          
@@ -1038,8 +1040,8 @@
 !
       IMPLICIT NONE
       CLASS(FTLinkedListIterator), POINTER :: nodeIterator
-      CLASS(FTObject)            , POINTER :: obj
-      CLASS(SMNode)              , POINTER :: node
+      CLASS(FTObject)            , POINTER :: obj  => NULL()
+      CLASS(SMNode)              , POINTER :: node => NULL()
       CALL nodeIterator % setToStart()
       DO WHILE( .NOT.nodeIterator % isAtEnd() )
          obj => nodeIterator % object()
@@ -1084,14 +1086,14 @@
 !
          INTEGER                      :: numBoundaries
          INTEGER                      :: j, k, nodeCount
-         CLASS(FTLinkedList), POINTER :: currentEdgeList
-         CLASS(FTLinkedList), POINTER :: boundaryElements
-         CLASS(SMEdge)      , POINTER :: currentEdge
-         CLASS(SMElement)   , POINTER :: e
-         CLASS(SMNode)      , POINTER :: node
-         CLASS(FTObject)    , POINTER :: obj
+         CLASS(FTLinkedList), POINTER :: currentEdgeList => NULL()
+         CLASS(FTLinkedList), POINTER :: boundaryElements => NULL()
+         CLASS(SMEdge)      , POINTER :: currentEdge => NULL()
+         CLASS(SMElement)   , POINTER :: e => NULL()
+         CLASS(SMNode)      , POINTER :: node => NULL()
+         CLASS(FTObject)    , POINTER :: obj => NULL()
          
-         CLASS(FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
 !
 !        ---------------------
 !        Gather boundary Edges
@@ -1145,13 +1147,13 @@
 !                 Nevertheless, deactivate when at the end of a curve.
 !                 ----------------------------------------------------
 !
-                   IF ( currentEdge%nodes(1) % node % whereOnBoundary == 0.0_RP .OR. &
-                        currentEdge%nodes(1) % node % whereOnBoundary == 1.0_RP)     THEN
-                        currentEdge % nodes(1) % node % activeStatus = INACTIVE
+                   IF ( currentEdge % nodes(1) % node % whereOnBoundary == 0.0_RP .OR. &
+                        currentEdge % nodes(1) % node % whereOnBoundary == 1.0_RP)     THEN
+                        currentEdge % nodes(1) % node % activeStatus    = INACTIVE
                    END IF
-                   IF ( currentEdge%nodes(2)%node % whereOnBoundary == 0.0_RP .OR. &
-                        currentEdge%nodes(2)%node % whereOnBoundary == 1.0_RP)     THEN
-                        currentEdge % nodes(2) % node % activeStatus = INACTIVE
+                   IF ( currentEdge % nodes(2) % node % whereOnBoundary == 0.0_RP .OR. &
+                        currentEdge % nodes(2) % node % whereOnBoundary == 1.0_RP)     THEN
+                        currentEdge % nodes(2) % node % activeStatus    = INACTIVE
                    END IF
                    
                   CALL iterator % moveToNext()
@@ -1184,13 +1186,13 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)              , POINTER :: currentNode
-         CLASS(SMCurve)             , POINTER :: c
-         CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMNode)              , POINTER :: currentNode => NULL()
+         CLASS(SMCurve)             , POINTER :: c => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          REAL(KIND=RP)                        :: tOld,tNew
          REAL(KIND=RP)                        :: pOld(3),pNew(3)
-         CLASS(SMChainedCurve)      , POINTER :: chain
+         CLASS(SMChainedCurve)      , POINTER :: chain => NULL()
          INTEGER                              :: curveID
 !
 !        --------------------------------------------------------------------

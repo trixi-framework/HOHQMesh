@@ -117,9 +117,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedListIterator), POINTER :: elementIterator
-         CLASS(SMElement)           , POINTER :: e
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         CLASS(SMElement)           , POINTER :: e => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_SHAPE_MEASURES)
          CHARACTER(LEN=16)                    :: namesFmt = "(   8A16 )", valuesFmt = '(  8F16.3)', numb = "10"
          
@@ -165,9 +165,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedListIterator), POINTER :: elementIterator
-         CLASS(SMElement)           , POINTER :: e
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         CLASS(SMElement)           , POINTER :: e => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_SHAPE_MEASURES)
          INTEGER                              :: k, nValues
          
@@ -213,8 +213,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject), POINTER :: obj
-         CLASS(SMNode)  , POINTER :: node
+         CLASS(FTObject), POINTER :: obj => NULL()
+         CLASS(SMNode)  , POINTER :: node => NULL()
          
          REAL(KIND=RP) :: P(3,4)         ! Location of the four corners
          REAL(KIND=RP) :: L(3,4)         ! Sequential edge vectors
@@ -385,8 +385,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject), POINTER :: obj
-         CLASS(SMNode)  , POINTER :: node
+         CLASS(FTObject), POINTER :: obj  => NULL()
+         CLASS(SMNode)  , POINTER :: node => NULL()
          
          REAL(KIND=RP) :: P(3,4)         ! Location of the four corners
          REAL(KIND=RP) :: L(3,4)         ! Sequential edge vectors
@@ -463,9 +463,9 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(SMElement)           , POINTER :: e
-         CLASS(FTLinkedListIterator), POINTER :: elementIterator
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMElement)           , POINTER :: e => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          
          elementIterator => mesh % elementsIterator
          ALLOCATE(array)
@@ -573,8 +573,8 @@
          INTEGER                  :: k
          REAL(KIND=RP)            :: shapeMeasures(NUMBER_OF_SHAPE_MEASURES)
          LOGICAL                  :: info(NUMBER_OF_SHAPE_MEASURES)
-         CLASS(FTObject), POINTER :: obj
-         CLASS(SMNode)  , POINTER :: node
+         CLASS(FTObject), POINTER :: obj => NULL()
+         CLASS(SMNode)  , POINTER :: node => NULL()
          
          CALL ComputeElementShapeMeasures( e, shapeMeasures )
          CALL ExtractBadElementInfo( shapeMeasures, info )

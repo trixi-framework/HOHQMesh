@@ -78,19 +78,19 @@
          CLASS (LaplaceMeshSmoother)   :: self
          CLASS (SMMesh)      , POINTER :: mesh
          CLASS (SMModel)     , POINTER :: model
-         CLASS(FTObject)     , POINTER :: obj
-         CLASS(SMNode)       , POINTER :: node
+         CLASS(FTObject)     , POINTER :: obj  => NULL()
+         CLASS(SMNode)       , POINTER :: node => NULL()
 !
 !        ---------------
 !        local variables
 !        ---------------
 !
          INTEGER :: iter
-
+         
          CALL makeNodeToEdgeConnections( mesh )
          
          DO iter = 1, self % numSteps
-            CALL relax( mesh) 
+            CALL relax( mesh ) 
          END DO 
          
          CALL deallocateNodeToEdgeConnections 
@@ -113,10 +113,10 @@
 !        ---------------
 !
          INTEGER                               :: k, id
-         CLASS(FTLinkedListIterator), POINTER  :: iterator
-         CLASS(FTObject)            , POINTER  :: obj
-         CLASS(SMNode)              , POINTER  :: node
-         CLASS(SMEdge)              , POINTER  :: edge
+         CLASS(FTLinkedListIterator), POINTER  :: iterator => NULL()
+         CLASS(FTObject)            , POINTER  :: obj      => NULL()
+         CLASS(SMNode)              , POINTER  :: node     => NULL()
+         CLASS(SMEdge)              , POINTER  :: edge     => NULL()
          REAL(KIND=RP)                         :: x(3)
          
          iterator => mesh % nodesIterator
@@ -125,8 +125,8 @@
             CALL iterator % setToStart()
             
             DO WHILE(.NOT.iterator % isAtEnd())
-               obj     => iterator % object()
-               CALL cast(obj,node)
+               obj  => iterator % object()
+               node => nodeFromSMMeshobject(obj)
                
                IF ( ASSOCIATED(node) .AND. .NOT.hasFixedPosition(node) )     THEN
                   id = node % id

@@ -46,11 +46,11 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMEdge)              , POINTER :: edge
-         CLASS(SMElement)           , POINTER :: e
+         CLASS(SMEdge)              , POINTER :: edge => NULL()
+         CLASS(SMElement)           , POINTER :: e => NULL()
          INTEGER                              :: side, k, id, numElements
-         CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
 !
 !        -----------------------------------------------------
 !        Make sure that the temporary array has been allocated
@@ -114,11 +114,11 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)               , POINTER :: node
-         CLASS(SMElement)            , POINTER :: e
+         CLASS(SMNode)               , POINTER :: node => NULL()
+         CLASS(SMElement)            , POINTER :: e => NULL()
          INTEGER                               :: k, id, numNodes
-         CLASS(FTLinkedListIterator), POINTER  :: iterator
-         CLASS(FTObject)            , POINTER  :: obj
+         CLASS(FTLinkedListIterator), POINTER  :: iterator => NULL()
+         CLASS(FTObject)            , POINTER  :: obj => NULL()
 !
 !        -----------------------------------------------------
 !        Make sure that the temporary array has been allocated
@@ -193,10 +193,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)  , POINTER             :: node
-         CLASS(SMEdge)  , POINTER             :: edge
-         CLASS(FTObject), POINTER             :: obj
-         CLASS(FTLinkedListIterator), POINTER :: iterator
+         CLASS(SMNode)  , POINTER             :: node     => NULL()
+         CLASS(SMEdge)  , POINTER             :: edge     => NULL()
+         CLASS(FTObject), POINTER             :: obj      => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          INTEGER                              :: k, id, numNodes
          
 !

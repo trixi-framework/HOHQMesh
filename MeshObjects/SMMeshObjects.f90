@@ -67,7 +67,7 @@
       END TYPE SMNode
       
       TYPE SMNodePtr
-         CLASS(SMNode), POINTER :: node
+         CLASS(SMNode), POINTER :: node => NULL()
       END TYPE SMNodePtr
 !
 !     ------------------
@@ -101,7 +101,7 @@
       END TYPE SMElement
       
       TYPE SMElementPtr
-         CLASS(SMElement), POINTER :: element
+         CLASS(SMElement), POINTER :: element => NULL()
       END TYPE SMElementPtr
 !
 !     ---------------
@@ -114,7 +114,7 @@
          TYPE(SMNodePtr)   , DIMENSION(2) :: nodes
          TYPE(SMElementPtr), DIMENSION(2) :: elements
          INTEGER                          :: elementSide(2)
-         CLASS(SMNode)    , POINTER       :: auxiliaryNode ! used for splitting interface elements
+         CLASS(SMNode)    , POINTER       :: auxiliaryNode => NULL() ! used for splitting interface elements
 !
 !        ========
          CONTAINS
@@ -127,7 +127,7 @@
       END TYPE SMEdge
       
       TYPE SMEdgePtr
-         CLASS(SMEdge), POINTER :: edge
+         CLASS(SMEdge), POINTER :: edge => NULL()
       END TYPE SMEdgePtr
 !
 !     ---------------
@@ -145,7 +145,7 @@
       END TYPE SMQuad
       
       TYPE SMQuadPtr
-         CLASS(SMQuad), POINTER :: quad
+         CLASS(SMQuad), POINTER :: quad => NULL()
       END TYPE SMQuadPtr
 !
 !     -----
@@ -190,6 +190,22 @@
          END SELECT
          
       END SUBROUTINE castToSMMeshObject
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      FUNCTION nodeFromSMMeshobject(obj) RESULT(cast)  
+      IMPLICIT NONE  
+         CLASS(FTObject), POINTER :: obj
+         CLASS(SMNode)  , POINTER :: cast
+         
+         cast => NULL()
+         SELECT TYPE (e => obj)
+            CLASS is (SMNode)
+               cast => e
+            CLASS DEFAULT
+         END SELECT
+         
+      END FUNCTION nodeFromSMMeshobject
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -282,15 +298,16 @@
 !
 !        -----------------------------------------------------------
 !        REM: This block of code causes a crash under gfortran 4.9.0
+!        and 4.9.2 !DEBUG
 !        -----------------------------------------------------------
 !
-         IF ( ASSOCIATED(p % node) )     THEN
-            CALL p % node % release()
-            IF ( p % node % isUnreferenced() )     THEN
-               DEALLOCATE(p % node)
-               p % node => NULL() 
-            END IF 
-         END IF 
+!         IF ( ASSOCIATED(p % node) )     THEN
+!            CALL p % node % release()
+!            IF ( p % node % isUnreferenced() )     THEN
+!               DEALLOCATE(p % node)
+!               p % node => NULL() 
+!            END IF 
+!         END IF 
 !
 !        ----------------------
 !        End of offending block
@@ -389,7 +406,7 @@
 !        ---------------
 !
          INTEGER                  :: j
-         CLASS(fTObject), POINTER :: obj
+         CLASS(fTObject), POINTER :: obj => NULL()
 
          CALL self % FTObject % init()
          CALL self % nodes    % initWithSize(eType)
@@ -435,8 +452,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode), POINTER :: node
-         CLASS(FTObject), POINTER :: obj
+         CLASS(SMNode), POINTER :: node => NULL()
+         CLASS(FTObject), POINTER :: obj => NULL()
          INTEGER                  :: k
          
          WRITE(iUnit,*) "Element with ID = ", self % id
@@ -512,8 +529,8 @@
       SUBROUTINE destructEdge(self)  
          IMPLICIT NONE  
          CLASS(SMEdge)             :: self
-         CLASS(SMNode)   , POINTER :: np
-         CLASS(SMElement), POINTER :: ep
+         CLASS(SMNode)   , POINTER :: np => NULL()
+         CLASS(SMElement), POINTER :: ep => NULL()
          INTEGER                   :: k
          
          DO k = 1,2
@@ -572,8 +589,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)  , POINTER :: node
-         CLASS(FTObject), POINTER :: obj
+         CLASS(SMNode)  , POINTER :: node => NULL()
+         CLASS(FTObject), POINTER :: obj => NULL()
          INTEGER                  :: k
          
          WRITE(iUnit,*) "Edge with ID = ", self % id, self % refCount(), self % remove

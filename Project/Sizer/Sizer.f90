@@ -27,10 +27,10 @@
          INTEGER                               :: noOfInterfaceBoundaries
          REAL(KIND=RP)                         :: baseSize
          REAL(KIND=RP)                         :: xMin(3), xMax(3)
-         CLASS(FTLinkedList)         , POINTER :: controlsList
-         CLASS(ChainedSegmentedCurve), POINTER :: outerBoundary
-         CLASS(FTLinkedList)         , POINTER :: innerBoundariesList
-         CLASS(FTLinkedList)         , POINTER :: interfaceBoundariesList
+         CLASS(FTLinkedList)         , POINTER :: controlsList            => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER :: outerBoundary           => NULL()
+         CLASS(FTLinkedList)         , POINTER :: innerBoundariesList     => NULL()
+         CLASS(FTLinkedList)         , POINTER :: interfaceBoundariesList => NULL()
 !
 !        ========
          CONTAINS
@@ -126,7 +126,7 @@
          IMPLICIT NONE
          CLASS(MeshSizer)                   :: self
          CLASS(SizerCenterControl), POINTER :: center
-         CLASS(FTObject)          , POINTER :: obj
+         CLASS(FTObject)          , POINTER :: obj => NULL()
          
          IF ( .NOT.ASSOCIATED(self % controlsList) )     THEN
             ALLOCATE(self % controlsList)
@@ -144,7 +144,7 @@
          IMPLICIT NONE
          CLASS(MeshSizer)                 :: self
          CLASS(SizerLineControl), POINTER :: line
-         CLASS(FTObject)        , POINTER :: obj
+         CLASS(FTObject)        , POINTER :: obj => NULL()
          
          IF ( .NOT.ASSOCIATED(self % controlsList) )     THEN
             ALLOCATE(self % controlsList)
@@ -163,7 +163,7 @@
          CLASS(MeshSizer)                      :: self
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurve
          INTEGER                               :: curveType ! = INNER, OUTER, INTERIOR_INTERFACE
-         CLASS(FTObject), POINTER              :: obj
+         CLASS(FTObject), POINTER              :: obj => NULL()
          
          SELECT CASE ( curveType )
          
@@ -222,9 +222,9 @@
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
          INTEGER                          :: i,j, nX(3) = [10,10,0]
          
-         CLASS(FTLinkedListIterator) , POINTER :: iterator
-         CLASS(FTObject)             , POINTER :: obj
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain
+         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
 !
 !        -----------------------------------------
 !        Sizes determined by centers/line controls
@@ -323,9 +323,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedListIterator) , POINTER :: iterator
-         CLASS(FTObject)             , POINTER :: obj
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain
+         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
 
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(list)
@@ -360,10 +360,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTObject)            , POINTER :: obj
-         CLASS(SizerCenterControl)  , POINTER :: center
-         CLASS(SizerLineControl)    , POINTER :: line
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
+         CLASS(SizerCenterControl)  , POINTER :: center => NULL()
+         CLASS(SizerLineControl)    , POINTER :: line => NULL()
          REAL(KIND=RP)                        :: hFunInv
          
          hFunInv = 1.0_RP/self%baseSize
@@ -425,8 +425,8 @@
 !        ---------------
 !
          REAL(KIND=RP)                    :: nodes(3,4), x(3)
-         CLASS(FRSegmentedCurve), POINTER :: c
-         CLASS(FTObject)        , POINTER :: obj
+         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
+         CLASS(FTObject)        , POINTER :: obj => NULL()
          INTEGER                          :: k, N, j
          REAL(KIND=RP)                    :: s
          
@@ -472,14 +472,15 @@
 !        ---------------
 !
          TYPE SizerCurvePtr
-            CLASS(ChainedSegmentedCurve), POINTER :: curve
+            CLASS(ChainedSegmentedCurve), POINTER :: curve => NULL()
          END TYPE SizerCurvePtr
          
          TYPE(SizerCurvePtr)        , DIMENSION(:), ALLOCATABLE :: innerCurvesArray
-         CLASS(FTLinkedListIterator), POINTER                   :: iterator
-         CLASS(FTObject)            , POINTER                   :: obj
+         CLASS(FTLinkedListIterator), POINTER                   :: iterator => NULL()
+         CLASS(FTObject)            , POINTER                   :: obj => NULL()
          
-         CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain  , outerSegmentedCurveChain
+         CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()  ,&
+                                                                   outerSegmentedCurveChain => NULL()
          CLASS(FRSegmentedCurve)     , POINTER                  :: innerSegment, outerSegment
          REAL(KIND=RP)                                          :: x(3), y(3), d, outerInvScale, innerInvScale
          REAL(KIND=RP)                                          :: nHatInner(3), nHatOuter(3), dot
@@ -758,12 +759,12 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(ChainedSegmentedCurve), POINTER :: chain
-         CLASS(FRSegmentedCurve)     , POINTER :: segment
+         CLASS(ChainedSegmentedCurve), POINTER :: chain => NULL()
+         CLASS(FRSegmentedCurve)     , POINTER :: segment => NULL()
          REAL(KIND=RP)                         :: cScale, cHeight, cWidth, cSize, invScale
          REAL(KIND=RP)                         :: segmentInvScale
-         CLASS(FTLinkedListIterator) , POINTER :: iterator
-         CLASS(FTObject)             , POINTER :: obj
+         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS(FTObject)             , POINTER :: obj => NULL()
          INTEGER                               :: k, j
 !
          IF ( self % noOfInterfaceBoundaries == 0 )     RETURN

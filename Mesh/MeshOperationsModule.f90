@@ -38,9 +38,9 @@
 !     for use on grids of large size or anything else.
 !     ------------------------------------------------------------
 !
-      CLASS(SMNode)            , POINTER :: node
-      CLASS(FTObject)          , POINTER :: obj
-      CLASS(FTLinkedListRecord), POINTER :: llRecord
+      CLASS(SMNode)            , POINTER :: node     => NULL()
+      CLASS(FTObject)          , POINTER :: obj      => NULL()
+      CLASS(FTLinkedListRecord), POINTER :: llRecord => NULL()
      
       REAL(KIND=RP), DIMENSION(3)    :: xTest, x, d
       INTEGER                        :: idTest, id

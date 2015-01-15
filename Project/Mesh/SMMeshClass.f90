@@ -35,17 +35,17 @@
 !        Data
 !        ----
 !
-         CLASS(FTLinkedList), POINTER :: nodes
-         CLASS(FTLinkedList), POINTER :: elements
-         CLASS(FTLinkedList), POINTER :: edges
+         CLASS(FTLinkedList), POINTER :: nodes => NULL()
+         CLASS(FTLinkedList), POINTER :: elements => NULL()
+         CLASS(FTLinkedList), POINTER :: edges => NULL()
 !
 !        ---------
 !        Iterators
 !        ---------
 !
-         CLASS(FTLinkedListIterator), POINTER :: nodesIterator
-         CLASS(FTLinkedListIterator), POINTER :: edgesIterator
-         CLASS(FTLinkedListIterator), POINTER :: elementsIterator
+         CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: edgesIterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: elementsIterator => NULL()
          
          INTEGER, PRIVATE :: elementID = 0, nodeID = 0, edgeID = 0
 !
@@ -78,12 +78,12 @@
 !      ------------------------------------------------------
 !
       TYPE CurveArrayPtr
-         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         CLASS(SegmentedCurveArray), POINTER :: curveArray => NULL()
       END TYPE CurveArrayPtr
       
-      CLASS(SegmentedCurveArray)       , POINTER :: outerBoundaryCurve
-      TYPE(CurveArrayPtr), DIMENSION(:), POINTER :: interiorCurves
-      TYPE(CurveArrayPtr), DIMENSION(:), POINTER :: interfaceCurves
+      CLASS(SegmentedCurveArray)       , POINTER :: outerBoundaryCurve => NULL()
+      TYPE(CurveArrayPtr), DIMENSION(:), POINTER :: interiorCurves => NULL()
+      TYPE(CurveArrayPtr), DIMENSION(:), POINTER :: interfaceCurves => NULL()
 !
 !     ------------------------------------------
 !     Convenience arrays for dealing with curves
@@ -96,7 +96,7 @@
 !     Arrays for keeping track of edges
 !     ---------------------------------
 !
-      TYPE(FTMutableObjectArray), POINTER     :: boundaryEdgesArray
+      TYPE(FTMutableObjectArray), POINTER     :: boundaryEdgesArray => NULL()
       INTEGER                   , ALLOCATABLE :: boundaryEdgesType(:)
 !
 !     ========     
@@ -241,10 +241,10 @@
 !
          TYPE(FTHashTable)          :: hashTable
          TYPE(FTLinkedListIterator) :: elementIterator
-         CLASS(SMEdge)   , POINTER  :: edge
-         CLASS(FTObject) , POINTER  :: obj
-         CLASS(SMElement), POINTER  :: element
-         CLASS(SMNode)   , POINTER  :: node, startNode, endNode
+         CLASS(SMEdge)   , POINTER  :: edge => NULL()
+         CLASS(FTObject) , POINTER  :: obj => NULL()
+         CLASS(SMElement), POINTER  :: element => NULL()
+         CLASS(SMNode)   , POINTER  :: node => NULL(), startNode => NULL(), endNode => NULL()
          
          INTEGER                    :: nNodes
          INTEGER                    :: nodeIDs(4), endNodes(2)
@@ -350,13 +350,13 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement), POINTER   :: e
-         CLASS(SMNode)   , POINTER   :: node
-         CLASS(SMEdge)   , POINTER   :: edge
+         CLASS(SMElement), POINTER   :: e    => NULL()
+         CLASS(SMNode)   , POINTER   :: node => NULL()
+         CLASS(SMEdge)   , POINTER   :: edge => NULL()
          
-         CLASS(FTLinkedList)        , POINTER :: list
-         CLASS(FTLinkedListIterator), POINTER :: iterator
-         CLASS(FTObject)            , POINTER :: obj
+         CLASS(FTLinkedList)        , POINTER :: list => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          
          LOGICAL                              :: takeStep
          INTEGER                              :: k
@@ -474,9 +474,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)            , POINTER :: obj
-         CLASS(SMMeshObject)        , POINTER :: mo
-         CLASS(FTLinkedListIterator), POINTER  :: iterator
+         CLASS(FTObject)            , POINTER :: obj => NULL()
+         CLASS(SMMeshObject)        , POINTER :: mo => NULL()
+         CLASS(FTLinkedListIterator), POINTER  :: iterator => NULL()
          
          INTEGER                              :: j
          
@@ -551,8 +551,8 @@
 !        ----------------
 !
          INTEGER                  :: j
-         CLASS(FTObject), POINTER :: obj
-         CLASS(FTLinkedList), POINTER :: list
+         CLASS(FTObject), POINTER :: obj => NULL()
+         CLASS(FTLinkedList), POINTER :: list => NULL()
          
          CALL boundaryEdgesArray % release()
          IF ( boundaryEdgesArray % isUnreferenced() )     THEN

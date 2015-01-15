@@ -87,7 +87,7 @@
          LOGICAL                                      :: isCircular
          CHARACTER(LEN=FRSEGMENTED_CURVE_NAME_LENGTH) :: curveName
          REAL(KIND=RP)                                :: h
-         CLASS(FTMutableObjectArray), POINTER         :: nodeArray
+         CLASS(FTMutableObjectArray), POINTER         :: nodeArray => NULL()
 !
 !        ========
          CONTAINS
@@ -161,16 +161,16 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(SegmentedCurveNode), POINTER     :: left, right, middle, p
-         CLASS(FTLinkedListRecord), POINTER     :: leftRecord, rightRecord, middleRecord
+         CLASS(SegmentedCurveNode), POINTER     :: left => NULL(), right => NULL(), middle => NULL(), p => NULL()
+         CLASS(FTLinkedListRecord), POINTER     :: leftRecord => NULL(), rightRecord => NULL(), middleRecord => NULL()
          REAL(KIND=RP)                          :: t, x(3)
          REAL(KIND=RP)                          :: xL(3), xM(3), xR(3), tL, tM, tR, c, s
          REAL(KIND=RP)                          :: xPrimeL(3), xPrimeR(3), xPrime(3), xDoublePrime(3)
          REAL(KIND=RP)                          :: norm
          INTEGER                                :: j, jp1, jm1, N, jointType
          LOGICAL                                :: isCircular
-         CLASS(FTObject)            , POINTER   :: obj
-         CLASS(FTLinkedList)        , POINTER   :: nodes
+         CLASS(FTObject)            , POINTER   :: obj   => NULL()
+         CLASS(FTLinkedList)        , POINTER   :: nodes => NULL()
 !
 !        ----
 !        Self
@@ -424,9 +424,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)          , POINTER :: obj
-         CLASS(SegmentedCurveNode), POINTER :: middle
-         CLASS(FTLinkedListRecord), POINTER :: middleRecord
+         CLASS(FTObject)          , POINTER :: obj          => NULL()
+         CLASS(SegmentedCurveNode), POINTER :: middle       => NULL()
+         CLASS(FTLinkedListRecord), POINTER :: middleRecord => NULL()
          
          REAL(KIND=RP) :: xL(3), xR(3), x(3), xM(3), xPrime(3), xDoublePrime(3)
          REAL(KIND=RP) :: tL, tR, d, t, dt, c, s, tM
@@ -461,7 +461,7 @@
             CALL middle % initSegmentedCurveNode( x, t )
             
             obj => middle
-            CALL list % insert(obj,leftRecord)
+            CALL list % insertObjectAfterRecord(obj,leftRecord)
             middleRecord => leftRecord % next
                         
             CALL RefineFRSegmentedCurve( list, leftRecord  , left  , middle, h, theCurve )
@@ -485,9 +485,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTMutableObjectArray), POINTER  :: newNodes
+         CLASS(FTMutableObjectArray), POINTER  :: newNodes  => NULL()
+         CLASS(FTObject)            , POINTER  :: obj       => NULL()
          INTEGER                               :: N, j
-         CLASS(FTObject)            , POINTER  :: obj
 !         
          N = self % nodeArray % COUNT()
          ALLOCATE(newNodes)
@@ -524,8 +524,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)            , POINTER :: objectPtr
-         CLASS(SegmentedCurveNode)  , POINTER :: node
+         CLASS(FTObject)            , POINTER :: objectPtr => NULL()
+         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
          INTEGER                              :: N, j
          
          N = self % nodeArray % COUNT()
@@ -557,8 +557,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)            , POINTER :: objectPtr
-         CLASS(SegmentedCurveNode)  , POINTER :: node
+         CLASS(FTObject)            , POINTER :: objectPtr => NULL()
+         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
          
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -585,8 +585,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)            , POINTER :: objectPtr
-         CLASS(SegmentedCurveNode)  , POINTER :: node
+         CLASS(FTObject)            , POINTER :: objectPtr => NULL()
+         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -611,8 +611,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)            , POINTER :: objectPtr
-         CLASS(SegmentedCurveNode)  , POINTER :: node
+         CLASS(FTObject)            , POINTER :: objectPtr => NULL()
+         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -637,8 +637,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)            , POINTER :: objectPtr
-         CLASS(SegmentedCurveNode)  , POINTER :: node
+         CLASS(FTObject)            , POINTER :: objectPtr  => NULL()
+         CLASS(SegmentedCurveNode)  , POINTER :: node       => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -663,8 +663,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)            , POINTER :: objectPtr
-         CLASS(SegmentedCurveNode)  , POINTER :: node
+         CLASS(FTObject)            , POINTER :: objectPtr => NULL()
+         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)

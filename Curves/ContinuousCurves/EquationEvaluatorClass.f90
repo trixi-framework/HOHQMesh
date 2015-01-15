@@ -76,7 +76,7 @@
       END TYPE Token
       
       TYPE TokenStack
-         TYPE(Token), DIMENSION(:), POINTER :: tokens
+         TYPE(Token), DIMENSION(:), POINTER :: tokens  => NULL()
          INTEGER                            :: top
       END TYPE TokenStack
       
@@ -84,7 +84,7 @@
       PRIVATE :: ConstructTokenStack, DestructTokenStack, TokenStackPush, TokenStackPop, TokenStackPeek
       
       TYPE NumberStack
-         REAL(KIND=EP), DIMENSION(:), POINTER :: values
+         REAL(KIND=EP), DIMENSION(:), POINTER :: values  => NULL()
          INTEGER                              :: top
       END TYPE NumberStack
       
@@ -98,7 +98,7 @@
       TYPE EquationEvaluator
          CHARACTER(LEN=EQUATION_STRING_LENGTH)                       :: equation
          CHARACTER(LEN=VARIABLE_NAME_LENGTH)                         :: variableName
-         TYPE(Token)                          ,DIMENSION(:), POINTER :: postfix
+         TYPE(Token)                          ,DIMENSION(:), POINTER :: postfix => NULL()
       END TYPE EquationEvaluator
 !
 !     --------------

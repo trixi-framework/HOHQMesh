@@ -47,9 +47,9 @@
          INTEGER           :: iUnit, j
          INTEGER, EXTERNAL :: UnusedUnit
          
-         CLASS(SMElement), POINTER :: e
-         CLASS(FTObject) , POINTER :: obj
-         CLASS(SMNode)   , POINTER :: node
+         CLASS(SMElement), POINTER :: e    => NULL()
+         CLASS(FTObject) , POINTER :: obj  => NULL()
+         CLASS(SMNode)   , POINTER :: node => NULL()
          INTEGER                   :: ids(8)
 !
 !        -----------
@@ -119,12 +119,12 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(FTObject)    , POINTER         :: obj
-         CLASS(SMNode)      , POINTER         :: node
-         CLASS(SMEdge)      , POINTER         :: edge
-         CLASS(SMElement)   , POINTER         :: e
+         CLASS(FTObject)    , POINTER         :: obj  => NULL()
+         CLASS(SMNode)      , POINTER         :: node => NULL()
+         CLASS(SMEdge)      , POINTER         :: edge => NULL()
+         CLASS(SMElement)   , POINTER         :: e    => NULL()
          TYPE(ElementOutputInfo)              :: elementInfo
-         CLASS(FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          
          INTEGER                  :: iUnit, j, k
          INTEGER, DIMENSION(6)    :: edgeInfoArray
@@ -273,10 +273,10 @@
 !
          INTEGER                        :: j, k
          INTEGER                        :: N
-         CLASS(SMNode)        , POINTER :: node1, node2
-         CLASS(SMCurve)       , POINTER :: c
-         CLASS(SMChainedCurve), POINTER :: chain
-         CLASS(FTObject)      , POINTER :: obj
+         CLASS(SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
+         CLASS(SMCurve)       , POINTER :: c     => NULL()
+         CLASS(SMChainedCurve), POINTER :: chain => NULL()
+         CLASS(FTObject)      , POINTER :: obj   => NULL()
          
          REAL(KIND=RP)            :: tStart(4), tEnd(4), t_j, deltaT
          INTEGER                  :: curveId(4)

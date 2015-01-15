@@ -24,8 +24,8 @@
 !        Mesh project storage
 !        --------------------
 !
-         CLASS( MeshProject )        , POINTER :: project
-         CLASS(FTMutableObjectArray) , POINTER :: badElements
+         CLASS( MeshProject )        , POINTER :: project => NULL()
+         CLASS(FTMutableObjectArray) , POINTER :: badElements => NULL()
          TYPE( MeshStatistics )                :: stats
 !
 !        ----
@@ -39,15 +39,15 @@
 !        Error reporting
 !        ---------------
 !
-         CLASS(FTException), POINTER :: exception
+         CLASS(FTException), POINTER :: exception => NULL()
          INTEGER                     :: errorSeverity = FT_ERROR_NONE
 !
 !        -----
 !        Other
 !        -----
 !
-         CLASS(FTObject) , POINTER :: obj
-         CLASS(SMElement), POINTER :: e
+         CLASS(FTObject) , POINTER :: obj => NULL()
+         CLASS(SMElement), POINTER :: e => NULL()
          
          CHARACTER(LEN=8) :: version = "10.08.12"
          LOGICAL          :: debug = .FALSE.
@@ -172,16 +172,18 @@
 !           Clean up mesh
 !           -------------
 !
+            IF(PrintMessage) PRINT *, "   Performing final mesh cleanup..."
             CALL PerformFinalMeshCleanup( project % mesh, project % model )
+               IF(PrintMessage) PRINT *, "   Mesh cleanup done."
 !
 !           --------------------------------------
 !           Smooth mesh one more time if requested
 !           --------------------------------------
 !
             IF(Associated(project % smoother))     THEN
-               IF(PrintMessage) PRINT *, "   Begin Smoothing..."
+               IF(PrintMessage) PRINT *, "   Begin Final Smoothing..."
                CALL project % smoother % smoothMesh(  project % mesh, project % model )
-               IF(PrintMessage) PRINT *, "   Smoothing done."
+               IF(PrintMessage) PRINT *, "   final Smoothing done."
             END IF
             
          CALL stopwatch % stop()
