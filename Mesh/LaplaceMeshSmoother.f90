@@ -78,8 +78,6 @@
          CLASS (LaplaceMeshSmoother)   :: self
          CLASS (SMMesh)      , POINTER :: mesh
          CLASS (SMModel)     , POINTER :: model
-         CLASS(FTObject)     , POINTER :: obj  => NULL()
-         CLASS(SMNode)       , POINTER :: node => NULL()
 !
 !        ---------------
 !        local variables
