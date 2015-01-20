@@ -296,18 +296,13 @@
             STOP
          END IF
 !
-!        -----------------------------------------------------------
-!        REM: This block of code causes a crash under gfortran 4.9.0
-!        and 4.9.2 !DEBUG
-!        -----------------------------------------------------------
-!
-!         IF ( ASSOCIATED(p % node) )     THEN
-!            CALL p % node % release()
-!            IF ( p % node % isUnreferenced() )     THEN
-!               DEALLOCATE(p % node)
-!               p % node => NULL() 
-!            END IF 
-!         END IF 
+         IF ( ASSOCIATED(p % node) )     THEN
+            CALL p % node % release()
+            IF ( p % node % isUnreferenced() )     THEN
+               DEALLOCATE(p % node)
+               p % node => NULL() 
+            END IF 
+         END IF 
 !
 !        ----------------------
 !        End of offending block

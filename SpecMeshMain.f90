@@ -24,7 +24,7 @@
 !        Mesh project storage
 !        --------------------
 !
-         CLASS( MeshProject )        , POINTER :: project => NULL()
+         CLASS( MeshProject )        , POINTER :: project     => NULL()
          CLASS(FTMutableObjectArray) , POINTER :: badElements => NULL()
          TYPE( MeshStatistics )                :: stats
 !
