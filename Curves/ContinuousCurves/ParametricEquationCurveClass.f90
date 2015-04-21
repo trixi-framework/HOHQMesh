@@ -73,7 +73,6 @@
             CALL ThrowEquationFormatException(curveName, zEqn, "Z-Equation",msg)
          END IF
          
-         
        END SUBROUTINE initWithEquationsNameAndID
 !
 !//////////////////////////////////////////////////////////////////////// 

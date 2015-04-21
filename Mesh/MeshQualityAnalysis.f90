@@ -166,8 +166,8 @@
 !        ---------------
 !
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
-         CLASS(SMElement)           , POINTER :: e => NULL()
-         CLASS(FTObject)            , POINTER :: obj => NULL()
+         CLASS(SMElement)           , POINTER :: e               => NULL()
+         CLASS(FTObject)            , POINTER :: obj             => NULL()
          REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_SHAPE_MEASURES)
          INTEGER                              :: k, nValues
          
@@ -486,7 +486,7 @@
             DEALLOCATE(array)
             array => NULL() 
          END IF 
-         
+
       END FUNCTION BadElementsInMesh
 !
 !////////////////////////////////////////////////////////////////////////
