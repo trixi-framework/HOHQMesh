@@ -31,6 +31,7 @@
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_SUBDIVISIONS_KEY = "ExtrusionSubdivisions"
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_STARTNAME_KEY    = "ExtrusionStartName"
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_ENDNAME_KEY      = "ExtrusionEndName"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_DIRECTION_KEY    = "ExtrusiondirectionName"
 !
 !     ========      
       CONTAINS 
@@ -63,6 +64,7 @@
 !        ---------------
 !
          INTEGER                                :: ios
+         INTEGER                                :: direction
          REAL(KIND=RP)                          :: height
          INTEGER                                :: subdivisions
          CHARACTER(LEN=LINE_LENGTH)             :: inputLine = " ", nameString
@@ -70,6 +72,22 @@
          REAL(KIND=RP), EXTERNAL                :: GetRealValue
          CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
          CLASS(FTException), POINTER            :: exception
+!
+!        ---------
+!        Direction
+!        ---------
+!
+         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+         IF ( ios == 0 )     THEN
+            direction = GetRealValue( inputLine )
+            CALL dict % addValueForKey(direction,SIMPLE_EXTRUSION_DIRECTION_KEY)
+         ELSE 
+            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
+                                       "direction", "ReadSimpleExtrusionBlock")
+            CALL throw(exception)
+            CALL exception % release()
+            RETURN
+         END IF 
 !
 !        ------
 !        Height
@@ -94,7 +112,7 @@
          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
          IF ( ios == 0 )     THEN
             subdivisions = GetIntValue( inputLine )
-            CALL dict%addValueForKey(subdivisions,SIMPLE_EXTRUSION_SUBDIVISIONS_KEY)
+            CALL dict % addValueForKey(subdivisions,SIMPLE_EXTRUSION_SUBDIVISIONS_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                        "subdivisions", "ReadSimpleExtrusionBlock")
@@ -110,7 +128,7 @@
          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
          IF ( ios == 0 )     THEN
             nameString = GetStringValue( inputLine )
-            CALL dict%addValueForKey(nameString,SIMPLE_EXTRUSION_STARTNAME_KEY)
+            CALL dict % addValueForKey(nameString,SIMPLE_EXTRUSION_STARTNAME_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                        "start surface name", "ReadSimpleExtrusionBlock")
@@ -126,7 +144,7 @@
          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
          IF ( ios == 0 )     THEN
             nameString = GetStringValue( inputLine )
-            CALL dict%addValueForKey(nameString,SIMPLE_EXTRUSION_ENDNAME_KEY)
+            CALL dict % addValueForKey(nameString,SIMPLE_EXTRUSION_ENDNAME_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                        "end surface name", "ReadSimpleExtrusionBlock")
@@ -155,8 +173,8 @@
 !        Local Variables
 !        ---------------
 !
-         TYPE(DKUnstructuredMesh), POINTER :: quadMesh
-         TYPE(DKElement)         , POINTER :: currentQuadElement
+         CLASS(SMMesh)   , POINTER :: quadMesh
+         TYPE(SMElement) , POINTER :: currentQuadElement
          
          INTEGER                           :: numberOfLayers
          INTEGER                           :: numberOf2DNodes, numberOfQuadElements, numberOfEdges
@@ -164,20 +182,21 @@
          INTEGER                           :: i, j, k, l
          INTEGER                           :: eIdLeft, eIDRight, eSideLeft, eSideRight, edgeSideL, edgeSideR
          INTEGER                           :: faceNumber
-         INTEGER                           :: N
+         INTEGER                           :: N, pMutation
          
          REAL(KIND=RP)                     :: x(3), x2(2)
-         REAL(KIND=RP)                     :: h, dz
+         REAL(KIND=RP)                     :: h, dz, r, y, z
          
-         TYPE(DKNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
-         TYPE(DKNode)                    , POINTER     :: currentNode
-         TYPE(DKElement)                 , POINTER     :: currentElement
-         TYPE(DKElement)                 , POINTER     :: e
-         TYPE(DKEdge)                    , POINTER     :: currentEdge
+         TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
+         CLASS(SMNode)                   , POINTER     :: currentNode, node
+         CLASS(SMElement)                , POINTER     :: currentElement
+         CLASS(SMElement)                , POINTER     :: e
+         CLASS(SMEdge)                   , POINTER     :: currentEdge
+         CLASS(FTObject)                 , POINTER     :: obj
          
-         TYPE(DKNode)      , POINTER :: node1, node2
-         TYPE(Curve)       , POINTER :: c
-         TYPE(ChainedCurve), POINTER :: chain
+         CLASS(SMNode)        , POINTER :: node1, node2
+         CLASS(SMCurve)       , POINTER :: c
+         CLASS(SMChainedCurve), POINTER :: chain
          
          REAL(KIND=RP)               :: tStart, tEnd, t_k, deltaT
          INTEGER                     :: curveId
@@ -191,20 +210,27 @@
 !
          INTEGER, DIMENSION(4,4)  :: dir = RESHAPE((/-1,-1,1,1,-1,-1,1,1,1,1,-1,-1,1,1,-1,-1/),(/4,4/))
          
-         quadMesh  => project%mesh
+         quadMesh  => project % mesh
          N         =  project % runParams % polynomialOrder
+!
+!        --------------------------------------------------------
+!        Rotate the mesh for extrusion in the requested direction
+!        --------------------------------------------------------
+!
+         pMutation = parametersDictionary % integerValueForKey(key = SIMPLE_EXTRUSION_DIRECTION_KEY)
+         IF ( pMutation < 3 )     THEN
+            CALL quadMesh % rotateMesh(pmutation)
+         END IF 
 !
 !        ---------------------------------------------------------------
 !        Make sure that the nodes and elements are consecutively ordered
 !        and that the edges refer to the correct elements.
 !        ---------------------------------------------------------------
 !
-         CALL NumberTheNodesInList   ( quadMesh%nodes )
-         CALL NumberTheElementsInList( quadMesh%elements )
-         CALL DestructEdgeList       ( quadMesh%edges )
-         numberOfQuadElements          = ElementListCount( quadMesh%elements )
-         quadMesh%edges => newEdgeList()
-         CALL BuildEdgeList( quadMesh )
+         CALL quadMesh % renumberObjects(NODES)
+         CALL quadMesh % renumberObjects(ELEMENTS)
+         numberOfQuadElements = quadMesh % elements % count()
+         CALL quadMesh % buildEdgeList()
 !
 !        ---------------------------------------------------------------------
 !        Allocate memory for the hex mesh. Since the extrusion is 
@@ -220,16 +246,19 @@
 !        Gather nodes for easy access
 !        ----------------------------
 !
-         numberOf2DNodes = NodeListCount(quadMesh%nodes)
+         numberOf2DNodes =quadMesh % nodes % count()
          ALLOCATE( quadMeshNodes(numberOf2DNodes) )
          
-         CALL NodeListIteratorInit( quadMesh % nodes )
-         DO WHILE ( .NOT.NodeListIteratorDone( quadMesh % nodes ) )
-            currentNode => NodeListCurrent( quadMesh % nodes )
+         CALL quadMesh % nodesIterator % setToStart()
+         DO WHILE( .NOT.quadMesh % nodesIterator % isAtEnd())
+         
+            obj => quadMesh % nodesIterator % object()
+            CALL castToSMNode(obj,currentNode)
             node2DID = currentNode % id
-            quadMeshNodes(node2DID)%node => currentNode
-            CALL StepNodeListIterator( quadMesh % nodes )
-         END DO
+            quadMeshNodes(node2DID) % node => currentNode
+         
+            CALL quadMesh % nodesIterator % moveToNext() 
+         END DO 
 !
 !        ---------------------------------------
 !        Generate the new nodes for the hex mesh
@@ -244,10 +273,11 @@
          nodeID = 1
          DO j = 0, numberofLayers
             DO k = 1, numberOf2DNodes
-               x2 = quadMeshNodes(k)% node % x
-               hex8Mesh%nodes(k,j) % id     = nodeID
-               hex8Mesh%nodes(k,j) % x(1:2) = x2
-               hex8Mesh%nodes(k,j) % x(3)   = j*dz
+               hex8Mesh % nodes(k,j) % id     = nodeID
+               
+               hex8Mesh % nodes(k,j) % x = quadMeshNodes(k) %  node % x
+               hex8Mesh % nodes(k,j) % x(pMutation)   = j*dz
+               
                nodeID = nodeID + 1
             END DO   
          END DO
@@ -259,9 +289,10 @@
          elementID = 1
          DO j = 1, numberOfLayers
             quadElementID = 1
-            CALL ElementListIteratorInit( quadMesh % elements )
-            DO WHILE ( .NOT.ElementListIteratorDone( quadMesh % elements ) )
-               currentElement => ElementListCurrent( quadMesh % elements )
+            CALL quadMesh % elementsIterator % setToStart()
+            DO WHILE( .NOT. quadMesh % elementsIterator % isAtEnd() )
+               obj => quadMesh % elementsIterator % object()
+               CALL castToSMelement(obj,currentElement)
 !
 !              -----------------------
 !              Set the element nodeIDs
@@ -273,16 +304,18 @@
 !                 Bottom of hex
 !                 -------------
 !
-                  node2DID = currentElement % nodes(k) %node % id
-                  nodeID   = hex8Mesh%nodes(node2DID,j-1) % id
-                  hex8Mesh%elements(quadElementID,j)%nodeIDs(k) = nodeID
+                  obj => currentElement % nodes % objectAtIndex(k)
+                  CALL cast(obj,node)
+                  node2DID = node % id
+                  nodeID   = hex8Mesh % nodes(node2DID,j-1) % id
+                  hex8Mesh % elements(quadElementID,j) % nodeIDs(k) = nodeID
 !
 !                 ----------
 !                 Top of hex
 !                 ----------
 !
-                  nodeID = hex8Mesh%nodes(node2DID,j) % id
-                  hex8Mesh%elements(quadElementID,j)%nodeIDs(k+4) = nodeID
+                  nodeID = hex8Mesh % nodes(node2DID,j) % id
+                  hex8Mesh % elements(quadElementID,j) % nodeIDs(k+4) = nodeID
                   
                END DO
                
@@ -292,9 +325,10 @@
                hex8Mesh % elements(quadElementID,j) % bFaceName = "---"
                quadElementID                                 = quadElementID + 1
                elementID                                     = elementID + 1
-               CALL StepElementListIterator( quadMesh % elements )
-            END DO
-         END DO
+               
+               CALL quadMesh % elementsIterator % moveToNext()
+            END DO 
+         END DO 
 !
 !        ----------------------------------
 !        Construct the faces from the edges
@@ -303,13 +337,14 @@
          DO j = 1, numberOfLayers
             faceID = 1
             
-            CALL EdgeListIteratorInit( quadMesh % edges )
-            DO WHILE ( .NOT.EdgeListIteratorDone( quadMesh % edges ) )
-               currentEdge => EdgeListCurrent( quadMesh % edges )
+            CALL quadMesh % edgesIterator % setToStart()
+            DO WHILE( .NOT. quadMesh % edgesIterator % isAtEnd() )
+               obj => quadMesh % edgesIterator % object()
+               CALL cast(obj, currentEdge)
                
-               hex8Mesh % faces(faceID,j) % id        = faceID
-               hex8Mesh % faces(faceID,j) % edge      => currentEdge
-               CALL RetainEdge(currentEdge)
+               hex8Mesh % faces(faceID,j) % id   = faceID
+               hex8Mesh % faces(faceID,j) % edge => currentEdge
+               CALL currentEdge % retain()
 !
 !              --------------------
 !              Set the left element
@@ -328,7 +363,7 @@
 !              Refer back to the element
 !              -------------------------
 !
-               hex8Mesh%elements(quadElementID,j) % faceID(hex8Mesh % faces(faceID,j) % faceNumber(1)) = faceID
+               hex8Mesh % elements(quadElementID,j) % faceID(hex8Mesh % faces(faceID,j) % faceNumber(1)) = faceID
 !
 !              -------------
 !              Add the nodes
@@ -353,7 +388,7 @@
                   hex8Mesh % faces(faceID,j) % faceNumber(2) = hexFaceForQuadEdge(edgeSideR)
                   hex8Mesh % faces(faceID,j) % inc           = [dir(edgeSideL,edgeSideR),1]
                   
-                  hex8Mesh%elements(quadElementID,j) % faceID(hex8Mesh % faces(faceID,j) % faceNumber(2)) = faceID
+                  hex8Mesh % elements(quadElementID,j) % faceID(hex8Mesh % faces(faceID,j) % faceNumber(2)) = faceID
 
                ELSE
                   hex8Mesh % faces(faceID,j) % elementIDs(2) = NONE
@@ -384,17 +419,17 @@
 !
                      hex8Mesh % elements(quadElementID,j) % bFaceFlag(faceNumber) = ON
                      
-                     IF( node1%nodeType == ROW_SIDE )     THEN
-                        curveID = node1%bCurveID
-                        c       => CurveWithID_InModel_( node1%bCurveID, project % model, chain )
+                     IF( node1 % nodeType == ROW_SIDE )     THEN
+                        curveID = node1 % bCurveID
+                        c => project % model % curveWithID(curveId, chain)
                      ELSE
-                        curveID = node2%bCurveID
-                        c       => CurveWithID_InModel_( node2%bCurveID, project % model, chain )
+                        curveID = node2 % bCurveID
+                        c => project % model % curveWithID(curveId, chain)
                      END IF
                      
-                     hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = c%curveName
-                     tStart = node1%gWhereOnBoundary
-                     tEnd   = node2%gWhereOnBoundary
+                     hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = c % curveName()
+                     tStart = node1 % gWhereOnBoundary
+                     tEnd   = node2 % gWhereOnBoundary
 !
 !                    ------------------------------
 !                    Compute the interpolant points
@@ -417,10 +452,10 @@
                            t_k = t_k + 1.0_RP
                         END IF
                         
-                        x2 = PositionAt_( chain, t_k )
+                        x = chain % positionAt(t_k)
                         DO l = 0, N
                            t_k =  (j-1)*dz + dz*(1.0_RP - COS(l*PI/N))/2.0_RP
-                           hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = [x2(1),x2(2),t_k]
+                           hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = [x(1),x(2),t_k]
                         END DO  
                         
                       END DO
@@ -431,10 +466,10 @@
 !                    Only mark the boundary names for output, no interpolant needed
 !                    --------------------------------------------------------------
 !
-                     IF( node1%nodeType == CORNER_NODE )     THEN
-                        hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = noCurveName(node2%bCurveID)
+                     IF( node1 % nodeType == CORNER_NODE )     THEN
+                        hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = noCurveName(node2 % bCurveID)
                      ELSE
-                        hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = noCurveName(node1%bCurveID)
+                        hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = noCurveName(node1 % bCurveID)
                      END IF
                      
                   END IF
@@ -442,9 +477,8 @@
                END IF 
 !              
                faceID = faceID + 1
-               CALL StepEdgeListIterator( quadMesh % edges )
-               
-            END DO
+            CALL quadMesh % edgesIterator % moveToNext()     
+            END DO 
          END DO
 !
 !        ----------------------------
@@ -540,7 +574,7 @@
 !                  
                END DO
             END IF 
-            
+
          END DO  
 !
 

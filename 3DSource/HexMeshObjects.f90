@@ -11,7 +11,7 @@
       USE SMConstants
       USE MeshProjectClass
       USE FTValueDictionaryClass
-      USE GridObjectsModule
+      USE SMMeshObjectsModule
       IMPLICIT NONE 
 !
 !   Faces:
@@ -121,7 +121,7 @@
          INTEGER, DIMENSION(2)      :: inc           ! Increment for the two directions for the slave element
          INTEGER, DIMENSION(2)      :: faceNumber    ! Face number (1-6) of the two elements associated with this face3D 
          REAL(KIND=RP), ALLOCATABLE :: x (:,:,:,:)   ! Nodal values of chebyshev interpolant for the face, if there is one.
-         TYPE(DKEdge) , POINTER     :: edge          ! The spawning edge, if there is one.
+         CLASS(SMEdge) , POINTER    :: edge          ! The spawning edge, if there is one.
       END TYPE Face3D
       
       TYPE StructuredHexMesh
@@ -159,7 +159,7 @@
 !        ---------
 !
          TYPE(StructuredHexMesh)  :: hexMesh
-         TYPE(DKUnstructuredMesh) :: quadMesh
+         TYPE(SMMesh)             :: quadMesh
          INTEGER                  :: numberOfLayers
 !
 !        ---------------
@@ -169,9 +169,9 @@
          INTEGER  :: numberOf2DNodes, numberOfQuadElements, numberOfEdges
          INTEGER  :: j, k
          
-         numberOf2DNodes      = nodeListCount   ( quadMesh % nodes )
-         numberOfQuadElements = elementListCount( quadMesh % elements )
-         numberOfEdges        = edgeListCount   ( quadMesh % edges )
+         numberOf2DNodes      = quadMesh % nodes % count()
+         numberOfQuadElements = quadMesh % elements % count()
+         numberOfEdges        = quadMesh % edges % count()
          
          ALLOCATE(hexMesh%nodes   ( numberOf2DNodes     , 0:numberOfLayers) )
          ALLOCATE(hexMesh%elements( numberOfQuadElements,   numberOfLayers) )
@@ -210,7 +210,9 @@
          INTEGER :: k, j
          DO k = 1, SIZE(hexMesh%faces,2)
             DO j = 1, SIZE(hexMesh%faces,1)
-               IF(ASSOCIATED(hexMesh%faces(j,k)%edge)) CALL ReleaseEdge(hexMesh%faces(j,k)%edge) 
+               IF(ASSOCIATED(hexMesh%faces(j,k)%edge)) THEN
+                  CALL hexMesh%faces(j,k)%edge % release()
+               END IF 
             END DO   
          END DO  
          

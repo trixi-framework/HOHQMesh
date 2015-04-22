@@ -12,6 +12,7 @@
       USE ProgramGlobals
       USE FTObjectClass 
       USE FTMutableObjectArrayClass
+      USE FTLinkedListIteratorClass
       IMPLICIT NONE
 !
 !     ---------
@@ -459,7 +460,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE castToSMelement(obj,cast) 
+      SUBROUTINE castToSMElement(obj,cast) 
 !
 !     -----------------------------------------------------
 !     Cast the base class FTObject to the SMNode class
@@ -476,7 +477,7 @@
             CLASS DEFAULT
          END SELECT
          
-      END SUBROUTINE castToSMelement
+      END SUBROUTINE castToSMElement
 !@mark -
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -687,4 +688,5 @@
          INTEGER         :: iUnit
          WRITE(iUnit,*) "SMQuad object"
       END SUBROUTINE printQuadDescription
+      
       END Module SMMeshObjectsModule

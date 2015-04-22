@@ -35,9 +35,9 @@
 !        Data
 !        ----
 !
-         CLASS(FTLinkedList), POINTER :: nodes => NULL()
+         CLASS(FTLinkedList), POINTER :: nodes    => NULL()
          CLASS(FTLinkedList), POINTER :: elements => NULL()
-         CLASS(FTLinkedList), POINTER :: edges => NULL()
+         CLASS(FTLinkedList), POINTER :: edges    => NULL()
 !
 !        ---------
 !        Iterators
@@ -61,8 +61,10 @@
          PROCEDURE :: newElementID
          PROCEDURE :: newEdgeID
          PROCEDURE :: renumberAllLists
+         PROCEDURE :: renumberObjects
          PROCEDURE :: destroyEdgeArrays
          PROCEDURE :: syncEdges
+         PROCEDURE :: rotateMesh
       END TYPE SMMesh
 !
 !      ---------------------------------------------------------------------
@@ -333,6 +335,40 @@
          CALL hashTable % release()
          
       END SUBROUTINE buildEdgeList
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE rotateMesh(self,pmutation)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMMesh) :: self
+         INTEGER       :: pmutation
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTObject), POINTER  :: obj
+         CLASS(SMNode)  , POINTER  :: node
+         REAL(KIND=RP)             :: x(3)
+         INTEGER                   :: j
+         
+         CALL self % nodesIterator % setToStart()
+         DO WHILE( .NOT. self % nodesIterator % isAtEnd() )
+         
+            obj => self % nodesIterator % object()
+            CALL castToSMNode(obj,node)
+            
+            x  = CSHIFT(node % x, SHIFT = -pmutation)
+            node % x = x
+            
+            CALL self % nodesIterator % moveToNext()
+         END DO 
+      END SUBROUTINE rotateMesh
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////

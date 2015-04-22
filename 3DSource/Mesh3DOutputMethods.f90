@@ -34,8 +34,8 @@
          INTEGER           :: iUnit, j, k
          INTEGER, EXTERNAL :: UnusedUnit
          
-         TYPE(DKNode)   , POINTER :: currentNode
-         TYPE(DKElement), POINTER :: currentElement
+         TYPE(SMNode)   , POINTER :: currentNode
+         TYPE(SMElement), POINTER :: currentElement
 !
 !        -----------
 !        Open a file
@@ -87,7 +87,7 @@
 !        ---------
 !
          TYPE( StructuredHexMesh )          :: mesh
-         TYPE( Model2D)           , POINTER :: model
+         TYPE(SMModel)            , POINTER :: model
          CHARACTER(LEN=*)                   :: fName
          INTEGER                            :: N ! The polynomial order of the boundaries.
          INTEGER                            :: version !version number of the ISM format.
@@ -160,7 +160,7 @@
                   SELECT CASE ( f )
                      CASE( 3,5 ) 
                         !^ DEBUG this should be flat for the time being, and not actually happen.
-                        PRINT *, "Boundary face where there shouldn't be one"
+!                        PRINT *, "Boundary face where there shouldn't be one"
                      CASE DEFAULT 
                         faceID = mesh % elements(k,j) % faceID(f)
                         IF( mesh%elements(k,j)%bFaceFlag(f) == ON )     THEN

@@ -10,10 +10,8 @@
       Module MeshController3D
       USE FTValuedictionaryClass
       USE SimpleExtrusionModule
-      USE SharedExceptionManagerModule
-      USE ReaderExceptions
       USE MeshProjectClass
-      USE HexMeshObjectsModule
+      USE SMMeshObjectsModule
       IMPLICIT NONE
 ! 
 !---------------------------------------------------------------------
@@ -141,7 +139,7 @@
 !        Generate the Hex mesh
 !        ---------------------
 !
-         algorithmName = hexMeshParametersDictionary%stringValueForKey(SM_3D_ALGORITHM_CHOICE_KEY,LINE_LENGTH)
+         algorithmName = hexMeshParametersDictionary % stringValueForKey(SM_3D_ALGORITHM_CHOICE_KEY,LINE_LENGTH)
 
          SELECT CASE ( TRIM(algorithmName) )
             CASE( SIMPLE_EXTRUSION_ALGORITHM_KEY )
@@ -187,7 +185,7 @@
          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
          IF ( ios == 0 )     THEN
             tmpString = GetStringValue( inputLine )
-            CALL dict%addValueForKey(tmpString,SM_ELEMENT_TYPE_KEY)
+            CALL dict % addValueForKey(tmpString,SM_ELEMENT_TYPE_KEY)
          ELSE
             exception => ReaderException("Read Variable","Error reading variable", "Element type", "Read3DMeshBlock")
             CALL throw(exception)
@@ -198,7 +196,7 @@
          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
          IF ( ios == 0 )     THEN
             tmpString = GetStringValue( inputLine )
-            CALL dict%addValueForKey(tmpString,SM_3D_ALGORITHM_CHOICE_KEY)
+            CALL dict % addValueForKey(tmpString,SM_3D_ALGORITHM_CHOICE_KEY)
          ELSE 
             exception => ReaderException("Read Variable","Error reading variable", "algorithm", "Read3DMeshBlock")
             CALL throw(exception)
@@ -233,7 +231,7 @@
          CHARACTER(LEN=LINE_LENGTH)  :: algorithmName
          CLASS(FTException), POINTER :: exception
          
-         algorithmName = dict%stringValueForKey(SM_3D_ALGORITHM_CHOICE_KEY,LINE_LENGTH)
+         algorithmName = dict % stringValueForKey(SM_3D_ALGORITHM_CHOICE_KEY,LINE_LENGTH)
 
          SELECT CASE ( TRIM(algorithmName) )
             CASE( SIMPLE_EXTRUSION_ALGORITHM_KEY ) 
