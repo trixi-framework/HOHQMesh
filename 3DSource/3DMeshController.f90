@@ -9,9 +9,11 @@
 !
       Module MeshController3D
       USE FTValuedictionaryClass
-      USE SimpleExtrusionModule
+      USE SimpleSweepModule
       USE MeshProjectClass
       USE SMMeshObjectsModule
+      USE HexMeshObjectsModule
+
       IMPLICIT NONE
 ! 
 !---------------------------------------------------------------------
@@ -22,7 +24,7 @@
 !     Constants
 !     ---------
 !
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SM_3D_ALGORITHM_CHOICE_KEY = "simpleExtrusion"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SM_3D_ALGORITHM_CHOICE_KEY = "AlgorithmChoice"
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SM_ELEMENT_TYPE_KEY        = "elementType"
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SM_GENERATE3D_MESH_KEY     = "generate3DMesh"
 !
@@ -101,6 +103,7 @@
 !        ---------------
 !
          INTEGER                                :: iOS
+         INTEGER                                :: algorithmChoice
          CHARACTER(LEN=LINE_LENGTH)             :: meshAlgorithm, algorithmName
          CHARACTER(LEN=ERROR_MSG_STRING_LENGTH) :: msg
          CLASS(FTException), POINTER            :: exception
@@ -140,10 +143,15 @@
 !        ---------------------
 !
          algorithmName = hexMeshParametersDictionary % stringValueForKey(SM_3D_ALGORITHM_CHOICE_KEY,LINE_LENGTH)
+         IF(algorithmName == SIMPLE_EXTRUSION_ALGORITHM_KEY)     THEN
+            algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
+         ELSE
+            algorithmChoice = SIMPLE_ROTATION_ALGORITHM
+         END IF 
 
-         SELECT CASE ( TRIM(algorithmName) )
-            CASE( SIMPLE_EXTRUSION_ALGORITHM_KEY )
-               CALL PerformSimpleMeshExtrusion(project,hex8Mesh,hexMeshParametersDictionary)
+         SELECT CASE ( algorithmChoice )
+            CASE( SIMPLE_EXTRUSION_ALGORITHM, SIMPLE_ROTATION_ALGORITHM )
+               CALL PerformSimpleMeshSweep(project,hex8Mesh,hexMeshParametersDictionary, algorithmChoice)
             CASE DEFAULT
                exception => ReaderException("Generate 3D Mesh Algorithm",&
                                           "Unknown algorithm specified", algorithmName, "generate3DMesh")
@@ -161,7 +169,7 @@
 !
 !         \begin{Define3DMesh}
 !            meshType  = "HEX"
-!            algorithm = "SimpleExtrusion"
+!            algorithm = "SimpleExtrusion" or "SimpleRotation"
 !         \end{Define3DMesh}
 !
          IMPLICIT NONE
@@ -209,7 +217,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE Read3DAlgorithmBlock( fUnit, dict ) 
-         USE SimpleExtrusionModule
+         USE SimpleSweepModule
 !
 !     -----------------------------------------
 !     Select among the choices of 3D algorithms
@@ -237,6 +245,8 @@
             CASE( SIMPLE_EXTRUSION_ALGORITHM_KEY ) 
                CALL ReadSimpleExtrusionBlock( fUnit, dict )
                IF ( errorCount() > 0 )     RETURN ! Don't deal with errors at this point
+            CASE (SIMPLE_ROTATION_ALGORITHM_KEY)
+               CALL ReadSimpleRotationBlock(fUnit = fUnit,dict = dict)
             CASE DEFAULT
                exception => ReaderException("Read Algorithm","Unknown algorithm specified", &
                                            algorithmName, "Read3DAlgorithmBlock")

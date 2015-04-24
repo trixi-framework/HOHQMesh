@@ -113,27 +113,7 @@
          IF( fUnit /= NONE )     THEN
          
             CALL project % initWithContentsOfFileUnit( fUnit )
-!
-!           ----------------
-!           Catch any errors
-!           ----------------
-!
-            IF ( catch() )     THEN
-               PRINT *, "The following errors were found when constructing the project:"
-               PRINT *, " "
-               
-               DO
-                  exception => popLastException()
-                  IF ( .NOT.ASSOCIATED(exception) )     EXIT
-                  CALL exception % printDescription(6)
-                  errorSeverity = MAX(errorSeverity, exception % severity())
-               END DO
-               
-               IF ( errorSeverity > FT_ERROR_WARNING )     THEN
-                  STOP "The Errors were Fatal. Cannot generate mesh." 
-               END IF 
-            END IF 
-            
+            CALL trapExceptions !Abort on fatal exceptions
          ELSE
             PRINT *, "Unable to open input file"
             STOP
@@ -272,8 +252,8 @@
             IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
             
             CALL generate3DMesh(fUnit = fUnit,project = project) 
-            
-            didGenerate3DMesh = hexMeshParametersDictionary % logicalValueForKey(key = SM_GENERATE3D_MESH_KEY)
+            CALL trapExceptions !Aborts on fatal exceptions
+            didGenerate3DMesh = .TRUE.
             
             IF ( didGenerate3DMesh )     THEN
                IF(printMessage) PRINT *, "Hex mesh generated"
@@ -329,3 +309,30 @@
          CALL destructFTExceptions
          
       END PROGRAM SpecMeshMain
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE trapExceptions  
+         USE SharedExceptionManagerModule
+         IMPLICIT NONE 
+
+         INTEGER                    :: errorSeverity = FT_ERROR_NONE
+         TYPE(FTException), POINTER :: exception
+          
+         IF ( catch() )     THEN
+            PRINT *, "The following errors were found when constructing the project:"
+            PRINT *, " "
+            
+            DO
+               exception => popLastException()
+               IF ( .NOT.ASSOCIATED(exception) )     EXIT
+               CALL exception % printDescription(6)
+               errorSeverity = MAX(errorSeverity, exception % severity())
+            END DO
+            
+            IF ( errorSeverity > FT_ERROR_WARNING )     THEN
+               STOP "The Errors were Fatal. Cannot generate mesh." 
+            END IF 
+         END IF 
+
+      END SUBROUTINE trapExceptions
