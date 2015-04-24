@@ -308,7 +308,7 @@
          INTEGER                           :: N, pMutation
          INTEGER                           :: algorithmChoice
          
-         REAL(KIND=RP)                     :: x(3), x2(2)
+         REAL(KIND=RP)                     :: x(3), xTmp(3)
          REAL(KIND=RP)                     :: h, dz, dTheta, theta
          
          TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
@@ -605,7 +605,9 @@
                         x = chain % positionAt(t_k)
                         DO l = 0, N
                            t_k =  (j-1)*dz + dz*(1.0_RP - COS(l*PI/N))/2.0_RP
-                           hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = [x(1),x(2),t_k]
+                           xTmp = [x(1),x(2),t_k]
+                           IF(pMutation<3) xTmp = CSHIFT(xTmp, SHIFT = -pmutation)
+                           hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = xTmp 
                         END DO  
                         
                       END DO
@@ -738,7 +740,7 @@
          INTEGER       :: pmutation
          REAL(KIND=RP) :: x(3)
                
-         x              = baseLOcation
+         x              = baseLocation
          x(pmutation)   = delta 
       END FUNCTION extrudedNodeLocation
 !
