@@ -146,7 +146,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE NewStructuredHexMeshFromQuadMesh( hexMesh, quadMesh, numberOfLayers )
+      SUBROUTINE InitializeStructuredHexMeshFromQuadMesh( hexMesh, quadMesh, numberOfLayers )
 !
 !     ---------------------------------
 !     Allocate memory for new Hex8 mesh
@@ -169,28 +169,29 @@
          INTEGER  :: numberOf2DNodes, numberOfQuadElements, numberOfEdges
          INTEGER  :: j, k
          
-         numberOf2DNodes      = quadMesh % nodes % count()
-         numberOfQuadElements = quadMesh % elements % count()
-         numberOfEdges        = quadMesh % edges % count()
+         numberOf2DNodes      = quadMesh  %  nodes  %  count()
+         numberOfQuadElements = quadMesh  %  elements  %  count()
+         numberOfEdges        = quadMesh  %  edges  %  count()
          
-         ALLOCATE(hexMesh%nodes   ( numberOf2DNodes     , 0:numberOfLayers) )
-         ALLOCATE(hexMesh%elements( numberOfQuadElements,   numberOfLayers) )
-         ALLOCATE(hexMesh%faces   ( numberOfEdges       ,   numberOfLayers) )
-         ALLOCATE(hexMesh%capFaces( numberOfQuadElements, 0:numberOfLayers) )
+         ALLOCATE(hexMesh % nodes   ( numberOf2DNodes     , 0:numberOfLayers) )
+         ALLOCATE(hexMesh % elements( numberOfQuadElements,   numberOfLayers) )
+         ALLOCATE(hexMesh % faces   ( numberOfEdges       ,   numberOfLayers) )
+         ALLOCATE(hexMesh % capFaces( numberOfQuadElements, 0:numberOfLayers) )
+        
          
-         DO k = 1, SIZE(hexMesh%faces,2)
-            DO j = 1, SIZE(hexMesh%faces,1)
-               hexMesh%faces(j,k)%edge => NULL()
+         DO k = 1, SIZE(hexMesh % faces,2)
+            DO j = 1, SIZE(hexMesh % faces,1)
+               hexMesh % faces(j,k) % edge => NULL()
             END DO   
          END DO  
          
-         DO k = 0, SIZE(hexMesh%capFaces,2)-1
-            DO j = 1, SIZE(hexMesh%capFaces,1)
-               hexMesh%capFaces(j,k)%edge => NULL()
+         DO k = 0, SIZE(hexMesh % capFaces,2)-1
+            DO j = 1, SIZE(hexMesh % capFaces,1)
+               hexMesh % capFaces(j,k) % edge => NULL()
             END DO   
          END DO  
          
-      END SUBROUTINE NewStructuredHexMeshFromQuadMesh
+      END SUBROUTINE InitializeStructuredHexMeshFromQuadMesh
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -208,10 +209,10 @@
 !        ---------------
 !
          INTEGER :: k, j
-         DO k = 1, SIZE(hexMesh%faces,2)
-            DO j = 1, SIZE(hexMesh%faces,1)
-               IF(ASSOCIATED(hexMesh%faces(j,k)%edge)) THEN
-                  CALL hexMesh%faces(j,k)%edge % release()
+         DO k = 1, SIZE(hexMesh % faces,2)
+            DO j = 1, SIZE(hexMesh % faces,1)
+               IF(ASSOCIATED(hexMesh % faces(j,k) % edge)) THEN
+                  CALL hexMesh % faces(j,k) % edge  %  release()
                END IF 
             END DO   
          END DO  
