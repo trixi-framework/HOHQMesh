@@ -87,7 +87,7 @@
             CALL dict % addValueForKey(direction,SIMPLE_SWEEP_DIRECTION_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "direction", "ReadSimpleExtrusionBlock")
+                                         "direction", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -103,7 +103,7 @@
             CALL dict % addValueForKey(height,SIMPLE_EXTRUSION_HEIGHT_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "height", "ReadSimpleExtrusionBlock")
+                                        "height", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -119,7 +119,7 @@
             CALL dict % addValueForKey(subdivisions,SIMPLE_SWEEP_SUBDIVISIONS_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "subdivisions", "ReadSimpleExtrusionBlock")
+                                        "subdivisions", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -135,7 +135,7 @@
             CALL dict % addValueForKey(nameString,SIMPLE_SWEEP_STARTNAME_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "start surface name", "ReadSimpleExtrusionBlock")
+                                        "start surface name", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -206,7 +206,7 @@
             CALL dict % addValueForKey(direction,SIMPLE_SWEEP_DIRECTION_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "direction", "ReadSimpleRotationBlock")
+                                         "direction", "ReadSimpleRotationBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -222,7 +222,7 @@
             CALL dict % addValueForKey(angleFactor,SIMPLE_ROTATION_ANGLE_KEY)
          ELSE 
             exception => ReaderException("Simple rotation read error", "Error reading variable", &
-                                       "rotation angle", "ReadSimpleRotationBlock")
+                                         "rotation angle", "ReadSimpleRotationBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -238,7 +238,7 @@
             CALL dict % addValueForKey(subdivisions,SIMPLE_SWEEP_SUBDIVISIONS_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "subdivisions", "ReadSimpleRotationBlock")
+                                         "subdivisions", "ReadSimpleRotationBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -254,7 +254,7 @@
             CALL dict % addValueForKey(nameString,SIMPLE_SWEEP_STARTNAME_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "start surface name", "ReadSimpleRotationBlock")
+                                         "start surface name", "ReadSimpleRotationBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -270,7 +270,7 @@
             CALL dict % addValueForKey(nameString,SIMPLE_SWEEP_ENDNAME_KEY)
          ELSE 
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "end surface name", "ReadSimpleRotationBlock")
+                                         "end surface name", "ReadSimpleRotationBlock")
             CALL throw(exception)
             CALL exception % release()
             RETURN
@@ -288,54 +288,34 @@
 !        Arguments
 !        ---------
 !
-         TYPE(MeshProject)         :: project
-         TYPE( StructuredHexMesh ) :: hex8Mesh
-         CLASS(FTValueDictionary)  :: parametersDictionary
+         TYPE ( MeshProject )        :: project
+         TYPE ( StructuredHexMesh )  :: hex8Mesh
+         CLASS( FTValueDictionary )  :: parametersDictionary
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
-         CLASS(SMMesh)   , POINTER :: quadMesh
-         TYPE(SMElement) , POINTER :: currentQuadElement
+         CLASS(SMMesh)    , POINTER :: quadMesh
          
          INTEGER                           :: numberOfLayers
-         INTEGER                           :: numberOf2DNodes, numberOfQuadElements, numberOfEdges
-         INTEGER                           :: elementID, nodeID, node2DID, faceID, quadElementID
-         INTEGER                           :: i, j, k, l
-         INTEGER                           :: eIdLeft, eIDRight, eSideLeft, eSideRight, edgeSideL, edgeSideR
-         INTEGER                           :: faceNumber
+         INTEGER                           :: numberOf2DNodes, numberOfQuadElements
+         INTEGER                           :: numberOfBoundaryFaces
+         INTEGER                           :: node2DID, quadElementID
+         INTEGER                           :: j, k
+         INTEGER                           :: eIdLeft, eIDRight
          INTEGER                           :: N, pMutation
          INTEGER                           :: algorithmChoice
          
-         REAL(KIND=RP)                     :: x(3), xTmp(3)
-         REAL(KIND=RP)                     :: h, dz, dTheta, theta
          
          TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
-         CLASS(SMNode)                   , POINTER     :: currentNode, node
-         CLASS(SMElement)                , POINTER     :: currentElement
-         CLASS(SMElement)                , POINTER     :: e
-         CLASS(SMEdge)                   , POINTER     :: currentEdge
+         CLASS(SMNode)                   , POINTER     :: currentNode
          CLASS(FTObject)                 , POINTER     :: obj
          
-         CLASS(SMNode)        , POINTER :: node1, node2
-         CLASS(SMCurve)       , POINTER :: c
-         CLASS(SMChainedCurve), POINTER :: chain
-         
-         REAL(KIND=RP)               :: tStart, tEnd, t_k, deltaT
-         INTEGER                     :: curveId
-         CHARACTER(LEN=32)           :: noCurveName(-4:-1) = (/"Right", "Left ", "Front", "Back " /)
          INTEGER                     :: rotMap(3) = [3, 3, 1]
-         
-!
-!        -----------------------------------------------------------------------------
-!        dir stores the relative direction of one quad element edge to its neighbor
-!        e.g. Side 2 (left) associates with side 1 (right) then the index on the slave
-!        runs in the opposite direction. Therefore, dir(2,1) = -1
-!        -----------------------------------------------------------------------------
-!
-         INTEGER, DIMENSION(4,4)  :: dir = RESHAPE((/-1,-1,1,1,-1,-1,1,1,1,1,-1,-1,1,1,-1,-1/),(/4,4/))
 !                  
+         numberOfBoundaryFaces = 0
+!
          quadMesh  => project % mesh
          N         =  project % runParams % polynomialOrder
 !
@@ -343,7 +323,7 @@
 !        Rotate the mesh for extrusion in the requested direction
 !        --------------------------------------------------------
 !
-         pMutation = parametersDictionary % integerValueForKey(key = SIMPLE_SWEEP_DIRECTION_KEY)
+         pMutation = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
          
          IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
             IF ( pMutation < 3 )     THEN
@@ -362,8 +342,8 @@
 !
          CALL quadMesh % renumberObjects(NODES)
          CALL quadMesh % renumberObjects(ELEMENTS)
+         CALL quadMesh % renumberObjects(EDGES)
          numberOfQuadElements = quadMesh % elements % count()
-         CALL quadMesh % buildEdgeList()
 !
 !        ---------------------------------------------------------------------
 !        Allocate memory for the hex mesh. Since the extrusion is 
@@ -373,13 +353,148 @@
 !        ---------------------------------------------------------------------
 !
          numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
-         CALL NewStructuredHexMeshFromQuadMesh( hex8Mesh, quadMesh, numberOfLayers )
+         CALL InitializeStructuredHexMeshFromQuadMesh( hex8Mesh, quadMesh, numberOfLayers )
 !
-!        ----------------------------
+!        ----------------------------------
 !        Gather nodes for easy access
-!        ----------------------------
+!        TODO: list class now has function
+!        to return an array of the objects.
+!        ----------------------------------
 !
-         numberOf2DNodes =quadMesh % nodes % count()
+         numberOf2DNodes = quadMesh % nodes % count()
+         ALLOCATE( quadMeshNodes(numberOf2DNodes) )
+         
+         CALL quadMesh % nodesIterator % setToStart()
+         DO WHILE( .NOT.quadMesh % nodesIterator % isAtEnd())
+         
+            obj => quadMesh % nodesIterator % object()
+            CALL castToSMNode(obj,currentNode)
+            node2DID = currentNode % id
+            quadMeshNodes(node2DID) % node => currentNode
+         
+            CALL quadMesh % nodesIterator % moveToNext() 
+         END DO 
+         
+         CALL sweepNodes( quadMeshNodes, hex8Mesh, algorithmChoice, parametersDictionary )
+         CALL sweepElements( quadMesh, hex8Mesh, numberofLayers, algorithmChoice, parametersDictionary )
+         CALL constructSweptFaces( project, quadMesh, hex8Mesh, N, algorithmChoice, parametersDictionary )
+         CALL constructCapFaces( project, hex8Mesh, numberOfLayers )
+!
+
+      END SUBROUTINE PerformSimpleMeshSweep
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE sweepNodes( quadMeshNodes, hex8Mesh, algorithmChoice, parametersDictionary )
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE ( StructuredHexMesh )    :: hex8Mesh
+         TYPE( FTValueDictionary)      :: parametersDictionary
+         TYPE(SMNodePtr), DIMENSION(:) :: quadMeshNodes
+         INTEGER                       :: algorithmChoice
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER                           :: numberOf2DNodes
+         INTEGER                           :: nodeID
+         INTEGER                           :: j, k
+         INTEGER                           :: pMutation
+         INTEGER                           :: numberOfLayers
+         
+         REAL(KIND=RP)                     :: h, dz, dTheta, theta
+!
+         numberOf2DNodes = SIZE(quadMeshNodes)
+         pMutation       = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
+!
+!        ---------------------------------------
+!        Generate the new nodes for the hex mesh
+!        layer by layer. Order the new node IDs
+!        layer by layer, too.
+!        ---------------------------------------
+!
+         IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
+            numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
+            h              = parametersDictionary % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
+            dz             = h/numberofLayers
+             
+            nodeID = 1
+            DO j = 0, numberofLayers
+               DO k = 1, numberOf2DNodes
+                  hex8Mesh % nodes(k,j) % id = nodeID
+                  hex8Mesh % nodes(k,j) % x  = extrudedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
+                                                                    delta = j*dz, pmutation = pMutation)
+                  nodeID = nodeID + 1
+               END DO   
+            END DO
+            
+         ELSE
+         
+            numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
+            theta          = PI * parametersDictionary % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
+            dTheta         = theta/numberofLayers
+             
+            nodeID = 1
+            DO j = 0, numberofLayers
+               DO k = 1, numberOf2DNodes
+                  hex8Mesh % nodes(k,j) % id = nodeID
+                  hex8Mesh % nodes(k,j) % x  = rotatedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
+                                                                   theta        = j*dTheta, pmutation = pMutation) 
+                  nodeID = nodeID + 1
+               END DO   
+            END DO
+            
+         END IF 
+!
+      END SUBROUTINE sweepNodes
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE sweepElements( quadMesh, hex8Mesh, numberofLayers, algorithmChoice, parametersDictionary )
+         USE MeshProjectClass  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE ( SMMesh )             :: quadMesh
+         TYPE ( StructuredHexMesh )  :: hex8Mesh
+         INTEGER                     :: numberOfLayers
+         TYPE( FTValueDictionary)    :: parametersDictionary
+         INTEGER                           :: algorithmChoice
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER                           :: numberOf2DNodes, numberOfQuadElements
+         INTEGER                           :: elementID, nodeID, node2DID, quadElementID
+         INTEGER                           :: j, k
+         INTEGER                           :: pMutation
+         
+         REAL(KIND=RP)                     :: h, dz, dTheta, theta
+         
+         TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
+         CLASS(SMNode)                   , POINTER     :: currentNode, node
+         CLASS(SMElement)                , POINTER     :: currentElement
+         CLASS(FTObject)                 , POINTER     :: obj
+         
+         numberOfQuadElements = quadMesh % elements % count()
+         pMutation            = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
+!
+!        ----------------------------------
+!        Gather nodes for easy access
+!        TODO: list class now has function
+!        to return an array of the objects.
+!        ----------------------------------
+!
+         numberOf2DNodes = quadMesh % nodes % count()
          ALLOCATE( quadMeshNodes(numberOf2DNodes) )
          
          CALL quadMesh % nodesIterator % setToStart()
@@ -423,9 +538,9 @@
             nodeID = 1
             DO j = 0, numberofLayers
                DO k = 1, numberOf2DNodes
-                  hex8Mesh % nodes(k,j) % id     = nodeID
-                  hex8Mesh % nodes(k,j) % x = rotatedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
-                                                                  theta = j*dTheta, pmutation = pMutation) 
+                  hex8Mesh % nodes(k,j) % id = nodeID
+                  hex8Mesh % nodes(k,j) % x  = rotatedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
+                                                                   theta        = j*dTheta, pmutation = pMutation) 
                   nodeID = nodeID + 1
                END DO   
             END DO
@@ -442,7 +557,7 @@
             CALL quadMesh % elementsIterator % setToStart()
             DO WHILE( .NOT. quadMesh % elementsIterator % isAtEnd() )
                obj => quadMesh % elementsIterator % object()
-               CALL castToSMelement(obj,currentElement)
+               CALL castToSMElement(obj,currentElement)
 !
 !              -----------------------
 !              Set the element nodeIDs
@@ -473,6 +588,15 @@
                hex8Mesh % elements(quadElementID,j) % id        = elementID
                hex8Mesh % elements(quadElementID,j) % bFaceFlag = OFF
                hex8Mesh % elements(quadElementID,j) % bFaceName = "---"
+               
+               IF ( j == 1 )     THEN
+                  hex8Mesh % elements(quadElementID,j) % bFaceName(3) = &
+                  parametersDictionary % stringValueForKey(key = SIMPLE_SWEEP_STARTNAME_KEY,requestedLength = LINE_LENGTH)
+               ELSE IF (j == numberOfLayers)     THEN 
+                  hex8Mesh % elements(quadElementID,j) % bFaceName(5) = &
+                  parametersDictionary % stringValueForKey(key = SIMPLE_SWEEP_ENDNAME_KEY,requestedLength = LINE_LENGTH)
+               END IF 
+               
                quadElementID                                 = quadElementID + 1
                elementID                                     = elementID + 1
                
@@ -480,10 +604,71 @@
             END DO 
          END DO 
 !
-!        ----------------------------------
-!        Construct the faces from the edges
-!        ----------------------------------
-!         
+      END SUBROUTINE sweepElements
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE constructSweptFaces( project, quadMesh, hex8Mesh, N, algorithmChoice, parametersDictionary )  
+         USE MeshProjectClass
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE ( MeshProject )        :: project
+         TYPE ( StructuredHexMesh )  :: hex8Mesh
+         TYPE ( SMMesh )             :: quadMesh
+         TYPE ( FTValueDictionary)   :: parametersDictionary
+         INTEGER                     :: numberOfLayers, N, algorithmChoice
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                     :: numberOfBoundaryFaces
+         INTEGER                     :: faceID, quadElementID
+         INTEGER                     :: j, k, l
+         INTEGER                     :: eIdLeft, eIDRight, edgeSideL, edgeSideR
+         INTEGER                     :: faceNumber
+         INTEGER                     :: pMutation
+         
+         REAL(KIND=RP)               :: x(3), xTmp(3)
+         REAL(KIND=RP)               :: dz, dTheta, h, theta
+         
+         CLASS(SMElement)                , POINTER     :: e
+         CLASS(SMEdge)                   , POINTER     :: currentEdge
+         CLASS(FTObject)                 , POINTER     :: obj
+         
+         CLASS(SMNode)        , POINTER :: node1, node2
+         CLASS(SMCurve)       , POINTER :: c
+         CLASS(SMChainedCurve), POINTER :: chain
+         
+         REAL(KIND=RP)               :: tStart, tEnd, t_k, deltaT
+         INTEGER                     :: curveId
+         CHARACTER(LEN=32)           :: noCurveName(-4:-1) = (/"Right", "Left ", "Front", "Back " /)
+         INTEGER                     :: rotMap(3) = [3, 3, 1]
+!
+!        -----------------------------------------------------------------------------
+!        dir stores the relative direction of one quad element edge to its neighbor
+!        e.g. Side 2 (left) associates with side 1 (right) then the index on the slave
+!        runs in the opposite direction. Therefore, dir(2,1) = -1
+!        -----------------------------------------------------------------------------
+!
+         INTEGER, DIMENSION(4,4)  :: dir = RESHAPE((/-1,-1,1,1,-1,-1,1,1,1,1,-1,-1,1,1,-1,-1/),(/4,4/))
+!        
+         pMutation = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
+         
+         IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
+            numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
+            h              = parametersDictionary % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
+            dz             = h/numberofLayers
+         ELSE
+            numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
+            theta          = PI * parametersDictionary % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
+            dTheta         = theta/numberofLayers
+         END IF 
+         
          DO j = 1, numberOfLayers
             faceID = 1
             
@@ -551,6 +736,7 @@
 !              ----------------------------------
 !
                IF ( .NOT.ASSOCIATED(e) )     THEN ! This is a boundary face
+                  numberOfBoundaryFaces = numberOfBoundaryFaces + 1
                   node1 => currentEdge % nodes(1) % node
                   node2 => currentEdge % nodes(2) % node
 !
@@ -604,10 +790,17 @@
                         
                         x = chain % positionAt(t_k)
                         DO l = 0, N
-                           t_k =  (j-1)*dz + dz*(1.0_RP - COS(l*PI/N))/2.0_RP
-                           xTmp = [x(1),x(2),t_k]
-                           IF(pMutation<3) xTmp = CSHIFT(xTmp, SHIFT = -pmutation)
-                           hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = xTmp 
+                           IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
+                              t_k =  (j-1)*dz + dz*(1.0_RP - COS(l*PI/N))/2.0_RP
+                              xTmp = [x(1),x(2),0.0_RP]
+                              IF(pMutation<3) xTmp = CSHIFT(xTmp, SHIFT = -pmutation)
+                              hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = extrudedNodeLocation(xTmp,t_k,pmutation)
+                           ELSE 
+                              t_k =  (j-1)*dTheta + dTheta*(1.0_RP - COS(l*PI/N))/2.0_RP
+                              xTmp = [x(1),x(2),0.0_RP]
+                              IF(rotmap(pMutation)<3) xTmp = CSHIFT(xTmp, SHIFT = -rotMap(pmutation))
+                              hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = rotatedNodeLocation(xTmp,t_k,pmutation)
+                           END IF 
                         END DO  
                         
                       END DO
@@ -632,6 +825,37 @@
             CALL quadMesh % edgesIterator % moveToNext()     
             END DO 
          END DO
+         
+      END SUBROUTINE constructSweptFaces
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE constructCapFaces( project, hex8Mesh, numberOfLayers )  
+         USE MeshProjectClass  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE ( MeshProject )        :: project
+         TYPE ( StructuredHexMesh )  :: hex8Mesh
+         INTEGER                     :: numberOfLayers
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CLASS(SMMesh)    , POINTER :: quadMesh
+         INTEGER                    :: numberOfQuadElements
+         
+         INTEGER                    :: quadElementID
+         INTEGER                    :: j, k
+         INTEGER                    :: eIdLeft, eIDRight
+         
+         INTEGER                    :: rotMap(3) = [3, 3, 1]
+         
+         numberOfQuadElements = project % mesh % elements % count()
 !
 !        ----------------------------
 !        Construct the bottom and top 
@@ -655,7 +879,7 @@
                   
                   DO k = 1, 4
                      hex8Mesh % capFaces(quadElementID,j) % nodeIDs(k) = &
-                        hex8Mesh % elements(quadElementID,1) % nodeIDs(localFaceNode(k,3))
+                           hex8Mesh % elements(quadElementID,1) % nodeIDs(localFaceNode(k,3))
                   END DO  
 !
 !                 -------------------
@@ -714,9 +938,9 @@
                         hex8Mesh % elements(quadElementID,numberOfLayers) % nodeIDs(localFaceNode(k,5))
                   END DO  
 !
-!                 -------------------
-!                 No exterior element
-!                 -------------------
+!                 ----------------
+!                 Exterior element
+!                 ----------------
 !
                   eIdRight = hex8Mesh % elements(quadElementID,j+1) % id
                   
@@ -728,9 +952,81 @@
             END IF 
 
          END DO  
+      END SUBROUTINE constructCapFaces
 !
-
-      END SUBROUTINE PerformSimpleMeshSweep
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE interpolateCapFaces( hex8Mesh, numberOfLayers, bCurveOrder)
+         USE CurveInterpolantClass
+         USE TransfiniteMapClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         INTEGER                   :: bCurveOrder
+         TYPE( StructuredHexMesh ) :: hex8Mesh
+         INTEGER                   :: numberOfLayers
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE( CurveInterpolant )    , DIMENSION(4) :: curves
+         TYPE( TransfiniteQuadMap )                 :: mapper
+         INTEGER :: eID, level
+         INTEGER :: fID
+         INTEGER :: i, j, k
+         INTEGER :: sideFaces(4) = [1, 2, 4, 6] ! Faces 3 & 5 are the cap faces. These surround the element
+         LOGICAL :: hasCurve
+         
+         REAL(KIND=RP), DIMENSION(0:bCurveOrder) :: chebyPoints
+         
+         DO j = 0, bCurveOrder
+            chebyPoints(j) = -COS(j*PI/bCurveOrder) 
+         END DO  
+         
+         DO eID = 1, SIZE( hex8Mesh % elements )
+             DO level = 1, numberOfLayers
+            
+               hasCurve = .FALSE.
+               DO k = 1, 4
+                  IF( hex8Mesh % elements(eId,level) % bFaceFlag( sideFaces(k)) == ON) hasCurve = .TRUE. 
+               END DO 
+               
+               IF( .NOT. hasCurve ) CYCLE 
+!
+!              ---------------------------------------------------------
+!              If the element has a curved extruded face, we must define
+!              a transfinite map for the cap faces for this element. 
+!              Collect the boundary curves to interpolate
+!              ---------------------------------------------------------
+!
+               DO k = 1, 4
+!
+!                 ----------------
+!                 The curved sides
+!                 ----------------
+!
+                  IF( hex8Mesh % elements(eId,level) % bFaceFlag( sideFaces(k) ) == ON )     THEN
+                     fID = hex8Mesh % elements(eId,level) % faceID( sideFaces(k) )
+                     
+                  ELSE 
+!
+!                 ------------------
+!                 The straight sides
+!                 ------------------
+!
+                  
+                  END IF 
+               END DO  
+               
+               
+            END DO  
+         END DO 
+         
+      END SUBROUTINE interpolateCapFaces
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
