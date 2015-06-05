@@ -120,7 +120,7 @@
       END IF
 
       CALL MarkExteriorElements ( mesh, project % backgroundParams )
-      CALL MarkInterfaceElements( mesh, project % backgroundParams )
+      CALL MarkInterfaceElements( mesh )
 !
 !     ----------------------------------------
 !     Actually do the deletion. At this point,
@@ -378,7 +378,7 @@
          CLASS(SMElement)     , POINTER :: e => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
          
-         INTEGER                        :: k, j, nodeArraySize
+         INTEGER                        :: k, nodeArraySize
          INTEGER                        :: jointType, bCurveSide
          
          REAL(KIND=RP)                  :: t, p(3)
@@ -749,8 +749,7 @@
          REAL(KIND=RP)                       :: nodes(3,4)
          REAL(KIND=RP)                       :: x1(3), x2(3), xRight, yTop, xLeft, yBottom
          REAL(KIND=RP)                       :: h, hMin, dz, z(3), segmentLength
-         LOGICAL                             :: isInterfaceElement, removedHere
-         INTEGER                             :: numInside, numOutside, side(4)
+         LOGICAL                             :: removedHere
          
          elements        => mesh % elements
          elementIterator => mesh % elementsIterator
@@ -1040,7 +1039,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE MarkInterfaceElements( mesh, backgroundParams )
+      SUBROUTINE MarkInterfaceElements( mesh )
       USE Geometry
       IMPLICIT NONE
 !
@@ -1049,7 +1048,6 @@
 !        ---------
 !
          CLASS(SMMesh)                 , POINTER :: mesh
-         TYPE(BackgroundGridParameters)          :: backgroundParams
 !
 !        ---------------
 !        Local variables
@@ -1065,7 +1063,7 @@
          INTEGER                              :: k, l, j, m, mSteps
          REAL(KIND=RP)                        :: w
          REAL(KIND=RP)                        :: nodes(3,4)
-         REAL(KIND=RP)                        :: x1(3), x2(3), xRight, yTop, xLeft, yBottom
+         REAL(KIND=RP)                        :: x1(3), x2(3) !, xRight, yTop, xLeft, yBottom
          REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
          LOGICAL                              :: isInterfaceElement
          INTEGER                              :: numInside, numOutside, side(4)
