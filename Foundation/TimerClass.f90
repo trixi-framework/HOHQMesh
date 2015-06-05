@@ -10,9 +10,6 @@
 !      
 !      Usage
 !
-!         * Initialization *
-!
-!               CALL timer % init()
 !
 !         * Starting the timer *
 !
