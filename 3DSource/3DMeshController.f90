@@ -96,7 +96,6 @@
 !
          INTEGER                  :: fUnit
          TYPE(MeshProject)        :: project
-         TYPE(StructuredHexMesh)  :: mesh8
 !
 !        ---------------
 !        Local variables
@@ -154,7 +153,7 @@
                CALL PerformSimpleMeshSweep(project,hex8Mesh,hexMeshParametersDictionary, algorithmChoice)
             CASE DEFAULT
                exception => ReaderException("Generate 3D Mesh Algorithm",&
-                                          "Unknown algorithm specified", algorithmName, "generate3DMesh")
+                                            "Unknown algorithm specified", algorithmName, "generate3DMesh")
                CALL throw(exception)
                CALL exception % release()
          END SELECT 
@@ -186,7 +185,6 @@
 !        ---------------
 !
          INTEGER                     :: ios
-         CHARACTER(LEN=32)           :: fileFormat
          CHARACTER(LEN=LINE_LENGTH)  :: inputLine = " ", tmpString
          CLASS(FTException), POINTER :: exception
          
