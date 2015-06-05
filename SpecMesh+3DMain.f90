@@ -41,8 +41,8 @@
 !        Error reporting
 !        ---------------
 !
-         CLASS(FTException), POINTER :: exception => NULL()
-         INTEGER                     :: errorSeverity = FT_ERROR_NONE
+!         CLASS(FTException), POINTER :: exception => NULL()
+!         INTEGER                     :: errorSeverity = FT_ERROR_NONE
 !
 !        -----
 !        Other
@@ -177,10 +177,10 @@
 !
          PRINT *, " "
          PRINT *, "2D Mesh Statistics:"
-         PRINT *, "Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
-         PRINT *, "Number of nodes    = ", project % mesh % nodes    % COUNT()
-         PRINT *, "Number of Edges    = ", project % mesh % edges    % COUNT()
-         PRINT *, "Number of Elements = ", project % mesh % elements % COUNT()
+         PRINT *, "   Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
+         PRINT *, "   Number of nodes    = ", project % mesh % nodes    % COUNT()
+         PRINT *, "   Number of Edges    = ", project % mesh % edges    % COUNT()
+         PRINT *, "   Number of Elements = ", project % mesh % elements % COUNT()
 !
 !        ---------------------------------------
 !        Write mesh quality statistics to a file
@@ -251,12 +251,27 @@
          IF ( inquireShouldGenerate3DMesh(fUnit) )     THEN
             IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
             
-            CALL generate3DMesh(fUnit = fUnit,project = project) 
+            CALL stopWatch % start()
+            CALL generate3DMesh(fUnit,project) 
+            CALL stopWatch % stop()
             CALL trapExceptions !Aborts on fatal exceptions
             didGenerate3DMesh = .TRUE.
             
             IF ( didGenerate3DMesh )     THEN
                IF(printMessage) PRINT *, "Hex mesh generated"
+!
+!              -----------------------------
+!              Gather and publish statistics
+!              -----------------------------
+!
+               PRINT *, " "
+               PRINT *, "3D Mesh Statistics:"
+               PRINT *, "    Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
+               PRINT *, "    Number of nodes    = ", SIZE(hex8Mesh % nodes)
+               PRINT *, "    Number of Faces    = ", SIZE(hex8Mesh % faces) + SIZE(hex8Mesh % capFaces)
+               PRINT *, "    Number of Elements = ", SIZE(hex8Mesh % elements)
+               PRINT *
+               
             ELSE
                IF(printMessage) PRINT *, "Hex mesh generation failed"
             END IF 
