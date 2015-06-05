@@ -288,23 +288,25 @@
 !
             IF( ASSOCIATED(edge % elements(2) % element) .AND.         &
                 edge % nodes(1) % node % bCurveChainID > UNDEFINED .AND. &
-                edge % nodes(2) % node % bCurveChainID > UNDEFINED .AND. &
-                curveTypeForID(curveID) == INTERIOR_INTERFACE )       THEN
+                edge % nodes(2) % node % bCurveChainID > UNDEFINED )   THEN 
+                 
+                IF( curveTypeForID(curveID) == INTERIOR_INTERFACE )       THEN
 !
-!              --------------------------------------------------
-!              However, the nodes of the edge must both be inside
-!              for us to be interested in it
-!              --------------------------------------------------
+!                 --------------------------------------------------
+!                 However, the nodes of the edge must both be inside
+!                 for us to be interested in it
+!                 --------------------------------------------------
 !
-               IF ( edge % nodes(1) % node % bCurveSide == INSIDE .AND. &
-                    edge % nodes(2) % node % bCurveSide == INSIDE )    THEN
-                    
-                  edge % edgeType = ON_INTERFACE
-                  obj => boundaryEdgesArray % objectAtIndex(curveID)
-                  CALL cast(obj,edgeList)
-                  obj => edge
-                  CALL edgeList % add(obj)
-                  boundaryEdgesType(curveID) = INTERFACE_EDGES
+                  IF ( edge % nodes(1) % node % bCurveSide == INSIDE .AND. &
+                       edge % nodes(2) % node % bCurveSide == INSIDE )    THEN
+                       
+                     edge % edgeType = ON_INTERFACE
+                     obj => boundaryEdgesArray % objectAtIndex(curveID)
+                     CALL cast(obj,edgeList)
+                     obj => edge
+                     CALL edgeList % add(obj)
+                     boundaryEdgesType(curveID) = INTERFACE_EDGES
+                  END IF 
                END IF 
                
             END IF
