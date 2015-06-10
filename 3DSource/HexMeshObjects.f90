@@ -40,6 +40,36 @@
      &         1, 4, 8, 5                     & ! Node numbers, face 6
      &         /),(/4,6/))
 !
+!-------------------------------------------------------------------------
+!  Definition of the local node numbers for the edges of the master element
+!--------------------------------------------------------------------------
+!
+      INTEGER, DIMENSION(2,12) :: localEdgeNode = &
+     &         RESHAPE( (/                   &
+     &         1, 2,                &! Node numbers, edge 1
+     &         2, 6,                &! Node numbers, edge 2
+     &         5, 6,                &! Node numbers, edge 3
+     &         1, 5,                &! Node numbers, edge 4
+     &         4, 3,                &! Node numbers, edge 5
+     &         3, 7,                &! Node numbers, edge 6
+     &         8, 7,                &! Node numbers, edge 7
+     &         4, 8,                &! Node numbers, edge 8
+     &         1, 4,                &! Node numbers, edge 9
+     &         2, 3,                &! Node numbers, edge 10
+     &         6, 7,                &! Node numbers, edge 11
+     &         5, 8                 &! Node numbers, edge 12
+     &         /), (/2,12/) )
+     
+      INTEGER, DIMENSION(4,6) :: localEdgeForFace = &
+     &         RESHAPE( (/          &
+     &         1,  2,  3, 4 ,       &! edge numbers, face 1
+     &         5,  6,  7, 8,        &! edge numbers, face 2
+     &         1, 10,  5, 9  ,      &! edge numbers, face 3
+     &         10, 6, 11, 2 ,       &! edge numbers, face 4
+     &         3, 11,  7, 12,       &! edge numbers, face 5
+     &         9,  8, 12, 4         &! edge numbers, face 6
+     &         /), (/4,6/) )
+!
 !
 !----------------------------------------------------------------------+
 !                                                                      |
@@ -100,12 +130,22 @@
 !     -------------
 !
       TYPE Node3D
-         INTEGER       :: id
+         INTEGER       :: globalID
          REAL(KIND=RP) :: x(3)
       END TYPE Node3D
-      
+            
+      TYPE Face3D
+         INTEGER                    :: levelID       ! id of this face on a given level
+         INTEGER, DIMENSION(4)      :: nodeIDs       ! ids of the four nodes bounding this face3D
+         INTEGER, DIMENSION(2)      :: elementIDs    ! ids of the two hex elements sharing this face3D
+         INTEGER, DIMENSION(2)      :: inc           ! Increment for the two directions for the slave element
+         INTEGER, DIMENSION(2)      :: faceNumber    ! Face number (1-6) of the two elements associated with this face3D 
+         REAL(KIND=RP), ALLOCATABLE :: x (:,:,:)     ! Nodal values of chebyshev interpolant for the face, if there is one.
+         CLASS(SMEdge) , POINTER    :: edge          ! The spawning edge, if there is one.
+      END TYPE Face3D
+
       TYPE Hex8Element
-          INTEGER                         :: id
+          INTEGER                         :: globalID
           INTEGER, DIMENSION(8)           :: nodeIDs
           INTEGER, DIMENSION(6)           :: faceID
           INTEGER                         :: materialID
@@ -113,16 +153,6 @@
           INTEGER, DIMENSION(6)           :: bFaceFlag     ! = ON or OFF. On if there is an interpolant associated with the face.
           CHARACTER(LEN=32), DIMENSION(6) :: bFaceName     ! The boundary face name for each face. Will be "---" for internal faces.
       END TYPE Hex8Element
-      
-      TYPE Face3D
-         INTEGER                    :: id            ! id of this face
-         INTEGER, DIMENSION(4)      :: nodeIDs       ! ids of the four nodes bounding this face3D
-         INTEGER, DIMENSION(2)      :: elementIDs    ! ids of the two hex elements sharing this face3D
-         INTEGER, DIMENSION(2)      :: inc           ! Increment for the two directions for the slave element
-         INTEGER, DIMENSION(2)      :: faceNumber    ! Face number (1-6) of the two elements associated with this face3D 
-         REAL(KIND=RP), ALLOCATABLE :: x (:,:,:,:)   ! Nodal values of chebyshev interpolant for the face, if there is one.
-         CLASS(SMEdge) , POINTER    :: edge          ! The spawning edge, if there is one.
-      END TYPE Face3D
       
       TYPE StructuredHexMesh
          TYPE(Node3D)     , DIMENSION(:,:), ALLOCATABLE :: nodes
@@ -135,8 +165,8 @@
 !        the source quadMesh.
 !        ------------------------------------------------------------
 !
-         TYPE(Face3D)     , DIMENSION(:,:), ALLOCATABLE :: faces
-         TYPE(Face3D)     , DIMENSION(:,:), ALLOCATABLE :: capFaces
+         TYPE(Face3D)  , DIMENSION(:,:), ALLOCATABLE :: faces
+         TYPE(Face3D)  , DIMENSION(:,:), ALLOCATABLE :: capFaces
       END TYPE StructuredHexMesh
 !
 !     ========      
@@ -169,9 +199,9 @@
          INTEGER  :: numberOf2DNodes, numberOfQuadElements, numberOfEdges
          INTEGER  :: j, k
          
-         numberOf2DNodes      = quadMesh  %  nodes  %  count()
-         numberOfQuadElements = quadMesh  %  elements  %  count()
-         numberOfEdges        = quadMesh  %  edges  %  count()
+         numberOf2DNodes      = quadMesh % nodes % count()
+         numberOfQuadElements = quadMesh % elements % count()
+         numberOfEdges        = quadMesh % edges % count()
          
          ALLOCATE(hexMesh % nodes   ( numberOf2DNodes     , 0:numberOfLayers) )
          ALLOCATE(hexMesh % elements( numberOfQuadElements,   numberOfLayers) )
@@ -185,7 +215,7 @@
             END DO   
          END DO  
          
-         DO k = 0, SIZE(hexMesh % capFaces,2)-1
+         DO k = 0, UBOUND(hexMesh % capFaces,2)
             DO j = 1, SIZE(hexMesh % capFaces,1)
                hexMesh % capFaces(j,k) % edge => NULL()
             END DO   
@@ -212,7 +242,7 @@
          DO k = 1, SIZE(hexMesh % faces,2)
             DO j = 1, SIZE(hexMesh % faces,1)
                IF(ASSOCIATED(hexMesh % faces(j,k) % edge)) THEN
-                  CALL hexMesh % faces(j,k) % edge  %  release()
+                  CALL hexMesh % faces(j,k) % edge % release()
                END IF 
             END DO   
          END DO  

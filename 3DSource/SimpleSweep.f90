@@ -35,7 +35,19 @@
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_ENDNAME_KEY          = "ExtrusionEndName"
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_DIRECTION_KEY        = "ExtrusionDirectionName"
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ANGLE_KEY         = "RotationAngleName"
+      
+      INTEGER, PARAMETER :: SWEEP_FLOOR = 1, SWEEP_CEILING = 2
 !
+
+      REAL(KIND=RP), ALLOCATABLE :: chebyPoints(:)
+!
+!     ------------------------------------------------------------
+!     Given the global node ID, get the level and 2D node location
+!     in the nodes array
+!     ------------------------------------------------------------
+!
+      INTEGER, ALLOCATABLE :: locAndLevelForNodeID(:,:)
+      
 !     ========      
       CONTAINS 
 !     ========      
@@ -296,16 +308,15 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(SMMesh)    , POINTER :: quadMesh
+         CLASS(SMMesh), POINTER :: quadMesh
          
-         INTEGER                           :: numberOfLayers
-         INTEGER                           :: numberOf2DNodes, numberOfQuadElements
-         INTEGER                           :: numberOfBoundaryFaces
-         INTEGER                           :: node2DID, quadElementID
-         INTEGER                           :: j, k
-         INTEGER                           :: eIdLeft, eIDRight
-         INTEGER                           :: N, pMutation
-         INTEGER                           :: algorithmChoice
+         INTEGER                :: numberOfLayers
+         INTEGER                :: numberOf2DNodes, numberOfQuadElements
+         INTEGER                :: numberOfNodes
+         INTEGER                :: numberOfBoundaryFaces
+         INTEGER                :: node2DID
+         INTEGER                :: N, pMutation
+         INTEGER                :: algorithmChoice
          
          
          TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
@@ -355,13 +366,14 @@
          numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
          CALL InitializeStructuredHexMeshFromQuadMesh( hex8Mesh, quadMesh, numberOfLayers )
 !
-!        ----------------------------------
+!        -----------------------------------
 !        Gather nodes for easy access
-!        TODO: list class now has function
+!        TODO: list class now has a function
 !        to return an array of the objects.
-!        ----------------------------------
+!        -----------------------------------
 !
          numberOf2DNodes = quadMesh % nodes % count()
+         numberOfNodes   = numberOf2DNodes*(numberOfLayers + 1)
          ALLOCATE( quadMeshNodes(numberOf2DNodes) )
          
          CALL quadMesh % nodesIterator % setToStart()
@@ -374,11 +386,23 @@
          
             CALL quadMesh % nodesIterator % moveToNext() 
          END DO 
-         
+!
+!        ---------------------------------------------------------------
+!        Allocate connections between global ID and local (2D, level) id
+!        ---------------------------------------------------------------
+!
+         ALLOCATE( locAndLevelForNodeID(2, numberOfNodes))
+!
+!        ------------------------------------------------
+!        Do the sweeping. These procedures must be called
+!        in order.
+!        ------------------------------------------------
+!
          CALL sweepNodes( quadMeshNodes, hex8Mesh, algorithmChoice, parametersDictionary )
          CALL sweepElements( quadMesh, hex8Mesh, numberofLayers, algorithmChoice, parametersDictionary )
          CALL constructSweptFaces( project, quadMesh, hex8Mesh, N, algorithmChoice, parametersDictionary )
-         CALL constructCapFaces( project, hex8Mesh, numberOfLayers )
+         CALL constructCapFaces( hex8Mesh, numberOfQuadElements, numberOfLayers )
+         CALL interpolateCapFaces(hex8Mesh , N )
 !
 
       END SUBROUTINE PerformSimpleMeshSweep
@@ -426,9 +450,11 @@
             nodeID = 1
             DO j = 0, numberofLayers
                DO k = 1, numberOf2DNodes
-                  hex8Mesh % nodes(k,j) % id = nodeID
+                  hex8Mesh % nodes(k,j) % globalID = nodeID
                   hex8Mesh % nodes(k,j) % x  = extrudedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
                                                                     delta = j*dz, pmutation = pMutation)
+                  locAndLevelForNodeID(1,nodeID) = k
+                  locAndLevelForNodeID(2,nodeID) = j
                   nodeID = nodeID + 1
                END DO   
             END DO
@@ -442,9 +468,11 @@
             nodeID = 1
             DO j = 0, numberofLayers
                DO k = 1, numberOf2DNodes
-                  hex8Mesh % nodes(k,j) % id = nodeID
+                  hex8Mesh % nodes(k,j) % globalID = nodeID
                   hex8Mesh % nodes(k,j) % x  = rotatedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
                                                                    theta        = j*dTheta, pmutation = pMutation) 
+                  locAndLevelForNodeID(1,nodeID) = k
+                  locAndLevelForNodeID(2,nodeID) = j
                   nodeID = nodeID + 1
                END DO   
             END DO
@@ -456,6 +484,11 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE sweepElements( quadMesh, hex8Mesh, numberofLayers, algorithmChoice, parametersDictionary )
+!
+!        -------------------------------
+!        Call after generating the nodes
+!        -------------------------------
+!
          USE MeshProjectClass  
          IMPLICIT NONE
 !
@@ -467,85 +500,24 @@
          TYPE ( StructuredHexMesh )  :: hex8Mesh
          INTEGER                     :: numberOfLayers
          TYPE( FTValueDictionary)    :: parametersDictionary
-         INTEGER                           :: algorithmChoice
+         INTEGER                     :: algorithmChoice
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
-         INTEGER                           :: numberOf2DNodes, numberOfQuadElements
+         INTEGER                           :: numberOfQuadElements
          INTEGER                           :: elementID, nodeID, node2DID, quadElementID
          INTEGER                           :: j, k
          INTEGER                           :: pMutation
          
-         REAL(KIND=RP)                     :: h, dz, dTheta, theta
          
-         TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
-         CLASS(SMNode)                   , POINTER     :: currentNode, node
-         CLASS(SMElement)                , POINTER     :: currentElement
+         CLASS(SMNode)                   , POINTER     :: node
+         CLASS(SMElement)                , POINTER     :: currentQuadElement
          CLASS(FTObject)                 , POINTER     :: obj
          
          numberOfQuadElements = quadMesh % elements % count()
          pMutation            = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
-!
-!        ----------------------------------
-!        Gather nodes for easy access
-!        TODO: list class now has function
-!        to return an array of the objects.
-!        ----------------------------------
-!
-         numberOf2DNodes = quadMesh % nodes % count()
-         ALLOCATE( quadMeshNodes(numberOf2DNodes) )
-         
-         CALL quadMesh % nodesIterator % setToStart()
-         DO WHILE( .NOT.quadMesh % nodesIterator % isAtEnd())
-         
-            obj => quadMesh % nodesIterator % object()
-            CALL castToSMNode(obj,currentNode)
-            node2DID = currentNode % id
-            quadMeshNodes(node2DID) % node => currentNode
-         
-            CALL quadMesh % nodesIterator % moveToNext() 
-         END DO 
-!
-!        ---------------------------------------
-!        Generate the new nodes for the hex mesh
-!        layer by layer. Order the new node IDs
-!        layer by layer, too.
-!        ---------------------------------------
-!
-         IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
-            numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
-            h              = parametersDictionary % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
-            dz             = h/numberofLayers
-             
-            nodeID = 1
-            DO j = 0, numberofLayers
-               DO k = 1, numberOf2DNodes
-                  hex8Mesh % nodes(k,j) % id = nodeID
-                  hex8Mesh % nodes(k,j) % x  = extrudedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
-                                                                    delta = j*dz, pmutation = pMutation)
-                  nodeID = nodeID + 1
-               END DO   
-            END DO
-            
-         ELSE
-         
-            numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
-            theta          = PI * parametersDictionary % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
-            dTheta         = theta/numberofLayers
-             
-            nodeID = 1
-            DO j = 0, numberofLayers
-               DO k = 1, numberOf2DNodes
-                  hex8Mesh % nodes(k,j) % id = nodeID
-                  hex8Mesh % nodes(k,j) % x  = rotatedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
-                                                                   theta        = j*dTheta, pmutation = pMutation) 
-                  nodeID = nodeID + 1
-               END DO   
-            END DO
-            
-         END IF 
 !
 !        ---------------------------------
 !        Build the elements layer by layer
@@ -554,10 +526,12 @@
          elementID = 1
          DO j = 1, numberOfLayers
             quadElementID = 1
+            
             CALL quadMesh % elementsIterator % setToStart()
+            
             DO WHILE( .NOT. quadMesh % elementsIterator % isAtEnd() )
                obj => quadMesh % elementsIterator % object()
-               CALL castToSMElement(obj,currentElement)
+               CALL castToSMElement(obj,currentQuadElement)
 !
 !              -----------------------
 !              Set the element nodeIDs
@@ -569,32 +543,39 @@
 !                 Bottom of hex
 !                 -------------
 !
-                  obj => currentElement % nodes % objectAtIndex(k)
+                  obj => currentQuadElement % nodes % objectAtIndex(k)
                   CALL cast(obj,node)
                   node2DID = node % id
-                  nodeID   = hex8Mesh % nodes(node2DID,j-1) % id
+                  nodeID   = hex8Mesh % nodes(node2DID,j-1) % globalID
                   hex8Mesh % elements(quadElementID,j) % nodeIDs(k) = nodeID
 !
 !                 ----------
 !                 Top of hex
 !                 ----------
 !
-                  nodeID = hex8Mesh % nodes(node2DID,j) % id
-                  hex8Mesh % elements(quadElementID,j) % nodeIDs(k+4) = nodeID
+                  nodeID = hex8Mesh % nodes(node2DID,j) % globalID
+                  hex8Mesh % elements(quadElementID,j)  % nodeIDs(k+4) = nodeID
                   
                END DO
                
                hex8Mesh % elements(quadElementID,j) % faceID    = NONE
-               hex8Mesh % elements(quadElementID,j) % id        = elementID
+               hex8Mesh % elements(quadElementID,j) % globalID  = elementID
                hex8Mesh % elements(quadElementID,j) % bFaceFlag = OFF
-               hex8Mesh % elements(quadElementID,j) % bFaceName = "---"
-               
+               hex8Mesh % elements(quadElementID,j) % bFaceName = NO_BC_STRING
+!
+!              ------------------------------------------------------------------
+!              Set boundary condition names at the start and end of the extrusion
+!              as defined in the control file
+!              ------------------------------------------------------------------
+!
                IF ( j == 1 )     THEN
                   hex8Mesh % elements(quadElementID,j) % bFaceName(3) = &
-                  parametersDictionary % stringValueForKey(key = SIMPLE_SWEEP_STARTNAME_KEY,requestedLength = LINE_LENGTH)
+                  parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_STARTNAME_KEY,&
+                                                           requestedLength = LINE_LENGTH)
                ELSE IF (j == numberOfLayers)     THEN 
                   hex8Mesh % elements(quadElementID,j) % bFaceName(5) = &
-                  parametersDictionary % stringValueForKey(key = SIMPLE_SWEEP_ENDNAME_KEY,requestedLength = LINE_LENGTH)
+                  parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_ENDNAME_KEY,&
+                                                           requestedLength = LINE_LENGTH)
                END IF 
                
                quadElementID                                 = quadElementID + 1
@@ -602,13 +583,20 @@
                
                CALL quadMesh % elementsIterator % moveToNext()
             END DO 
+            
          END DO 
 !
       END SUBROUTINE sweepElements
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE constructSweptFaces( project, quadMesh, hex8Mesh, N, algorithmChoice, parametersDictionary )  
+      SUBROUTINE constructSweptFaces( project, quadMesh, hex8Mesh, N, algorithmChoice, parametersDictionary )
+!
+!        ----------------------------------------------------------
+!        These faces are created by sweeping the quad element edges
+!        It must be called after the hex elements are swept.
+!        ----------------------------------------------------------
+!
          USE MeshProjectClass
          IMPLICIT NONE  
 !
@@ -668,17 +656,22 @@
             theta          = PI * parametersDictionary % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
             dTheta         = theta/numberofLayers
          END IF 
-         
+!
+!        ------------------------------------------------
+!        For each layer, sweep each edge to create a face
+!        ------------------------------------------------
+!
          DO j = 1, numberOfLayers
             faceID = 1
             
             CALL quadMesh % edgesIterator % setToStart()
+            
             DO WHILE( .NOT. quadMesh % edgesIterator % isAtEnd() )
                obj => quadMesh % edgesIterator % object()
                CALL cast(obj, currentEdge)
                
-               hex8Mesh % faces(faceID,j) % id   = faceID
-               hex8Mesh % faces(faceID,j) % edge => currentEdge
+               hex8Mesh % faces(faceID,j) % levelID = faceID
+               hex8Mesh % faces(faceID,j) % edge    => currentEdge
                CALL currentEdge % retain()
 !
 !              --------------------
@@ -687,7 +680,7 @@
 !
                e             => currentEdge % elements(1) % element
                quadElementID = e % id
-               eIdLeft       = hex8Mesh % elements(quadElementID,j) % id
+               eIdLeft       = hex8Mesh % elements(quadElementID,j) % globalID
                edgeSideL     = currentEdge % elementSide(1)
                
                hex8Mesh % faces(faceID,j) % elementIDs(1) = eIdLeft
@@ -716,7 +709,7 @@
                e  => currentEdge % elements(2) % element
                IF ( ASSOCIATED( e ) )     THEN
                   quadElementID = e % id
-                  eIdRight      = hex8Mesh % elements(quadElementID,j) % id
+                  eIdRight      = hex8Mesh % elements(quadElementID,j) % globalID
                   edgeSideR     = currentEdge % elementSide(2)
                  
                   hex8Mesh % faces(faceID,j) % elementIDs(2) = eIdRight
@@ -736,6 +729,7 @@
 !              ----------------------------------
 !
                IF ( .NOT.ASSOCIATED(e) )     THEN ! This is a boundary face
+               
                   numberOfBoundaryFaces = numberOfBoundaryFaces + 1
                   node1 => currentEdge % nodes(1) % node
                   node2 => currentEdge % nodes(2) % node
@@ -778,7 +772,7 @@
                         deltaT = 1.0_RP + deltaT
                      END IF
                     
-                     ALLOCATE(hex8Mesh % faces(faceID,j) % x(3,0:N,0:N,6))
+                     ALLOCATE(hex8Mesh % faces(faceID,j) % x(3,0:N,0:N))
                      DO k = 0, N 
                     
                         t_k = tStart + deltaT*(1.0_RP - COS(k*PI/N))/2.0_RP
@@ -794,12 +788,12 @@
                               t_k =  (j-1)*dz + dz*(1.0_RP - COS(l*PI/N))/2.0_RP
                               xTmp = [x(1),x(2),0.0_RP]
                               IF(pMutation<3) xTmp = CSHIFT(xTmp, SHIFT = -pmutation)
-                              hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = extrudedNodeLocation(xTmp,t_k,pmutation)
+                              hex8Mesh % faces(faceID,j) % x(:,k,l) = extrudedNodeLocation(xTmp,t_k,pmutation)
                            ELSE 
                               t_k =  (j-1)*dTheta + dTheta*(1.0_RP - COS(l*PI/N))/2.0_RP
                               xTmp = [x(1),x(2),0.0_RP]
                               IF(rotmap(pMutation)<3) xTmp = CSHIFT(xTmp, SHIFT = -rotMap(pmutation))
-                              hex8Mesh % faces(faceID,j) % x(:,k,l,faceNumber) = rotatedNodeLocation(xTmp,t_k,pmutation)
+                              hex8Mesh % faces(faceID,j) % x(:,k,l) = rotatedNodeLocation(xTmp,t_k,pmutation)
                            END IF 
                         END DO  
                         
@@ -830,7 +824,12 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE constructCapFaces( project, hex8Mesh, numberOfLayers )  
+      SUBROUTINE constructCapFaces( hex8Mesh, numberOfQuadElements, numberOfLayers )
+!
+!        ---------------------------------------------------------
+!        Call constructCapFaces after the swept faces are computed
+!        ---------------------------------------------------------
+!
          USE MeshProjectClass  
          IMPLICIT NONE
 !
@@ -838,7 +837,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE ( MeshProject )        :: project
+         INTEGER                     :: numberOfQuadElements
          TYPE ( StructuredHexMesh )  :: hex8Mesh
          INTEGER                     :: numberOfLayers
 !
@@ -846,16 +845,9 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(SMMesh)    , POINTER :: quadMesh
-         INTEGER                    :: numberOfQuadElements
-         
          INTEGER                    :: quadElementID
          INTEGER                    :: j, k
          INTEGER                    :: eIdLeft, eIDRight
-         
-         INTEGER                    :: rotMap(3) = [3, 3, 1]
-         
-         numberOfQuadElements = project % mesh % elements % count()
 !
 !        ----------------------------
 !        Construct the bottom and top 
@@ -872,7 +864,7 @@
 !                 Interior element
 !                 ----------------
 !
-                  eIdLeft    = hex8Mesh % elements(quadElementID,1) % id
+                  eIdLeft    = hex8Mesh % elements(quadElementID,1) % globalID
                   
                   hex8Mesh % capFaces(quadElementID,j) % elementIDs(1) = eIdLeft
                   hex8Mesh % capFaces(quadElementID,j) % faceNumber(1) = 3
@@ -900,7 +892,7 @@
 !                 Interior element
 !                 ----------------
 !
-                  eIdLeft    = hex8Mesh % elements(quadElementID,numberOfLayers) % id
+                  eIdLeft    = hex8Mesh % elements(quadElementID,numberOfLayers) % globalID
                   
                   hex8Mesh % capFaces(quadElementID,j) % elementIDs(1) = eIdLeft
                   hex8Mesh % capFaces(quadElementID,j) % faceNumber(1) = 5
@@ -928,7 +920,7 @@
 !                 Interior element
 !                 ----------------
 !
-                  eIdLeft = hex8Mesh % elements(quadElementID,j) % id
+                  eIdLeft = hex8Mesh % elements(quadElementID,j) % globalID
                   
                   hex8Mesh % capFaces(quadElementID,j) % elementIDs(1) = eIdLeft
                   hex8Mesh % capFaces(quadElementID,j) % faceNumber(1) = 5
@@ -942,7 +934,7 @@
 !                 Exterior element
 !                 ----------------
 !
-                  eIdRight = hex8Mesh % elements(quadElementID,j+1) % id
+                  eIdRight = hex8Mesh % elements(quadElementID,j+1) % globalID
                   
                   hex8Mesh % capFaces(quadElementID,j) % elementIDs(2) = eIdRight
                   hex8Mesh % capFaces(quadElementID,j) % faceNumber(2) = 3
@@ -956,7 +948,12 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE interpolateCapFaces( hex8Mesh, numberOfLayers, bCurveOrder)
+      SUBROUTINE interpolateCapFaces( hex8Mesh, bCurveOrder)
+!
+!        --------------------------------------
+!        Called after cap faces are constructed
+!        --------------------------------------
+!
          USE CurveInterpolantClass
          USE TransfiniteMapClass
          IMPLICIT NONE
@@ -967,66 +964,293 @@
 !
          INTEGER                   :: bCurveOrder
          TYPE( StructuredHexMesh ) :: hex8Mesh
-         INTEGER                   :: numberOfLayers
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         TYPE( CurveInterpolant )    , DIMENSION(4) :: curves
-         TYPE( TransfiniteQuadMap )                 :: mapper
-         INTEGER :: eID, level
-         INTEGER :: fID
-         INTEGER :: i, j, k
-         INTEGER :: sideFaces(4) = [1, 2, 4, 6] ! Faces 3 & 5 are the cap faces. These surround the element
-         LOGICAL :: hasCurve
+         INTEGER                                         :: numberOfLayers
+         TYPE( CurveInterpolant ), DIMENSION(:), POINTER :: curves
+         INTEGER                                         :: quadElementID, level
+         INTEGER                                         :: j, k
+         LOGICAL                                         :: hasCurve
          
-         REAL(KIND=RP), DIMENSION(0:bCurveOrder) :: chebyPoints
-         
+         ALLOCATE(curves(4))
+!
+!        ------------------------------------------------------------
+!        Distribute face points with a chebyshev Lobatto distribution
+!        ------------------------------------------------------------
+!
+         ALLOCATE(chebyPoints(0:bCurveOrder))
          DO j = 0, bCurveOrder
             chebyPoints(j) = -COS(j*PI/bCurveOrder) 
          END DO  
          
-         DO eID = 1, SIZE( hex8Mesh % elements )
+         numberOfLayers = UBOUND(hex8Mesh % capFaces,2)
+          
+         DO quadElementID = 1, UBOUND( hex8Mesh % elements, 1 )
+         
              DO level = 1, numberOfLayers
-            
+!
+!              --------------------------------------------------------
+!              We only have to compute the face point locations if the 
+!              face is curved
+!              --------------------------------------------------------
+!
                hasCurve = .FALSE.
                DO k = 1, 4
-                  IF( hex8Mesh % elements(eId,level) % bFaceFlag( sideFaces(k)) == ON) hasCurve = .TRUE. 
+                  IF( hex8Mesh % elements(quadElementID,level) % bFaceFlag( hexFaceForQuadEdge(k)) == ON )     THEN
+                      hasCurve = .TRUE. 
+                      EXIT
+                  END IF 
                END DO 
                
                IF( .NOT. hasCurve ) CYCLE 
-!
-!              ---------------------------------------------------------
-!              If the element has a curved extruded face, we must define
-!              a transfinite map for the cap faces for this element. 
-!              Collect the boundary curves to interpolate
-!              ---------------------------------------------------------
-!
-               DO k = 1, 4
-!
-!                 ----------------
-!                 The curved sides
-!                 ----------------
-!
-                  IF( hex8Mesh % elements(eId,level) % bFaceFlag( sideFaces(k) ) == ON )     THEN
-                     fID = hex8Mesh % elements(eId,level) % faceID( sideFaces(k) )
-                     
-                  ELSE 
-!
-!                 ------------------
-!                 The straight sides
-!                 ------------------
-!
-                  
-                  END IF 
-               END DO  
                
+               hex8Mesh % elements(quadElementID,level) % bFaceFlag( 3 ) = ON
+               hex8Mesh % elements(quadElementID,level) % bFaceFlag( 5 ) = ON  
+!
+!              --------------------------
+!              Bottom face of the element
+!              --------------------------
+!
+               CALL constructFaceCurvesForCapFace(hex8Mesh       = hex8Mesh, &
+                                                  element        = hex8Mesh % elements(quadElementID,level), &
+                                                  level          = level, &
+                                                  curves         = curves, &
+                                                  bCurveOrder    = bCurveOrder,&
+                                                  floorOrCeiling = SWEEP_FLOOR)
+                                                  
+               CALL computeCapFacePoints(face        = hex8Mesh % capFaces(quadElementID,level-1), &
+                                         bcurveOrder = bCurveOrder,&
+                                         curves      = curves)
+!
+!              -------------------------
+!              Top face for the last one
+!              -------------------------
+!
+               IF (  level == numberOfLayers )     THEN
+                  CALL constructFaceCurvesForCapFace(hex8Mesh       = hex8Mesh, &
+                                                     element        = hex8Mesh % elements(quadElementID,level), &
+                                                     level          = level, &
+                                                     curves         = curves, &
+                                                     bCurveOrder    = bCurveOrder,&
+                                                     floorOrCeiling = SWEEP_CEILING)
+                                                     
+                  CALL computeCapFacePoints(face        = hex8Mesh % capFaces(quadElementID,level), &
+                                            bcurveOrder = bCurveOrder,&
+                                            curves      = curves)
+               END IF 
                
             END DO  
          END DO 
          
+         DO k = 1, 4
+            CALL destruct(curves(k)) 
+         END DO  
+         DEALLOCATE(curves)
+         
       END SUBROUTINE interpolateCapFaces
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE constructFaceCurveForElementFace(N, level, face, curve)
+         USE CurveInterpolantClass
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         INTEGER                     :: N
+         INTEGER                     :: level
+         TYPE( Face3D )              :: face
+         TYPE( curveInterpolant )    :: curve
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                         :: j
+         REAL(KIND=RP), DIMENSION(0:N,3) :: values
+         
+         DO j = 0, N
+            values(j,:) = face % x(:,j,level) 
+         END DO  
+         
+         CALL Construct(this   = curve      , &
+                        N      = N          , &
+                        nodes  = chebyPoints, &
+                        values = values)
+
+      END SUBROUTINE constructFaceCurveForElementFace
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE constructStraightLineCurve(N, startNode, endNode, curve)  
+         USE CurveInterpolantClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         INTEGER :: N
+         TYPE( Node3D )           :: startNode
+         TYPE( Node3D )           :: endNode
+         TYPE( CurveInterpolant ) :: curve
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                         :: j
+         REAL(KIND=RP), DIMENSION(0:N,3) :: values
+         
+         DO j = 0, N
+            values(j,:) = 0.5_RP*(1.0_RP - chebyPoints(j))*startNode % x + &
+                          0.5_RP*(1.0_RP + chebyPoints(j))*endNode % x
+        END DO  
+
+         CALL Construct(this   = curve      , &
+                        N      = N          , &
+                        nodes  = chebyPoints, &
+                        values = values)
+         
+      END SUBROUTINE constructStraightLineCurve
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE constructFaceCurvesForCapFace( hex8Mesh, element, level, curves, bCurveOrder, floorOrCeiling )  
+         USE CurveInterpolantClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE( StructuredHexMesh )                       :: hex8Mesh
+         TYPE( Hex8Element )                             :: element
+         TYPE( CurveInterpolant ), DIMENSION(:), POINTER :: curves
+         INTEGER                                         :: bCurveOrder
+         INTEGER                                         :: floorOrCeiling
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                  :: k
+         TYPE( Node3D )           :: node1, node2
+         INTEGER                  :: l
+         
+         INTEGER                  :: level
+         INTEGER                  :: fID
+         INTEGER                  :: nodeID1, nodeID2
+         INTEGER                  :: localNodeID1, localNodeID2
+         INTEGER, DIMENSION(2,4)  :: localNodeFaceMapBottom = RESHAPE(SOURCE = [1,2,2,3,4,3,1,4], SHAPE = [2,4])
+         INTEGER, DIMENSION(2,4)  :: localNodeFaceMapTop    = RESHAPE(SOURCE = [5,6,6,7,8,7,5,8], SHAPE = [2,4])
+!         
+!
+!        ---------------------------------------------------------
+!        Grab the bottom or top row of the swept face as requested
+!        ---------------------------------------------------------
+!
+         IF ( floorOrCeiling == SWEEP_FLOOR )     THEN
+            l = 0
+         ELSE
+             l = bCurveOrder
+         END IF
+         
+         
+         
+         DO k = 1, 4
+            fID = element % faceID( hexFaceForQuadEdge(k) )
+            
+            IF( element % bFaceFlag( hexFaceForQuadEdge(k) ) == ON )     THEN
+!
+!              -----------------------------------
+!              The curved sides on the bottom face
+!              -----------------------------------
+!
+               CALL constructFaceCurveForElementFace(N           = bCurveOrder, &
+                                                     level       = l      , &
+                                                     face        = hex8Mesh % faces(fID, level), &
+                                                     curve       = curves(k))
+            ELSE 
+!
+!              ------------------
+!              The straight sides
+!              ------------------
+!
+               IF ( floorOrCeiling == SWEEP_FLOOR )     THEN
+                  localNodeID1 = localNodeFaceMapBottom(1,k) ! Get the bottom nodes
+                  localNodeID2 = localNodeFaceMapBottom(2,k)
+               ELSE 
+                  localNodeID1 = localNodeFaceMapTop(1,k) ! Get the bottom nodes
+                  localNodeID2 = localNodeFaceMapTop(2,k)
+               END IF 
+               
+               nodeID1      = element % nodeIDs(localNodeID1)
+               nodeID2      = element % nodeIDs(localNodeID2)
+               
+               node1 = hex8Mesh % nodes(locAndLevelForNodeID(1,nodeID1), locAndLevelForNodeID(2,nodeID1))
+               node2 = hex8Mesh % nodes(locAndLevelForNodeID(1,nodeID2), locAndLevelForNodeID(2,nodeID2))
+               
+               CALL constructStraightLineCurve(N         = bCurveOrder,&
+                                               startNode = node1, &
+                                               endNode   = node2, &
+                                               curve     = curves(k))
+            END IF 
+         END DO
+!         
+      END SUBROUTINE constructFaceCurvesForCapFace
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE computeCapFacePoints( face, bcurveOrder, curves)  
+         USE CurveInterpolantClass
+         USE TransfiniteMapClass
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(Face3D)                     :: face
+         INTEGER                          :: bCurveOrder
+         TYPE(CurveInterpolant), POINTER  :: curves(:)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE(TransfiniteQuadMap) :: mapper
+         INTEGER                  :: i, j
+!
+!        --------------------------------------------------
+!        Construct the transfinite map from the four curves
+!        --------------------------------------------------
+!
+               
+         mapper = NewTransfiniteQuadMap(boundaryCurves = curves, &
+                                        ownership      = MAP_DOESNT_OWN_CURVES)
+!
+!        ---------------
+!        Allocate memory
+!        ---------------
+!
+         ALLOCATE( face % x(3,0:bCurveOrder,0:bCurveOrder) )
+         
+         DO j = 0, bCurveOrder
+            DO i = 0, bCurveOrder
+               CALL EvaluateTransfiniteMapAt(this = mapper , &
+                                             xi   = chebyPoints(i),&
+                                             eta  = chebyPoints(j),&
+                                             res  = face % x(:,i,j))
+            END DO   
+         END DO  
+
+      END SUBROUTINE computeCapFacePoints
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

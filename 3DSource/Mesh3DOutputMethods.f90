@@ -33,9 +33,6 @@
 !
          INTEGER           :: iUnit, j, k
          INTEGER, EXTERNAL :: UnusedUnit
-         
-         TYPE(SMNode)   , POINTER :: currentNode
-         TYPE(SMElement), POINTER :: currentElement
 !
 !        -----------
 !        Open a file
@@ -79,7 +76,6 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE WriteISMHexMeshFile( mesh, fName, model, N, version )
-         USE ProgramGlobals, ONLY:maxParameterChange
          IMPLICIT NONE 
 !
 !        ---------
@@ -97,7 +93,7 @@
 !        ---------------
 !
          INTEGER                    :: iUnit, j, k
-         INTEGER                    :: f, jj, ii, m, faceID
+         INTEGER                    :: f, jj, ii, faceID
          INTEGER, EXTERNAL          :: UnusedUnit
          
 !
@@ -131,15 +127,15 @@
 !
 !         DO j = 1, SIZE(mesh % faces,2)
 !            DO k = 1, SIZE(mesh % faces,1)
-!               WRITE( iUnit, "(10(2x,i8))") mesh  %  faces(k,j)  %  elementIDs, mesh  %  faces(k,j)  %  faceNumber &
-!               ,mesh  %  faces(k,j)  %  inc, mesh  %  faces(k,j)  %  nodeIDs
+!               WRITE( iUnit, "(10(2x,i8))") mesh % faces(k,j) % elementIDs, mesh % faces(k,j) % faceNumber &
+!               ,mesh % faces(k,j) % inc, mesh % faces(k,j) % nodeIDs
 !            END DO   
 !         END DO  
 !         
 !         DO j = 0, SIZE(mesh % capFaces,2)-1
 !            DO k = 1, SIZE(mesh % capFaces,1)
-!               WRITE( iUnit, "(10(2x,i8))") mesh  %  capFaces(k,j)  %  elementIDs, mesh  %  capFaces(k,j)  %  faceNumber &
-!               ,mesh  %  capFaces(k,j)  %  inc, mesh  %  capFaces(k,j)  %  nodeIDs
+!               WRITE( iUnit, "(10(2x,i8))") mesh % capFaces(k,j) % elementIDs, mesh % capFaces(k,j) % faceNumber &
+!               ,mesh % capFaces(k,j) % inc, mesh % capFaces(k,j) % nodeIDs
 !            END DO
 !         END DO  
 !
@@ -158,13 +154,29 @@
                WRITE( iUnit, *) mesh % elements(k,j) % bFaceFlag
                          
                DO f = 1, 6
-                  faceID = mesh  %  elements(k,j)  %  faceID(f)
+                  
                   IF( mesh % elements(k,j) % bFaceFlag(f) == ON )     THEN
-                     DO jj = 0, N 
-                        DO ii = 0, N
-                           WRITE( iUnit, * ) mesh  %  faces(faceID,j)  %  x(:,ii,jj,f) !DEBUG Check the ordering of the loops
-                        END DO
-                     END DO
+                     SELECT CASE ( f )
+                        CASE( 3 ) 
+                          DO jj = 0, N 
+                              DO ii = 0, N
+                                 WRITE( iUnit, * ) mesh % capFaces(k,j-1) % x(:,ii,jj)
+                              END DO
+                           END DO
+                        CASE (5) 
+                          DO jj = 0, N 
+                              DO ii = 0, N
+                                 WRITE( iUnit, * ) mesh % capFaces(k,j) % x(:,ii,jj)
+                              END DO
+                           END DO
+                        CASE DEFAULT 
+                          faceID = mesh % elements(k,j) % faceID(f)
+                          DO jj = 0, N 
+                              DO ii = 0, N
+                                 WRITE( iUnit, * ) mesh % faces(faceID,j) % x(:,ii,jj)
+                              END DO
+                           END DO
+                     END SELECT 
                   END IF
                END DO
                
