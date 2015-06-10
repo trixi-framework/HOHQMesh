@@ -57,7 +57,7 @@
          TYPE(CurveInterpolant)         , INTENT(OUT) :: this
          INTEGER                        , INTENT(IN)  :: N
          REAL(KIND=RP), DIMENSION(0:N)  , INTENT(IN)  :: nodes
-         REAL(KIND=RP), DIMENSION(0:N,2), INTENT(IN)  :: values
+         REAL(KIND=RP), DIMENSION(0:N,3), INTENT(IN)  :: values
          
          ALLOCATE( this%nodes(0:N) )
          ALLOCATE( this%values(0:N,3) )
@@ -132,7 +132,7 @@
                            this%nodes, this%values(:,1), this%bWeights)
          givingResult(2) = LagrangeInterpolantDerivative( atLocation, this%numberOfNodes, &
                            this%nodes, this%values(:,2), this%bWeights)
-          givingResult(2) = LagrangeInterpolantDerivative( atLocation, this%numberOfNodes, &
+         givingResult(3) = LagrangeInterpolantDerivative( atLocation, this%numberOfNodes, &
                            this%nodes, this%values(:,3), this%bWeights)
   
       END SUBROUTINE DerivativeAt
