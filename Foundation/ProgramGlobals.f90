@@ -59,8 +59,9 @@
 !        String constants
 !        ----------------
 !
-         INTEGER, PARAMETER :: LINE_LENGTH            = 256
-         INTEGER, PARAMETER :: STRING_CONSTANT_LENGTH = 64
+         INTEGER         , PARAMETER :: LINE_LENGTH            = 256
+         INTEGER         , PARAMETER :: STRING_CONSTANT_LENGTH = 64
+         CHARACTER(LEN=3), PARAMETER :: NO_BC_STRING           = "---"
 !
 !        -----------
 !        Preferences
