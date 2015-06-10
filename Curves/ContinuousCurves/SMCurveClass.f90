@@ -210,7 +210,7 @@
          tLeft  = MAX(0.0_RP,tOld - 0.1_RP)
          tRight = MIN(tOld + 0.1_RP, 1.0)
          xTarget = x
-         t       = fmin(self,tLeft,tRight,1.0d-11)!TODO make parameter
+         t       = fmin(self,tLeft,tRight,minimizationTolerance)
          
       END FUNCTION ParametrizationAtPointNear
 !@mark -
@@ -350,7 +350,7 @@
       CLASS(SMCurve) :: self
       double precision  a,b,c,d,e,eps,xm,p,q,r,tol1,t2,u,v,w,fu,fv,fw,&
      &    fx,x,tol3
-      double precision  dabs,dsqrt,d1mach
+      double precision  dabs,dsqrt
 !
 !  c is the squared inverse of the golden ratio
       c=0.5d0*(3.0d0-dsqrt(5.0d0))
@@ -358,7 +358,7 @@
 !  eps is approximately the square root of the relative machine
 !  precision.
 !
-   10 eps=EPSILON(1.0d0)
+      eps=EPSILON(1.0d0)
       tol1=eps+1.0d0
       eps=dsqrt(eps)
 !
