@@ -110,7 +110,6 @@
          INTEGER                 :: i,j
          REAL(KIND=RP)           :: x(3)
          CLASS(SMNode) , POINTER :: node => NULL()
-         CLASS(SMQuad) , POINTER :: quad => NULL()
 !
 !        -------------------
 !        Self initialization
@@ -831,7 +830,7 @@
 !
       IMPLICIT NONE 
       CLASS(QuadTreeGrid), POINTER :: self
-      INTEGER                   :: i, j, N, M,k
+      INTEGER                   :: i, j, N, M
             
       N = self % N(1)
       M = self % N(2)

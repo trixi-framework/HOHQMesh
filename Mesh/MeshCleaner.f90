@@ -913,14 +913,13 @@
          INTEGER                          :: mark(4)
          
          REAL(KIND=RP)  , DIMENSION(3)    :: p
-         REAL(KIND=RP)                    :: tStart, tEnd, t, tSav
+         REAL(KIND=RP)                    :: t, tSav
          
          CLASS(SMCurve)       , POINTER   :: c => NULL()
          CLASS(SMChainedCurve), POINTER   :: chain  => NULL()      ! Returned also so that it, too can be used.
          TYPE(SMNode)                     :: nodeCopy(4) ! Two extra but not a big deal.
          CLASS(SMElement)     , POINTER   :: eTest => NULL()
-         LOGICAL                          :: badArrayOriginal(6), badArrayNew(6)      ! Node valence <= 6
-         LOGICAL                          :: failed
+         LOGICAL                          :: badArrayOriginal(6)      ! Node valence <= 6
          INTEGER                          :: nodeID
          
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg

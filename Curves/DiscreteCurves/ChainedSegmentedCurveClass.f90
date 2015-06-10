@@ -115,7 +115,7 @@
 !        ---------------
 !
          CLASS(FTObject)             , POINTER :: obj => NULL()
-         CLASS(FRSegmentedCurve)     , POINTER :: prevCurve => NULL(), curve => NULL()
+         CLASS(FRSegmentedCurve)     , POINTER :: prevCurve => NULL()
          REAL(KIND=RP)                         :: xStart(3), xEnd(3), d
          INTEGER                               :: nChain
          

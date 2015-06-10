@@ -63,7 +63,7 @@ CONTAINS
 !  eps is approximately the square root of the relative machine         
 !  precision.                
 !                            
-   10 eps=EPSILON(eps)
+      eps=EPSILON(eps)
       tol1=eps+1.0d0 
       eps=sqrt(eps) 
 !                            

@@ -502,12 +502,11 @@
 !        ---------------
 !
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
-         CLASS(FTObject)             , POINTER :: obj => NULL()
          INTEGER                               :: curveID
          CHARACTER(LEN=128)                    :: msg
          
-         INTEGER       :: nX, nY, j, N
-         REAL(KIND=RP) :: heightB, widthB, p(3)
+         INTEGER       :: nX, nY
+         REAL(KIND=RP) :: heightB, widthB
          REAL(KIND=RP) :: leftB, rightB, topB, bottomB, h
          
          leftB   = HUGE(leftB)

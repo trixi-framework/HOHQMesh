@@ -343,8 +343,7 @@
 !
          CLASS(SMEdge)              , POINTER     :: edge => NULL(), currentEdge => NULL(), &
                                                      edge1 => NULL(), edge2 => NULL()
-         CLASS(FTLinkedList)        , POINTER     :: sortedEdges => NULL(), edgeList => NULL(), &
-                                                     reorientedEdges => NULL(), list => NULL()
+         CLASS(FTLinkedList)        , POINTER     :: sortedEdges => NULL(), edgeList => NULL()
          TYPE (SMNodePtr)           , POINTER     :: sortedNodes(:) => NULL()
          CLASS(FTobject)            , POINTER     :: obj            => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: iterator       => NULL()
@@ -353,10 +352,10 @@
          REAL(KIND=RP)              , ALLOCATABLE :: sortedNodeLocations(:,:)
          
          INTEGER                          :: numBoundaries, numEdges, numNodes
-         INTEGER                          :: k, j, m, l
+         INTEGER                          :: k, j, m
          INTEGER                          :: locRelativeToBoundary, curveDirection
          INTEGER                          :: id1, id2, sharedNodeID, eId1, eId2, eId, idMin
-         REAL(KIND=RP)                    :: x0(3), x1(3), x2(3), c, w
+         REAL(KIND=RP)                    :: x0(3), x1(3), x2(3), c
 !
 !        -----------------------------------------------
 !        Nothing to order if there are no boundary edges
@@ -717,7 +716,7 @@
          CLASS(FTLinkedListIterator), POINTER     :: edgeListIterator => NULL()
    
          LOGICAL                                  :: isInnerBoundaryCurve
-         INTEGER                                  :: j, k
+         INTEGER                                  :: j
          INTEGER                                  :: numBoundaries, chainID
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH):: msg
          
@@ -817,7 +816,6 @@
          REAL(KIND=RP)  , DIMENSION(3)            :: z, p
          REAL(KIND=RP)                            :: tStart, tEnd, t
          REAL(KIND=RP)                            :: d, dMin, dt
-         REAL(KIND=RP)                            :: tmpTol = 1.d-9 !DEBUG
          INTEGER                                  :: j, k, M
          INTEGER                                  :: totalCurvePoints
          
@@ -962,7 +960,6 @@
          CLASS(SMChainedCurve)        , POINTER :: chain => NULL()
          TYPE(SMNodePtr), DIMENSION(:), POINTER :: nodeArray => NULL()
          CLASS(SMNode)                , POINTER :: node => NULL()
-         CLASS(SMCurve)               , POINTER :: c => NULL()
          INTEGER                                :: nodeArraySize, j
          REAL(KIND=RP)                          :: t0, tm, tp, tmpTol = 1.0d-2
          
@@ -1087,12 +1084,9 @@
 !        ---------------
 !
          INTEGER                      :: numBoundaries
-         INTEGER                      :: j, k, nodeCount
+         INTEGER                      :: j
          CLASS(FTLinkedList), POINTER :: currentEdgeList => NULL()
-         CLASS(FTLinkedList), POINTER :: boundaryElements => NULL()
          CLASS(SMEdge)      , POINTER :: currentEdge => NULL()
-         CLASS(SMElement)   , POINTER :: e => NULL()
-         CLASS(SMNode)      , POINTER :: node => NULL()
          CLASS(FTObject)    , POINTER :: obj => NULL()
          
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()

@@ -426,7 +426,6 @@
 !
          REAL(KIND=RP)                    :: nodes(3,4), x(3)
          CLASS(FRSegmentedCurve), POINTER :: c => NULL()
-         CLASS(FTObject)        , POINTER :: obj => NULL()
          INTEGER                          :: k, N, j
          REAL(KIND=RP)                    :: s
          

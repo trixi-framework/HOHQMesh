@@ -42,7 +42,6 @@
 !
          CLASS(FTValueDictionary), POINTER :: userDictionary
          CLASS(FTDictionary)     , POINTER :: ptr
-         CLASS(FTObject)         , POINTER :: objectPtr
          
          ALLOCATE(userDictionary)
          CALL userDictionary % initWithSize(8)

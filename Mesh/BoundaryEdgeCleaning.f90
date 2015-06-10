@@ -30,7 +30,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER                       :: j, k
+         INTEGER                       :: j
          INTEGER                       :: numBoundaries
          CLASS(FTLinkedList), POINTER  :: list => NULL()
          CLASS(FTObject)    , POINTER  :: obj  => NULL()
@@ -126,14 +126,13 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges  => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL(), newElementsIterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(SMElement)           , POINTER :: e => NULL()
          CLASS(SMEdge)              , POINTER :: currentEdge, newBoundaryEdge, edge
          CLASS(SMNode)              , POINTER :: node1, node2
          CLASS(FTObject)            , POINTER :: obj
          INTEGER                              :: k, chainID, side
          REAL(KIND=RP)                        :: elementSize, x1(3), x2(3)
-         LOGICAL                              :: takeStep
 !
 !        -------------------------------------------------
 !        Keep a preliminary list of the new boundary edges

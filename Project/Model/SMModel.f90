@@ -164,10 +164,7 @@
 !
          INTEGER                        :: ios
          INTEGER, EXTERNAL              :: UnusedUnit
-         CLASS(SMChainedCurve), POINTER :: chain => NULL(), currentChain => NULL()
-         CLASS(SMCurve)       , POINTER :: currentCurve => NULL()
          CLASS(FTException)   , POINTER :: exception => NULL()
-         INTEGER                        :: chainCount
 !
 !        -----------------------------
 !        Import outer boundary, if any

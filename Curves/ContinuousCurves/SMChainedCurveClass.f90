@@ -188,12 +188,9 @@
 !        ---------------
 !
          CLASS(SMCurve)             , POINTER :: curve => NULL(), nextCurve => NULL(), previousCurve => NULL()
-         TYPE(FTLinkedListIterator)           :: iterator
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(FTLinkedListRecord)  , POINTER :: recordPtr => NULL()
          
          REAL(KIND=RP)            :: xEnd(3), x0(3), xN(3)
-         LOGICAL                  :: swap
          INTEGER                  :: nCurves, k, kp1, km1
          INTEGER, EXTERNAL        :: loop
          
@@ -342,7 +339,7 @@
 !        ---------------
 !
          CLASS(FTObject), POINTER :: obj => NULL()
-         INTEGER                  :: l, k
+         INTEGER                  :: l
          
          l   =  self % CurveNumberForLocation(t)
          obj => self % curvesArray % objectAtIndex(l)
@@ -398,7 +395,6 @@
 !
          CLASS(SMChainedCurve)          :: self
          CLASS(SMCurve)       , POINTER :: c
-         INTEGER                        :: id
 !
 !        ---------------
 !        Local variables

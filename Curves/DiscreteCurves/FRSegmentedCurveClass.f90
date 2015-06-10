@@ -167,7 +167,7 @@
          REAL(KIND=RP)                          :: xL(3), xM(3), xR(3), tL, tM, tR, c, s
          REAL(KIND=RP)                          :: xPrimeL(3), xPrimeR(3), xPrime(3), xDoublePrime(3)
          REAL(KIND=RP)                          :: norm
-         INTEGER                                :: j, jp1, jm1, N, jointType
+         INTEGER                                :: j, N, jointType
          LOGICAL                                :: isCircular
          CLASS(FTObject)            , POINTER   :: obj   => NULL()
          CLASS(FTLinkedList)        , POINTER   :: nodes => NULL()

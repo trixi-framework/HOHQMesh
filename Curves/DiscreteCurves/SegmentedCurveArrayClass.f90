@@ -129,8 +129,6 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER :: nSegments
-         
          self % x = x
          self % t = t
          

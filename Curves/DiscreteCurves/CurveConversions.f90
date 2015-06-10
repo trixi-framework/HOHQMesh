@@ -91,7 +91,7 @@
          INTEGER                                    :: j, k, n
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: t
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: x
-         REAL(KIND=RP)                              :: tShift, tt = 0.0_RP, xx(3)
+         REAL(KIND=RP)                              :: tt = 0.0_RP, xx(3)
          
          nCurves          = segmentedChain % curvecount()
          nSegmentedPoints = segmentedChain % nodeCount()

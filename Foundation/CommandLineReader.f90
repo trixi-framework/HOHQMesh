@@ -328,11 +328,7 @@
 !       ---------------
 !       Local Variables
 !       ---------------
-!
-        INTEGER                                     :: i
-        INTEGER                                     :: argumentLength
-        CHARACTER(LEN=COMMAND_LINE_ARGUMENT_LENGTH) :: arg
-        
+!        
         StringValueForLastArgument = ""
         IF(COMMAND_ARGUMENT_COUNT() == 0)   RETURN
 !

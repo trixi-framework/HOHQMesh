@@ -35,7 +35,6 @@
 !        ---------------
 !
          INTEGER                     :: listSize
-         INTEGER                     :: j
          TYPE(FTLinkedListIterator)  :: iterator
          CLASS(FTObject), POINTER    :: obj => NULL()
 !

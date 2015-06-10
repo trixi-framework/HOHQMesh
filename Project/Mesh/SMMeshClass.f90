@@ -355,7 +355,6 @@
          CLASS(FTObject), POINTER  :: obj
          CLASS(SMNode)  , POINTER  :: node
          REAL(KIND=RP)             :: x(3)
-         INTEGER                   :: j
          
          CALL self % nodesIterator % setToStart()
          DO WHILE( .NOT. self % nodesIterator % isAtEnd() )
@@ -586,9 +585,6 @@
 !        Local varaiables
 !        ----------------
 !
-         INTEGER                  :: j
-         CLASS(FTObject), POINTER :: obj => NULL()
-         CLASS(FTLinkedList), POINTER :: list => NULL()
          
          CALL boundaryEdgesArray % release()
          IF ( boundaryEdgesArray % isUnreferenced() )     THEN

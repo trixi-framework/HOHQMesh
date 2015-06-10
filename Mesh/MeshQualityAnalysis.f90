@@ -231,7 +231,7 @@
          REAL(KIND=RP) :: area           ! signed area of the quad
          REAL(KIND=RP) :: condition      ! condition NUMBER
          REAL(KIND=RP) :: angles(4)      ! The 4 angles in the quad
-         REAL(KIND=RP) :: minAngle, maxAngle, theta, s
+         REAL(KIND=RP) :: s
          
          INTEGER       :: loop(0:5) = (/4,1,2,3,4,1/)
          INTEGER       :: k

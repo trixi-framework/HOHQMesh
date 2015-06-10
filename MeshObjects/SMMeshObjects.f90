@@ -448,9 +448,6 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode), POINTER :: node => NULL()
-         CLASS(FTObject), POINTER :: obj => NULL()
-         INTEGER                  :: k
          
          WRITE(iUnit,*) "Element with ID = ", self % id
          CALL self % nodes % printDescription(iUnit)
@@ -585,8 +582,6 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)  , POINTER :: node => NULL()
-         CLASS(FTObject), POINTER :: obj => NULL()
          INTEGER                  :: k
          
          WRITE(iUnit,*) "Edge with ID = ", self % id, self % refCount(), self % remove
@@ -595,11 +590,6 @@
          DO k = 1, 2
             CALL self % nodes(k) % node % printDescription(iUnit) 
          END DO 
-          
-!         CALL  self % elements(1) % element % printDescription(iUnit)
-!         IF ( ASSOCIATED(self % elements(2) % element) )     THEN
-!            CALL  self % elements(2) % element % printDescription(iUnit)
-!         END IF 
          
       END SUBROUTINE printEdgeDescription
 !
