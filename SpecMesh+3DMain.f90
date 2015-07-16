@@ -155,7 +155,7 @@
 !
             IF(PrintMessage) PRINT *, "   Performing final mesh cleanup..."
             CALL PerformFinalMeshCleanup( project % mesh, project % model )
-               IF(PrintMessage) PRINT *, "   Mesh cleanup done."
+            IF(PrintMessage) PRINT *, "   Mesh cleanup done."
 !
 !           --------------------------------------
 !           Smooth mesh one more time if requested
@@ -248,7 +248,7 @@
 !        -----------------------------------------
 !
          CALL InitMeshController3D
-         IF ( inquireShouldGenerate3DMesh(fUnit) )     THEN
+         IF ( shouldGenerate3DMesh(fUnit) )     THEN
             IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
             
             CALL stopWatch % start()

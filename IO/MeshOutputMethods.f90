@@ -21,8 +21,6 @@
       END TYPE ElementOutputInfo
       
       PRIVATE :: ElementOutputInfo        
-!      PRIVATE :: NewElementOutputInfo
-!      PRIVATE :: DestructElementOutputInfo, ExtractElementOutputInfo
 !
 !     ========
       CONTAINS 
@@ -253,8 +251,8 @@
 !     bCurveName(4) = Name of the 4 boundary curves. Equals "---" IF
 !                     the element side is interior,
 !     x(2,0:N,4)    = location (x,y) of the j=0:N Chebyshev-Lobatto points
-!                     along boundary k = 1,2,3,4. The kth entry will be zero id
-!                     bCruveFlag(k) = OFF.
+!                     along boundary k = 1,2,3,4. The kth entry will be zero if
+!                     bCurveFlag(k) = OFF.
 !     -------------------------------------------------------------------------
 !
          IMPLICIT NONE

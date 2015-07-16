@@ -28,20 +28,21 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE PerformTopologyCleanup( mesh )
+         USE SMMeshClass
          IMPLICIT NONE 
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh), POINTER :: mesh
+         CLASS(SMMesh) :: mesh
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                                 :: numberOfValenceChanges, numberOfDiamondsRemoved
-         LOGICAL                                 :: valenceHasChanged, diamondsHaveBeenRemoved
+         INTEGER  :: numberOfValenceChanges, numberOfDiamondsRemoved
+         LOGICAL  :: valenceHasChanged, diamondsHaveBeenRemoved
          
          valenceHasChanged       = .false.
          diamondsHaveBeenRemoved = .false.
@@ -94,8 +95,8 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh), POINTER :: mesh
-         INTEGER               :: numberOfValenceChanges
+         TYPE (SMMesh) :: mesh
+         INTEGER       :: numberOfValenceChanges
 !
 !        ---------------
 !        Local variables
@@ -147,7 +148,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh), POINTER :: mesh
+         TYPE (SMMesh) :: mesh
          INTEGER                :: numberOfDiamondsRemoved
 !
 !        ---------------
@@ -212,7 +213,7 @@
 !        ---------
 !
          INTEGER                :: id
-         CLASS(SMMesh), POINTER :: mesh
+         TYPE (SMMesh) :: mesh
 !
 !        ---------------
 !        Local variables
@@ -413,7 +414,7 @@
 !        ---------
 !
          INTEGER                :: id
-         CLASS(SMMesh), POINTER :: mesh
+         TYPE (SMMesh) :: mesh
 !
 !        ---------------
 !        Local variables
@@ -523,6 +524,36 @@
                CALL DoLazyDelete( mesh )
                CALL mesh % syncEdges()
             END IF 
+!
+!           -------------------------------------------
+!           Bail if the mesh is so bad that it can't be
+!           fixed
+!           -------------------------------------------
+!
+!            badElements => BadElementsInMesh( mesh )
+!            IF(ASSOCIATED(badElements))     THEN 
+!               DO k = 1, numberOfBadElements
+!                  obj => badElements % objectAtIndex(k)
+!                  CALL cast(obj,e)
+!                  IF( shapeMeasures(ASPECT_RATIO_INDEX,k ) < 0.0_RP .OR. &
+!                      shapeMeasures(JACOBIAN_INDEX,k) <= 0.0_RP     .OR. &
+!                      shapeMeasures(CONDITION_INDEX,k) > 1000.0_RP) THEN
+!                      PRINT *,shapeMeasures(ASPECT_RATIO_INDEX,k ),&
+!                      shapeMeasures(JACOBIAN_INDEX,k),&
+!                      shapeMeasures(CONDITION_INDEX,k)
+!                      PRINT *
+!                      PRINT *, "     **************************************************************"
+!                      PRINT *, "     The mesh generated appears to be so bad that I cannot fix it."
+!                      PRINT *, "     Try choosing a smaller mesh size and try again"
+!                      PRINT *, "     **************************************************************"
+!                      PRINT *
+!                      CALL badElements % release()
+!                      DEALLOCATE(badElements)
+!                      DEALLOCATE(shapeMeasures, badElementMeasure)
+!                      RETURN 
+!                  END IF 
+!               END DO
+!            END IF 
 !
 !           --------------------------
 !           Clean up boundary elements
@@ -1163,7 +1194,13 @@
                CALL eNbr % nodes % replaceObjectAtIndexWithObject(idNbr,obj)
             END DO
          END DO
-         
+!
+!        -------------------------------------------------------------------
+!        New nodes were added, so we must re-compute the element connections
+!        -------------------------------------------------------------------
+!
+         CALL makeNodeToElementConnections(mesh)
+               
       END SUBROUTINE DeleteElementIfDiamond 
 
       END Module MeshCleaner

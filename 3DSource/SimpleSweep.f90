@@ -326,24 +326,29 @@
          
          INTEGER                     :: rotMap(3) = [3, 3, 1]
 !                  
+!
+         quadMesh              => project % mesh
          numberOfBoundaryFaces = 0
+         N                     =  project % runParams % polynomialOrder
 !
-         quadMesh  => project % mesh
-         N         =  project % runParams % polynomialOrder
-!
-!        --------------------------------------------------------
-!        Rotate the mesh for extrusion in the requested direction
-!        --------------------------------------------------------
+!        -----------------------------------------------------------------
+!        Rotate the mesh for extrusion/rotation in the requested direction
+!        -----------------------------------------------------------------
 !
          pMutation = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
          
          IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
             IF ( pMutation < 3 )     THEN
-               CALL quadMesh % rotateMesh(pmutation)
+               CALL quadMesh % permuteMeshDirection(pmutation)
             END IF 
-         ELSE ! Rotation about an axis requires 2D mesh to be in a different plane
+         ELSE 
+!
+!           -------------------------------------------------------------------------
+!           Rotation about the z axis requires the 2D mesh to be in a different plane
+!           -------------------------------------------------------------------------
+!
             IF ( rotMap(pMutation) < 3 )     THEN
-               CALL quadMesh % rotateMesh(rotMap(pMutation))
+               CALL quadMesh % permuteMeshDirection(rotMap(pMutation))
             END IF 
          END IF 
 !
@@ -367,11 +372,11 @@
          numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
          CALL InitializeStructuredHexMeshFromQuadMesh( hex8Mesh, quadMesh, numberOfLayers )
 !
-!        -----------------------------------
+!        ---------------------------------------
 !        Gather nodes for easy access
-!        TODO: list class now has a function
+!        TODO: The list class now has a function
 !        to return an array of the objects.
-!        -----------------------------------
+!        ---------------------------------------
 !
          numberOf2DNodes = quadMesh % nodes % count()
          numberOfNodes   = numberOf2DNodes*(numberOfLayers + 1)
@@ -471,7 +476,8 @@
                DO k = 1, numberOf2DNodes
                   hex8Mesh % nodes(k,j) % globalID = nodeID
                   hex8Mesh % nodes(k,j) % x  = rotatedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
-                                                                   theta        = j*dTheta, pmutation = pMutation) 
+                                                                   theta        = j*dTheta, &
+                                                                   pmutation    = pMutation) 
                   locAndLevelForNodeID(1,nodeID) = k
                   locAndLevelForNodeID(2,nodeID) = j
                   nodeID = nodeID + 1
@@ -591,7 +597,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE constructSweptFaces( project, quadMesh, hex8Mesh, N, algorithmChoice, parametersDictionary )
+      SUBROUTINE constructSweptFaces( project, quadMesh, hex8Mesh, N, &
+                                      algorithmChoice, parametersDictionary )
 !
 !        ----------------------------------------------------------
 !        These faces are created by sweeping the quad element edges
@@ -616,13 +623,14 @@
 !        ---------------
 !
          INTEGER                     :: numberOfBoundaryFaces
-         INTEGER                     :: faceID, quadElementID
+         INTEGER                     :: faceID, quadElementIDL, quadElementIDR
          INTEGER                     :: j, k, l
          INTEGER                     :: eIdLeft, eIDRight, edgeSideL, edgeSideR
-         INTEGER                     :: faceNumber
+         INTEGER                     :: faceNumberL, faceNumberR
          INTEGER                     :: pMutation
+         INTEGER                     :: nodeID1, nodeID2
          
-         REAL(KIND=RP)               :: x(3), xTmp(3)
+         REAL(KIND=RP)               :: x(3), xTmp(3), x1(3), x2(3)
          REAL(KIND=RP)               :: dz, dTheta, h, theta
          
          CLASS(SMElement)                , POINTER     :: e
@@ -648,12 +656,11 @@
 !        
          pMutation = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
          
+         numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
          IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
-            numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
             h              = parametersDictionary % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
             dz             = h/numberofLayers
          ELSE
-            numberOfLayers = parametersDictionary % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
             theta          = PI * parametersDictionary % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
             dTheta         = theta/numberofLayers
          END IF 
@@ -679,20 +686,20 @@
 !              Set the left element
 !              --------------------
 !
-               e             => currentEdge % elements(1) % element
-               quadElementID = e % id
-               eIdLeft       = hex8Mesh % elements(quadElementID,j) % globalID
-               edgeSideL     = currentEdge % elementSide(1)
+               e              => currentEdge % elements(1) % element
+               quadElementIDL = e % id
+               eIdLeft        = hex8Mesh % elements(quadElementIDL,j) % globalID
+               edgeSideL      = currentEdge % elementSide(1)
                
                hex8Mesh % faces(faceID,j) % elementIDs(1) = eIdLeft
-               faceNumber                                 = hexFaceForQuadEdge(edgeSideL)
-               hex8Mesh % faces(faceID,j) % faceNumber(1) = faceNumber
+               faceNumberL                                = hexFaceForQuadEdge(edgeSideL)
+               hex8Mesh % faces(faceID,j) % faceNumber(1) = faceNumberL
 !
 !              -------------------------
 !              Refer back to the element
 !              -------------------------
 !
-               hex8Mesh % elements(quadElementID,j) % faceID(hex8Mesh % faces(faceID,j) % faceNumber(1)) = faceID
+               hex8Mesh % elements(quadElementIDL,j) % faceID(faceNumberL) = faceID
 !
 !              -------------
 !              Add the nodes
@@ -700,7 +707,7 @@
 !
                DO k = 1, 4
                   hex8Mesh % faces(faceID,j) % nodeIDs(k) = &
-                  hex8Mesh % elements(quadElementID,j) % nodeIDs(localFaceNode(k,hex8Mesh % faces(faceID,j) % faceNumber(1)))
+                  hex8Mesh % elements(quadElementIDL,j) % nodeIDs(localFaceNode(k,hex8Mesh % faces(faceID,j) % faceNumber(1)))
                END DO  
 !
 !              ---------------------
@@ -709,15 +716,16 @@
 !
                e  => currentEdge % elements(2) % element
                IF ( ASSOCIATED( e ) )     THEN
-                  quadElementID = e % id
-                  eIdRight      = hex8Mesh % elements(quadElementID,j) % globalID
+                  quadElementIDR = e % id
+                  eIdRight      = hex8Mesh % elements(quadElementIDR,j) % globalID
                   edgeSideR     = currentEdge % elementSide(2)
+                  faceNumberR   = hexFaceForQuadEdge(edgeSideR)
                  
                   hex8Mesh % faces(faceID,j) % elementIDs(2) = eIdRight
-                  hex8Mesh % faces(faceID,j) % faceNumber(2) = hexFaceForQuadEdge(edgeSideR)
+                  hex8Mesh % faces(faceID,j) % faceNumber(2) = faceNumberR
                   hex8Mesh % faces(faceID,j) % inc           = [dir(edgeSideL,edgeSideR),1]
                   
-                  hex8Mesh % elements(quadElementID,j) % faceID(hex8Mesh % faces(faceID,j) % faceNumber(2)) = faceID
+                  hex8Mesh % elements(quadElementIDR,j) % faceID(faceNumberR) = faceID
 
                ELSE
                   hex8Mesh % faces(faceID,j) % elementIDs(2) = NONE
@@ -730,7 +738,6 @@
 !              ----------------------------------
 !
                IF ( .NOT.ASSOCIATED(e) )     THEN ! This is a boundary face
-               
                   numberOfBoundaryFaces = numberOfBoundaryFaces + 1
                   node1 => currentEdge % nodes(1) % node
                   node2 => currentEdge % nodes(2) % node
@@ -748,17 +755,17 @@
 !                    Mark as on a boundary curve needing interpolant information
 !                    -----------------------------------------------------------
 !
-                     hex8Mesh % elements(quadElementID,j) % bFaceFlag(faceNumber) = ON
+                     hex8Mesh % elements(quadElementIDL,j) % bFaceFlag(faceNumberL) = ON
                      
                      IF( node1 % nodeType == ROW_SIDE )     THEN
                         curveID = node1 % bCurveID
                         c => project % model % curveWithID(curveId, chain)
-                     ELSE
+                     ELSE IF( node2 % nodeType == ROW_SIDE )     THEN 
                         curveID = node2 % bCurveID
                         c => project % model % curveWithID(curveId, chain)
                      END IF
                      
-                     hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = c % curveName()
+                     hex8Mesh % elements(quadElementIDL,j) % bFaceName(faceNumberL) = c % curveName()
                      tStart = node1 % gWhereOnBoundary
                      tEnd   = node2 % gWhereOnBoundary
 !
@@ -793,7 +800,7 @@
                            ELSE 
                               t_k =  (j-1)*dTheta + dTheta*(1.0_RP - COS(l*PI/N))/2.0_RP
                               xTmp = [x(1),x(2),0.0_RP]
-                              IF(rotmap(pMutation)<3) xTmp = CSHIFT(xTmp, SHIFT = -rotMap(pmutation))
+!                              IF(rotmap(pMutation)<3) xTmp = CSHIFT(xTmp, SHIFT = -rotMap(pmutation))
                               hex8Mesh % faces(faceID,j) % x(:,k,l) = rotatedNodeLocation(xTmp,t_k,pmutation)
                            END IF 
                         END DO  
@@ -807,17 +814,48 @@
 !                    --------------------------------------------------------------
 !
                      IF( node1 % nodeType == CORNER_NODE )     THEN
-                        hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = noCurveName(node2 % bCurveID)
+                        hex8Mesh % elements(quadElementIDL,j) % bFaceName(faceNumberL) = noCurveName(node2 % bCurveID)
                      ELSE
-                        hex8Mesh % elements(quadElementID,j) % bFaceName(faceNumber) = noCurveName(node1 % bCurveID)
+                        hex8Mesh % elements(quadElementIDL,j) % bFaceName(faceNumberL) = noCurveName(node1 % bCurveID)
                      END IF
                      
                   END IF
-
+               ELSE
+!
+!              --------------------------------------------------------------------
+!              For rotation sweeping, ALL the swept faces are curved, so turn those 
+!              on, too. Since the face is not on a 
+!              boundary curve, the edge that generates it will be a straight line 
+!              connecting the two end nodes.
+!              --------------------------------------------------------------------
+!
+                  IF ( algorithmChoice == SIMPLE_ROTATION_ALGORITHM )     THEN
+                     hex8Mesh % elements(quadElementIDL,j) % bFaceFlag(faceNumberL) = ON
+                     hex8Mesh % elements(quadElementIDR,j) % bFaceFlag(faceNumberR) = ON
+                     
+                     nodeID1 = hex8Mesh % faces(faceID,j) % nodeIDs(1)
+                     nodeID2 = hex8Mesh % faces(faceID,j) % nodeIDs(2)
+                     x1      = hex8Mesh % nodes(locAndLevelForNodeID(1,nodeID1),locAndLevelForNodeID(2,nodeID1)) % x
+                     x2      = hex8Mesh % nodes(locAndLevelForNodeID(1,nodeID2),locAndLevelForNodeID(2,nodeID2)) % x
+                     
+                     ALLOCATE(hex8Mesh % faces(faceID,j) % x(3,0:N,0:N))
+                     
+                     DO k = 0, N 
+                    
+                        t_k = (1.0_RP - COS(k*PI/N))/2.0_RP
+                        x   = (1.0_RP - t_k)*x1 + t_k*x2 
+                        DO l = 0, N
+                           t_k =  (j-1)*dTheta + dTheta*(1.0_RP - COS(l*PI/N))/2.0_RP
+                           xTmp = [x(1),x(2),0.0_RP]
+                           hex8Mesh % faces(faceID,j) % x(:,k,l) = rotatedNodeLocation(xTmp,t_k,pMutation)
+                        END DO  
+                      END DO
+                  END IF 
                END IF 
 !              
                faceID = faceID + 1
-            CALL quadMesh % edgesIterator % moveToNext()     
+               
+               CALL quadMesh % edgesIterator % moveToNext()     
             END DO 
          END DO
          
@@ -988,7 +1026,7 @@
          END DO  
          
          numberOfLayers = UBOUND(hex8Mesh % capFaces,2)
-          
+         
          DO quadElementID = 1, UBOUND( hex8Mesh % elements, 1 )
          
              DO level = 1, numberOfLayers
@@ -1122,7 +1160,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE constructFaceCurvesForCapFace( hex8Mesh, element, level, curves, bCurveOrder, floorOrCeiling )  
+      SUBROUTINE constructFaceCurvesForCapFace( hex8Mesh, element, level, &
+                                                curves, bCurveOrder, floorOrCeiling )  
          USE CurveInterpolantClass
          IMPLICIT NONE
 !
@@ -1159,7 +1198,7 @@
          IF ( floorOrCeiling == SWEEP_FLOOR )     THEN
             l = 0
          ELSE
-             l = bCurveOrder
+            l = bCurveOrder
          END IF
          
          

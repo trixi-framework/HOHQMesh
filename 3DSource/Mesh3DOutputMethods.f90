@@ -83,7 +83,7 @@
 !        ---------
 !
          TYPE( StructuredHexMesh )          :: mesh
-         TYPE(SMModel)            , POINTER :: model
+         CLASS(SMModel)            , POINTER :: model
          CHARACTER(LEN=*)                   :: fName
          INTEGER                            :: N ! The polynomial order of the boundaries.
          INTEGER                            :: version !version number of the ISM format.

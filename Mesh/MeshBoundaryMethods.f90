@@ -254,6 +254,8 @@
                   edgeList => linkedListFromObject(obj)
                   IF ( .NOT.ASSOCIATED(edgeList) )     THEN
                      PRINT *, "edge list not associated" !DEBUGPRINT
+                     PRINT *, ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID!DEBUGPRINT
+                     ERROR STOP "Unassociated edge pointers in CollectBoundaryEdges"
                   END IF 
                   obj => edge
                   CALL edgeList % add(obj)
@@ -268,7 +270,7 @@
 !        Gather interior interface edges
 !        -------------------------------
 !
-         CALL iterator % setToStart()
+        CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL cast(obj,edge)

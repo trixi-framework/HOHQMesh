@@ -64,7 +64,7 @@
          PROCEDURE :: renumberObjects
          PROCEDURE :: destroyEdgeArrays
          PROCEDURE :: syncEdges
-         PROCEDURE :: rotateMesh
+         PROCEDURE :: permuteMeshDirection
       END TYPE SMMesh
 !
 !      ---------------------------------------------------------------------
@@ -338,7 +338,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE rotateMesh(self,pmutation)  
+      SUBROUTINE permuteMeshDirection(self,pmutation)  
          IMPLICIT NONE
 !
 !        ---------
@@ -367,7 +367,7 @@
             
             CALL self % nodesIterator % moveToNext()
          END DO 
-      END SUBROUTINE rotateMesh
+      END SUBROUTINE permuteMeshDirection
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -590,6 +590,7 @@
          IF ( boundaryEdgesArray % isUnreferenced() )     THEN
             DEALLOCATE(boundaryEdgesArray)
             IF(ALLOCATED(boundaryEdgesType)) DEALLOCATE(boundaryEdgesType)
+            boundaryEdgesArray => NULL()
          END IF 
       END SUBROUTINE destroyEdgeArrays
 !

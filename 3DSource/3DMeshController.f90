@@ -62,7 +62,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      LOGICAL FUNCTION inquireShouldGenerate3DMesh(fUnit)
+      LOGICAL FUNCTION shouldGenerate3DMesh(fUnit)
 !
 !     ---------------------------------------------
 !     See if we should generate a 3D mesh, as given
@@ -77,13 +77,13 @@
          CALL MoveToBlock("\begin{Define3DMesh}", fUnit, iOS )
          
          IF ( iOS == 0 )     THEN
-            inquireShouldGenerate3DMesh = .true. 
+            shouldGenerate3DMesh = .true. 
          ELSE 
-            inquireShouldGenerate3DMesh = .false. 
+            shouldGenerate3DMesh = .false. 
          END IF 
-         CALL hexMeshParametersDictionary % addValueForKey( inquireShouldGenerate3DMesh, SM_GENERATE3D_MESH_KEY )
+         CALL hexMeshParametersDictionary % addValueForKey( shouldGenerate3DMesh, SM_GENERATE3D_MESH_KEY )
 
-      END FUNCTION inquireShouldGenerate3DMesh
+      END FUNCTION shouldGenerate3DMesh
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -111,7 +111,6 @@
 !        Read in control file information
 !        --------------------------------
 !
-
          REWIND(fUnit)
          CALL MoveToBlock("\begin{Define3DMesh}", fUnit, iOS )
          
