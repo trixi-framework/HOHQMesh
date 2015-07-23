@@ -502,7 +502,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh) :: self
+         CLASS(SMMesh)  :: self
          INTEGER       :: whichIterator
 !
 !        ---------------

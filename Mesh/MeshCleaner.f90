@@ -9,6 +9,7 @@
 !
       Module MeshCleaner
       USE Geometry
+      USE SMMeshObjectsModule
       USE SMMeshClass
       USE MeshQualityAnalysisClass
       USE MeshBoundaryMethodsModule
@@ -79,7 +80,7 @@
 !        -------------------------------------------------
 !
          IF ( valenceHasChanged .OR. diamondsHaveBeenRemoved )     THEN
-            CALL renumberObjects(mesh,NODES)
+            CALL mesh % renumberObjects(whichIterator = NODES)
             CALL mesh % syncEdges()
             CALL UnmarkNodesNearBoundaries( mesh % nodesIterator )
          END IF
