@@ -95,7 +95,7 @@
          INTEGER                    :: iUnit, j, k
          INTEGER                    :: f, jj, ii, faceID
          INTEGER, EXTERNAL          :: UnusedUnit
-         
+         INTEGER                    :: start, nde, increment, eID
 !
 !        -----------
 !        Open a file
@@ -146,6 +146,8 @@
          DO j = 1, SIZE(mesh % elements,2)       ! level
             DO k = 1, SIZE(mesh % elements,1)    ! element on original quad mesh
                
+               eID = mesh % elements(k,j) % globalID
+               
                IF ( version == ISM_MM )     THEN
                   WRITE( iUnit, *) mesh % elements(k,j) % nodeIDs, TRIM(mesh % elements(k,j) % materialName)
                ELSE
@@ -170,9 +172,26 @@
                               END DO
                            END DO
                         CASE DEFAULT 
+                        
                           faceID = mesh % elements(k,j) % faceID(f)
+                          IF ( eID == mesh % faces(faceID,j) % elementIDs(1) )     THEN
+                             start     = 0
+                             nde       = N
+                             increment = 1
+                          ELSE 
+                             increment = mesh % faces(faceID,j) % inc(1)
+                             IF ( increment > 0 )     THEN
+                                start = 0
+                                nde   = N
+                             ELSE 
+                                start = N
+                                nde   = 0
+                             END IF 
+                             
+                          END IF 
+                          
                           DO jj = 0, N 
-                              DO ii = 0, N
+                              DO ii = start , nde, increment
                                  WRITE( iUnit, * ) mesh % faces(faceID,j) % x(:,ii,jj)
                               END DO
                            END DO
