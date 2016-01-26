@@ -37,13 +37,6 @@
          INTEGER           :: fUnit, preferencesFileUnit, ios
          INTEGER, EXTERNAL :: StdInFileUnitCopy, UnusedUnit
 !
-!        ---------------
-!        Error reporting
-!        ---------------
-!
-!         CLASS(FTException), POINTER :: exception => NULL()
-!         INTEGER                     :: errorSeverity = FT_ERROR_NONE
-!
 !        -----
 !        Other
 !        -----
@@ -86,11 +79,11 @@
 !        ---------------------------
 !
          IF ( CommandLineArgumentIsPresent("-version") )     THEN
-            PRINT *, "SpecMesh2D Version ", version
+            PRINT *, "SpecMesh Version ", version
          END IF
          
          IF ( CommandLineArgumentIsPresent("-help") )     THEN
-            PRINT *, "No help avalable yet"
+            PRINT *, "No help avalable yet. Sorry!"
             STOP
          END IF
          
