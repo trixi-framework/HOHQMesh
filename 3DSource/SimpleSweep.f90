@@ -579,7 +579,8 @@
                   hex8Mesh % elements(quadElementID,j) % bFaceName(3) = &
                   parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_STARTNAME_KEY,&
                                                            requestedLength = LINE_LENGTH)
-               ELSE IF (j == numberOfLayers)     THEN 
+               END IF 
+               IF (j == numberOfLayers)     THEN 
                   hex8Mesh % elements(quadElementID,j) % bFaceName(5) = &
                   parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_ENDNAME_KEY,&
                                                            requestedLength = LINE_LENGTH)
