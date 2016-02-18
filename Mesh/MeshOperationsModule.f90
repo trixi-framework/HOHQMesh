@@ -15,6 +15,7 @@
       USE FTLinkedListClass
       USE FTLinkedListIteratorClass
       USE SMMeshClass
+      USE ProgramGlobals
       IMPLICIT NONE 
 
 !
@@ -47,7 +48,7 @@
       LOGICAL                        :: duplicateWasFound
 !      
       
-      PRINT *, "Testing for duplicate nodes..."
+      IF(printMessage) PRINT *, "Testing for duplicate nodes..."
       
       duplicateWasFound = .false.
       CALL mesh % nodesIterator % setToStart()
@@ -70,7 +71,7 @@
             d    = ABS(x-xTest)
             
             IF( MAXVAL(d) < 1.0d-10 )     THEN
-               PRINT *, "Duplicate Node at ",x, " with ids", idTest, id, " and level ", node % level
+               IF(printMessage) PRINT *, "Duplicate Node at ",x, " with ids", idTest, id, " and level ", node % level
                duplicateWasFound = .true.
             END IF
             
@@ -79,9 +80,11 @@
          
          CALL mesh % nodesIterator % moveToNext() 
       END DO 
-       
-      IF( .NOT.duplicateWasFound ) PRINT *, "No duplicate nodes found. Mesh OK"
-      PRINT *, "Test complete."
+      
+      IF(printMessage)     THEN 
+         IF( .NOT.duplicateWasFound ) PRINT *, "No duplicate nodes found. Mesh OK"
+         PRINT *, "Test complete."
+      END IF 
       
       END SUBROUTINE CheckMeshForDuplicateNodes
 
