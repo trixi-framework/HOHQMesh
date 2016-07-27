@@ -57,6 +57,10 @@
          PROCEDURE :: curveIDAtChainIndex
          
       END TYPE ChainedSegmentedCurve
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseChain 
+      END INTERFACE  
 !
 !     ========      
       CONTAINS 
@@ -90,13 +94,26 @@
          CLASS(ChainedSegmentedCurve) :: self
          
          IF ( ASSOCIATED(self % chain) )     THEN
-            CALL self % chain % release()
-            IF ( self % chain % isUnreferenced() )     THEN
-               DEALLOCATE(self % chain) 
-            END IF  
+            CALL release(self % chain)
          END IF 
          
       END SUBROUTINE destructChain
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseChain(self)  
+         IMPLICIT NONE
+         CLASS(ChainedSegmentedCurve), POINTER :: self
+         CLASS(FTObject)             , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseChain
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -587,13 +604,13 @@
          CALL v % initWithValue(self % curveName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"chainName")
-         CALL v % release()
+         CALL release(v)
            
          ALLOCATE(v)
          CALL v % initWithValue( c % curveName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"curveName")
-         CALL v % release()
+         CALL release(v)
          
          dataLength = SIZE(TRANSFER(xStart,dat))
          ALLOCATE(dat(dataLength))
@@ -602,14 +619,14 @@
          CALL d % initWithDataOfType(dat,"REAL,DIMENSION(3)")
          obj => d
          CALL userDictionary % addObjectForKey(obj,"startPosition")
-         CALL d % release()
+         CALL release(d)
          
          dat = TRANSFER(xEnd,dat)
          ALLOCATE(d)
          CALL d % initWithDataOfType(dat,"REAL,DIMENSION(3)")
          obj => d
          CALL userDictionary % addObjectForKey(obj,"endPosition")
-         CALL d % release()
+         CALL release(d)
 !
 !        --------------------
 !        Create the exception
@@ -620,14 +637,14 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = SEGMENTED_CURVES_DONT_JOIN_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL userDictionary % release()
+         CALL release(userDictionary)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL exception % release()
+         CALL release(exception)
          
       END SUBROUTINE throwCurvedoesntFollowException
 

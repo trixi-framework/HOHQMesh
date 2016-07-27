@@ -64,8 +64,7 @@
 !
          DO j = 1, numBoundaries
             IF ( boundaryEdgesType(j) == INTERFACE_EDGES )     THEN
-               obj => boundaryEdgesArray % objectAtIndex(j)
-               CALL cast(obj,list)
+               CALL cast(boundaryEdgesArray % objectAtIndex(j),list)
                CALL MoveInterfaceNodesToBoundary(list,model)
             END IF  
          END DO
@@ -242,10 +241,8 @@
 !
          CALL removeMarkedEdges(iterator)
 !
-         CALL iterator % release()
-         CALL newlyExposedBoundaryEdges % release()
-         IF (iterator % isUnreferenced() )        DEALLOCATE(iterator)
-         IF (newlyExposedBoundaryEdges % isUnreferenced()) DEALLOCATE(newlyExposedBoundaryEdges) 
+         CALL release(iterator)
+         CALL release(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveCloseElements
 !
@@ -372,10 +369,8 @@
 !
          CALL removeMarkedEdges(iterator)
          
-         CALL iterator % release()
-         CALL newlyExposedBoundaryEdges % release()
-         IF (newlyExposedBoundaryEdges % isUnreferenced()) DEALLOCATE(newlyExposedBoundaryEdges) 
-         IF (iterator % isUnreferenced())         DEALLOCATE(iterator)
+         CALL release(iterator)
+         CALL release(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveBumpOuts
 !     
@@ -424,11 +419,10 @@
             
             CALL iterator % moveToNext()
          END DO
-         CALL iterator % release()
+         CALL  release(iterator)
          DEALLOCATE(iterator)
          
       END SUBROUTINE MoveInterfaceNodesToBoundary
-      
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

@@ -56,6 +56,10 @@
       END TYPE SMModel
       
       PRIVATE :: destroyIterator, destroyList
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseModel 
+      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -95,13 +99,7 @@
          CALL destroyList    (self % innerBoundaries)
          CALL destroyList    (self % interfaceBoundaries)
          
-         IF(ASSOCIATED(self % outerBoundary))     THEN
-            CALL self % outerBoundary % release()
-            IF ( self % outerBoundary % isUnreferenced() )     THEN
-               DEALLOCATE(self % outerBoundary)
-               NULLIFY(self % outerBoundary) 
-            END IF 
-         END IF
+         CALL release(self % outerBoundary)
          
          IF ( ALLOCATED(self % boundaryCurveMap) )     THEN
             DEALLOCATE(self % boundaryCurveMap)
@@ -115,17 +113,27 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      SUBROUTINE releaseModel(self)  
+         IMPLICIT NONE
+         CLASS(SMModel)  , POINTER :: self
+         CLASS(FTObject), POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseModel
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
       SUBROUTINE destroyIterator(obj)  
          IMPLICIT NONE  
          CLASS(FTLinkedListIterator), POINTER :: obj
          
-         IF ( ASSOCIATED(obj) )     THEN
-            CALL obj % release()
-            IF ( obj % isUnreferenced() )     THEN
-               DEALLOCATE(obj)
-               NULLIFY(obj) 
-            END IF 
-         END IF 
+         CALL release(obj)
          
       END SUBROUTINE destroyIterator
 !
@@ -135,13 +143,7 @@
          IMPLICIT NONE  
          CLASS(FTLinkedList), POINTER :: obj
          
-         IF ( ASSOCIATED(obj) )     THEN
-            CALL obj % release()
-            IF ( obj % isUnreferenced() )     THEN
-               DEALLOCATE(obj)
-               NULLIFY(obj) 
-            END IF 
-         END IF 
+         CALL release(obj)
          
       END SUBROUTINE destroyList
 !@mark -
@@ -179,8 +181,7 @@
             CALL ReadOuterBoundaryBlock( self, fUnit )
             
             IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               CALL self % outerBoundary % release()
-               DEALLOCATE( self % outerBoundary )
+               CALL release(self % outerBoundary)
                exception => errorObject()
                CALL throw(exception)
                RETURN
@@ -205,8 +206,7 @@
             CALL ReadInnerBoundaryBlock( self, INNER_BOUNDARY_BLOCK, fUnit )
             
             IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               CALL self % innerBoundaries % release()
-               DEALLOCATE( self % innerBoundaries )
+               CALL release(self % innerBoundaries)
                exception => errorObject()
                CALL throw(exception)
                RETURN
@@ -232,8 +232,7 @@
             CALL ReadInnerBoundaryBlock( self, INTERFACE_BOUNDARY_BLOCK, fUnit )
             
             IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               CALL self % interfaceBoundaries % release()
-               DEALLOCATE( self % interfaceBoundaries )
+               CALL release(self % interfaceBoundaries)
                exception => errorObject()
                CALL throw(exception)
                RETURN
@@ -438,7 +437,7 @@
 !             ------------------
 !
               CALL chain % complete(INNER)
-              CALL chain % release()
+              CALL release(chain)
 !
 !             --------------------------------------------------------
 !             The chain has been created, clean up and then start over
@@ -545,7 +544,7 @@
          CALL cCurve % initWithEquationsNameAndID(eqnX, eqnY, eqnZ, curveName, self % curveCount + 1)
 
          IF ( catch(EQUATION_FORMAT_EXCEPTION) )     THEN  ! Pass the error up the chain
-            CALL cCurve % release()
+            CALL release(cCurve)
             DEALLOCATE(cCurve)
             exception => errorObject()
             CALL throw(exception)
@@ -555,7 +554,7 @@
          
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
-         CALL cCurve % release()
+         CALL release(cCurve)
 !
 !        ----------------------------
 !        Make sure the block is ended
@@ -619,7 +618,7 @@
          
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
-         CALL cCurve % release()
+         CALL release(cCurve)
 !
 !        ----------------------------
 !        Make sure the block is ended
@@ -686,7 +685,7 @@
          
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
-         CALL cCurve % release()
+         CALL release(cCurve)
 !
 !        ----------------------------
 !        Make sure the block is ended
@@ -799,8 +798,7 @@
                 
                CALL iterator % moveToNext()
             END DO
-           CALL iterator % release()
-           DEALLOCATE(iterator)
+           CALL release(iterator)
         END IF
 !!
 !!        --------------------
@@ -839,8 +837,7 @@
                 
                CALL iterator % moveToNext()
             END DO
-           CALL iterator % release()
-           DEALLOCATE(iterator)
+           CALL release(iterator)
         END IF
 
       END SUBROUTINE MakeCurveToChainConnections
@@ -880,13 +877,13 @@
          CALL v % initWithValue(objectName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"objectName")
-         CALL v % release()
+         CALL release(v)
          
          ALLOCATE(v)
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL v % release()
+         CALL release(v)
 !
 !        --------------------
 !        Create the exception
@@ -897,14 +894,14 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = MODEL_READ_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL userDictionary % release()
+         CALL release(userDictionary)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL exception % release()
+         CALL release(exception)
          
       END SUBROUTINE ThrowModelReadException
 !@mark -

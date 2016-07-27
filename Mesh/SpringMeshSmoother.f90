@@ -62,6 +62,10 @@
 !     ---------------------------
 !
       REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE, PRIVATE :: nodeAcceleration, nodeVelocity
+      
+!      INTERFACE release
+!         MODULE PROCEDURE releaseSpringMeshSmoother 
+!      END INTERFACE  
 !
 !     ========
       CONTAINS 
@@ -93,6 +97,22 @@
          CLASS(SpringMeshSmoother) :: self
          !Do nothing
       END SUBROUTINE DestructSpringMeshSmoother
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!      SUBROUTINE releaseSpringMeshSmoother(self)  
+!         IMPLICIT NONE
+!         CLASS(SpringMeshSmoother) , POINTER :: self
+!         CLASS(FTObject), POINTER :: obj
+!         
+!         IF(.NOT. ASSOCIATED(self)) RETURN
+!         
+!         obj => self
+!         CALL releaseFTObject(self = obj)
+!         IF ( .NOT. ASSOCIATED(obj) )     THEN
+!            self => NULL() 
+!         END IF      
+!      END SUBROUTINE releaseSpringMeshSmoother
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -179,8 +199,7 @@
          CALL boundaryNodesList % init()
          CALL CollectBoundaryAndInterfaceNodes( mesh % nodesIterator, boundaryNodesList )
          CALL FindCurveLocationsforNodes      ( boundaryNodesList, model )
-         CALL boundaryNodesList % release()
-         DEALLOCATE(boundaryNodesList)
+         CALL release(boundaryNodesList)
       
       END SUBROUTINE SpringSmoothMesh
 !

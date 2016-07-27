@@ -159,10 +159,8 @@
 !        -------------------------------------------------
 !
          CALL mesh % elements % addObjectsFromList(newElementsList)
-         CALL newElementsList % release()
-         IF(newElementsList % isUnreferenced()) DEALLOCATE(newElementsList)
-         CALL elementIterator % release()
-         IF(elementIterator % isUnreferenced()) DEALLOCATE(elementIterator)
+         CALL release(newElementsList)
+         CALL release(elementIterator)
 
          CALL DoLazyDelete( mesh )
          CALL mesh % renumberAllLists()
@@ -419,7 +417,7 @@
          obj   => node
          nodeC => node
          CALL mesh % nodes % add(obj)
-         CALL node % release()
+         CALL release(node)
 !
 !        ------------------------------------------------------------------
 !        Construct three new elements depending on what the orientation is.
@@ -548,7 +546,7 @@
          
          obj => eNew
          CALL newElementsList % add(obj)
-         CALL eNew % release()
+         CALL release(eNew)
            
       END SUBROUTINE CreateAndAddElement
 !
@@ -569,7 +567,7 @@
          
          obj => eNew
          CALL newElementsList % add(obj)
-         CALL eNew % release()
+         CALL release(eNew)
          
       END SUBROUTINE constructNewElement
 !
@@ -589,7 +587,7 @@
          obj => node
          CALL mesh % nodes % add(obj)
          CALL setAuxiliaryNode( edge, node )
-         CALL node % release()
+         CALL release(node)
          
       END SUBROUTINE constructNewNode
       

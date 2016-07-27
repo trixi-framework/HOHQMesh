@@ -52,7 +52,7 @@
          ALLOCATE(ReaderException)
          ptr => userDictionary
          CALL ReaderException % initFTException(FT_ERROR_FATAL,exceptionName,ptr)
-         CALL userDictionary % release()
+         CALL release(userDictionary)
 
       END FUNCTION ReaderException
  

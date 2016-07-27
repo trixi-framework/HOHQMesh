@@ -48,6 +48,10 @@
       INTERFACE cast
          MODULE PROCEDURE castToSMCurve
       END INTERFACE cast
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseBaseCurve 
+      END INTERFACE  
 !
 !     ----------------
 !     Module variables
@@ -88,6 +92,22 @@
          CALL self % FTObject % destruct()
          
       END SUBROUTINE destructBaseCurve
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseBaseCurve(self)  
+         IMPLICIT NONE
+         CLASS(SMCurve), POINTER :: self
+         CLASS(FTObject)          , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseBaseCurve
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

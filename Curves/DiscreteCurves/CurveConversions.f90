@@ -52,7 +52,7 @@
             ALLOCATE(frsCurve)
             CALL frsCurve % initWithCurve(cCurve, h, cCurve % id())
             CALL segmentedChain % add(frsCurve)
-            CALL frsCurve % release()
+            CALL release(frsCurve)
          END DO
          
          CALL segmentedChain % complete()

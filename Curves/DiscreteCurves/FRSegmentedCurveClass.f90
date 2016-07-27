@@ -107,6 +107,11 @@
       END TYPE FRSegmentedCurve
       
       PRIVATE :: RefineFRSegmentedCurve
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseFRSegmentedCurve 
+         MODULE PROCEDURE releaseFRSegmentedCurveNode
+      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -125,6 +130,22 @@
          self % invScale = HUGE(t)
          
       END SUBROUTINE initSegmentedCurveNode
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseFRSegmentedCurveNode(self)  
+         IMPLICIT NONE
+         CLASS(SegmentedCurveNode), POINTER :: self
+         CLASS(FTObject)        , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseFRSegmentedCurveNode
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -198,7 +219,7 @@
          CALL left % initSegmentedCurveNode( x, t )
          obj => left
          CALL nodes % add(obj)
-         CALL left % release()
+         CALL release(left)
          leftRecord => nodes % tail
                   
          t  = 0.5_RP
@@ -206,7 +227,7 @@
          CALL middle % initSegmentedCurveNode( x, t )
          obj => middle
          CALL nodes % add(obj)
-         CALL middle % release()
+         CALL release(middle)
          middleRecord => nodes % tail
 
          t = 1.0_RP
@@ -214,7 +235,7 @@
          CALL right % initSegmentedCurveNode( x, t )
          obj => right
          CALL nodes % add(obj)
-         CALL right % release()
+         CALL release(right)
          rightRecord => nodes % tail
 !
 !        -------------------
@@ -377,8 +398,7 @@
 !        Clean up
 !        --------
 !
-         CALL nodes % release()
-         DEALLOCATE(nodes)
+         CALL release(nodes)
 !
       END SUBROUTINE initWithCurve
 !
@@ -387,12 +407,25 @@
       SUBROUTINE DestructFRSegmentedCurve( self )
          CLASS( FRSegmentedCurve )      :: self
 
-         CALL self % nodeArray % release()
-         IF ( self % nodeArray % isUnreferenced() )     THEN
-            DEALLOCATE(self % nodeArray) 
-         END IF 
-      
+         CALL release(self % nodeArray)
+               
       END SUBROUTINE DestructFRSegmentedCurve
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseFRSegmentedCurve(self)  
+         IMPLICIT NONE
+         CLASS(FRSegmentedCurve), POINTER :: self
+         CLASS(FTObject)        , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseFRSegmentedCurve
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -498,11 +531,7 @@
             CALL newNodes % addObject(obj)
          END DO
          
-         CALL self % nodeArray % release()
-         IF ( self % nodeArray % isUnreferenced() )     THEN
-            DEALLOCATE(self % nodeArray)
-            self % nodeArray => NULL() 
-         END IF 
+         CALL release(self % nodeArray)
          
          self % nodeArray => newNodes
          

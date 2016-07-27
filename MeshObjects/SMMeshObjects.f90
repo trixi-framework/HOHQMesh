@@ -164,6 +164,13 @@
       INTERFACE cast
          MODULE PROCEDURE castToSMEdge
       END INTERFACE cast
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseSMNode 
+         MODULE PROCEDURE releaseSMElement
+         MODULE PROCEDURE releaseSMEdge
+         MODULE PROCEDURE releaseSMQuad
+      END INTERFACE  
 !
 !     ========      
       CONTAINS
@@ -297,13 +304,7 @@
             STOP
          END IF
 !
-         IF ( ASSOCIATED(p % node) )     THEN
-            CALL p % node % release()
-            IF ( p % node % isUnreferenced() )     THEN
-               DEALLOCATE(p % node)
-               p % node => NULL() 
-            END IF 
-         END IF 
+         CALL release(p % node)
 !
 !        ----------------------
 !        End of offending block
@@ -313,6 +314,22 @@
          CALL p % node % retain()
          
       END SUBROUTINE PointNodePtr_To_
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseSMNode(self)  
+         IMPLICIT NONE
+         CLASS(SMNode)  , POINTER :: self
+         CLASS(FTObject), POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSMNode
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -424,11 +441,27 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      SUBROUTINE releaseSMElement(self)  
+         IMPLICIT NONE
+         CLASS(SMElement), POINTER :: self
+         CLASS(FTObject) , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSMElement
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
       SUBROUTINE destructelement(self) 
          IMPLICIT NONE  
          CLASS(SMElement) :: self
          
-         CALL self % nodes % release()
+         CALL self % nodes % destruct()
 
       END SUBROUTINE destructelement
 !
@@ -532,40 +565,39 @@
 !           Release nodes
 !           -------------
 !
-            np => self % nodes(k) % node
-            IF ( ASSOCIATED(np) )     THEN
-               CALL np % release()
-               IF ( np % isUnReferenced() )     THEN
-                  DEALLOCATE(self % nodes(k) % node)
-                  self % nodes(k) % node => NULL() 
-               END IF
-            END IF
+            CALL release(self % nodes(k) % node)
 !
 !           ----------------
 !           Release elements
 !           ----------------
 !
-            ep => self % elements(k) % element
-            IF ( ASSOCIATED(ep) )     THEN
-               CALL ep % release()
-               IF ( ep % isUnReferenced() )     THEN
-                  DEALLOCATE(self % elements(k) % element)
-                  self % elements(k) % element => NULL() 
-               END IF
-            END IF
+            CALL release(self % elements(k) % element)
          END DO  
 
          IF(ASSOCIATED(self % auxiliaryNode))     THEN
-            CALL self % auxiliaryNode % release()
-            IF ( self % auxiliaryNode % isUnreferenced() )     THEN
-               DEALLOCATE(self % auxiliaryNode)
-               self % auxiliaryNode => NULL() 
-            END IF 
+            CALL release(self % auxiliaryNode)
          END IF
          
          CALL self % FTObject % destruct()
          
       END SUBROUTINE destructEdge
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseSMEdge(self)  
+         IMPLICIT NONE
+         CLASS(SMEdge)   , POINTER :: self
+         CLASS(FTObject) , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSMEdge
+!
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE printEdgeDescription(self,iUnit)  
@@ -662,13 +694,25 @@
          INTEGER         :: k
          
          DO k = 1, 4
-            CALL self % nodes(k) % node % release()
-            IF ( self % nodes(k) % node % isUnreferenced() )     THEN
-               DEALLOCATE(self % nodes(k) % node)
-               self % nodes(k) % node => NULL()
-            END IF  
+            CALL release(self % nodes(k) % node)
          END DO  
       END SUBROUTINE destructQuad
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseSMQuad(self)  
+         IMPLICIT NONE
+         CLASS(SMQuad)   , POINTER :: self
+         CLASS(FTObject) , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSMQuad
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

@@ -242,7 +242,7 @@
          DO k = 1, SIZE(hexMesh % faces,2)
             DO j = 1, SIZE(hexMesh % faces,1)
                IF(ASSOCIATED(hexMesh % faces(j,k) % edge)) THEN
-                  CALL hexMesh % faces(j,k) % edge % release()
+                  CALL release(hexMesh % faces(j,k) % edge)
                END IF 
             END DO   
          END DO  

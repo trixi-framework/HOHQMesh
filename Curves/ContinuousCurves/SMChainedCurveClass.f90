@@ -14,7 +14,8 @@
 !!
 !!        *Destruction*
 !!
-!!           CALL chain % release()
+!!           CALL release(chain) [Pointer]
+!!           CALL chain % destruct() [Non Pointer]
 !!
 !!        *Adding Curves*
 !!
@@ -103,6 +104,10 @@
          PROCEDURE :: ChainTForCurveTInCurve
 
       END TYPE SMChainedCurve
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseChainedCurve 
+      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -133,16 +138,28 @@
          CLASS(SMChainedCurve) :: self
          
          IF ( ASSOCIATED(self % curvesArray) )     THEN
-            CALL self % curvesArray  % release()
-            IF ( self % curvesArray % isUnreferenced() )     THEN
-               DEALLOCATE(self % curvesArray) 
-               self % curvesArray => NULL()
-            END IF 
+            CALL release(self % curvesArray)
          END IF 
          
          CALL self % SMCurve % destruct()
          
       END SUBROUTINE destructChainedCurve
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseChainedCurve(self)  
+         IMPLICIT NONE
+         TYPE (SMChainedCurve), POINTER :: self
+         CLASS(FTObject)      , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseChainedCurve
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -642,7 +659,7 @@
          CALL v % initWithValue(self % curveName())
          obj => v
          CALL userDictionary % addObjectForKey(obj,"chainName")
-         CALL v % release()
+         CALL release(v)
          
          obj => curve
          CALL userDictionary % addObjectForKey(obj,"curve")
@@ -653,7 +670,7 @@
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL v % release()
+         CALL release(v)
 !
 !        --------------------
 !        Create the exception
@@ -664,14 +681,14 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = CURVES_DONT_JOIN_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL userDictionary % release()
+         CALL release(userDictionary)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL exception % release()
+         CALL release(exception)
          
       END SUBROUTINE ThrowCurvesDontJoinException
 
