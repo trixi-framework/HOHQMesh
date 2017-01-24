@@ -361,7 +361,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE releaseGrid(self)  
+      RECURSIVE SUBROUTINE releaseGrid(self)  
          IMPLICIT NONE
          CLASS(QuadTreeGrid), POINTER :: self
          CLASS(FTObject)    , POINTER :: obj
