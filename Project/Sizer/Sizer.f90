@@ -45,6 +45,10 @@
          PROCEDURE :: sizeFunctionMinimumOnBox
          
       END TYPE MeshSizer
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseSizer 
+      END INTERFACE  
 !
 !     ========
       CONTAINS 
@@ -82,43 +86,42 @@
          CLASS(MeshSizer) :: self
          
          IF ( ASSOCIATED(self % controlsList) )     THEN
-            CALL self % controlsList % release()
-            IF ( self % controlsList % isUnreferenced() )     THEN
-               DEALLOCATE(self % controlsList) 
-               self % controlsList => NULL()
-            END IF 
+            CALL release(self % controlsList)
          END IF 
          
          IF ( ASSOCIATED(self % innerBoundariesList) )     THEN
-            CALL self % innerBoundariesList % release()
-            IF ( self % innerBoundariesList % isUnreferenced() )     THEN
-               DEALLOCATE(self % innerBoundariesList) 
-               self % innerBoundariesList => NULL()
-            END IF 
+            CALL release(self % innerBoundariesList)
          END IF 
          
          IF ( ASSOCIATED(self % interfaceBoundariesList) )     THEN
-            CALL self % interfaceBoundariesList % release()
-            IF ( self % interfaceBoundariesList % isUnreferenced() )     THEN
-               DEALLOCATE(self % interfaceBoundariesList) 
-               self % interfaceBoundariesList => NULL()
-            END IF 
+            CALL release(self % interfaceBoundariesList)
          END IF 
          
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
-            CALL self % outerBoundary % release()
-            IF ( self % outerBoundary % isUnreferenced() )     THEN
-               DEALLOCATE(self % outerBoundary) 
-               self % outerBoundary => NULL()
-            END IF 
+            CALL release(self % outerBoundary)
          END IF 
          
-         CALL self % controlsList % release()
-         DEALLOCATE(self % controlsList)
+         CALL release(self % controlsList)
          
          CALL self % FTObject % destruct()
          
       END SUBROUTINE destructMeshSizer
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseSizer(self)  
+         IMPLICIT NONE
+         CLASS(MeshSizer), POINTER :: self
+         CLASS(FTObject)           , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSizer
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -294,8 +297,7 @@
    
                CALL iterator % moveToNext()
             END DO
-            CALL iterator % release()
-            DEALLOCATE(iterator)
+            CALL release(iterator)
          END IF 
 !
 !        -------------------------
@@ -338,8 +340,7 @@
             CALL iterator % moveToNext()
          END DO
          
-         CALL iterator % release()
-         DEALLOCATE(iterator)
+         CALL release(iterator)
    
       END SUBROUTINE cSizeForCurvesInList
 !
@@ -394,8 +395,7 @@
                CALL iterator % moveToNext()
             END DO
             
-            CALL iterator % release()
-            DEALLOCATE(iterator)
+            CALL release(iterator)
             
          END IF 
 !
@@ -513,8 +513,7 @@
                k = k + 1
                CALL iterator % moveToNext()           
             END DO  
-            CALL iterator % release()
-            DEALLOCATE(iterator)
+            CALL release(iterator)
          END IF 
             
          IF ( self % noOfInterfaceBoundaries > 0 )     THEN
@@ -529,8 +528,7 @@
                k                           = k + 1
                CALL iterator % moveToNext()           
             END DO  
-            CALL iterator % release()
-            DEALLOCATE(iterator)
+            CALL release(iterator)
          END IF
 !
 !        -----------------------------------------------
@@ -795,8 +793,7 @@
             
             CALL iterator % moveToNext()
          END DO  
-         CALL iterator % release()
-         DEALLOCATE(iterator)
+         CALL release(iterator)
                
       END SUBROUTINE ComputeInterfaceCurveScales
 !

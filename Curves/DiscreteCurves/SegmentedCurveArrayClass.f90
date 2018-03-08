@@ -67,6 +67,10 @@
          PROCEDURE :: printDescription => PrintSegmentedCurveArray
          
       END TYPE SegmentedCurveArray
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseCurveArray 
+      END INTERFACE  
 !
 !     ========
       CONTAINS 
@@ -147,6 +151,22 @@
          CALL self % FTObject % destruct()
          
       END SUBROUTINE DestructSegmentedCurveArray
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseCurveArray(self)  
+         IMPLICIT NONE
+         CLASS(SegmentedCurveArray), POINTER :: self
+         CLASS(FTObject)           , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseCurveArray
 !
 !////////////////////////////////////////////////////////////////////////
 !

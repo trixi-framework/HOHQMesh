@@ -63,7 +63,7 @@
          REAL(KIND=RP), DIMENSION(3) :: P1, P2, P3     ! Location of the four corners
          REAL(KIND=RP), DIMENSION(3) :: L1, L2         ! The two edge vectors
          REAL(KIND=RP)               :: LNorm1, Lnorm2 ! lengths of the edge vectors
-         REAL(KIND=RP), EXTERNAL     :: Norm2
+!         REAL(KIND=RP), EXTERNAL     :: Norm2
          
          CLASS(FTObject), POINTER :: obj  => NULL()
          CLASS(SMNode)  , POINTER :: node => NULL()

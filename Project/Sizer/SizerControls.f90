@@ -44,6 +44,11 @@
 !
          PROCEDURE :: initwithProperties => initSizerLineControl
       END TYPE SizerLineControl
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseSizerLineControl
+         MODULE PROCEDURE releaseSizerCenterControl
+      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -84,6 +89,38 @@
          self % lineControlType = lineControlType
          
       END SUBROUTINE initSizerLineControl
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseSizerLineControl(self)  
+         IMPLICIT NONE
+         CLASS(SizerLineControl), POINTER :: self
+         CLASS(FTObject)        , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSizerLineControl
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseSizerCenterControl(self)  
+         IMPLICIT NONE
+         CLASS(SizerCenterControl), POINTER :: self
+         CLASS(FTObject)          , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSizerCenterControl
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

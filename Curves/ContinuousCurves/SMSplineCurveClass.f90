@@ -31,6 +31,10 @@
          PROCEDURE :: destruct   => destructSplineCurve
          PROCEDURE :: positionAt => positionOnSplineCurveAt
       END TYPE SMSplineCurve
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseSplineCurve 
+      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -99,6 +103,22 @@
          CALL self % SMCurve % destruct()
 
       END SUBROUTINE DestructSplineCurve
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseSplineCurve(self)  
+         IMPLICIT NONE
+         TYPE (SMSplineCurve) , POINTER :: self
+         CLASS(FTObject), POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSplineCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !

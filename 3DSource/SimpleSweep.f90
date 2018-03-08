@@ -102,7 +102,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                          "direction", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 !
@@ -118,7 +118,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                         "height", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 !
@@ -134,7 +134,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                         "subdivisions", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 !
@@ -150,7 +150,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                         "start surface name", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 !
@@ -166,7 +166,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                        "end surface name", "ReadSimpleExtrusionBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 
@@ -221,7 +221,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                          "direction", "ReadSimpleRotationBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 !
@@ -237,7 +237,7 @@
             exception => ReaderException("Simple rotation read error", "Error reading variable", &
                                          "rotation angle", "ReadSimpleRotationBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 !
@@ -253,7 +253,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                          "subdivisions", "ReadSimpleRotationBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 !
@@ -269,7 +269,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                          "start surface name", "ReadSimpleRotationBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 !
@@ -285,7 +285,7 @@
             exception => ReaderException("Simple extrusion read error", "Error reading variable", &
                                          "end surface name", "ReadSimpleRotationBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN
          END IF 
 
@@ -579,7 +579,8 @@
                   hex8Mesh % elements(quadElementID,j) % bFaceName(3) = &
                   parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_STARTNAME_KEY,&
                                                            requestedLength = LINE_LENGTH)
-               ELSE IF (j == numberOfLayers)     THEN 
+               END IF 
+               IF (j == numberOfLayers)     THEN 
                   hex8Mesh % elements(quadElementID,j) % bFaceName(5) = &
                   parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_ENDNAME_KEY,&
                                                            requestedLength = LINE_LENGTH)
@@ -730,7 +731,7 @@
                ELSE
                   hex8Mesh % faces(faceID,j) % elementIDs(2) = NONE
                   hex8Mesh % faces(faceID,j) % faceNumber(2) = NONE
-                  hex8Mesh % faces(faceID,j) % inc           = 0
+                  hex8Mesh % faces(faceID,j) % inc           = 1
                END IF
 !
 !              ----------------------------------

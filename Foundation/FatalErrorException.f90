@@ -60,13 +60,13 @@
          CALL v % initWithValue(poster)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"poster")
-         CALL v % release()
+         CALL release(v)
          
          ALLOCATE(v)
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL v % release()
+         CALL release(v)
 !
 !        --------------------
 !        Create the exception
@@ -85,14 +85,14 @@
                                     infoDictionary  = userDictionary)
          END SELECT 
          
-         CALL userDictionary % release()
+         CALL release(userDictionary)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL exception % release()
+         CALL release(exception)
          
       END SUBROUTINE ThrowErrorExceptionOfType
       

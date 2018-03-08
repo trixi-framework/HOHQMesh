@@ -61,9 +61,10 @@
       INTEGER         , PARAMETER                , PRIVATE :: separatorCount = 7
       CHARACTER(LEN=1), DIMENSION(separatorCount), PRIVATE :: separators = (/"+","-","*","/","(",")","^"/)
       CHARACTER(LEN=1), DIMENSION(10)            , PRIVATE :: DIGITS = (/"0","1","2","3","4","5","6","7","8","9"/)
-      CHARACTER (LEN=4),DIMENSION(11)            , PRIVATE :: functions = &
-                                                              (/"cos ","sin ","exp ","tan ","sqrt","abs ","ln  ","log ",      &
-                                                                "acos","asin","atan"/)
+      CHARACTER (LEN=5),DIMENSION(13)            , PRIVATE :: functions = &
+                                                              (/"cos  ","sin  ","exp  ","tan  ","sqrt ",&
+                                                                "abs  ","ln   ","log  ",                &
+                                                                "acos ","asin ","atan ", "atanh", "tanh " /)
       CHARACTER (LEN=1),DIMENSION(5)             , PRIVATE :: operators = (/"*","/","^","+","-"/)
 !
 !     -------------
@@ -810,8 +811,14 @@
       else if ( fun == "tan".OR. fun == "TAN") then 
           result = tan(a) 
                                                                         
+      else if ( fun == "tanh".OR. fun == "TANH") then 
+          result = tanh(a) 
+                                                                        
       else if ( fun == "atan".OR. fun == "ATAN") then 
           result = atan(a) 
+          
+      else if ( fun == "atanh".OR. fun == "ATANH") then 
+          result = atanh(a) 
                                                                         
       else 
           write (6,fmt=*) "unknown function" 

@@ -100,6 +100,10 @@
 !
       TYPE(FTMutableObjectArray), POINTER     :: boundaryEdgesArray => NULL()
       INTEGER                   , ALLOCATABLE :: boundaryEdgesType(:)
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseMesh 
+      END INTERFACE  
 !
 !     ========     
       CONTAINS
@@ -145,36 +149,30 @@
          IMPLICIT NONE  
          CLASS(SMMesh) :: self
          
-         CALL self % nodesIterator    % release()
-         CALL self % edgesIterator    % release()
-         CALL self % elementsIterator % release()
-         
-         IF ( self % nodesIterator % isUnreferenced() )     THEN
-            DEALLOCATE(self % nodesIterator) 
-         END IF 
-         IF ( self % edgesIterator % isUnreferenced() )     THEN
-            DEALLOCATE(self % edgesIterator) 
-         END IF 
-         IF ( self % elementsIterator % isUnreferenced() )     THEN
-            DEALLOCATE(self % elementsIterator) 
-         END IF 
-         
-         CALL self % nodes % release()
-         IF ( self % nodes % isUnreferenced() )     THEN
-            DEALLOCATE(self % nodes) 
-         END IF 
-         
-         CALL self % elements % release()
-         IF ( self % elements % isUnreferenced() )     THEN
-            DEALLOCATE(self % elements) 
-         END IF 
-         
-         CALL self % edges % release()
-         IF ( self % edges % isUnreferenced() )     THEN
-            DEALLOCATE(self % edges) 
-         END IF 
+         CALL release(self % nodesIterator)
+         CALL release(self % edgesIterator)
+         CALL release(self % elementsIterator)
+         CALL release(self % nodes)
+         CALL release(self % elements)
+         CALL release(self % edges)
          
       END SUBROUTINE destructSMMesh
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseMesh(self)  
+         IMPLICIT NONE
+         CLASS(SMMesh)  , POINTER :: self
+         CLASS(FTObject), POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseMesh
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -317,7 +315,7 @@
 !
                   obj => edge
                   CALL self % edges % add(obj)
-                  CALL edge % release()
+                  CALL release(edge)
                   
                   CALL hashTable % addObjectForKeys(obj,key1,key2)
                END IF 
@@ -331,8 +329,8 @@
 !        Clean up
 !        --------
 !
-         CALL elementIterator % release()
-         CALL hashTable % release()
+         CALL elementIterator % destruct()
+         CALL hashTable % destruct()
          
       END SUBROUTINE buildEdgeList
 !
@@ -586,11 +584,9 @@
 !        ----------------
 !
          
-         CALL boundaryEdgesArray % release()
-         IF ( boundaryEdgesArray % isUnreferenced() )     THEN
-            DEALLOCATE(boundaryEdgesArray)
+         CALL release(boundaryEdgesArray)
+         IF ( .NOT. ASSOCIATED(boundaryEdgesArray) )     THEN
             IF(ALLOCATED(boundaryEdgesType)) DEALLOCATE(boundaryEdgesType)
-            boundaryEdgesArray => NULL()
          END IF 
       END SUBROUTINE destroyEdgeArrays
 !
@@ -604,15 +600,9 @@
 !        Ensure edges are in sync
 !        ------------------------
 !
-         CALL self % edgesIterator % release()
-         IF ( self % edgesIterator % isUnreferenced() )     THEN
-            DEALLOCATE(self % edgesIterator) 
-         END IF 
+         CALL release(self % edgesIterator)
          
-         CALL self % edges % release()
-         IF ( self % edges % isUnreferenced() )     THEN
-            DEALLOCATE(self % edges) 
-         END IF
+         CALL release(self % edges)
          ALLOCATE(self % edges)
          ALLOCATE(self % edgesIterator)
          

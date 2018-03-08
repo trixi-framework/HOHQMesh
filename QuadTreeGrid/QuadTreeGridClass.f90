@@ -83,6 +83,10 @@
       
       INTEGER                                                :: numberOfGridsAtLevel
       TYPE(NestedQuadTreeGridPtr), DIMENSION(:), ALLOCATABLE :: gridsAtLevel
+      
+      INTERFACE release
+         MODULE PROCEDURE :: releaseGrid 
+      END INTERFACE  
 !
 !     ========
       CONTAINS 
@@ -320,11 +324,7 @@
             DO j = 1, M
                DO i = 1, N 
                   IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN
-                     CALL self % children(i,j) % grid % release()
-                     IF ( self % children(i,j) % grid % isUnreferenced() )     THEN
-                        DEALLOCATE(self % children(i,j) % grid)
-                        self % children(i,j) % grid => NULL()
-                     END IF 
+                     CALL release(self % children(i,j) % grid)
                   END IF
                END DO
             END DO
@@ -339,13 +339,7 @@
             DO j = 1, self % N(2) 
                DO i = 1, self % N(1)
                   quad => self % quads(i,j) % quad
-                  IF( ASSOCIATED(quad) ) THEN
-                     CALL quad % release()
-                     IF ( quad % isUnreferenced() )     THEN
-                        DEALLOCATE(self % quads(i,j) % quad) 
-                        self % quads(i,j) % quad => NULL()
-                     END IF 
-                  END IF
+                  IF( ASSOCIATED(quad) ) CALL release(quad)
                END DO 
             END DO
             DEALLOCATE(self % quads)
@@ -355,13 +349,7 @@
             DO j = 0, self % N(2) 
                DO i = 0, self % N(1)
                   node => self % nodes(i,j) % node
-                  IF( ASSOCIATED(node) ) THEN
-                     CALL node % release()
-                     IF ( node % isUnreferenced() )     THEN
-                        DEALLOCATE(self % nodes(i,j) % node) 
-                        self % nodes(i,j) % node => NULL()
-                     END IF 
-                  END IF
+                  IF( ASSOCIATED(node) ) CALL release(node)
                END DO 
             END DO
             DEALLOCATE( self % nodes )
@@ -370,6 +358,22 @@
          NULLIFY( self % neighborL, self % neighborR, self % neighborT, self % neighborB )
 
       END SUBROUTINE DestructGrid
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      RECURSIVE SUBROUTINE releaseGrid(self)  
+         IMPLICIT NONE
+         CLASS(QuadTreeGrid), POINTER :: self
+         CLASS(FTObject)    , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseGrid
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////

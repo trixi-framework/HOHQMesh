@@ -58,7 +58,7 @@
             CALL iterator % moveToNext()
          END DO
          
-         CALL iterator % release()
+         CALL iterator % destruct()
          
       END SUBROUTINE initArrayWithLinkedList
       

@@ -87,7 +87,7 @@
       INTERFACE OPERATOR (.cross.)
          MODULE PROCEDURE CrossProduct
       END INTERFACE
-      PRIVATE :: CrossProduct, Norm2
+      PRIVATE :: CrossProduct
 !
 ! note1: will have to change for nonplanar geometries
 !
@@ -606,15 +606,6 @@
       c = u(1)*v(2) - v(1)*u(2)
       
       END FUNCTION CrossProduct
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      FUNCTION Norm2(u) 
-      IMPLICIT NONE
-      REAL(KIND=RP) :: u(3)
-      REAL(KIND=RP) :: Norm2
-      norm2 = SQRT(u(1)**2 + u(2)**2 )
-      END FUNCTION Norm2
       
       END Module MeshQualityAnalysisClass
       

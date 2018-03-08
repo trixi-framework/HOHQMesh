@@ -50,7 +50,7 @@
 !
       TYPE, PUBLIC :: FTTimer
          LOGICAL      , PRIVATE :: started = .FALSE., stopped = .FALSE.
-         REAL(KIND=TP), PRIVATE :: startTime = 0.0_TP
+         REAL(KIND=TP), PRIVATE :: startTime  = 0.0_TP
          REAL(KIND=TP), PRIVATE :: finishTime = 0.0_TP
 !
 !        ========

@@ -29,6 +29,10 @@
          PROCEDURE :: tangentAt        => tangentOnLineAt
          PROCEDURE :: printDescription => printLineDescription
       END TYPE SMLine
+      
+      INTERFACE release
+         MODULE PROCEDURE releaseLine 
+      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -62,7 +66,22 @@
          CALL self % SMCurve % destruct()
          
       END SUBROUTINE destructLine
-
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseLine(self)  
+         IMPLICIT NONE
+         TYPE (SMLine)  , POINTER :: self
+         CLASS(FTObject), POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseLine
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

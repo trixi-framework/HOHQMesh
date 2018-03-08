@@ -43,7 +43,12 @@
       END TYPE LaplaceSmootherParameters
       PUBLIC :: LaplaceSmootherParameters
       
-      PUBLIC :: ReadLaplaceSmootherBlock
+      PUBLIC :: ReadLaplaceSmootherBlock, release
+      
+!      INTERFACE release
+!         MODULE PROCEDURE ::  releaseLaplaceSmoother
+!      END INTERFACE  
+      
 !
 !     ========
       CONTAINS 
@@ -65,6 +70,22 @@
          IMPLICIT NONE  
          CLASS(LaplaceMeshSmoother) :: self
       END SUBROUTINE destructLaplaceMeshSmoother
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!      SUBROUTINE releaseLaplaceSmoother(self)  
+!         IMPLICIT NONE
+!         TYPE (LaplaceMeshSmoother), POINTER :: self
+!         CLASS(FTObject)           , POINTER :: obj
+!         
+!         IF(.NOT. ASSOCIATED(self)) RETURN
+!         
+!         obj => self
+!         CALL releaseFTObject(self = obj)
+!         IF ( .NOT. ASSOCIATED(obj) )     THEN
+!            self => NULL() 
+!         END IF      
+!      END SUBROUTINE releaseLaplaceSmoother
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

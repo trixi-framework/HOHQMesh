@@ -85,6 +85,10 @@
 !
          PROCEDURE :: initWithContentsOfFileUnit         
       END TYPE MeshProject
+      
+      INTERFACE release
+         MODULE PROCEDURE :: releaseMeshProject 
+      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -189,31 +193,19 @@
          CLASS(MeshProject) :: self
          
          IF ( ASSOCIATED(self % model) )     THEN
-            CALL self % model % release()
-            IF ( self % model % isUnreferenced() )     THEN
-               DEALLOCATE(self % model) 
-            END IF
+            CALL release(self % model)
          END IF 
          
          IF ( ASSOCIATED(self % mesh) )     THEN
-            CALL self % mesh % release()
-            IF ( self % mesh % isUnreferenced() )     THEN
-               DEALLOCATE(self % mesh) 
-            END IF
+            CALL release(self % mesh)
          END IF 
          
          IF ( ASSOCIATED(self % sizer) )     THEN
-            CALL self % sizer % release()
-            IF ( self % sizer % isUnreferenced() )     THEN
-               DEALLOCATE(self % sizer) 
-            END IF
+            CALL release(self % sizer)
          END IF 
          
          IF ( ASSOCIATED(self % grid) )     THEN
-            CALL self % grid % release()
-            IF ( self % grid % isUnreferenced() )     THEN
-               DEALLOCATE(self % grid) 
-            END IF
+            CALL release(self % grid)
          END IF 
          
          IF ( ASSOCIATED(self % smoother) )     THEN
@@ -222,6 +214,22 @@
          END IF 
          
       END SUBROUTINE DestructMeshProject
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseMeshProject(self)  
+         IMPLICIT NONE
+         CLASS(MeshProject), POINTER :: self
+         CLASS(FTObject)   , POINTER :: obj
+         
+         IF(.NOT. ASSOCIATED(self)) RETURN
+         
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseMeshProject
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -331,7 +339,7 @@
             curveID                =  curveID + 1
             segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( self % model % outerBoundary, h, curveID )
             CALL self % sizer % addBoundaryCurve(segmentedOuterBoundary,OUTER)
-            CALL segmentedOuterBoundary % release()
+            CALL release(segmentedOuterBoundary)
          END IF
 !
 !        --------------------------------------
@@ -349,7 +357,7 @@
                segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, h, curveID )
                 
                CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INNER)
-               CALL segmentedInnerBoundary % release()
+               CALL release(segmentedInnerBoundary)
                 
                CALL iterator % moveToNext()           
             END DO
@@ -370,7 +378,7 @@
                 segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, h, curveID )
                 
                 CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INTERIOR_INTERFACE)
-                CALL segmentedInnerBoundary % release()
+                CALL release(segmentedInnerBoundary)
                 
                 CALL iterator % moveToNext()           
              END DO  
@@ -406,7 +414,7 @@
             CALL c % initWithProperties( centerParams % x0, centerParams % centerExtent, &
                                        centerParams % centerMeshSize, centerParams % centerType )
             CALL self % sizer % addSizerCenterControl(c)
-            CALL c % release()
+            CALL release(c)
          END DO
 !
 !        --------------------------------
@@ -425,7 +433,7 @@
             CALL L    % initWithProperties( lineParams % x0, lineParams % x1, lineParams % lineExtent, &
                                             lineParams % lineMeshSize, lineParams % lineControlType )
             CALL self % sizer % addSizerLineControl(L)
-            CALL L    % release()
+            CALL release(L)
          END DO
 !
 !-------------------------------------------------------------------------------
@@ -592,13 +600,13 @@
          CALL v  %  initWithValue(objectName)
          obj => v
          CALL userDictionary  %  addObjectForKey(obj,"objectName")
-         CALL v  %  release()
+         CALL release(v)
          
          ALLOCATE(v)
          CALL v  %  initWithValue(msg)
          obj => v
          CALL userDictionary  %  addObjectForKey(obj,"message")
-         CALL v  %  release()
+         CALL release(v)
 !
 !        --------------------
 !        Create the exception
@@ -609,14 +617,14 @@
          CALL exception  %  initFTException(level, &
                               exceptionName   = PROJECT_READ_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL userDictionary  %  release()
+         CALL release(userDictionary)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL exception  %  release()
+         CALL release(exception)
          
       END SUBROUTINE ThrowProjectReadException
 !@mark -

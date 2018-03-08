@@ -37,13 +37,6 @@
          INTEGER           :: fUnit, preferencesFileUnit, ios
          INTEGER, EXTERNAL :: StdInFileUnitCopy, UnusedUnit
 !
-!        ---------------
-!        Error reporting
-!        ---------------
-!
-!         CLASS(FTException), POINTER :: exception => NULL()
-!         INTEGER                     :: errorSeverity = FT_ERROR_NONE
-!
 !        -----
 !        Other
 !        -----
@@ -51,7 +44,7 @@
          CLASS(FTObject) , POINTER :: obj => NULL()
          CLASS(SMElement), POINTER :: e => NULL()
          
-         CHARACTER(LEN=8) :: version = "6.10.15"
+         CHARACTER(LEN=8) :: version = "7.27.16"
          LOGICAL          :: debug = .FALSE., didGenerate3DMesh = .FALSE.
          INTEGER          :: k
          INTEGER          :: statsFileUnit
@@ -86,11 +79,11 @@
 !        ---------------------------
 !
          IF ( CommandLineArgumentIsPresent("-version") )     THEN
-            PRINT *, "SpecMesh2D Version ", version
+            PRINT *, "SpecMesh Version ", version
          END IF
          
          IF ( CommandLineArgumentIsPresent("-help") )     THEN
-            PRINT *, "No help avalable yet"
+            PRINT *, "No help avalable yet. Sorry!"
             STOP
          END IF
          
@@ -206,8 +199,7 @@
                   CALL cast(obj,e)
                   CALL PrintBadElementInfo( e, statsFileUnit )
                END DO
-               CALL badElements % release()
-               IF(badElements % isUnreferenced()) DEALLOCATE(badElements)
+               CALL release(badElements)
                
             ELSE IF (PrintMessage)     THEN 
                PRINT *, "********* Elements are OK *********"
@@ -318,8 +310,7 @@
 !        --------
 !
          CLOSE( fUnit )
-         CALL project % release()
-         DEALLOCATE(project)
+         CALL release(project)
          
          CALL destructFTExceptions
          

@@ -19,16 +19,6 @@
       END FUNCTION Loop
 !
 !////////////////////////////////////////////////////////////////////////
-!
-      FUNCTION Norm2(u) 
-         USE SMConstants
-         IMPLICIT NONE
-         REAL(KIND=RP) :: u(3)
-         REAL(KIND=RP) :: Norm2
-         norm2 = SQRT( u(1)**2 + u(2)**2 )
-      END FUNCTION Norm2
-!
-!////////////////////////////////////////////////////////////////////////
 ! 
       INTEGER FUNCTION offsetForIandJ(i,j,N)
 !

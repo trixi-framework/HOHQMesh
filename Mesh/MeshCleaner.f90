@@ -359,7 +359,7 @@
          CALL node % initWithLocationAndID(x,mesh % newNodeID())
          obj               => node
          CALL mesh % nodes % add(obj)
-         CALL node % release()
+         CALL release(node)
 !
 !        --------------------------------------------
 !        Change the corners to point to this new node
@@ -398,7 +398,7 @@
          CALL e % initWithNodesIDAndType( elementNodes, newID, QUAD )
          obj => e
          CALL mesh % elements % add(obj)
-         CALL e % release()
+         CALL release(e)
 !
          CALL deallocateNodeToEdgeConnections()
          CALL deallocateNodeToElementConnections()
@@ -517,8 +517,7 @@
 !           Do lazy deletes
 !           ---------------
 !
-            CALL badElements % release()
-            DEALLOCATE( badElements )
+            CALL release(badElements)
             DEALLOCATE( shapeMeasures, badElementMeasure )
             
             IF ( numberOfChevrons > 0 )     THEN
@@ -592,8 +591,8 @@
          CALL e % nodes % replaceObjectAtIndexWithObject(2,obj4)
          CALL e % nodes % replaceObjectAtIndexWithObject(4,obj2)
          
-         CALL obj2 % release()
-         CALL obj4 % release()
+         CALL releaseFTObject(obj2)
+         CALL releaseFTObject(obj4)
          
       END SUBROUTINE MakeElement_RightHanded
 !
@@ -664,7 +663,7 @@
                CALL EdgeListIterator % moveToNext()
             END DO
             
-            CALL edgeListIterator % release()
+            CALL edgeListIterator % destruct()
          END DO
          CALL deallocateNodeToEdgeConnections
 !
@@ -711,7 +710,7 @@
                   CALL EdgeListIterator % moveToNext()
                END DO
                
-               CALL edgeListIterator % release()
+               CALL edgeListIterator % destruct()
            END DO
 !
 !          ----------------------------------------------------
@@ -774,8 +773,7 @@
 !
            CALL splitInterfaceElements( mesh, interfaceElements )
 !
-           CALL interfaceElements % release()
-           IF(interfaceElements % isUnreferenced()) DEALLOCATE(interfaceElements)
+           CALL release(interfaceElements)
          END IF 
 !
 !        --------
@@ -888,12 +886,12 @@
 !                 Make the swap
 !                 -------------
 !
-                  obj => e % nodes % objectAtIndex(badNodeLocalID)
-                  CALL obj % release()
-                  IF ( obj % isUnreferenced() )     THEN
-                     CALL cast(obj,node)
-                     DEALLOCATE(node)
-                  END IF 
+!                  obj => e % nodes % objectAtIndex(badNodeLocalID)
+!                  CALL release(obj)
+!                  IF ( obj % isUnreferenced() )     THEN ! What's going on here?
+!                     CALL cast(obj,node)
+!                     DEALLOCATE(node)
+!                  END IF 
                   obj => eNbr % nodes % objectAtIndex(nbrNodeLocalID)
                   CALL e % nodes % replaceObjectAtIndexWithObject(badNodeLocalID, obj)
                   eNbr % remove = .true.
@@ -1168,7 +1166,7 @@
          CALL node % initWithLocationAndID(x,mesh % newNodeID())
          obj => node
          CALL mesh % nodes % add(obj)
-         CALL node % release()
+         CALL release(node)
 !
 !        ----------------------------------------------
 !        Find the elements that share the two nodes,
