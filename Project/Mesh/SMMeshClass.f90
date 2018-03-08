@@ -149,12 +149,12 @@
          IMPLICIT NONE  
          CLASS(SMMesh) :: self
          
-         CALL release(self % nodesIterator)
-         CALL release(self % edgesIterator)
-         CALL release(self % elementsIterator)
-         CALL release(self % nodes)
-         CALL release(self % elements)
-         CALL release(self % edges)
+         CALL self % nodesIterator % release()
+         CALL self % edgesIterator % release()
+         CALL self % elementsIterator % release()
+         CALL self % nodes % release()
+         CALL self % elements % release()
+         CALL self % edges % release()
          
       END SUBROUTINE destructSMMesh
 !
@@ -584,7 +584,7 @@
 !        ----------------
 !
          
-         CALL release(boundaryEdgesArray)
+         CALL boundaryEdgesArray % release()
          IF ( .NOT. ASSOCIATED(boundaryEdgesArray) )     THEN
             IF(ALLOCATED(boundaryEdgesType)) DEALLOCATE(boundaryEdgesType)
          END IF 
@@ -600,9 +600,9 @@
 !        Ensure edges are in sync
 !        ------------------------
 !
-         CALL release(self % edgesIterator)
+         CALL self % edgesIterator % release()
          
-         CALL release(self % edges)
+         CALL self % edges % release()
          ALLOCATE(self % edges)
          ALLOCATE(self % edgesIterator)
          

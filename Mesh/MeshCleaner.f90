@@ -517,7 +517,7 @@
 !           Do lazy deletes
 !           ---------------
 !
-            CALL release(badElements)
+            CALL badElements % release()
             DEALLOCATE( shapeMeasures, badElementMeasure )
             
             IF ( numberOfChevrons > 0 )     THEN
@@ -773,7 +773,7 @@
 !
            CALL splitInterfaceElements( mesh, interfaceElements )
 !
-           CALL release(interfaceElements)
+           CALL interfaceElements % release()
          END IF 
 !
 !        --------

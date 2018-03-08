@@ -174,25 +174,25 @@
          CALL v % initWithValue(curveName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"curveName")
-         CALL release(v)
+         CALL v % release()
            
          ALLOCATE(v)
          CALL v % initWithValue(eqn)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"Equation String")
-         CALL release(v)
+         CALL v % release()
        
          ALLOCATE(v)
          CALL v % initWithValue(objectName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"objectName")
-         CALL release(v)
+         CALL v % release()
          
          ALLOCATE(v)
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL release(v)
+         CALL v % release()
 !
 !        --------------------
 !        Create the exception
@@ -203,14 +203,14 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = EQUATION_FORMAT_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL release(userDictionary)
+         CALL userDictionary % release()
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL release(exception)
+         CALL exception % release()
          
       END SUBROUTINE ThrowEquationFormatException
       

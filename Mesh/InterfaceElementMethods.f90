@@ -159,8 +159,8 @@
 !        -------------------------------------------------
 !
          CALL mesh % elements % addObjectsFromList(newElementsList)
-         CALL release(newElementsList)
-         CALL release(elementIterator)
+         CALL newElementsList % release()
+         CALL elementIterator % release()
 
          CALL DoLazyDelete( mesh )
          CALL mesh % renumberAllLists()

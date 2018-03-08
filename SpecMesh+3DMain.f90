@@ -199,7 +199,7 @@
                   CALL cast(obj,e)
                   CALL PrintBadElementInfo( e, statsFileUnit )
                END DO
-               CALL release(badElements)
+               CALL badElements % release()
                
             ELSE IF (PrintMessage)     THEN 
                PRINT *, "********* Elements are OK *********"

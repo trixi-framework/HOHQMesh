@@ -398,7 +398,7 @@
 !        Clean up
 !        --------
 !
-         CALL release(nodes)
+         CALL nodes % release()
 !
       END SUBROUTINE initWithCurve
 !
@@ -407,7 +407,7 @@
       SUBROUTINE DestructFRSegmentedCurve( self )
          CLASS( FRSegmentedCurve )      :: self
 
-         CALL release(self % nodeArray)
+         CALL self % nodeArray % release()
                
       END SUBROUTINE DestructFRSegmentedCurve
 !
@@ -531,7 +531,7 @@
             CALL newNodes % addObject(obj)
          END DO
          
-         CALL release(self % nodeArray)
+         CALL self % nodeArray % release()
          
          self % nodeArray => newNodes
          
