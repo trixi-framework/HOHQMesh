@@ -800,7 +800,7 @@
                            ELSE 
                               t_k =  (j-1)*dTheta + dTheta*(1.0_RP - COS(l*PI/N))/2.0_RP
                               xTmp = [x(1),x(2),0.0_RP]
-!                              IF(rotmap(pMutation)<3) xTmp = CSHIFT(xTmp, SHIFT = -rotMap(pmutation))
+                              IF(rotmap(pMutation)<3) xTmp = CSHIFT(xTmp, SHIFT = -rotMap(pmutation))
                               hex8Mesh % faces(faceID,j) % x(:,k,l) = rotatedNodeLocation(xTmp,t_k,pmutation)
                            END IF 
                         END DO  
@@ -847,6 +847,7 @@
                         DO l = 0, N
                            t_k =  (j-1)*dTheta + dTheta*(1.0_RP - COS(l*PI/N))/2.0_RP
                            xTmp = [x(1),x(2),0.0_RP]
+                           IF(rotmap(pMutation)<3) xTmp = CSHIFT(xTmp, SHIFT = -rotMap(pmutation))
                            hex8Mesh % faces(faceID,j) % x(:,k,l) = rotatedNodeLocation(xTmp,t_k,pMutation)
                         END DO  
                       END DO
@@ -919,7 +920,7 @@
 !
                   hex8Mesh % capFaces(quadElementID,j) % elementIDs(2) = NONE
                   hex8Mesh % capFaces(quadElementID,j) % faceNumber(2) = NONE
-                  hex8Mesh % capFaces(quadElementID,j) % inc           = 0
+                  hex8Mesh % capFaces(quadElementID,j) % inc           = 1
 !                  
                END DO
                
@@ -947,7 +948,7 @@
 !
                   hex8Mesh % capFaces(quadElementID,j) % elementIDs(2) = NONE
                   hex8Mesh % capFaces(quadElementID,j) % faceNumber(2) = NONE
-                  hex8Mesh % capFaces(quadElementID,j) % inc           = 0
+                  hex8Mesh % capFaces(quadElementID,j) % inc           = 1
 !                  
                END DO
                
@@ -1036,7 +1037,7 @@
 !              face is curved
 !              --------------------------------------------------------
 !
-               hasCurve = .FALSE.
+               hasCurve  = .FALSE.
                DO k = 1, 4
                   IF( hex8Mesh % elements(quadElementID,level) % bFaceFlag( hexFaceForQuadEdge(k)) == ON )     THEN
                       hasCurve = .TRUE. 
@@ -1045,7 +1046,7 @@
                END DO 
                
                IF( .NOT. hasCurve ) CYCLE 
-               
+
                hex8Mesh % elements(quadElementID,level) % bFaceFlag( 3 ) = ON
                hex8Mesh % elements(quadElementID,level) % bFaceFlag( 5 ) = ON  
 !
@@ -1093,7 +1094,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE constructFaceCurveForElementFace(N, level, face, curve)
+      SUBROUTINE constructFaceCurveForElementFace(N, level, face, curve, increment)
          USE CurveInterpolantClass
          IMPLICIT NONE  
 !
@@ -1103,6 +1104,7 @@
 !
          INTEGER                     :: N
          INTEGER                     :: level
+         INTEGER                     :: increment
          TYPE( Face3D )              :: face
          TYPE( curveInterpolant )    :: curve
 !
@@ -1110,10 +1112,18 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER                         :: j
+         INTEGER                         :: j, start, nde
          REAL(KIND=RP), DIMENSION(0:N,3) :: values
          
-         DO j = 0, N
+         IF ( increment == 1 )     THEN
+            start = 0 
+            nde   = N
+         ELSE 
+            start = N 
+            nde   = 0
+         END IF 
+          
+         DO j = start, nde, increment
             values(j,:) = face % x(:,j,level) 
          END DO  
          
@@ -1184,7 +1194,7 @@
          INTEGER                  :: l
          
          INTEGER                  :: level
-         INTEGER                  :: fID
+         INTEGER                  :: fID, eID, increment
          INTEGER                  :: nodeID1, nodeID2
          INTEGER                  :: localNodeID1, localNodeID2
          INTEGER, DIMENSION(2,4)  :: localNodeFaceMapBottom = RESHAPE(SOURCE = [1,2,2,3,4,3,1,4], SHAPE = [2,4])
@@ -1207,15 +1217,24 @@
             fID = element % faceID( hexFaceForQuadEdge(k) )
             
             IF( element % bFaceFlag( hexFaceForQuadEdge(k) ) == ON )     THEN
+               eID = element % globalID
+               IF ( eID == hex8Mesh % faces(fID, level) % elementIDs(1) )     THEN
+                  increment = 1
+               ELSE IF ( eID == hex8Mesh % faces(fID, level) % elementIDs(2) )     THEN 
+                  increment = hex8Mesh % faces(fID, level) % inc(1)
+               ELSE 
+                  ERROR STOP "Mismatched element to face in constructFaceCurvesForCapFace"
+               END IF 
 !
 !              -----------------------------------
 !              The curved sides on the bottom face
 !              -----------------------------------
 !
                CALL constructFaceCurveForElementFace(N           = bCurveOrder, &
-                                                     level       = l      , &
+                                                     level       = l      ,     &
                                                      face        = hex8Mesh % faces(fID, level), &
-                                                     curve       = curves(k))
+                                                     curve       = curves(k), &
+                                                     increment   = increment)
             ELSE 
 !
 !              ------------------
