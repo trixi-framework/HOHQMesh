@@ -140,6 +140,7 @@
          outerBoundaryCurve => NULL()
          interiorCurves     => NULL()
          interfaceCurves    => NULL()
+         boundaryEdgesArray => NULL()
       
       END SUBROUTINE initSMMesh
 !
@@ -583,11 +584,11 @@
 !        Local varaiables
 !        ----------------
 !
-         
-         CALL boundaryEdgesArray % release()
+         IF(ASSOCIATED(boundaryEdgesArray)) CALL boundaryEdgesArray % release()
          IF ( .NOT. ASSOCIATED(boundaryEdgesArray) )     THEN
             IF(ALLOCATED(boundaryEdgesType)) DEALLOCATE(boundaryEdgesType)
          END IF 
+         IF(boundaryEdgesArray % refCount() == 0) boundaryEdgesArray => NULL()
       END SUBROUTINE destroyEdgeArrays
 !
 !//////////////////////////////////////////////////////////////////////// 
