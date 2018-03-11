@@ -1084,7 +1084,7 @@
                        
          IF ( numBoundaries == 0 )     RETURN 
          
-         CALL AllocateBoundaryEdgesArray(numBoundaries)
+        CALL AllocateBoundaryEdgesArray(numBoundaries)
 
          ALLOCATE(iterator)
          CALL iterator % init()
@@ -1100,6 +1100,10 @@
                
                obj => boundaryEdgesArray % objectAtIndex(j)
                CALL cast(obj,currentEdgeList)
+               IF(.NOT. ASSOCIATED(currentEdgeList)) THEN
+                  PRINT *, "Unnassociated edgelist in SetNodeActiveStatus number",j
+                  CYCLE
+               END IF 
                
                CALL iterator % setLinkedList(currentEdgeList)
                CALL iterator % setToStart()
@@ -1141,7 +1145,7 @@
             END DO
             
          END IF
-         
+
          CALL iterator % release()
          CALL deallocateNodeToElementConnections()
          CALL deallocateElementToEdgeConnections()

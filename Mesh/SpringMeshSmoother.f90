@@ -123,7 +123,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS  (SpringMeshSmoother)   :: self
+         CLASS (SpringMeshSmoother)    :: self
          CLASS (SMMesh)      , POINTER :: mesh
          CLASS (SMModel)     , POINTER :: model
 !
