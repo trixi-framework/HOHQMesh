@@ -226,7 +226,7 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE buildEdgeList(self)  
-         USE FTHashTableClass
+         USE FTSparseMatrixClass
          USE FTLinkedListIteratorClass
          IMPLICIT NONE
 !
@@ -240,7 +240,7 @@
 !        Local Variables
 !        ---------------
 !
-         TYPE(FTHashTable)          :: hashTable
+         TYPE(FTSparseMatrix)          :: hashTable
          TYPE(FTLinkedListIterator) :: elementIterator
          CLASS(SMEdge)   , POINTER  :: edge => NULL()
          CLASS(FTObject) , POINTER  :: obj => NULL()
