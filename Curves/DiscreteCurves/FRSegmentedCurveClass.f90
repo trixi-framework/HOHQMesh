@@ -67,15 +67,35 @@
 !     Linked list node records
 !     ------------------------
 !
-      TYPE, EXTENDS(FTObject) :: SegmentedCurveNode
+      TYPE, EXTENDS(FTObject) :: SMSegmentedCurveNode
          REAL(KIND=RP) :: x(3), nHat(3), invScale, t
 !
 !        ========
          CONTAINS
 !        ========
 !
-         PROCEDURE :: initSegmentedCurveNode
-      END TYPE SegmentedCurveNode
+         PROCEDURE :: initSMSegmentedCurveNode
+         PROCEDURE :: destruct => destructSMSegmentedCurveNode
+         PROCEDURE :: printDescription => printNodeDescription
+         
+      END TYPE SMSegmentedCurveNode
+!
+!        --------------
+!        Segment record
+!        --------------
+!
+      TYPE, EXTENDS(FTObject) :: SMSegment
+         CLASS(SMSegmentedCurveNode), POINTER :: leftNode , rightNode
+         CLASS(SMSegment)           , POINTER :: segmentLeft, segmentRight
+!
+!        ========
+         CONTAINS
+!        ========
+!
+         PROCEDURE :: initSMSegment
+         PROCEDURE :: destruct => destructSMSegment
+         
+      END TYPE SMSegment
 !
 !     ----------
 !     Class type
@@ -93,11 +113,11 @@
          CONTAINS
 !        ========
 !
+         PROCEDURE :: initWithCurve    => initFRSegmentedCurve
          PROCEDURE :: destruct         => DestructFRSegmentedCurve
          PROCEDURE :: printDescription => printFRSegmentedCurve;
          PROCEDURE :: reverse          => reverseFRSegmentedCurve
          PROCEDURE :: COUNT            => FRSegmentedCurveCount
-         PROCEDURE :: initWithCurve
          PROCEDURE :: setCurveInvScaleForIndex
          PROCEDURE :: positionAtIndex
          PROCEDURE :: argumentAtIndex
@@ -106,12 +126,15 @@
          
       END TYPE FRSegmentedCurve
       
-      PRIVATE :: RefineFRSegmentedCurve
-      
       INTERFACE release
          MODULE PROCEDURE releaseFRSegmentedCurve 
-         MODULE PROCEDURE releaseFRSegmentedCurveNode
+         MODULE PROCEDURE releaseSMSegmentedCurveNode
+         MODULE PROCEDURE releaseSMSegment
       END INTERFACE  
+
+      INTERFACE cast
+         MODULE PROCEDURE castToSMSegmentedCurveNode
+      END INTERFACE cast
 !
 !     ========
       CONTAINS
@@ -119,8 +142,12 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initSegmentedCurveNode( self, x, t )
-         CLASS( SegmentedCurveNode ) :: self
+!      SegmentedCurveNode
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE initSMSegmentedCurveNode( self, x, t )
+         CLASS( SMSegmentedCurveNode ) :: self
          REAL(KIND=RP)               :: x(3), t
          
          CALL self  %  FTObject  %  init()
@@ -129,39 +156,263 @@
          self % t        = t
          self % invScale = HUGE(t)
          
-      END SUBROUTINE initSegmentedCurveNode
+      END SUBROUTINE initSMSegmentedCurveNode
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE releaseFRSegmentedCurveNode(self)  
+      SUBROUTINE destructSMSegmentedCurveNode(self)  
          IMPLICIT NONE
-         CLASS(SegmentedCurveNode), POINTER :: self
-         CLASS(FTObject)        , POINTER :: obj
+         CLASS(SMSegmentedCurveNode) :: self
          
-         IF(.NOT. ASSOCIATED(self)) RETURN
+         CALL self % FTObject % destruct()
          
+      END SUBROUTINE destructSMSegmentedCurveNode
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE releaseSMSegmentedCurveNode(self)  
+         IMPLICIT NONE
+         CLASS(SMSegmentedCurveNode) , POINTER :: self
+         CLASS(FTObject)             , POINTER :: obj
          obj => self
          CALL releaseFTObject(self = obj)
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             self => NULL() 
          END IF      
-      END SUBROUTINE releaseFRSegmentedCurveNode
+      END SUBROUTINE releaseSMSegmentedCurveNode
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE setInvScale(self,s)  
          IMPLICIT NONE  
-         CLASS( SegmentedCurveNode ), POINTER :: self
-         REAL(KIND=RP)                        :: s
+         CLASS( SMSegmentedCurveNode ), POINTER :: self
+         REAL(KIND=RP)                          :: s
          self % invScale = s
       END SUBROUTINE  
 !
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE castToSMSegmentedCurveNode(obj,cast) 
+!
+!     --------------------------------------------------------------
+!     Cast the base class FTObject to the SMSegmentedCurveNode class
+!     --------------------------------------------------------------
+!
+         IMPLICIT NONE  
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMSegmentedCurveNode), POINTER :: cast
+
+         cast => NULL()
+
+         SELECT TYPE (e => obj)
+            TYPE is (SMSegmentedCurveNode)
+               cast => e
+            CLASS DEFAULT
+               
+         END SELECT
+         
+      END SUBROUTINE castToSMSegmentedCurveNode
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE printNodeDescription(self,iUnit)  
+         IMPLICIT NONE 
+         CLASS(SMSegmentedCurveNode) :: self
+         INTEGER                     :: iUnit
+         
+         WRITE(iUnit,*) self % t, self % x
+
+      END SUBROUTINE printNodeDescription    
+!
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initWithCurve( self, theCurve, h, id )
+!      SMSegment Class
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE initSMSegment( self, nodeLeft, nodeRight )
+         CLASS(SMSegment)                     :: self
+         CLASS(SMSegmentedCurveNode), POINTER :: nodeLeft, nodeRight
+         
+         CALL self  %  FTObject  %  init()
+         
+         self % leftNode     => nodeLeft
+         self % RightNode    => nodeRight
+         self % segmentLeft  => NULL()
+         self % segmentRight => NULL()
+         
+         CALL self % leftNode  % retain()
+         CALL self % rightNode % retain()
+                  
+      END SUBROUTINE initSMSegment
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      RECURSIVE SUBROUTINE DestructSMSegment(self)  
+         IMPLICIT NONE
+         CLASS(SMSegment)           :: self
+         CLASS(FTObject), POINTER :: obj
+                  
+         CALL release(self % leftNode)
+         CALL release(self % rightNode)
+         
+         IF(ASSOCIATED(self % segmentRight))    CALL release(self % segmentRight)
+         IF(ASSOCIATED(self % segmentLeft))     CALL release(self % segmentLeft)
+         
+         CALL self % FTObject % destruct()
+
+      END SUBROUTINE DestructSMSegment
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      RECURSIVE SUBROUTINE releaseSMSegment(self)  
+         IMPLICIT NONE
+         CLASS(SMSegment) , POINTER :: self
+         CLASS(FTObject)  , POINTER :: obj
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL() 
+         END IF      
+      END SUBROUTINE releaseSMSegment
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      RECURSIVE SUBROUTINE subdivideSMSegment(self, atT, h, alongCurve, savingNodesTo)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMSegment), POINTER :: self
+         CLASS(SMCurve)            :: alongCurve
+         CLASS(FTLinkedList)       :: savingNodesTo
+         REAL(KIND=RP)             :: h, atT
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP)                        :: xMid(3)
+         LOGICAL                              :: doSubdivision
+         REAL(KIND=RP)                        :: tL, tR
+         CLASS(SMSegmentedCurveNode), POINTER :: nodeMid, targetNode
+         CLASS(FTObject)            , POINTER :: objPtr    
+!
+!        -----------------------------------------------
+!        Use the two endpoints and midpoint to determine
+!        if this segment needs to be subdivided
+!        -----------------------------------------------
+!
+         xMid = alongCurve % positionAt(t = atT)
+         ALLOCATE(nodeMid)
+         CALL nodeMid % initSMSegmentedCurveNode(x = xMid,t = atT)
+         
+         CALL TestForSubdivision(self            = self,          &
+                                 shouldSubdivide = doSubdivision, &
+                                 h               = h,        &
+                                 midNode         = nodeMid)
+!
+!        -------------------------------------------------------
+!        If subdivision is needed, split into two child segments
+!        -------------------------------------------------------
+!
+         IF ( doSubdivision )     THEN
+  
+            tL = self % leftNode % t
+            tR = self % rightNode % t
+                    
+            ALLOCATE( self % segmentLeft, self % segmentRight)
+            CALL self % segmentLeft  % initSMSegment( self % leftNode, nodeMid )
+            CALL self % segmentRight % initSMSegment(nodeLeft = nodeMid,nodeRight = self % rightNode)
+            
+            CALL subdivideSMSegment(self          = self % segmentLeft ,  &
+                                    atT           = tL + 0.5_RP*(atT-TL), &
+                                    h             = h,                    &
+                                    alongCurve    = alongCurve,           &
+                                    savingNodesTo = savingNodesTo)
+            CALL subdivideSMSegment(self          = self % segmentRight, &
+                                    atT           = atT + 0.5_RP*(tR-atT), &
+                                    h             = h,                    &
+                                    alongCurve    = alongCurve,           &
+                                    savingNodesTo = savingNodesTo)
+            
+         END IF
+         
+         CALL release(nodeMid)
+!
+!        ---------------------------------------------------------------
+!        Add the right node to the list, as long as it is not duplicated
+!        ---------------------------------------------------------------
+!         
+         objPtr => savingNodesTo % tail % recordObject
+         CALL cast(obj = objPtr,cast = targetNode)
+         IF ( ASSOCIATED(targetNode) )     THEN
+            IF ( ABS(targetNode % t - self % rightNode % t) &
+                 > 2.0*EPSILON(targetNode % t))                 THEN
+               objPtr => self % rightNode
+               CALL savingNodesTo % add(obj = objPtr)
+            END IF  
+         END IF 
+         
+      END SUBROUTINE subdivideSMSegment
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE TestForSubdivision(self, shouldSubdivide, h, midNode)
+         USE ProgramGlobals
+         USE Geometry, ONLY: Curvature
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMSegment), POINTER   :: self
+         CLASS(SMSegmentedCurveNode) :: midNode
+         LOGICAL                     :: shouldSubdivide
+         REAL(KIND=RP)               :: h
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP)  :: xl(3), xR(3), xMid(3)
+         REAL(KIND=RP)  :: xPrime(3), xDoublePrime(3)
+         REAL(KIND=RP)  :: tL, tR, atT, dt, c, d, s
+         shouldSubdivide = .FALSE.
+         
+         xL   = self % leftNode % x
+         xR   = self % rightNode % x
+         xMid = midNode % x
+         
+         tL  = self % leftNode % t
+         tR  = self % rightNode % t
+         atT = midNode % t
+         dt  = 0.5_RP*(tR - tL)
+         
+         xPrime       = 0.5_RP*(xR - xL)/dt             
+         xDoublePrime = (xR - 2*xMid + xL)/dt**2
+  
+         c = Curvature( xPrime, xDoublePrime )
+         
+         s = 1.0_RP/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature          
+         d = SQRT( (xR(1)-xL(1))**2 + (xR(2)-xL(2))**2 + (xR(3)-xL(3))**2)
+       
+         IF( d > s .OR. dt > 1.0_RP/numCurvePoints ) shouldSubdivide = .TRUE.
+         
+      END SUBROUTINE TestForSubdivision
+!
+!////////////////////////////////////////////////////////////////////////
+!
+!      FRSegmentedCurve
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE initFRSegmentedCurve( self, theCurve, h, id )
          USE Geometry, ONLY:Curvature
          USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE
-         USE FTMutableObjectArrayClass
 !
 !     ------------------------------------------------
 !     Construct the curve given a Curve class instance
@@ -173,85 +424,87 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FRSegmentedCurve)          :: self
-         CLASS(SMCurve)         , POINTER :: theCurve
-         REAL(KIND=RP)                    :: h
-         INTEGER                          :: id
+         CLASS(FRSegmentedCurve) :: self
+         CLASS(SMCurve), POINTER :: theCurve
+         REAL(KIND=RP)           :: h
+         INTEGER                 :: id
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
-         CLASS(SegmentedCurveNode), POINTER     :: left => NULL(), right => NULL(), middle => NULL(), p => NULL()
-         CLASS(FTLinkedListRecord), POINTER     :: leftRecord => NULL(), rightRecord => NULL(), middleRecord => NULL()
+         CLASS(SMSegmentedCurveNode), POINTER   :: left => NULL(), right => NULL(), middle => NULL(), p => NULL()
          REAL(KIND=RP)                          :: t, x(3)
          REAL(KIND=RP)                          :: xL(3), xM(3), xR(3), tL, tM, tR, c, s
          REAL(KIND=RP)                          :: xPrimeL(3), xPrimeR(3), xPrime(3), xDoublePrime(3)
          REAL(KIND=RP)                          :: norm
          INTEGER                                :: j, N, jointType
          LOGICAL                                :: isCircular
-         CLASS(FTObject)            , POINTER   :: obj   => NULL()
-         CLASS(FTLinkedList)        , POINTER   :: nodes => NULL()
+         CLASS(SMSegment)   , POINTER           :: rootSegment
+         CLASS(FTLinkedList), POINTER           :: nodes
+         CLASS(FTObject)    , POINTER           :: objPtr, obj
 !
 !        ----
 !        Self
 !        ----
 !
          CALL self % FTobject % init()
+         ALLOCATE(self % nodeArray)
          
          self % h          = h
          self % curveName  = theCurve % curveName()
          self % id         = id
          self % isCircular = .FALSE.
-         
-         ALLOCATE(self % nodeArray)
+         ALLOCATE(left, right)
 !
-!        -----
-!        Nodes
-!        -----
+!        ------------------------------------------------
+!        Create root segment, which spans the whole range
+!        ------------------------------------------------
+!
+         t = 0.0_RP
+         x = theCurve % positionAt( t )
+         CALL left % initSMSegmentedCurveNode( x, t )
+                  
+         t = 1.0_RP
+         x = theCurve % positionAt( t )
+         CALL right % initSMSegmentedCurveNode( x, t )
+         
+         ALLOCATE(rootSegment)
+         CALL rootSegment % initSMSegment(nodeLeft = left, nodeRight = right)
+         CALL release(left)
+         CALL release(right)
+!
+!        ---------------------------------------------
+!        Collect the nodes at the ends of the segments
+!        Start off with the left value, and collect
+!        the rest along the way.
+!        ---------------------------------------------
 !
          ALLOCATE(nodes)
          CALL nodes % init()
-         ALLOCATE(left, right, middle)
-         
-         t = 0.0_RP
-         x = theCurve % positionAt( t )
-         CALL left % initSegmentedCurveNode( x, t )
-         obj => left
-         CALL nodes % add(obj)
-         CALL release(left)
-         leftRecord => nodes % tail
-                  
-         t  = 0.5_RP
-         x = theCurve % positionAt( t )
-         CALL middle % initSegmentedCurveNode( x, t )
-         obj => middle
-         CALL nodes % add(obj)
-         CALL release(middle)
-         middleRecord => nodes % tail
-
-         t = 1.0_RP
-         x = theCurve % positionAt( t )
-         CALL right % initSegmentedCurveNode( x, t )
-         obj => right
-         CALL nodes % add(obj)
-         CALL release(right)
-         rightRecord => nodes % tail
+         objPtr => left
+         CALL nodes % add(obj = objPtr)
 !
-!        -------------------
-!        Refine as necessary
-!        -------------------
+!        ----------------------
+!        Subdivide if necessary
+!        ----------------------
 !
-         CALL RefineFRSegmentedCurve( nodes, leftRecord  , left  , middle, h, theCurve )
-         CALL RefineFRSegmentedCurve( nodes, middleRecord, middle, right , h, theCurve )
+         CALL subdivideSMSegment(self          = rootSegment, &
+                                 atT           = 0.5_RP,      &
+                                 alongCurve    = theCurve,    &
+                                 h             = h,           &
+                                 savingNodesTo = nodes)
 !
-!        ---------------------------------------------
-!        Re-Evaluate the curvatures on the final curve
-!        Convert the list to a array for easy access.
-!        ---------------------------------------------
+!        ------------------------------------
+!        Create an array from the linked list
+!        ------------------------------------
 !
          CALL initArrayWithLinkedList( self % nodeArray, nodes )
          N = self % nodeArray % COUNT()
+
+         CALL release(rootSegment)
+         CALL nodes % destruct()
+!         CALL release(self = nodes) !TODO why isn't release called right???
 !
 !        ----------------------------
 !        See if the curve is circular
@@ -259,9 +512,9 @@
 !
          isCircular = .FALSE.
          obj => self % nodeArray % objectAtIndex(1)
-         CALL castToSegmentedCurveNode(obj,left)
+         CALL cast(obj,left)
          obj => self % nodeArray % objectAtIndex(N)
-         CALL castToSegmentedCurveNode(obj,right)
+         CALL cast(obj,right)
          x = right % x - left % x
          t = MAXVAL(ABS(x))
          IF ( t < 100*EPSILON(1.0_RP) )     THEN
@@ -278,14 +531,14 @@
 !
          DO j = 1, N
             obj => self % nodeArray % objectAtIndex(j)
-            CALL castToSegmentedCurveNode(obj,p)
+            CALL cast(obj,p)
             
             IF ( j == 1 )     THEN
                obj => self % nodeArray % objectAtIndex(1)
-               CALL castToSegmentedCurveNode(obj,left)
+               CALL cast(obj,left)
                
                obj => self % nodeArray % objectAtIndex(2)
-               CALL castToSegmentedCurveNode(obj,right)
+               CALL cast(obj,right)
                xL           = left  % x
                xR           = right % x
                tL           = left  % t
@@ -294,9 +547,9 @@
                xDoublePrime = 0.0_RP
             ELSE IF (j == N)     THEN 
                obj => self % nodeArray % objectAtIndex(N-1)
-               CALL castToSegmentedCurveNode(obj,left)
+               CALL cast(obj,left)
                obj => self % nodeArray % objectAtIndex(N)
-               CALL castToSegmentedCurveNode(obj,right)
+               CALL cast(obj,right)
                xL           = left  % x
                xR           = right % x
                tL           = left  % t
@@ -307,9 +560,9 @@
                xM = p % x
                tM = p % t
                obj => self % nodeArray % objectAtIndex(j-1)
-               CALL castToSegmentedCurveNode(obj,left)
+               CALL cast(obj,left)
                obj => self % nodeArray % objectAtIndex(j+1)
-               CALL castToSegmentedCurveNode(obj,right)
+               CALL cast(obj,right)
                xL           = left  % x
                xR           = right % x
                tL           = left  % t
@@ -339,15 +592,15 @@
          IF ( self % isCircular .AND. jointType == ROW_SIDE )     THEN
          
             obj => self % nodeArray % objectAtIndex(1)
-            CALL castToSegmentedCurveNode(obj,p)
+            CALL cast(obj,p)
             
             xM = p % x
             tM = p % t
 
             obj => self % nodeArray % objectAtIndex(N-1)
-            CALL castToSegmentedCurveNode(obj,left)
+            CALL cast(obj,left)
             obj => self % nodeArray % objectAtIndex(2)
-            CALL castToSegmentedCurveNode(obj,right)
+            CALL cast(obj,right)
             
             xL           = left  % x
             xR           = right % x
@@ -367,40 +620,33 @@
             p % nHat(3)  = 0.0_RP
 
             obj => self % nodeArray % objectAtIndex(N)
-            CALL castToSegmentedCurveNode(obj,left)
+            CALL cast(obj,left)
             
             left % x        = p % x
             left % nHat     = p % nHat
             left % invScale = p % invScale
          ELSE
             obj => self % nodeArray % objectAtIndex(1)
-            CALL castToSegmentedCurveNode(obj,p)
+            CALL cast(obj,p)
 
             obj => self % nodeArray % objectAtIndex(2)
-            CALL castToSegmentedCurveNode(obj,right)
+            CALL cast(obj,right)
             
             p % nHat     = right % nHat
             p % invScale = right % invScale
             
             obj => self % nodeArray % objectAtIndex(N)
-            CALL castToSegmentedCurveNode(obj,p)
+            CALL cast(obj,p)
 
             obj => self % nodeArray % objectAtIndex(N-1)
-            CALL castToSegmentedCurveNode(obj,left)
+            CALL cast(obj,left)
             
             p % nHat     = left % nHat
             p % invScale = left % invScale
 
          END IF 
-
-!
-!        --------
-!        Clean up
-!        --------
-!
-         CALL nodes % release()
-!
-      END SUBROUTINE initWithCurve
+         
+      END SUBROUTINE initFRSegmentedCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -435,73 +681,6 @@
          INTEGER                    :: n
          n = self % nodeArray % COUNT() 
       END FUNCTION FRSegmentedCurveCount
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      RECURSIVE SUBROUTINE RefineFRSegmentedCurve( list, leftRecord, left, right, h, theCurve ) 
-         USE Geometry, ONLY: Curvature
-         USE ProgramGlobals, ONLY:numCurvePoints
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS(FTLinkedList)      , POINTER :: list
-         CLASS(FTLinkedListRecord), POINTER :: leftRecord
-         CLASS(SegmentedCurveNode), POINTER :: left, right
-         CLASS(SMCurve)                     :: theCurve
-         REAL(KIND=RP)                      :: h
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         CLASS(FTObject)          , POINTER :: obj          => NULL()
-         CLASS(SegmentedCurveNode), POINTER :: middle       => NULL()
-         CLASS(FTLinkedListRecord), POINTER :: middleRecord => NULL()
-         
-         REAL(KIND=RP) :: xL(3), xR(3), x(3), xM(3), xPrime(3), xDoublePrime(3)
-         REAL(KIND=RP) :: tL, tR, d, t, dt, c, s, tM
-         
-         xL = left % x
-         xR = right % x
-         tL = left % t
-         tR = right % t
-!
-!        ------------------------------------------------------
-!        Compute the radius of curvature for these three points
-!        ------------------------------------------------------
-!
-         dt = 0.5_RP*(tR - tL)
-         tM = tL + dt
-         xM = theCurve % positionAt( tM )
-         
-         xPrime       = 0.5_RP*(xR - xL)/dt             
-         xDoublePrime = (xR - 2*xM + xL)/dt**2
-              
-         c = Curvature( xPrime, xDoublePrime )
-         
-         s = 1.0_RP/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature          
-         d = SQRT( (xR(1)-xL(1))**2 + (xR(2)-xL(2))**2 )
-         !TODO must get the curves accurately
-         IF( d > s .OR. dt > 1.0_RP/numCurvePoints )     THEN
-            t = tL + 0.5_RP*(tR - tL)
-            
-            ALLOCATE(middle)
-            x = theCurve % positionAt( t )
-            
-            CALL middle % initSegmentedCurveNode( x, t )
-            
-            obj => middle
-            CALL list % insertObjectAfterRecord(obj,leftRecord)
-            middleRecord => leftRecord % next
-                        
-            CALL RefineFRSegmentedCurve( list, leftRecord  , left  , middle, h, theCurve )
-            CALL RefineFRSegmentedCurve( list, middleRecord, middle, right , h, theCurve )
-         END IF
-         
-      END SUBROUTINE RefineFRSegmentedCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -554,14 +733,14 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
+         CLASS(SMSegmentedCurveNode)  , POINTER :: node      => NULL()
          INTEGER                              :: N, j
          
          N = self % nodeArray % COUNT()
          
          DO j = 1, N
             objectPtr => self % nodeArray % objectAtIndex(j)
-            CALL castToSegmentedCurveNode(objectPtr,node)
+            CALL cast(objectPtr,node)
             WRITE(iUnit,*) node % x, node % nHat, node % invScale
          END DO  
          WRITE(iUnit,*) "---------------------------------"
@@ -587,10 +766,10 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
+         CLASS(SMSegmentedCurveNode)  , POINTER :: node      => NULL()
          
          objectPtr => self % nodeArray % objectAtIndex(j)
-         CALL castToSegmentedCurveNode(objectPtr,node)
+         CALL cast(objectPtr,node)
          
          CALL setInvScale(node,s) !Gets around an optimizer bug in gfortran 4.8.0
 !         node % invScale = s ! Yes, it took a long time to find it.
@@ -615,7 +794,7 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
+         CLASS(SMSegmentedCurveNode)  , POINTER :: node      => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -641,7 +820,7 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
+         CLASS(SMSegmentedCurveNode)  , POINTER :: node      => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -667,7 +846,7 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr  => NULL()
-         CLASS(SegmentedCurveNode)  , POINTER :: node       => NULL()
+         CLASS(SMSegmentedCurveNode)  , POINTER :: node       => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -693,7 +872,7 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(SegmentedCurveNode)  , POINTER :: node      => NULL()
+         CLASS(SMSegmentedCurveNode)  , POINTER :: node      => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -712,11 +891,11 @@
 !
          IMPLICIT NONE  
          CLASS(FTObject)          , POINTER :: obj
-         CLASS(SegmentedCurveNode), POINTER :: cast
+         CLASS(SMSegmentedCurveNode), POINTER :: cast
          
          cast => NULL()
          SELECT TYPE (e => obj)
-            CLASS IS(SegmentedCurveNode)
+            CLASS IS(SMSegmentedCurveNode)
                cast => e
             CLASS DEFAULT
                
