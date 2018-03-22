@@ -600,13 +600,13 @@
          CALL v  %  initWithValue(objectName)
          obj => v
          CALL userDictionary  %  addObjectForKey(obj,"objectName")
-         CALL v % release()
+         CALL release(v)
          
          ALLOCATE(v)
          CALL v  %  initWithValue(msg)
          obj => v
          CALL userDictionary  %  addObjectForKey(obj,"message")
-         CALL v % release()
+         CALL release(v)
 !
 !        --------------------
 !        Create the exception
@@ -617,14 +617,14 @@
          CALL exception  %  initFTException(level, &
                               exceptionName   = PROJECT_READ_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL userDictionary % release()
+         CALL release(userDictionary)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL exception % release()
+         CALL release(exception)
          
       END SUBROUTINE ThrowProjectReadException
 !@mark -

@@ -86,22 +86,22 @@
          CLASS(MeshSizer) :: self
          
          IF ( ASSOCIATED(self % controlsList) )     THEN
-            CALL self % controlsList % release()
+            CALL release(self % controlsList)
          END IF 
          
          IF ( ASSOCIATED(self % innerBoundariesList) )     THEN
-            CALL self % innerBoundariesList % release()
+            CALL release(self % innerBoundariesList)
          END IF 
          
          IF ( ASSOCIATED(self % interfaceBoundariesList) )     THEN
-            CALL self % interfaceBoundariesList % release()
+            CALL release(self % interfaceBoundariesList)
          END IF 
          
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             CALL release(self % outerBoundary)
          END IF 
          
-         CALL self % controlsList % release()
+         CALL release(self % controlsList)
          
          CALL self % FTObject % destruct()
          
@@ -297,7 +297,7 @@
    
                CALL iterator % moveToNext()
             END DO
-            CALL iterator % release()
+            CALL release(iterator)
          END IF 
 !
 !        -------------------------
@@ -340,7 +340,7 @@
             CALL iterator % moveToNext()
          END DO
          
-            CALL iterator % release()
+            CALL release(iterator)
    
       END SUBROUTINE cSizeForCurvesInList
 !
@@ -395,7 +395,7 @@
                CALL iterator % moveToNext()
             END DO
             
-            CALL iterator % release()
+            CALL release(iterator)
             
          END IF 
 !
@@ -513,7 +513,7 @@
                k = k + 1
                CALL iterator % moveToNext()           
             END DO  
-            CALL iterator % release()
+            CALL release(iterator)
          END IF 
             
          IF ( self % noOfInterfaceBoundaries > 0 )     THEN
@@ -528,7 +528,7 @@
                k                           = k + 1
                CALL iterator % moveToNext()           
             END DO  
-            CALL iterator % release()
+            CALL release(iterator)
          END IF
 !
 !        -----------------------------------------------
@@ -793,7 +793,7 @@
             
             CALL iterator % moveToNext()
          END DO  
-         CALL iterator % release()
+         CALL release(iterator)
                
       END SUBROUTINE ComputeInterfaceCurveScales
 !

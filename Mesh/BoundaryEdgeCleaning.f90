@@ -241,8 +241,8 @@
 !
          CALL removeMarkedEdges(iterator)
 !
-         CALL iterator % release()
-         CALL newlyExposedBoundaryEdges % release()
+         CALL release(iterator)
+         CALL release(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveCloseElements
 !
@@ -369,8 +369,8 @@
 !
          CALL removeMarkedEdges(iterator)
          
-         CALL iterator % release()
-         CALL newlyExposedBoundaryEdges % release()
+         CALL release(iterator)
+         CALL release(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveBumpOuts
 !     
@@ -419,8 +419,7 @@
             
             CALL iterator % moveToNext()
          END DO
-         CALL iterator % release()
-         DEALLOCATE(iterator)
+         CALL release(iterator)
          
       END SUBROUTINE MoveInterfaceNodesToBoundary
 !

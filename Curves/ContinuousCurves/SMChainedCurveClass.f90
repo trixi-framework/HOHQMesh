@@ -138,7 +138,7 @@
          CLASS(SMChainedCurve) :: self
          
          IF ( ASSOCIATED(self % curvesArray) )     THEN
-            CALL self % curvesArray % release()
+            CALL release(self % curvesArray)
          END IF 
          
          CALL self % SMCurve % destruct()
@@ -659,7 +659,7 @@
          CALL v % initWithValue(self % curveName())
          obj => v
          CALL userDictionary % addObjectForKey(obj,"chainName")
-         CALL v % release()
+         CALL release(v)
          
          obj => curve
          CALL userDictionary % addObjectForKey(obj,"curve")
@@ -670,7 +670,7 @@
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL v % release()
+         CALL release(v)
 !
 !        --------------------
 !        Create the exception
@@ -681,14 +681,14 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = CURVES_DONT_JOIN_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL userDictionary % release()
+         CALL release(userDictionary)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL exception % release()
+         CALL release(exception)
          
       END SUBROUTINE ThrowCurvesDontJoinException
 

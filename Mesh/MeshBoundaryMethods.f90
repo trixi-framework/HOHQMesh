@@ -80,7 +80,7 @@
                interiorCurves(k) % curveArray => allocateAndInitSegmentedCurveFromSegmentedChain(chain)
                CALL iterator % moveToNext()
             END DO
-            CALL iterator % release()
+            CALL release(iterator)
          END IF
 !
 !        --------------------------------
@@ -102,7 +102,7 @@
                interfaceCurves(k) % curveArray => allocateAndInitSegmentedCurveFromSegmentedChain(chain)
                CALL iterator % moveToNext()
             END DO
-            CALL iterator % release()
+            CALL release(iterator)
          END IF
          
       END SUBROUTINE generateTemporaryBoundaryArrays
@@ -159,7 +159,7 @@
 !     --------------------------------
 !
       IF ( ASSOCIATED(boundaryEdgesArray) )     THEN
-         CALL boundaryEdgesArray % release()
+         CALL release(boundaryEdgesArray)
       END IF 
       IF ( ALLOCATED(boundaryEdgesType) )     THEN
             DEALLOCATE( boundaryEdgesType ) 
@@ -182,7 +182,7 @@
          CALL list % init()
          obj => list
          CALL boundaryEdgesArray % addObject(obj)
-         CALL list % release()
+         CALL release(list)
       END DO  
       
       END SUBROUTINE AllocateBoundaryEdgesArray
@@ -409,7 +409,7 @@
                locRelativeToBoundary = currentEdge % nodes(2) % node % bCurveSide
                CALL iterator % moveToNext()
             END DO
-            CALL iterator % release()
+            CALL release(iterator)
             sharedNodeID = idMin
 !
 !           -------------------------
@@ -545,7 +545,7 @@
 !
             obj => sortedEdges
             CALL boundaryEdgesArray % replaceObjectAtIndexWithObject(k,obj)
-            CALL sortedEdges % release()
+            CALL release(sortedEdges)
          END DO 
          DEALLOCATE(nodeArray)
          
@@ -614,7 +614,7 @@
             j = j + 1
          END DO
          
-         CALL iterator % release()
+         CALL release(iterator)
          
       END FUNCTION GatheredNodes
 !
@@ -733,7 +733,7 @@
             IF (chainID == UNDEFINED )     THEN
                WRITE(msg,*) "Boundary curve chain ",chainID," not assigned for a boundary edge ", edge % id
                CALL ThrowErrorExceptionOfType("LocateEdgeImagesOnBoundaries",msg,FT_ERROR_FATAL)
-               CALL edgeListIterator % release()
+               CALL release(edgeListIterator)
                RETURN
             END IF
             
@@ -746,7 +746,7 @@
             IF ( .NOT.ASSOCIATED(chain) )     THEN
                WRITE(msg,*) "Chain with id ", chainID, " Not found in model"
                CALL ThrowErrorExceptionOfType("LocateEdgeImagesOnBoundaries",msg,FT_ERROR_FATAL)
-               CALL edgeListIterator % release()
+               CALL release(edgeListIterator)
                RETURN
             END IF
 !
@@ -759,7 +759,7 @@
             END IF
 !            
             CALL AssociateBoundaryEdgesToCurve( edgeList, chain, isInnerBoundaryCurve )
-            CALL edgeListIterator % release()
+            CALL release(edgeListIterator)
             
          END DO
          
@@ -1146,7 +1146,7 @@
             
          END IF
 
-         CALL iterator % release()
+         CALL release(iterator)
          CALL deallocateNodeToElementConnections()
          CALL deallocateElementToEdgeConnections()
          
@@ -1213,7 +1213,7 @@
             CALL iterator % moveToNext()
          END DO
 
-         CALL iterator % release()
+         CALL release(iterator)
          
       END SUBROUTINE FindCurveLocationsforNodes
 

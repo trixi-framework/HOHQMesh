@@ -127,7 +127,7 @@
                msg = "Missing algorithm block"
                exception => ReaderException("Block read error", msg, meshAlgorithm, "generate3DMesh")
                CALL throw(exception)
-               CALL exception % release()
+               CALL release(exception)
                CALL hexMeshParametersDictionary % destruct()
                RETURN
             END IF
@@ -154,7 +154,7 @@
                exception => ReaderException("Generate 3D Mesh Algorithm",&
                                             "Unknown algorithm specified", algorithmName, "generate3DMesh")
                CALL throw(exception)
-               CALL exception % release()
+               CALL release(exception)
          END SELECT 
          
       END SUBROUTINE generate3DMesh
@@ -194,7 +194,7 @@
          ELSE
             exception => ReaderException("Read Variable","Error reading variable", "Element type", "Read3DMeshBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
             RETURN 
          END IF 
          
@@ -205,7 +205,7 @@
          ELSE 
             exception => ReaderException("Read Variable","Error reading variable", "algorithm", "Read3DMeshBlock")
             CALL throw(exception)
-            CALL exception % release()
+            CALL release(exception)
            RETURN 
          END IF 
 
@@ -248,7 +248,7 @@
                exception => ReaderException("Read Algorithm","Unknown algorithm specified", &
                                            algorithmName, "Read3DAlgorithmBlock")
                CALL throw(exception)
-               CALL exception % release()
+            CALL release(exception)
          END SELECT 
 
          

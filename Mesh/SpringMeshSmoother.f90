@@ -199,7 +199,7 @@
          CALL boundaryNodesList % init()
          CALL CollectBoundaryAndInterfaceNodes( mesh % nodesIterator, boundaryNodesList )
          CALL FindCurveLocationsforNodes      ( boundaryNodesList, model )
-         CALL boundaryNodesList % release()
+         CALL release(boundaryNodesList)
       
       END SUBROUTINE SpringSmoothMesh
 !

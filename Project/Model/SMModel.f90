@@ -133,7 +133,7 @@
          IMPLICIT NONE  
          CLASS(FTLinkedListIterator), POINTER :: obj
          
-         CALL obj % release()
+         CALL release(obj)
          
       END SUBROUTINE destroyIterator
 !
@@ -143,7 +143,7 @@
          IMPLICIT NONE  
          CLASS(FTLinkedList), POINTER :: obj
          
-         CALL obj % release()
+         CALL release(obj)
          
       END SUBROUTINE destroyList
 !@mark -
@@ -206,7 +206,7 @@
             CALL ReadInnerBoundaryBlock( self, INNER_BOUNDARY_BLOCK, fUnit )
             
             IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               CALL self % innerBoundaries % release()
+               CALL release(self % innerBoundaries)
                exception => errorObject()
                CALL throw(exception)
                RETURN
@@ -232,7 +232,7 @@
             CALL ReadInnerBoundaryBlock( self, INTERFACE_BOUNDARY_BLOCK, fUnit )
             
             IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               CALL self % interfaceBoundaries % release()
+               CALL release(self % interfaceBoundaries)
                exception => errorObject()
                CALL throw(exception)
                RETURN
@@ -798,7 +798,7 @@
                 
                CALL iterator % moveToNext()
             END DO
-           CALL iterator % release()
+           CALL release(iterator)
         END IF
 !!
 !!        --------------------
@@ -837,7 +837,7 @@
                 
                CALL iterator % moveToNext()
             END DO
-           CALL iterator % release()
+           CALL release(iterator)
         END IF
 
       END SUBROUTINE MakeCurveToChainConnections
@@ -877,13 +877,13 @@
          CALL v % initWithValue(objectName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"objectName")
-         CALL v % release()
+         CALL release(v)
          
          ALLOCATE(v)
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL v % release()
+         CALL release(v)
 !
 !        --------------------
 !        Create the exception
@@ -894,14 +894,14 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = MODEL_READ_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL userDictionary % release()
+         CALL release(userDictionary)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL exception % release()
+         CALL release(exception)
          
       END SUBROUTINE ThrowModelReadException
 !@mark -
