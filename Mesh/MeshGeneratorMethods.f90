@@ -125,12 +125,6 @@
 !
       CALL DoLazyDelete( mesh )
 !
-!     -------------------------------------
-!     We no longer need the boundary arrays
-!     -------------------------------------
-!
-      CALL destroyTemporaryBoundaryArrays
-!
 !     -------------------------------------------
 !     Prepare for generating boundary elements by
 !     building, collecting and ordering boundary
@@ -225,6 +219,12 @@
          CALL cast(obj,list)
          CALL GenerateBoundaryElements( mesh, model, list ) 
       END DO
+!
+!     -------------------------------------
+!     We no longer need the boundary arrays
+!     -------------------------------------
+!
+      CALL destroyTemporaryBoundaryArrays
 !
 !     -------------------------------
 !     The edges are no longer in sync

@@ -775,8 +775,8 @@
 !     in the direction of the normal to the curve.
 !     ---------------------------------------------------------------------
 !
-         USE ProgramGlobals, ONLY:edgeLengthFactor
-         USE fMinModule, ONLY : DistanceSquaredBetweenPoints
+         USE ProgramGlobals, ONLY :edgeLengthFactor
+         USE fMinModule    , ONLY : DistanceSquaredBetweenPoints
          USE Geometry
          IMPLICIT NONE
 !
@@ -844,9 +844,6 @@
 !        minima that fMin cannot deal with. Compute and store points along
 !        the curve to compare against.
 !
-!        TODO: This can likely
-!        be sped up by using the already computed segmented curves stored in
-!        the sizer object.
 !       -------------------------------------------------------------------
 !
          ALLOCATE( xCurve(3,0:totalCurvePoints) )
