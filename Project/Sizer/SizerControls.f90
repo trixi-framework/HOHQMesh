@@ -10,6 +10,8 @@
       MODULE SizerControls
       USE SMConstants
       USE FTObjectClass
+      USE FTLinkedListClass
+      USE FTLinkedListIteratorClass
       IMPLICIT NONE
 !
 !     ----------
@@ -226,6 +228,75 @@
          
       END FUNCTION hInvForLineControl
 !
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION controlsSize( controlsList, x ) 
+!
+!     -------------------------------------------------------
+!     Go through a list of controls and find the minimum size
+!     -------------------------------------------------------
+!      
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTLinkedList), POINTER :: controlsList
+         REAL(KIND=RP)                :: x(3)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj      => NULL()
+         CLASS(SizerCenterControl)  , POINTER :: center   => NULL()
+         CLASS(SizerLineControl)    , POINTER :: line     => NULL()
+         REAL(KIND=RP)                        :: hFunInv
+         
+         controlsSize = HUGE(controlsSize)
+!
+!        --------------------------------
+!        Sizes given by centers and lines
+!        --------------------------------
+!
+         IF ( ASSOCIATED(controlsList) )     THEN
+         
+            ALLOCATE(iterator)
+            CALL iterator % initwithFTLinkedList(controlsList)
+            CALL iterator % setToStart()
+            
+            hFunInv = TINY(hFunInv)
+            
+            DO WHILE (.NOT.iterator % isAtEnd())
+               obj => iterator % object()
+               SELECT TYPE(obj)
+                  TYPE IS (SizerCenterControl)
+                     center  => obj
+                     hFunInv = MAX(hFunInv , hInvForCenter( center, x ) )
+                  TYPE IS (sizerLineControl)
+                     line => obj
+                     hFunInv = MAX(hFunInv , hInvForLineControl( line, x ) )
+                  CLASS DEFAULT
+                  
+               END SELECT 
+               
+               CALL iterator % moveToNext()
+            END DO
+            
+            CALL release(iterator)
+!
+!           -------------------------
+!           Compute the size function
+!           -------------------------
+!
+            controlsSize = 1.0_RP/hFunInv
+           
+         END IF 
+         
+      END FUNCTION controlsSize
+!
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE printCenterDescription(self,iUnit)  
@@ -233,5 +304,6 @@
          CLASS(SizerCenterControl) :: self
          INTEGER                   :: iUnit
          WRITE(iUnit,*) "SizerCenter object"
-      END SUBROUTINE  
+      END SUBROUTINE printCenterDescription
+      
       END MODULE SizerControls
