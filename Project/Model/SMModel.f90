@@ -584,13 +584,13 @@
 !        Local variables
 !        ---------------
 !
-         CHARACTER(LEN=LINE_LENGTH)                :: inputLine = " "
-         CHARACTER(LEN=SM_CURVE_NAME_LENGTH)       :: curveName
-         INTEGER                                   :: ios
-         CLASS(SMSplineCurve)         , POINTER    :: cCurve => NULL()
-         CLASS(SMCurve)               , POINTER    :: curvePtr => NULL()
-         REAL(KIND=RP) , DIMENSION(:), ALLOCATABLE :: t, x, y, z
-         INTEGER                                   :: numKnots, j
+         CHARACTER(LEN=LINE_LENGTH)                 :: inputLine = " "
+         CHARACTER(LEN=SM_CURVE_NAME_LENGTH)        :: curveName
+         INTEGER                                    :: ios
+         CLASS(SMSplineCurve)             , POINTER :: cCurve      => NULL()
+         CLASS(SMCurve)                   , POINTER :: curvePtr    => NULL()
+         REAL(KIND=RP) , DIMENSION(:), ALLOCATABLE  :: t, x, y, z
+         INTEGER                                    :: numKnots, j
          
          INTEGER, EXTERNAL :: GetIntValue
 !
@@ -615,7 +615,6 @@
          ALLOCATE(cCurve)
          CALL cCurve % initWithPointsNameAndID(t, x, y, z, curveName, self % curveCount + 1 )
          !Spline curves have no exceptions thrown
-         
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
          CALL release(cCurve)
