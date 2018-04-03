@@ -278,17 +278,19 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      RECURSIVE SUBROUTINE subdivideSMSegment(self, atT, h, alongCurve, savingNodesTo)  
+      RECURSIVE SUBROUTINE subdivideSMSegment(self, atT, h, alongCurve, controls, savingNodesTo)  
+         USE SizerControls
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(SMSegment), POINTER :: self
-         CLASS(SMCurve)            :: alongCurve
-         CLASS(FTLinkedList)       :: savingNodesTo
-         REAL(KIND=RP)             :: h, atT
+         CLASS(SMSegment)   , POINTER :: self
+         CLASS(SMCurve)               :: alongCurve
+         CLASS(FTLinkedList)          :: savingNodesTo
+         CLASS(FTLinkedList), POINTER :: controls
+         REAL(KIND=RP)                :: h, atT, hLoc, cSize
 !
 !        ---------------
 !        Local variables
@@ -309,9 +311,15 @@
          ALLOCATE(nodeMid)
          CALL nodeMid % initSMSegmentedCurveNode(x = xMid,t = atT)
          
+         hLoc = h
+         IF(ASSOCIATED(controls))     THEN
+            cSize = controlsSize(controlsList = controls,x = xMid)
+            hLoc = MIN(hLoc, cSize)
+         END IF  
+         
          CALL TestForSubdivision(self            = self,          &
                                  shouldSubdivide = doSubdivision, &
-                                 h               = h,        &
+                                 h               = hLoc,          &
                                  midNode         = nodeMid)
 !
 !        -------------------------------------------------------
@@ -331,11 +339,13 @@
                                     atT           = tL + 0.5_RP*(atT-TL), &
                                     h             = h,                    &
                                     alongCurve    = alongCurve,           &
+                                    controls      = controls,             &
                                     savingNodesTo = savingNodesTo)
             CALL subdivideSMSegment(self          = self % segmentRight, &
                                     atT           = atT + 0.5_RP*(tR-atT), &
                                     h             = h,                    &
                                     alongCurve    = alongCurve,           &
+                                    controls      = controls,             &
                                     savingNodesTo = savingNodesTo)
             
          END IF
@@ -410,7 +420,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initFRSegmentedCurve( self, theCurve, h, id )
+      SUBROUTINE initFRSegmentedCurve( self, theCurve, h, controls, id )
          USE Geometry, ONLY:Curvature
          USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE
 !
@@ -424,10 +434,11 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FRSegmentedCurve) :: self
-         CLASS(SMCurve), POINTER :: theCurve
-         REAL(KIND=RP)           :: h
-         INTEGER                 :: id
+         CLASS(FRSegmentedCurve)      :: self
+         CLASS(SMCurve)     , POINTER :: theCurve
+         CLASS(FTLinkedList), POINTER :: controls
+         REAL(KIND=RP)                :: h
+         INTEGER                      :: id
 !
 !        ---------------
 !        Local Variables
@@ -437,7 +448,7 @@
          REAL(KIND=RP)                          :: t, x(3)
          REAL(KIND=RP)                          :: xL(3), xM(3), xR(3), tL, tM, tR, c, s
          REAL(KIND=RP)                          :: xPrimeL(3), xPrimeR(3), xPrime(3), xDoublePrime(3)
-         REAL(KIND=RP)                          :: norm
+         REAL(KIND=RP)                          :: norm, hLocal
          INTEGER                                :: j, N, jointType
          LOGICAL                                :: isCircular
          CLASS(SMSegment)   , POINTER           :: rootSegment
@@ -451,7 +462,6 @@
          CALL self % FTobject % init()
          ALLOCATE(self % nodeArray)
          
-         self % h          = h
          self % curveName  = theCurve % curveName()
          self % id         = id
          self % isCircular = .FALSE.
@@ -474,6 +484,8 @@
          CALL release(left)
          CALL release(right)
 !
+         self % h = h
+!
 !        ---------------------------------------------
 !        Collect the nodes at the ends of the segments
 !        Start off with the left value, and collect
@@ -492,7 +504,8 @@
          CALL subdivideSMSegment(self          = rootSegment, &
                                  atT           = 0.5_RP,      &
                                  alongCurve    = theCurve,    &
-                                 h             = h,           &
+                                 h             = self % h,    &
+                                 controls      = controls,    &
                                  savingNodesTo = nodes)
 !
 !        ------------------------------------

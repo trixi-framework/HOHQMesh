@@ -325,77 +325,9 @@
                                    parent, (/0,0,0/), 0)
 !
 !-------------------------------------------------------------------------------
-!                               Construct Sizer
+!                               Build up Sizer properties
 !-------------------------------------------------------------------------------
 !
-!
-!        -------------------------------------------
-!        Discretize boundary curves and add to sizer
-!        -------------------------------------------
-!
-         curveID = 0
-         h       = MINVAL(self % meshParams % backgroundGridSize(1:2))
-         IF( ASSOCIATED( self % model % outerBoundary ) )     THEN
-            curveID                =  curveID + 1
-            segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( self % model % outerBoundary, h, curveID )
-            CALL self % sizer % addBoundaryCurve(segmentedOuterBoundary,OUTER)
-            CALL release(segmentedOuterBoundary)
-         END IF
-!
-!        --------------------------------------
-!        Step through each inner boundary curve
-!        and construct chains.
-!        --------------------------------------
-!
-         IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
-            iterator => self % model % innerBoundariesIterator
-            CALL iterator % setToStart
-            DO WHILE (.NOT.iterator % isAtEnd())
-               curveID =  curveID + 1
-               obj     => iterator % object()
-               CALL castToSMChainedCurve(obj,chain)
-               segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, h, curveID )
-                
-               CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INNER)
-               CALL release(segmentedInnerBoundary)
-                
-               CALL iterator % moveToNext()           
-            END DO
-         END IF
-!
-!        ------------------------------------------
-!        Step through each interface boundary curve
-!        and construct chains.
-!        ------------------------------------------
-!
-         IF( ASSOCIATED( self % model % interfaceBoundaries ) )     THEN
-            iterator => self % model % interfaceBoundariesIterator
-            CALL iterator % setToStart
-             DO WHILE (.NOT.iterator % isAtEnd())
-                curveID =  curveID + 1
-                obj     => iterator % object()
-                CALL castToSMChainedCurve(obj,chain)
-                segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, h, curveID )
-                
-                CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INTERIOR_INTERFACE)
-                CALL release(segmentedInnerBoundary)
-                
-                CALL iterator % moveToNext()           
-             END DO  
-         END IF
-!
-!        -------------------------------------------------------
-!        Make sure that there are enough elements between curves
-!        -------------------------------------------------------
-!
-         IF ( ASSOCIATED( self % model % interfaceBoundaries ) .OR. &
-              ASSOCIATED( self % model % innerBoundaries ) )     THEN
-            CALL ComputeCurveDistanceScales( self % sizer )
-         END IF
-         
-         IF ( ASSOCIATED( self % model % interfaceBoundaries ) ) THEN
-            CALL ComputeInterfaceCurveScales( self % sizer )
-         END IF
 !
 !        ------------------------------------------------------
 !        Construct any refinement centers as instructed by the 
@@ -435,6 +367,83 @@
             CALL self % sizer % addSizerLineControl(L)
             CALL release(L)
          END DO
+!
+!        ------------------------------------------------
+!        Discretize boundary curves and add to sizer.
+!        Use current sizer attributes to subdivide the
+!        boundary curves. There is a relationship between
+!        computing the discretization of the boundary
+!        curves and the size to be associated with the
+!        sizer. 
+!        ------------------------------------------------
+!
+         curveID = 0
+         h       = MINVAL(self % meshParams % backgroundGridSize(1:2))
+         
+         IF( ASSOCIATED( self % model % outerBoundary ) )     THEN
+            curveID                =  curveID + 1
+            segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( self % model % outerBoundary, &
+                                                                           h, self % sizer % controlsList, curveID )
+!            CALL segmentedOuterBoundary % printDescription(iUnit = 6)!DEBUGPRINT
+            CALL self % sizer % addBoundaryCurve(segmentedOuterBoundary,OUTER)
+            CALL release(segmentedOuterBoundary)
+         END IF
+!
+!        --------------------------------------
+!        Step through each inner boundary curve
+!        and construct chains.
+!        --------------------------------------
+!
+         IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
+            iterator => self % model % innerBoundariesIterator
+            CALL iterator % setToStart
+            DO WHILE (.NOT.iterator % isAtEnd())
+               curveID =  curveID + 1
+               obj     => iterator % object()
+               CALL castToSMChainedCurve(obj,chain)
+               segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, h, self % sizer % controlsList, curveID )
+                
+               CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INNER)
+               CALL release(segmentedInnerBoundary)
+                
+               CALL iterator % moveToNext()           
+            END DO
+         END IF
+!
+!        ------------------------------------------
+!        Step through each interface boundary curve
+!        and construct chains.
+!        ------------------------------------------
+!
+         IF( ASSOCIATED( self % model % interfaceBoundaries ) )     THEN
+            iterator => self % model % interfaceBoundariesIterator
+            CALL iterator % setToStart
+             DO WHILE (.NOT.iterator % isAtEnd())
+                curveID =  curveID + 1
+                obj     => iterator % object()
+                CALL castToSMChainedCurve(obj,chain)
+                segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, h, self % sizer % controlsList, curveID )
+                
+                CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INTERIOR_INTERFACE)
+                CALL release(segmentedInnerBoundary)
+                
+                CALL iterator % moveToNext()           
+             END DO  
+         END IF
+!
+!        -------------------------------------------------------
+!        Make sure that there are enough elements between curves
+!        Adjust the sizer to account for the curves.
+!        -------------------------------------------------------
+!
+         IF ( ASSOCIATED( self % model % interfaceBoundaries ) .OR. &
+              ASSOCIATED( self % model % innerBoundaries ) )     THEN
+            CALL ComputeCurveDistanceScales( self % sizer )
+         END IF
+         
+         IF ( ASSOCIATED( self % model % interfaceBoundaries ) ) THEN
+            CALL ComputeInterfaceCurveScales( self % sizer )
+         END IF
 !
 !-------------------------------------------------------------------------------
 !                          Construct Smoother, if requested
@@ -510,8 +519,10 @@
 !        ---------------
 !
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
+         CLASS(MeshSizer)            , POINTER :: sizer => NULL()
          INTEGER                               :: curveID
          CHARACTER(LEN=128)                    :: msg
+         CLASS(FTLinkedList)         , POINTER :: controlsList
          
          INTEGER       :: nX, nY
          REAL(KIND=RP) :: heightB, widthB
@@ -521,6 +532,7 @@
          rightB  = -leftB
          topB    =  rightB
          bottomB =  leftB
+         controlsList => NULL()
 !
 !        ----------------------------------------------------
 !        Create a discrete curve to determine the extents of 
@@ -530,7 +542,8 @@
          h = MAXVAL( backgroundGridSize(1:2) )
          IF( ASSOCIATED( model % outerBoundary ) )     THEN
             curveID = 1
-            segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( model % outerBoundary, h, curveID )
+            sizer => NULL()
+            segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( model % outerBoundary, h, controlsList, curveID )
 !
 !           ----------------------------------
 !           Find the bounds on the outer curve

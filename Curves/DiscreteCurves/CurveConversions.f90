@@ -19,7 +19,8 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION allocAndInitSegmentedChainFromChain( chain, h, id ) RESULT(SegmentedChain)
+      FUNCTION allocAndInitSegmentedChainFromChain( chain, h, controls, id ) RESULT(SegmentedChain)
+         USE SizerControls
          IMPLICIT NONE
 !
 !        ----------------------------------------------
@@ -33,6 +34,7 @@
 !
          CLASS(SMChainedCurve)       , POINTER :: chain
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedChain
+         CLASS(FTLinkedList)         , POINTER :: controls
          REAL(KIND=RP)                         :: h
          INTEGER                               :: id
 !
@@ -50,7 +52,7 @@
          DO k = 1, chain % COUNT()
             cCurve => chain % curveAtIndex(k)
             ALLOCATE(frsCurve)
-            CALL frsCurve % initWithCurve(cCurve, h, cCurve % id())
+            CALL frsCurve % initWithCurve(cCurve, h, controls, cCurve % id())
             CALL segmentedChain % add(frsCurve)
             CALL release(frsCurve)
          END DO
