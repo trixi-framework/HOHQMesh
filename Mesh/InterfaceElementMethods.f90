@@ -80,7 +80,7 @@
             CALL cast(obj,e)
             IF ( e % remove )     THEN
                CALL elementIterator % moveToNext()
-               CYCLE !DEBUG - in case elements are doubled up
+               CYCLE !in case elements are doubled up
             END IF
 !
 !           ------------------------------

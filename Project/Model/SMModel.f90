@@ -331,7 +331,7 @@
          CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: blockName, chainName
          CHARACTER(LEN=LINE_LENGTH)              :: inputLine = " "
          CHARACTER(LEN=LINE_LENGTH)              :: bBlockEndName
-         
+
          IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
             bBlockEndName = "\end{InnerBoundaries}"
          ELSE

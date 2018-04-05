@@ -94,6 +94,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE makeNodeToElementConnections( mesh )
+      USE MeshOutputMethods, ONLY : WriteToTecplot
 !
 !     --------------------------------------------------------
 !     Collect which elements are used by each node and store 
@@ -150,6 +151,8 @@
                numElementsForNode(id) = numElementsForNode(id) + 1
                IF ( numElementsForNode(id) > 8 )     THEN
                   PRINT *, "Valence too high for node ",id
+                  PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                  CALL WriteToTecplot( mesh, "DebugPlot.tec" )
                   STOP
                END IF 
                

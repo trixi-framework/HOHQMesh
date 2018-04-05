@@ -534,7 +534,7 @@
                   mo % id =  j
                   j       =  j + 1
                ELSE
-                  PRINT *, "unassociated pointer in list"!DEBUG
+                  PRINT *, "Unassociated pointer in list in renumberObjects"
                END IF 
                CALL iterator % moveToNext()
             END DO  

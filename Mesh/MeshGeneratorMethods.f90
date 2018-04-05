@@ -31,7 +31,7 @@
 !     This is the main procedure that actually generates the mesh.
 !     ------------------------------------------------------------
 !
-      IMPLICIT NONE  
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -236,7 +236,7 @@
       CALL mesh % syncEdges()
       CALL mesh % renumberAllLists()
       
-      IF(PrintMessage) PRINT *, "   Nodes and elements generated"
+     IF(PrintMessage) PRINT *, "   Nodes and elements generated"
 
       END SUBROUTINE GenerateQuadMeshForProject
 !
@@ -344,6 +344,7 @@
 !
       SUBROUTINE GenerateBoundaryElements( mesh, model, list ) 
          USE fMinModule
+         USE MeshOutputMethods, ONLY: writeToTecplot
          IMPLICIT NONE
 !
 !        ---------
@@ -675,7 +676,9 @@
                   k = k + 1
                   
                CASE DEFAULT
-                  PRINT *, "BAD row type" !DEBUG
+                  PRINT *, "An unkown row type has appeared in GenerateBoundaryElements"
+                  PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                  CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
                   STOP
             END SELECT
             k = k + 1

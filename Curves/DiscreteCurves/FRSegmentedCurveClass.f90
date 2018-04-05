@@ -754,7 +754,7 @@
          DO j = 1, N
             objectPtr => self % nodeArray % objectAtIndex(j)
             CALL cast(objectPtr,node)
-            WRITE(iUnit,*) node % x, node % nHat, node % invScale
+            WRITE(iUnit,*) node % t, node % x, node % nHat, node % invScale
          END DO  
          WRITE(iUnit,*) "---------------------------------"
 

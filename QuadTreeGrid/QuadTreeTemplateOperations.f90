@@ -202,7 +202,7 @@
               END DO
            
             CASE DEFAULT
-               PRINT *, "Unknown level operation: ", operation!DEBUG
+               PRINT *, "Unknown level operation: ", operation, " in DoLevelOperation"
          END SELECT
 !
 !        -------
