@@ -68,7 +68,7 @@
 !        -----------
 !
          INTEGER, PARAMETER :: MAX_VALENCE    = 8
-         INTEGER, PARAMETER :: numCurvePoints = 100
+         INTEGER, PARAMETER :: numCurvePoints = 500
          
          INTEGER       :: minNumberOfElementsInsideArea = 6
          REAL(KIND=RP) :: curvatureFactor         = 2.0_RP
