@@ -34,8 +34,9 @@
 !        File
 !        ----
 !
-         INTEGER           :: fUnit, preferencesFileUnit, ios
-         INTEGER, EXTERNAL :: StdInFileUnitCopy, UnusedUnit
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: controlFileName
+         INTEGER                               :: fUnit, preferencesFileUnit, ios
+         INTEGER, EXTERNAL                     :: StdInFileUnitCopy, UnusedUnit
 !
 !        -----
 !        Other
@@ -96,13 +97,25 @@
          IF ( CommandLineArgumentIsPresent("-verbose") )     THEN
             PrintMessage = .true.
          END IF
+         
+         controlFileName = "none"
+         IF ( CommandLineArgumentIsPresent(argument = "-f") )     THEN
+            controlFileName = StringValueForArgument(argument = "-f")
+         END IF 
 !
 !        ----------------------
 !        Initialize the project
 !        ----------------------
 !
          ALLOCATE(project)
-         fUnit   = StdInFileUnitCopy( )
+         IF ( controlFileName == "none" )     THEN
+            fUnit   = StdInFileUnitCopy( )
+         ELSE
+            fUnit = UnusedUnit()
+            OPEN(UNIT = fUnit, FILE = controlFileName, STATUS = "OLD",  IOSTAT = ios)
+            IF(ios /= 0)  fUnit = NONE 
+         END IF
+          
          IF( fUnit /= NONE )     THEN
          
             CALL project % initWithContentsOfFileUnit( fUnit )
