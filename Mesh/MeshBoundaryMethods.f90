@@ -190,6 +190,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE CollectBoundaryEdges( mesh )
+      USE MeshOutputMethods
 !
 !     ---------------------------------------------------
 !     Boundary edges are those who have at least one node
@@ -231,9 +232,11 @@
             IF( .NOT.ASSOCIATED(edge % elements(2) % element ) )    THEN ! "Exterior" boundary
                edge % edgeType = ON_BOUNDARY
                
-               IF( curveID == 0 .OR. curveSide == 0 )     THEN !DEBUG
+               IF( curveID == 0 .OR. curveSide == 0 )     THEN 
                   PRINT *, "Curve not found for boundary point"
                   PRINT *, edge % nodes(1) % node % x, edge % nodes(2) % node % x
+                  PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                  CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
                   STOP
                END IF
                
@@ -243,8 +246,10 @@
                   obj      => boundaryEdgesArray % objectAtIndex(curveID)
                   edgeList => linkedListFromObject(obj)
                   IF ( .NOT.ASSOCIATED(edgeList) )     THEN
-                     PRINT *, "edge list not associated" !DEBUGPRINT
-                     PRINT *, ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID!DEBUGPRINT
+                     PRINT *, "edge list not associated"
+                     PRINT *, ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
+                     PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
                      ERROR STOP "Unassociated edge pointers in CollectBoundaryEdges"
                   END IF 
                   obj => edge
@@ -312,6 +317,7 @@
 !
       SUBROUTINE OrderBoundaryEdges( mesh )
       USE ErrorTypesModule
+      USE MeshOutputMethods
 !
 !     -----------------------------------------------------------------
 !     For each boundary in the boundary edge arrays, re-order the edges
@@ -496,6 +502,12 @@
                ELSE
                   eId = eId1
                END IF
+               IF(eID == 0)     THEN
+                  PRINT *, "It appears that an edge is not connected"
+                  PRINT *, "Plot the file 'DebugPlot.tec' to see where additional resolution is needed"
+                  CALL WriteToTecplot( mesh, "DebugPlot.tec" )
+                  STOP 
+               END IF 
                edge => edgeArray(eId) % edge
                
                IF ( .NOT.ASSOCIATED(edge) )     THEN
@@ -798,7 +810,7 @@
          REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: nHat => NULL()
          REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: xCurve => NULL()
          REAL(KIND=RP)  , DIMENSION(3)            :: z, p
-         REAL(KIND=RP)                            :: tStart, tEnd, t
+         REAL(KIND=RP)                            :: tStart, tEnd, t, tStar
          REAL(KIND=RP)                            :: d, dMin, dt
          INTEGER                                  :: j, k, M
          INTEGER                                  :: totalCurvePoints
@@ -861,11 +873,12 @@
             p    = node % x
             dMin = HUGE(dMin)
             DO k = 0, totalCurvePoints - 1
-               d = SQRT( distanceSquaredBetweenPoints(xCurve(:,k),p,nHat(:,j)) )
+!               d = SQRT( distanceSquaredBetweenPoints(xCurve(:,k),p,nHat(:,j)) )
+               d = SQRT( distanceSquaredBetweenPoints(xCurve(:,k),p,[0.0_RP,0.0_RP,0.0_RP]) )
                IF( d < dMin )     THEN
                   t                     = k*dt
                   node%gWhereOnBoundary = t
-                  dMin = d
+                  dMin                  = d
                END IF
             END DO
          END DO
@@ -882,6 +895,8 @@
             
             tStart = t - dt
             tEnd   = t + dt
+            IF(tStart < 0.0_RP) tStart = 0.0_RP
+            IF(tEnd> 1.0_RP) tEnd = 1.0_RP
 !
 !           --------------------------------------------
 !           Make sure that the locations do not straddle
@@ -896,13 +911,30 @@
                tStart = MAX(tStart, 0.0_RP)
                tEnd   = MIN(tEnd, 1.0_RP)
 !
-               t = fmin(tStart, tEnd, c, p, nHat(:,j), minimizationTolerance )
+               tStar = t
+!
+!              ---------------------------------------------------------------
+!              Using fmin seems to give the same point sometimes for different
+!              p values. Just doing a search seems to work. HACK.
+!              ---------------------------------------------------------------
+!
+!               t = fmin(tStart, tEnd, c, p, [0.0_RP,0.0_RP,0.0_RP], minimizationTolerance )
+               dMin = HUGE(dMin)
+               DO k = 1, 20
+                  t = tStart + k*(tEnd-tStart)/20.0_RP
+                  d = distanceSquared(t,c,p,[0.0_RP,0.0_RP,0.0_RP])
+                  IF ( d < dMin )     THEN
+                     tStar = t
+                     dMin  = d 
+                  END IF 
+               END DO 
+               t = tStar
             ELSE
                c => chain % curveWithLocation(t)
                t =  chain % curveTForChainT(t)
             END IF 
 
-            d = SQRT(distanceSquared(t,c,p,(/0.0_RP,0.0_RP,0.0_RP,0.0_RP/)))
+            d = SQRT(distanceSquared(t,c,p,[0.0_RP,0.0_RP,0.0_RP]))
             
             node % bCurveID         = c % id()
             node % whereOnBoundary  = t
@@ -1111,13 +1143,13 @@
                   IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
                   
                      IF ( currentEdge % nodes(1) % node % nodeType == ROW_SIDE )     THEN
-                        currentEdge % nodes(1) % node % activeStatus = ACTIVE
+                        currentEdge % nodes(1) % node % activeStatus = INACTIVE!DEBUG
                      ELSE
                         currentEdge % nodes(1) % node % activeStatus = INACTIVE
                      END IF
                      
                      IF ( currentEdge%nodes(2) % node % nodeType == ROW_SIDE )     THEN
-                        currentEdge % nodes(2) % node % activeStatus = ACTIVE
+                        currentEdge % nodes(2) % node % activeStatus = INACTIVE!DEBUG
                      ELSE
                         currentEdge % nodes(2) % node % activeStatus = INACTIVE
                      END IF
