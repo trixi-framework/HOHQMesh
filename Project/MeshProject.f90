@@ -384,7 +384,6 @@
             curveID                =  curveID + 1
             segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( self % model % outerBoundary, &
                                                                            h, self % sizer % controlsList, curveID )
-!            CALL segmentedOuterBoundary % printDescription(iUnit = 6)!DEBUGPRINT
             CALL self % sizer % addBoundaryCurve(segmentedOuterBoundary,OUTER)
             CALL release(segmentedOuterBoundary)
          END IF
@@ -522,7 +521,7 @@
          CLASS(MeshSizer)            , POINTER :: sizer => NULL()
          INTEGER                               :: curveID
          CHARACTER(LEN=128)                    :: msg
-         CLASS(FTLinkedList)         , POINTER :: controlsList
+         CLASS(FTLinkedList)         , POINTER :: controlsList => NULL()
          
          INTEGER       :: nX, nY
          REAL(KIND=RP) :: heightB, widthB
@@ -542,7 +541,6 @@
          h = MAXVAL( backgroundGridSize(1:2) )
          IF( ASSOCIATED( model % outerBoundary ) )     THEN
             curveID = 1
-            sizer => NULL()
             segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( model % outerBoundary, h, controlsList, curveID )
 !
 !           ----------------------------------
