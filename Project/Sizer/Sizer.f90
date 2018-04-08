@@ -49,6 +49,10 @@
       INTERFACE release
          MODULE PROCEDURE releaseSizer 
       END INTERFACE  
+      
+      TYPE SizerCurvePtr
+         CLASS(ChainedSegmentedCurve), POINTER :: curve => NULL()
+      END TYPE SizerCurvePtr
 !
 !     ========
       CONTAINS 
@@ -469,36 +473,23 @@
 !        ---------------
 !        Local variables
 !        ---------------
-!
-         TYPE SizerCurvePtr
-            CLASS(ChainedSegmentedCurve), POINTER :: curve => NULL()
-         END TYPE SizerCurvePtr
-         
+!         
          TYPE(SizerCurvePtr)        , DIMENSION(:), ALLOCATABLE :: innerCurvesArray
          CLASS(FTLinkedListIterator), POINTER                   :: iterator => NULL()
          CLASS(FTObject)            , POINTER                   :: obj => NULL()
          
-         CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()  ,&
-                                                                   outerSegmentedCurveChain => NULL()
-         CLASS(FRSegmentedCurve)     , POINTER                  :: innerSegment, outerSegment
-         REAL(KIND=RP)                                          :: x(3), y(3), d, outerInvScale, innerInvScale
-         REAL(KIND=RP)                                          :: nHatInner(3), nHatOuter(3), dot
-         REAL(KIND=RP)              , DIMENSION(4)              :: A = (/0.0_RP,1.0_RP,0.0_RP,1.0_RP/)
-         REAL(KIND=RP)              , DIMENSION(4)              :: B = (/1.0_RP,0.0_RP,1.0_RP,0.0_RP/)
-         REAL(KIND=RP)              , DIMENSION(4)              :: C
-         INTEGER                                                :: i, j, k, l, m, N, nSegments
-         INTEGER                                                :: numberOfBoundaries
+         CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL() 
+         INTEGER                                                :: k
+         INTEGER                                                :: numberOfInsideBoundaries
          
-         REAL(KIND=RP), DIMENSION(3,4) :: nHatBox = &
-         RESHAPE((/0.0_RP,-1.0_RP,0.0_RP,1.0_RP,0.0_RP,0.0_RP,0.0_RP,1.0_RP,0.0_RP,-1.0_RP,0.0_RP,0.0_RP/),(/3,4/))
 !
 !        ------------------------------------------------------
 !        For convenience, save the inner boundaries in an array
 !        ------------------------------------------------------
 !
-         numberOfBoundaries = self % noOfInnerBoundaries + self % noOfInterfaceBoundaries
+         numberOfInsideBoundaries = self % noOfInnerBoundaries + self % noOfInterfaceBoundaries
          
-         IF( numberOfBoundaries > 0 ) ALLOCATE( innerCurvesArray(numberOfBoundaries) )
+         IF( numberOfInsideBoundaries > 0 ) ALLOCATE( innerCurvesArray(numberOfInsideBoundaries) )
          
          k = 1
          IF( self % noOfInnerBoundaries > 0 )     THEN
@@ -536,121 +527,14 @@
 !        to all inner curves
 !        -----------------------------------------------
 !
-         IF ( ASSOCIATED(self%outerBoundary) .AND. numberOfBoundaries > 0 )     THEN
+         IF ( ASSOCIATED(self%outerBoundary) .AND. numberOfInsideBoundaries > 0 )     THEN
          
-            N = self % outerBoundary % numberOfCurvesInChain
-!
-!           -----------------------------------------
-!           For each segment in the outer curve chain
-!           -----------------------------------------
-!
-            DO j = 1, N
-               outerSegment => self % outerBoundary % segmentedCurveAtIndex(j)
-               nSegments    =  outerSegment % COUNT()
-!
-!              --------------------------------------
-!              For each point along the outer segment
-!              --------------------------------------
-!
-               DO i = 1, nSegments
-                  x             = outerSegment % positionAtIndex(i)
-                  outerInvScale = outerSegment % invScaleAtIndex(i)
-                  nHatOuter     = outerSegment % normalAtIndex(i)
-!
-!                 -----------------------
-!                 For each inner boundary
-!                 -----------------------
-!   
-                  DO k = 1, numberOfBoundaries
-                     innerSegmentedCurveChain => innerCurvesArray(k) % curve
-!
-!                    --------------------------------------
-!                    For each segment along the inner chain
-!                    --------------------------------------
-!
-                     DO l = 1, innerSegmentedCurveChain % curveCount()
-                        innerSegment => innerSegmentedCurveChain % segmentedCurveAtIndex(l)
-!
-!                       -----------------------------------------------
-!                       For each point along the inner segemented curve
-!                       -----------------------------------------------
-!
-                        DO m = 1, innerSegment % COUNT()
-                           y             = innerSegment % positionAtIndex(m)
-                           innerInvScale = innerSegment % invScaleAtIndex(m)
-                           nHatInner     = innerSegment % normalAtIndex(m)
-                           
-                           d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
-!
-!                          -----------------------------------------------------------
-!                          Curves that are close and face each other should have their
-!                          mesh sizes adjusted to have enough between them
-!                          -----------------------------------------------------------
-!
-                           dot = DOT_PRODUCT(nHatInner,nHatOuter)
-                           
-                           IF( dot > closeCurveNormalAlignment )     THEN
-                              outerInvScale = MAX(d,outerInvScale)
-                              innerInvScale = MAX(d,innerInvScale)
-                              CALL outerSegment % setCurveInvScaleForIndex(outerInvScale,i)
-                              CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,m)
-                           END IF
-                           
-                        END DO  
-                     END DO  
-                  END DO  
-               END DO
-            END DO  
+            CALL OuterToInnerboundaryDistances(self,innerCurvesArray,numberOfInsideBoundaries)
             
-         ELSE IF ( numberOfBoundaries > 0 )     THEN
-!
-!           ------------------------------------------------------
-!           There are inner curves but no outer curves, just a box
-!           ------------------------------------------------------
-!
-            C(1) = self%xMin(2)
-            C(2) = self%xMax(1)
-            C(3) = self%xMax(2)
-            C(4) = self%xMin(1)
-
-            DO m = 1, 4
-               nHatOuter = nHatBox(:,m)
-!
-!              -----------------------------------
-!              For each inner boundary curve chain
-!              -----------------------------------
-!
-               DO k = 1, numberOfBoundaries
-                  innerSegmentedCurveChain => innerCurvesArray(k) % curve
-!
-!                 -----------------------------
-!                 For each segment in the chain
-!                 -----------------------------
-!
-                  DO l = 1, innerSegmentedCurveChain % curveCount()
-                     innerSegment => innerSegmentedCurveChain % segmentedCurveAtIndex(l)
-!
-!                    --------------------------------
-!                    For each point along the segment
-!                    --------------------------------
-!
-                     DO j = 1, innerSegment % COUNT()
-                        y             = innerSegment % positionAtIndex(j)
-                        innerInvScale = innerSegment % invScaleAtIndex(j)
-                        nHatInner     = innerSegment % normalAtIndex(j)
-                     
-                        d = ABS( A(m)*y(1) + B(m)*y(2) + C(m) ) !/SQRT(A(m)**2 + B(m)**2)
-                        d = closeCurveFactor/d ! Inverse length - 3 cells
-!
-                        dot = DOT_PRODUCT(nHatInner,nHatOuter)
-                        IF( dot > closeCurveNormalAlignment )     THEN
-                           innerInvScale = MAX(d,innerInvScale)
-                           CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,j)
-                        END IF
-                     END DO 
-                  END DO
-               END DO
-            END DO
+         ELSE IF ( numberOfInsideBoundaries > 0 )     THEN
+         
+            CALL OuterBoxToInnerboundaryDistances(self,innerCurvesArray,numberOfInsideBoundaries)
+            
          END IF
 !
 !        ------------------------------------
@@ -660,70 +544,9 @@
 !        opposite to each other.
 !        ------------------------------------
 !
-         IF ( numberOfBoundaries > 1 )     THEN
-!
-!           -----------------------------------
-!           For each inner boundary curve chain
-!           -----------------------------------
-!
-            DO k = 1, numberOfBoundaries
-               outerSegmentedCurveChain => innerCurvesArray(k) % curve
-!
-!              -----------------------------
-!              For each segment in the chain
-!              -----------------------------
-!
-               DO l = 1, outerSegmentedCurveChain % curveCount()
-                  outerSegment => outerSegmentedCurveChain % segmentedCurveAtIndex(l)
-!
-!                 --------------------------------
-!                 For each point along the segment
-!                 --------------------------------
-!
-                  DO j = 1, outerSegment % COUNT()
-                     x             = outerSegment % positionAtIndex(j)
-                     outerInvScale = outerSegment % invScaleAtIndex(j)
-                     nHatOuter     = outerSegment % normalAtIndex(j)
-!
-!                    ------------------------------
-!                    For each of the *other* chains
-!                    ------------------------------
-!
-                     DO m = k+1, numberOfboundaries
-                        innerSegmentedCurveChain => innerCurvesArray(m) % curve
-!
-!                       -----------------------------------
-!                       For each segment in the other chain
-!                       -----------------------------------
-!
-                        DO n = 1, innerSegmentedCurveChain % curveCount()
-                           innerSegment => innerSegmentedCurveChain % segmentedCurveAtIndex(n)
-!
-!                          --------------------------------------
-!                          For each point along the other segment
-!                          --------------------------------------
-!
-                           DO i = 1, innerSegment % COUNT()
-                              y             = innerSegment % positionAtIndex(i)
-                              innerInvScale = innerSegment % invScaleAtIndex(i)
-                              nHatInner     = innerSegment % normalAtIndex(i)
-                              
-                              d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
-!
-                              dot = DOT_PRODUCT(nHatInner,nHatOuter)
-
-                              IF( dot < -closeCurveNormalAlignment )     THEN
-                                 outerInvScale = MAX(d,outerInvScale)
-                                 CALL outerSegment % setCurveInvScaleForIndex(outerInvScale,j)
-                                 innerInvScale = MAX(d,innerInvScale)
-                                 CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,i)
-                              END IF
-                           END DO  
-                        END DO  
-                     END DO  
-                  END DO
-               END DO  
-            END DO
+         IF ( numberOfInsideBoundaries > 1 )     THEN
+         
+            CALL InnerToInnerBoundaryDistances(self,innerCurvesArray,numberOfInsideBoundaries)
 
          END IF
 !
@@ -734,6 +557,277 @@
          IF(ALLOCATED(innerCurvesArray)) DEALLOCATE( innerCurvesArray )
          
       END SUBROUTINE ComputeCurveDistanceScales      
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE OuterToInnerboundaryDistances(self, innerCurvesArray, numberOfInsideBoundaries)
+! 
+!      ------------------------------------------------------------------- 
+!      Find the distance from the outer curve to all the inner curves 
+!      ------------------------------------------------------------------- 
+! 
+      IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+      CLASS(MeshSizer)   , POINTER  :: self
+      INTEGER                       :: numberOfInsideBoundaries
+      TYPE(SizerCurvePtr)           :: innerCurvesArray(numberOfInsideBoundaries)
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      INTEGER                                                :: i, j, k, l, m, N, nSegments
+      CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL() 
+      CLASS(FRSegmentedCurve)     , POINTER                  :: innerSegment, outerSegment
+      REAL(KIND=RP)                                          :: x(3), y(3), d, outerInvScale, innerInvScale
+      REAL(KIND=RP)                                          :: nHatInner(3), nHatOuter(3), dot
+         
+      N = self % outerBoundary % numberOfCurvesInChain
+!
+!     -----------------------------------------
+!     For each segment in the outer curve chain
+!     -----------------------------------------
+!
+      DO j = 1, N
+         outerSegment => self % outerBoundary % segmentedCurveAtIndex(j)
+         nSegments    =  outerSegment % COUNT()
+!
+!        --------------------------------------
+!        For each point along the outer segment
+!        --------------------------------------
+!
+         DO i = 1, nSegments
+            x             = outerSegment % positionAtIndex(i)
+            outerInvScale = outerSegment % invScaleAtIndex(i)
+            nHatOuter     = outerSegment % normalAtIndex(i)
+!
+!           -----------------------
+!           For each inner boundary
+!           -----------------------
+!   
+            DO k = 1, numberOfInsideBoundaries
+               innerSegmentedCurveChain => innerCurvesArray(k) % curve
+!
+!              --------------------------------------
+!              For each segment along the inner chain
+!              --------------------------------------
+!
+               DO l = 1, innerSegmentedCurveChain % curveCount()
+                  innerSegment => innerSegmentedCurveChain % segmentedCurveAtIndex(l)
+!
+!                 -----------------------------------------------
+!                 For each point along the inner segemented curve
+!                 -----------------------------------------------
+!
+                  DO m = 1, innerSegment % COUNT()
+                     y             = innerSegment % positionAtIndex(m)
+                     innerInvScale = innerSegment % invScaleAtIndex(m)
+                     nHatInner     = innerSegment % normalAtIndex(m)
+                     
+                     d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
+!
+!                    -----------------------------------------------------------
+!                    Curves that are close and face each other should have their
+!                    mesh sizes adjusted to have enough between them
+!                    -----------------------------------------------------------
+!
+                     dot = DOT_PRODUCT(nHatInner,nHatOuter)
+                     
+                     IF( dot > closeCurveNormalAlignment )     THEN
+                        outerInvScale = MAX(d,outerInvScale)
+                        innerInvScale = MAX(d,innerInvScale)
+                        CALL outerSegment % setCurveInvScaleForIndex(outerInvScale,i)
+                        CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,m)
+                     END IF
+                     
+                  END DO  
+               END DO  
+            END DO  
+         END DO
+      END DO  
+      END SUBROUTINE OuterToInnerboundaryDistances
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE OuterBoxToInnerboundaryDistances(self, innerCurvesArray, numberOfInsideBoundaries)
+! 
+!      ------------------------------------------------------------------- 
+!      Find the distance from the outer curve to all the inner curves 
+!      ------------------------------------------------------------------- 
+! 
+      IMPLICIT NONE  
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      CLASS(MeshSizer)   , POINTER :: self
+      INTEGER                      :: numberOfInsideBoundaries
+      TYPE(SizerCurvePtr)          :: innerCurvesArray(numberOfInsideBoundaries)
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      INTEGER                                                :: j, k, l, m
+      CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()
+      CLASS(FRSegmentedCurve)     , POINTER                  :: innerSegment
+      REAL(KIND=RP)                                          :: y(3), d, innerInvScale
+      REAL(KIND=RP)                                          :: nHatInner(3), nHatOuter(3), dot
+      REAL(KIND=RP)              , DIMENSION(4)              :: A = (/0.0_RP,1.0_RP,0.0_RP,1.0_RP/)
+      REAL(KIND=RP)              , DIMENSION(4)              :: B = (/1.0_RP,0.0_RP,1.0_RP,0.0_RP/)
+      REAL(KIND=RP)               , DIMENSION(4)             :: C
+      REAL(KIND=RP), DIMENSION(3,4) :: nHatBox = &
+      RESHAPE((/0.0_RP,-1.0_RP,0.0_RP,1.0_RP,0.0_RP,0.0_RP,0.0_RP,1.0_RP,0.0_RP,-1.0_RP,0.0_RP,0.0_RP/),(/3,4/))
+!
+!     ------------------------------------------------------
+!     There are inner curves but no outer curves, just a box
+!     ------------------------------------------------------
+!
+      C(1) = self%xMin(2)
+      C(2) = self%xMax(1)
+      C(3) = self%xMax(2)
+      C(4) = self%xMin(1)
+
+      DO m = 1, 4
+         nHatOuter = nHatBox(:,m)
+!
+!        -----------------------------------
+!        For each inner boundary curve chain
+!        -----------------------------------
+!
+         DO k = 1, numberOfInsideBoundaries
+            innerSegmentedCurveChain => innerCurvesArray(k) % curve
+!
+!           -----------------------------
+!           For each segment in the chain
+!           -----------------------------
+!
+            DO l = 1, innerSegmentedCurveChain % curveCount()
+               innerSegment => innerSegmentedCurveChain % segmentedCurveAtIndex(l)
+!
+!              --------------------------------
+!              For each point along the segment
+!              --------------------------------
+!
+               DO j = 1, innerSegment % COUNT()
+                  y             = innerSegment % positionAtIndex(j)
+                  innerInvScale = innerSegment % invScaleAtIndex(j)
+                  nHatInner     = innerSegment % normalAtIndex(j)
+               
+                  d = ABS( A(m)*y(1) + B(m)*y(2) + C(m) ) !/SQRT(A(m)**2 + B(m)**2)
+                  d = closeCurveFactor/d ! Inverse length - 3 cells
+!
+                  dot = DOT_PRODUCT(nHatInner,nHatOuter)
+                  IF( dot > closeCurveNormalAlignment )     THEN
+                     innerInvScale = MAX(d,innerInvScale)
+                     CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,j)
+                  END IF
+               END DO 
+            END DO
+         END DO
+      END DO
+            
+      END SUBROUTINE OuterBoxToInnerboundaryDistances
+!
+!////////////////////////////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE InnerToInnerBoundaryDistances(self, innerCurvesArray, numberOfInsideBoundaries)
+! 
+!      ------------------------------------------------------------------- 
+!      Find the distance from the outer curve to all the inner curves 
+!      ------------------------------------------------------------------- 
+! 
+      IMPLICIT NONE  
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      CLASS(MeshSizer)   , POINTER  :: self
+      INTEGER                       :: numberOfInsideBoundaries
+      TYPE(SizerCurvePtr)           :: innerCurvesArray(numberOfInsideBoundaries)
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      INTEGER                                                :: i, j, k, l, m, N
+      CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()  ,&
+                                                                outerSegmentedCurveChain => NULL()
+      CLASS(FRSegmentedCurve)     , POINTER                  :: innerSegment, outerSegment
+      REAL(KIND=RP)                                          :: x(3), y(3), d, outerInvScale, innerInvScale
+      REAL(KIND=RP)                                          :: nHatInner(3), nHatOuter(3), dot
+         
+!
+!     -----------------------------------
+!     For each inner boundary curve chain
+!     -----------------------------------
+!
+      DO k = 1, numberOfInsideBoundaries
+         outerSegmentedCurveChain => innerCurvesArray(k) % curve
+!
+!        -----------------------------
+!        For each segment in the chain
+!        -----------------------------
+!
+         DO l = 1, outerSegmentedCurveChain % curveCount()
+            outerSegment => outerSegmentedCurveChain % segmentedCurveAtIndex(l)
+!
+!           --------------------------------
+!           For each point along the segment
+!           --------------------------------
+!
+            DO j = 1, outerSegment % COUNT()
+               x             = outerSegment % positionAtIndex(j)
+               outerInvScale = outerSegment % invScaleAtIndex(j)
+               nHatOuter     = outerSegment % normalAtIndex(j)
+!
+!              ------------------------------
+!              For each of the *other* chains
+!              ------------------------------
+!
+               DO m = k+1, numberOfInsideBoundaries
+                  innerSegmentedCurveChain => innerCurvesArray(m) % curve
+!
+!                 -----------------------------------
+!                 For each segment in the other chain
+!                 -----------------------------------
+!
+                  DO n = 1, innerSegmentedCurveChain % curveCount()
+                     innerSegment => innerSegmentedCurveChain % segmentedCurveAtIndex(n)
+!
+!                    --------------------------------------
+!                    For each point along the other segment
+!                    --------------------------------------
+!
+                     DO i = 1, innerSegment % COUNT()
+                        y             = innerSegment % positionAtIndex(i)
+                        innerInvScale = innerSegment % invScaleAtIndex(i)
+                        nHatInner     = innerSegment % normalAtIndex(i)
+                        
+                        d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
+!
+                        dot = DOT_PRODUCT(nHatInner,nHatOuter)
+
+                        IF( dot < -closeCurveNormalAlignment )     THEN
+                           outerInvScale = MAX(d,outerInvScale)
+                           CALL outerSegment % setCurveInvScaleForIndex(outerInvScale,j)
+                           innerInvScale = MAX(d,innerInvScale)
+                           CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,i)
+                        END IF
+                     END DO  
+                  END DO  
+               END DO  
+            END DO
+         END DO  
+      END DO
+      
+      END SUBROUTINE InnerToInnerBoundaryDistances
 !
 !////////////////////////////////////////////////////////////////////////
 !
