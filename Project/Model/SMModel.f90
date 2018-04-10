@@ -545,7 +545,6 @@
 
          IF ( catch(EQUATION_FORMAT_EXCEPTION) )     THEN  ! Pass the error up the chain
             CALL release(cCurve)
-            DEALLOCATE(cCurve)
             exception => errorObject()
             CALL throw(exception)
             CALL ThrowModelReadException(curveName,"Equation format error")
