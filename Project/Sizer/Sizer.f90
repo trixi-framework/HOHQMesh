@@ -481,7 +481,6 @@
          CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL() 
          INTEGER                                                :: k
          INTEGER                                                :: numberOfInsideBoundaries
-         
 !
 !        ------------------------------------------------------
 !        For convenience, save the inner boundaries in an array
@@ -546,9 +545,25 @@
 !
          IF ( numberOfInsideBoundaries > 1 )     THEN
          
-            CALL InnerToInnerBoundaryDistances(self,innerCurvesArray,numberOfInsideBoundaries)
+            CALL InnerToInnerBoundaryDistances(innerCurvesArray,numberOfInsideBoundaries)
 
          END IF
+!
+!        ---------------------------------------------------
+!        Finally, check to see if a curve is close to itself
+!        ---------------------------------------------------
+!
+         IF(ASSOCIATED(self % outerBoundary))     THEN 
+            CALL CurveToCurveBoundaryDistances(segmentedCurveChain = self % outerBoundary, &
+                                               isOuterBoundary = .TRUE.)
+         END IF 
+         
+         IF ( numberOfInsideBoundaries > 0 )     THEN
+            DO k = 1, numberOfInsideBoundaries
+               CALL CurveToCurveBoundaryDistances(segmentedCurveChain = innerCurvesArray(k) % curve, &
+                                                  isOuterBoundary = .FALSE. )
+            END DO 
+         END IF 
 !
 !        -------
 !        Cleanup
@@ -736,7 +751,7 @@
 !
 !////////////////////////////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE InnerToInnerBoundaryDistances(self, innerCurvesArray, numberOfInsideBoundaries)
+      SUBROUTINE InnerToInnerBoundaryDistances(innerCurvesArray, numberOfInsideBoundaries)
 ! 
 !      ------------------------------------------------------------------- 
 !      Find the distance from the outer curve to all the inner curves 
@@ -748,7 +763,6 @@
 !     Arguments
 !     ---------
 !
-      CLASS(MeshSizer)   , POINTER  :: self
       INTEGER                       :: numberOfInsideBoundaries
       TYPE(SizerCurvePtr)           :: innerCurvesArray(numberOfInsideBoundaries)
 !
@@ -890,6 +904,96 @@
          CALL release(iterator)
                
       END SUBROUTINE ComputeInterfaceCurveScales
+!
+!////////////////////////////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE CurveToCurveBoundaryDistances(segmentedCurveChain, isOuterBoundary )
+! 
+!      ---------------------------------------- 
+!      Find the distance from a curve to itself 
+!      UNDER DEVELOPMENT. DOESN'T DO WHAT IT IS SUPPOSED TO.
+!      ---------------------------------------- 
+! 
+      IMPLICIT NONE  
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain
+      LOGICAL                               :: isOuterBoundary
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      INTEGER                               :: i, j, l, n
+      CLASS(FRSegmentedCurve)     , POINTER :: innerSegment, outerSegment
+      REAL(KIND=RP)                         :: x(3), y(3), d, outerInvScale, innerInvScale
+      REAL(KIND=RP)                         :: nHatInner(3), nHatOuter(3), normalsDot, targetDot
+      REAL(KIND=RP)                         :: vecToTarget(3)
+      LOGICAL                               :: isProperTarget
+!
+!     -----------------------------
+!     For each segment in the chain
+!     -----------------------------
+!
+      DO l = 1, segmentedCurveChain % curveCount()
+         outerSegment => segmentedCurveChain % segmentedCurveAtIndex(l)
+!
+!        --------------------------------
+!        For each point along the segment
+!        --------------------------------
+!
+         DO j = 1, outerSegment % COUNT()
+            x             = outerSegment % positionAtIndex(j)
+            outerInvScale = outerSegment % invScaleAtIndex(j)
+            nHatOuter     = outerSegment % normalAtIndex(j)
+!
+!           ----------------------------------
+!           For every other point in the curve
+!           ----------------------------------
+!
+            DO n = 1, segmentedCurveChain % curveCount()
+               innerSegment => segmentedCurveChain % segmentedCurveAtIndex(n)
+!
+!              --------------------------------
+!              For each point along the segment
+!              --------------------------------
+!
+               DO i = 1, innerSegment % COUNT()
+                  IF(n == l .AND. i == j)     CYCLE 
+                  y             = innerSegment % positionAtIndex(i)
+                  innerInvScale = innerSegment % invScaleAtIndex(i)
+                  nHatInner     = innerSegment % normalAtIndex(i)
+                  vecToTarget   = y - x
+                  
+!
+                  normalsDot = DOT_PRODUCT(nHatInner,nHatOuter)
+                  targetDot  = DOT_PRODUCT(vecToTarget,nHatOuter)
+
+                  
+                  IF ( isOuterBoundary )     THEN
+                     isProperTarget =  normalsDot  < -closeCurveNormalAlignment .AND. targetDot   < -normalTangentMin
+                  ELSE 
+                     isProperTarget =  normalsDot  >  closeCurveNormalAlignment .AND. targetDot   > normalTangentMin
+                  END IF 
+
+                  IF( isProperTarget )     THEN
+                  
+                     d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
+
+                     outerInvScale = MAX(d,outerInvScale)
+                     CALL outerSegment % setCurveInvScaleForIndex(outerInvScale,j)
+                     innerInvScale = MAX(d,innerInvScale)
+                     CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,i)
+                  END IF
+               END DO  
+            END DO  
+         END DO
+      END DO  
+      
+      END SUBROUTINE CurveToCurveBoundaryDistances
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
