@@ -155,7 +155,7 @@
             WRITE(iUnit,*) "ISM-MM"
             WRITE(iUnit, *) mesh % nodes % COUNT(), mesh % edges % COUNT(), mesh % elements % COUNT(), N
          ELSE
-            PRINT *, "Unknown file format type... mesh file not written" !DEBUG
+            PRINT *, "Unknown file format type... mesh file not written"
             CLOSE( iUnit )
             RETURN
          END IF
