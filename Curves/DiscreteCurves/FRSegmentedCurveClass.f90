@@ -154,7 +154,7 @@
          
          self % x        = x
          self % t        = t
-         self % invScale = HUGE(t)
+         self % invScale = TINY(t)
          
       END SUBROUTINE initSMSegmentedCurveNode
 !
@@ -590,6 +590,12 @@
             s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature          
             p % invScale = 1.0_RP/s
             norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
+!
+!           --------------------------------------------------------------
+!           The normal direction is in the domain side for interior curves
+!           and to the exterior for the outer boundary curve
+!           --------------------------------------------------------------
+!
             p % nHat(1)  =  xPrime(2)/norm
             p % nHat(2)  = -xPrime(1)/norm
             p % nHat(3)  = 0.0_RP
