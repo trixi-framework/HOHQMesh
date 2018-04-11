@@ -79,6 +79,7 @@
          REAL(KIND=RP) :: parameterDelta          = 0.2_RP
          REAL(KIND=RP) :: subdivisionRelTol       = 0.05_RP
          REAL(KIND=RP) :: directionPenalty        = 1.d-4
+         LOGICAL       :: boundarySlipping        = .TRUE.
 !
 !        --------------------
 !        For printing history
@@ -92,6 +93,7 @@
 !
          REAL(KIND=RP) :: closeCurveFactor          = 3.25_RP  ! Should be around 3
          REAL(KIND=RP) :: closeCurveNormalAlignment = 0.8_RP   ! Dot product near 1
+         REAL(KIND=RP) :: normalTangentMin          = 0.01_RP  ! Dot of normal and tangent should be zero. Use this instead.
          
          INTEGER       :: refinementType          = 2
          INTEGER       :: boundarySmoothingPasses = 1
@@ -112,6 +114,7 @@
             READ(fUnit,*) closeCurveFactor     , closeCurveNormalAlignment
             READ(fUnit,*) refinementType       , boundarySmoothingPasses
             READ(fUnit,*) printMessage         , minNumberOfElementsInsideArea
+            READ(fUnit,*) boundarySlipping
          END SUBROUTINE LoadPreferences
 !
 !////////////////////////////////////////////////////////////////////////
@@ -125,6 +128,7 @@
             WRITE(fUnit,*) closeCurveFactor     , closeCurveNormalAlignment
             WRITE(fUnit,*) refinementType       , boundarySmoothingPasses
             WRITE(fUnit,*) printMessage         , minNumberOfElementsInsideArea
+            WRITE(fUnit,*) boundarySlipping
          END SUBROUTINE WriteDefaultPreferences
          
       END Module ProgramGlobals
