@@ -310,8 +310,7 @@
           CALL GET_COMMAND_ARGUMENT(i, arg, argumentLength)
           IF (argumentLength== 0) EXIT
           
-          IF ( TRIM(arg) == TRIM(argument) .OR.&
-               TRIM(arg) == argument(1:argumentLength) )      THEN
+          IF ( TRIM(arg) == TRIM(argument) )      THEN
              CALL GET_COMMAND_ARGUMENT(i+1, StringValueForArgument)
              RETURN
           END IF          
