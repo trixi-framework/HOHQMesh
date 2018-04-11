@@ -911,7 +911,6 @@
 ! 
 !      ---------------------------------------- 
 !      Find the distance from a curve to itself 
-!      UNDER DEVELOPMENT. DOESN'T DO WHAT IT IS SUPPOSED TO.
 !      ---------------------------------------- 
 ! 
       IMPLICIT NONE  
