@@ -1142,14 +1142,14 @@
                   
                   IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
                   
-                     IF ( currentEdge % nodes(1) % node % nodeType == ROW_SIDE )     THEN
-                        currentEdge % nodes(1) % node % activeStatus = INACTIVE!DEBUG
+                     IF ( currentEdge % nodes(1) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
+                        currentEdge % nodes(1) % node % activeStatus = ACTIVE
                      ELSE
                         currentEdge % nodes(1) % node % activeStatus = INACTIVE
                      END IF
                      
-                     IF ( currentEdge%nodes(2) % node % nodeType == ROW_SIDE )     THEN
-                        currentEdge % nodes(2) % node % activeStatus = INACTIVE!DEBUG
+                     IF ( currentEdge%nodes(2) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
+                        currentEdge % nodes(2) % node % activeStatus = ACTIVE
                      ELSE
                         currentEdge % nodes(2) % node % activeStatus = INACTIVE
                      END IF
