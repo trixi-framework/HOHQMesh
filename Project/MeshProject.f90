@@ -436,7 +436,8 @@
 !        -------------------------------------------------------
 !
          IF ( ASSOCIATED( self % model % interfaceBoundaries ) .OR. &
-              ASSOCIATED( self % model % innerBoundaries ) )     THEN
+              ASSOCIATED( self % model % innerBoundaries )     .OR. &
+              ASSOCIATED(self % model % outerBoundary))        THEN
             CALL ComputeCurveDistanceScales( self % sizer )
          END IF
          
@@ -518,7 +519,6 @@
 !        ---------------
 !
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
-         CLASS(MeshSizer)            , POINTER :: sizer => NULL()
          INTEGER                               :: curveID
          CHARACTER(LEN=128)                    :: msg
          CLASS(FTLinkedList)         , POINTER :: controlsList => NULL()
