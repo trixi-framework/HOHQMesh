@@ -150,10 +150,14 @@
                id   = node % id
                numElementsForNode(id) = numElementsForNode(id) + 1
                IF ( numElementsForNode(id) > 8 )     THEN
-                  PRINT *, "Valence too high for node ",id
+                  PRINT *, " "
+                  PRINT *, "**************************************************************************"
+                  PRINT *, "Valence too high for node ",id, " x = ",node % x
                   PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                  PRINT *, "**************************************************************************"
+                  PRINT *, " "
                   CALL WriteToTecplot( mesh, "DebugPlot.tec" )
-                  STOP
+                  STOP "Meshing Terminated"
                END IF 
                
                elementsForNodes(numElementsForNode(id),id) % element => e

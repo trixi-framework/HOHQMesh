@@ -676,10 +676,14 @@
                   k = k + 1
                   
                CASE DEFAULT
-                  PRINT *, "An unkown row type has appeared in GenerateBoundaryElements"
-                  PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                 PRINT *, " "
+                 PRINT *, "**************************************************************************"
+                 PRINT *, "An unknown row type has appeared in GenerateBoundaryElements"
+                 PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                 PRINT *, "**************************************************************************"
+                 PRINT *, " "
                   CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
-                  STOP
+                  STOP "Meshing Terminated"
             END SELECT
             k = k + 1
          END DO

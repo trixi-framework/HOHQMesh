@@ -1224,7 +1224,7 @@
                ELSE IF ( eID == hex8Mesh % faces(fID, level) % elementIDs(2) )     THEN 
                   increment = hex8Mesh % faces(fID, level) % inc(1)
                ELSE 
-                  ERROR STOP "Mismatched element to face in constructFaceCurvesForCapFace"
+                  STOP "Mismatched element to face in constructFaceCurvesForCapFace"
                END IF 
 !
 !              -----------------------------------

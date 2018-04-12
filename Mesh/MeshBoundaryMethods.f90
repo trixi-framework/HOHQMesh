@@ -233,11 +233,15 @@
                edge % edgeType = ON_BOUNDARY
                
                IF( curveID == 0 .OR. curveSide == 0 )     THEN 
+                  PRINT *, " "
+                  PRINT *, "**************************************************************************"
                   PRINT *, "Curve not found for boundary point"
-                  PRINT *, edge % nodes(1) % node % x, edge % nodes(2) % node % x
+                  PRINT *,  edge % nodes(1) % node % x, edge % nodes(2) % node % x
                   PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                  PRINT *, "**************************************************************************"
+                  PRINT *, " "
                   CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
-                  STOP
+                  STOP "Meshing Terminated"
                END IF
                
                IF( IsOnBoundaryCurve(edge % nodes(1) % node) .OR. &
@@ -246,11 +250,15 @@
                   obj      => boundaryEdgesArray % objectAtIndex(curveID)
                   edgeList => linkedListFromObject(obj)
                   IF ( .NOT.ASSOCIATED(edgeList) )     THEN
+                     PRINT *, " "
+                     PRINT *, "**************************************************************************"
                      PRINT *, "edge list not associated"
                      PRINT *, ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
                      PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     PRINT *, "**************************************************************************"
+                     PRINT *, " "
                      CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
-                     ERROR STOP "Unassociated edge pointers in CollectBoundaryEdges"
+                     STOP "Unassociated edge pointers in CollectBoundaryEdges"
                   END IF 
                   obj => edge
                   CALL edgeList % add(obj)
@@ -503,10 +511,14 @@
                   eId = eId1
                END IF
                IF(eID == 0)     THEN
+                  PRINT *, " "
+                  PRINT *, "**************************************************************************"
                   PRINT *, "It appears that an edge is not connected"
                   PRINT *, "Plot the file 'DebugPlot.tec' to see where additional resolution is needed"
+                  PRINT *, "**************************************************************************"
+                  PRINT *, " "
                   CALL WriteToTecplot( mesh, "DebugPlot.tec" )
-                  STOP 
+                  STOP "Meshing Terminated"
                END IF 
                edge => edgeArray(eId) % edge
                
