@@ -229,23 +229,26 @@
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
          INTEGER                          :: i,j, nX(3) = [10,10,0]
          
-         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
-         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(FTLinkedListIterator) , POINTER :: iterator            => NULL()
+         CLASS(FTObject)             , POINTER :: obj                 => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
 !
 !        -----------------------------------------
 !        Sizes determined by centers/line controls
 !        -----------------------------------------
 !
-         dX = (xMax - xMin)/nX
          hMin = HUGE(hMin)
-         DO j = 0, nX(2)
-            x(2) = xMin(2) + j*dx(2)
-            DO i = 0, nX(1)
-               x(1) = xMin(1) + i*dx(1)
-               hMin = MIN( hMin, controlSize(sizer,x) )
+         
+         IF ( ASSOCIATED(sizer % controlsList) )     THEN 
+            dX = (xMax - xMin)/nX
+            DO j = 0, nX(2)
+               x(2) = xMin(2) + j*dx(2)
+               DO i = 0, nX(1)
+                  x(1) = xMin(1) + i*dx(1)
+                  hMin = MIN( hMin, controlSize(sizer,x) )
+               END DO
             END DO
-         END DO
+         END IF 
 !
 !        ------------------------------------
 !        Sizes given by curves in the domain.
@@ -308,7 +311,7 @@
 !        Final choice for the size
 !        -------------------------
 !
-         hMin = MIN( hMin, cSize, sizer%baseSize, aSize )
+         hMin = MIN( hMin, cSize, sizer % baseSize, aSize )
       
       END FUNCTION sizeFunctionMinimumOnBox
 !
@@ -371,7 +374,7 @@
          CLASS(SizerLineControl)    , POINTER :: line => NULL()
          REAL(KIND=RP)                        :: hFunInv
          
-         hFunInv = 1.0_RP/self%baseSize
+         hFunInv = 1.0_RP/self % baseSize
 !
 !        --------------------------------
 !        Sizes given by centers and lines
