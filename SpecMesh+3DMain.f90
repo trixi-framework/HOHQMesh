@@ -160,7 +160,7 @@
 !           -------------
 !
             IF(PrintMessage) PRINT *, "   Performing final mesh cleanup..."
-            CALL PerformFinalMeshCleanup( project % mesh, project % model )
+               CALL PerformFinalMeshCleanup( project % mesh, project % model )
             IF(PrintMessage) PRINT *, "   Mesh cleanup done."
 !
 !           --------------------------------------
