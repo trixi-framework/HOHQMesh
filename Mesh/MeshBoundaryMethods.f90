@@ -348,7 +348,7 @@
 !        ---------------
 !
          CLASS(SMEdge)              , POINTER     :: edge => NULL(), currentEdge => NULL(), &
-                                                     edge1 => NULL(), edge2 => NULL()
+                                                     edge1 => NULL(), edge2 => NULL(), loopStartEdge => NULL()
          CLASS(FTLinkedList)        , POINTER     :: sortedEdges => NULL(), edgeList => NULL()
          TYPE (SMNodePtr)           , POINTER     :: sortedNodes(:) => NULL()
          CLASS(FTobject)            , POINTER     :: obj            => NULL()
@@ -476,6 +476,7 @@
             IF ( c > 0.0_RP )     THEN
                obj => edge1
                CALL sortedEdges % add(obj)
+               loopStartEdge => edge1
                obj => edge2
                CALL sortedEdges % add(obj)
                edge => edge2
@@ -483,6 +484,7 @@
             ELSE
                obj => edge2
                CALL sortedEdges % add(obj)
+               loopStartEdge => edge2
                obj => edge1
                CALL sortedEdges % add(obj)
                edge => edge1
@@ -528,6 +530,8 @@
                   DEALLOCATE(edgeArray)
                   RETURN
                END IF 
+               
+               IF(ASSOCIATED(POINTER = edge, TARGET = loopStartEdge) ) EXIT  ! Completed the loop
                
                obj  => edge
                CALL sortedEdges % add(obj)
@@ -667,20 +671,21 @@
          REAL(KIND=RP)  , ALLOCATABLE :: x(:,:)
          INTEGER                      :: nNodes, j, k
          
-         nNodes = list % COUNT()
-         ALLOCATE( x(3,nNodes) )
          
          nodeArray => GatheredNodes( list )
+         nNodes    = SIZE(nodeArray)
+         ALLOCATE( x(3,nNodes) )
 !
 !        -----------------------------
 !        Average the nearest neighbors
 !        -----------------------------
 !
+
          DO k = 1, nPasses 
             DO j = 2, nNodes-1
                x(:,j) = (nodeArray(j-1)%node%x + 6*nodeArray(j)%node%x + nodeArray(j+1)%node%x)/8.0_RP
             END DO
-            x(:,1)      = (nodeArray(nNodes)%node%x + 6*nodeArray(1)%node%x + nodeArray(2)%node%x)/8.0_RP
+            x(:,1)      = (nodeArray(nNodes)%node%x   + 6*nodeArray(1)%node%x      + nodeArray(2)%node%x)/8.0_RP
             x(:,nNodes) = (nodeArray(nNodes-1)%node%x + 6*nodeArray(nNodes)%node%x + nodeArray(1)%node%x)/8.0_RP
             DO j = 1, nNodes 
                nodeArray(j)%node%x = x(:,j)
