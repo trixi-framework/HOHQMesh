@@ -978,11 +978,14 @@
                   IF ( isOuterBoundary )     THEN
                      isProperTarget =  normalsDot  < -closeCurveNormalAlignment .AND. targetDot   < -normalTangentMin
                   ELSE 
-                     isProperTarget =  normalsDot  >  closeCurveNormalAlignment .AND. targetDot   > normalTangentMin
+                     isProperTarget =  normalsDot  <  -closeCurveNormalAlignment .AND. targetDot   > normalTangentMin
                   END IF 
 
                   IF( isProperTarget )     THEN
                   
+!                  IF ( TRIM(segmentedCurveChain % curveName) == "Button1" )     THEN!DEBUGPRINT
+!                     PRINT *, x(1:2), normalsDot, targetDot, vecToTarget(1:2)
+!                  END IF 
                      d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
 
                      outerInvScale = MAX(d,outerInvScale)

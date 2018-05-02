@@ -240,7 +240,7 @@
 !        Local Variables
 !        ---------------
 !
-         TYPE(FTSparseMatrix)          :: hashTable
+         TYPE(FTSparseMatrix)       :: hashTable
          TYPE(FTLinkedListIterator) :: elementIterator
          CLASS(SMEdge)   , POINTER  :: edge => NULL()
          CLASS(FTObject) , POINTER  :: obj => NULL()
