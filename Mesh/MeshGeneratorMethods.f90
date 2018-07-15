@@ -14,6 +14,7 @@
       USE ProgramGlobals
       USE MeshBoundaryMethodsModule
       USE ErrorTypesModule
+      USE MeshOutputMethods !DEBUG
       IMPLICIT NONE
    
 !
@@ -1039,6 +1040,52 @@
          END IF
         
       END SUBROUTINE MarkExteriorElements
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE MarkFloaters( mesh )
+!
+!        ------------------------------------------------------------------
+!        A floater is an element that is not attached to any other element,
+!        which happens occasionally during the marking process
+!        ------------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMMesh), POINTER :: mesh
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
+         CLASS(SMElement)           , POINTER :: e               => NULL()
+         CLASS(SMNode)              , POINTER :: node            => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj             => NULL()
+         INTEGER                              :: k
+!
+         elements        => mesh % elements
+         elementIterator => mesh % elementsIterator
+         
+         CALL elementIterator % setToStart()
+         DO WHILE(.NOT.elementIterator % isAtEnd())
+            obj => elementIterator % object()
+            CALL cast(obj,e)
+            
+            DO k = 1, 4 
+               obj => e % nodes % objectAtIndex(k)
+               CALL cast(obj,node)
+               
+            END DO
+            
+         END DO 
+
+      END SUBROUTINE MarkFloaters
 !
 !////////////////////////////////////////////////////////////////////////
 !
