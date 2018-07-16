@@ -45,7 +45,7 @@
          CLASS(FTObject) , POINTER :: obj => NULL()
          CLASS(SMElement), POINTER :: e => NULL()
          
-         CHARACTER(LEN=8) :: version = "7.27.16"
+         CHARACTER(LEN=8) :: version = "7.16.18"
          LOGICAL          :: debug = .FALSE., didGenerate3DMesh = .FALSE.
          INTEGER          :: k
          INTEGER          :: statsFileUnit
