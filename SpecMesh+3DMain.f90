@@ -297,7 +297,7 @@
          END IF
          
          IF( project % runParams % MeshFileName /= "None" )     THEN
-            IF( PrintMessage ) PRINT *, "Writing mesh file"
+            IF( PrintMessage ) PRINT *, "Writing mesh file..."
          
             IF ( project % runParams % meshFileFormat == BASIC_MESH_FORMAT )     THEN
                PRINT *, "*** BSC Format needs to be implemented ***"
@@ -315,6 +315,7 @@
                                       project % runParams % meshFileFormat )
                END IF 
             END IF
+            IF( PrintMessage ) PRINT *, "Mesh file written."
             
          END IF
 !
@@ -326,6 +327,7 @@
          CALL release(project)
          
          CALL destructFTExceptions
+         IF( PrintMessage ) PRINT *, "Execution complete. Exit."
          
       END PROGRAM SpecMeshMain
 !
