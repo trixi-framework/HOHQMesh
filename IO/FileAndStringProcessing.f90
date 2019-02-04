@@ -281,9 +281,11 @@
          OPEN(UNIT=fUnit, STATUS="scratch")
          
          DO
-           READ ( 5, FMT = '(a132)', IOSTAT = ios ) inputLine
+           READ ( 5, FMT = '(a132)', END = 1000 ) inputLine
+           IF( INDEX(inputline, "\end{FILE}") /= 0 )     EXIT
            WRITE( fUnit,  FMT = '(a132)' ) inputLine
-           IF( INDEX(inputline, "\end{File}") /= 0 )     EXIT
          END DO
+ 1000 CONTINUE 
+      rewind(fUnit)
       END FUNCTION StdInFileUnitCopy
       

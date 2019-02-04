@@ -76,12 +76,12 @@
          
          SELECT CASE ( typ )
             CASE( FT_ERROR_FATAL ) 
-               CALL exception % initFTException(FT_ERROR_WARNING, &
-                                    exceptionName   = WARNING_ERROR_EXCEPTION, &
-                                    infoDictionary  = userDictionary)
-            CASE DEFAULT 
                CALL exception % initFTException(FT_ERROR_FATAL, &
                                     exceptionName   = FATAL_ERROR_EXCEPTION, &
+                                    infoDictionary  = userDictionary)
+            CASE DEFAULT 
+               CALL exception % initFTException(FT_ERROR_WARNING, &
+                                    exceptionName   = WARNING_ERROR_EXCEPTION, &
                                     infoDictionary  = userDictionary)
          END SELECT 
          
@@ -97,3 +97,13 @@
       END SUBROUTINE ThrowErrorExceptionOfType
       
    END MODULE ErrorTypesModule
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   LOGICAL FUNCTION ReturnOnFatalError()
+      USE SharedExceptionManagerModule 
+      IMPLICIT NONE
+      
+      ReturnOnFatalError = catch() .AND. (maximumErrorSeverity() > FT_ERROR_WARNING)
+ 
+   END FUNCTION ReturnOnFatalError

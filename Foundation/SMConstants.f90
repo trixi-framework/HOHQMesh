@@ -32,4 +32,6 @@
          
          COMPLEX(KIND=CP)                 :: ImgI =(0.0,1.0)! = SQRT(-1.0_RP)
          
+         INTEGER, PARAMETER               :: DEFAULT_CHARACTER_LENGTH = 128
+         
       END MODULE SMConstants

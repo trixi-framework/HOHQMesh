@@ -390,7 +390,9 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadSpringSmootherBlock( fUnit, smp ) 
+      SUBROUTINE SetSpringSmootherBlock( smootherDict, smp ) 
+         USE FTValueDictionaryClass
+         USE ErrorTypesModule
 !
 !        Example block is:
 !
@@ -411,8 +413,8 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                        :: fUnit
-         TYPE(SpringSmootherParameters) :: smp
+         CLASS(FTValueDictionary), POINTER :: smootherDict
+         TYPE(SpringSmootherParameters)    :: smp
 !
 !        ---------------
 !        Local variables
@@ -423,18 +425,40 @@
          CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
          REAL(KIND=RP), EXTERNAL    :: GetRealValue
          INTEGER      , EXTERNAL    :: GetIntValue
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         str = GetStringValue( inputLine )
+!
+!        -------------------
+!        Smoothing On or OFF
+!        -------------------
+!
+         IF ( smootherDict % containsKey(key = "smoothing") )     THEN
+            str = smootherDict % stringValueForKey(key = "smoothing", requestedLength = 32) 
+         ELSE 
+            str = "OFF"
+            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
+                                           msg    = "smoother block is missing smoothing keyword. &
+                                                  &  Using default, smoothing = OFF.", &
+                                           typ    = FT_ERROR_WARNING)
+         END IF 
          
          IF( str == "ON" )     THEN
             smp%smoothingON = .true.
          ELSE
             smp%smoothingON = .false.
          END IF
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         str = GetStringValue( inputLine )
+!
+!        -----------------
+!        Type of smoothing 
+!        -----------------
+!
+         IF ( smootherDict % containsKey(key = "smoothing type") )     THEN
+            str = smootherDict % stringValueForKey(key = "smoothing type", requestedLength = 32) 
+         ELSE 
+            str = "LinearAndCrossBarSpring"
+            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
+                                           msg    = "smoother block is missing smoothing type keyword. &
+                                                  &  Using default, smoothing TYPE = LinearAndCrossBarSpring.", &
+                                           typ    = FT_ERROR_WARNING)
+         END IF 
          
          IF( str == "LinearSpring" )     THEN
             smp%springType = LINEAR_SPRING
@@ -443,26 +467,72 @@
          ELSE
             smp%springType = BOTH
          END IF
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%springConstant = GetRealValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%mass = GetRealValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%restLength = GetRealValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%dampingCoefficient = GetRealValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%numSteps = GetIntValue( inputLine )
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp%deltaT = GetRealValue( inputLine )
+!
+!        -------------------
+!        Smoother parameters
+!        -------------------
+!
+         IF ( smootherDict % containsKey(key = "spring constant") )     THEN
+            smp % springConstant = smootherDict % doublePrecisionValueForKey(key = "spring constant") 
+         ELSE 
+            smp % springConstant = 1.0_RP
+            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
+                                           msg    = "Smoother block is missing spring constant keyword. &
+                                                  &  Using default, spring constant = 1.0.", &
+                                           typ    = FT_ERROR_WARNING)
+         END IF 
+         
+         IF ( smootherDict % containsKey(key = "mass") )     THEN
+            smp % mass = smootherDict % doublePrecisionValueForKey(key = "mass") 
+         ELSE 
+            smp % mass = 1.0_RP
+            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
+                                           msg    = "Smoother block is missing mass keyword. &
+                                                  &  Using default, mass = 1.0.", &
+                                           typ    = FT_ERROR_WARNING)
+         END IF 
+         
+         IF ( smootherDict % containsKey(key = "rest length") )     THEN
+            smp % restLength = smootherDict % doublePrecisionValueForKey(key = "rest length") 
+         ELSE 
+            smp % restLength = 0.0_RP
+            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
+                                           msg    = "Smoother block is missing the rest length keyword. &
+                                                  &  Using default, rest length = 0.0.", &
+                                           typ    = FT_ERROR_WARNING)
+         END IF 
+         
+         IF ( smootherDict % containsKey(key = "damping coefficient") )     THEN
+            smp % dampingCoefficient = smootherDict % doublePrecisionValueForKey(key = "damping coefficient") 
+         ELSE 
+            smp % dampingCoefficient = 5.0_RP
+            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
+                                           msg    = "Smoother block is missing the damping coefficient keyword. &
+                                                  &  Using default, damping coefficient = 5.0.", &
+                                           typ    = FT_ERROR_WARNING)
+         END IF 
+         
+         IF ( smootherDict % containsKey(key = "number of iterations") )     THEN
+            smp % numSteps = smootherDict % integerValueForKey(key = "number of iterations") 
+         ELSE 
+            smp % numSteps = 25
+            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
+                                           msg    = "Smoother block is missing the number of iterations keyword. &
+                                                  &  Using default, number of iterations = 25.", &
+                                           typ    = FT_ERROR_WARNING)
+         END IF 
+         
+         IF ( smootherDict % containsKey(key = "time step") )     THEN
+            smp % deltaT = smootherDict % doublePrecisionValueForKey(key = "time step") 
+         ELSE 
+            smp % deltaT = 0.1_RP
+            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
+                                           msg    = "Smoother block is missing the time step keyword. &
+                                                  &  Using default, time step = 0.1.", &
+                                           typ    = FT_ERROR_WARNING)
+         END IF 
 
-      END SUBROUTINE ReadSpringSmootherBlock
+      END SUBROUTINE SetSpringSmootherBlock
       
       END Module SpringMeshSmootherClass
       

@@ -16,6 +16,8 @@
       USE SMParametricEquationCurveClass
       USE SMSplineCurveClass
       USE SMLineClass
+      USE FTValueDictionaryClass
+      USE ErrorTypesModule
       IMPLICIT NONE
 !
 !     ---------
@@ -26,6 +28,10 @@
       INTEGER, PARAMETER          :: BOUNDARY_CURVE       = 0, INTERFACE_CURVE = 1
       INTEGER, PARAMETER          :: BLOCK_NAME_STRING_LENGTH = 32
       CHARACTER(LEN=16)           :: MODEL_READ_EXCEPTION = "Model read error"
+      
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: OUTER_BOUNDARY_BLOCK_KEY       = "OUTER_BOUNDARY"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INNER_BOUNDARIES_BLOCK_KEY     = "INNER_BOUNDARIES"      
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INTERFACE_BOUNDARIES_BLOCK_KEY = "INTERFACE_BOUNDARIES"      
 !
 !     ---------------------
 !     Class type definition
@@ -49,7 +55,7 @@
          CONTAINS
 !        ========
 !
-         PROCEDURE :: initWithContentsOfFile         
+         PROCEDURE :: initWithContentsOfDictionary         
          PROCEDURE :: destruct    => destructModel
          PROCEDURE :: chainWithID
          PROCEDURE :: curveWithID => curveInModelWithID
@@ -67,10 +73,10 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE initWithContentsOfFile( self, fUnit )  
+      SUBROUTINE initWithContentsOfDictionary( self, modelDict )  
          IMPLICIT NONE
-         CLASS(SMModel)  :: self
-         INTEGER         :: fUnit
+         CLASS(SMModel)                    :: self
+         CLASS(FTValueDictionary), POINTER :: modelDict
          
          CALL self % FTObject % init()
          
@@ -84,9 +90,10 @@
          self % numberOfInnerCurves         =  0
          self % numberOfInterfaceCurves     =  0
          
-         CALL constructModelFromFile( self, fUnit )
+         IF( .NOT.ASSOCIATED(modelDict)) RETURN 
+         CALL constructModelFromDictionary( self, modelDict )
          
-      END SUBROUTINE initWithContentsOfFile
+      END SUBROUTINE initWithContentsOfDictionary
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -150,68 +157,68 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE constructModelFromFile( self, fUnit )  
+      SUBROUTINE constructModelFromDictionary( self, modelDict )  
          IMPLICIT NONE
 !
 !        -----------
 !        Arguments  
 !        -----------
 !
-         CLASS(SMModel)  :: self
-         INTEGER         :: fUnit
+         CLASS(SMModel)                    :: self
+         CLASS(FTValueDictionary), POINTER :: modelDict
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                        :: ios
-         INTEGER, EXTERNAL              :: UnusedUnit
-         CLASS(FTException)   , POINTER :: exception => NULL()
+         INTEGER, EXTERNAL                 :: UnusedUnit
+         CLASS(FTValueDictionary), POINTER :: outerBoundaryDict, innerBoundariesDict
+         CLASS(FTLinkedList)     , POINTER :: innerBoundariesList
+         CLASS(FTObject)         , POINTER :: obj
 !
-!        -----------------------------
-!        Import outer boundary, if any
-!        -----------------------------
+!        ----------
+!        Interfaces
+!        ----------
 !
-         rewind( fUnit )
-         CALL MoveToBlock( "\begin{OuterBoundary}" , fUnit, ios )
-        
-         IF( ios == 0 )     THEN
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
+!
+!        --------------------------------
+!        Construct outer boundary, if any
+!        --------------------------------
+!
+         IF ( modelDict % containsKey(key = OUTER_BOUNDARY_BLOCK_KEY) )     THEN
+         
             ALLOCATE( self % outerBoundary )
             CALL self % outerBoundary % initChainWithNameAndID("Outer Boundary",1)
-            CALL ReadOuterBoundaryBlock( self, fUnit )
+         
+            obj               => modelDict % objectForKey(key = OUTER_BOUNDARY_BLOCK_KEY)
+            outerBoundaryDict => valueDictionaryFromObject(obj)
             
-            IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               CALL release(self % outerBoundary)
-               exception => errorObject()
-               CALL throw(exception)
-               RETURN
-            END IF 
-            
+            CALL ConstructOuterBoundary( self, outerBoundaryDict )
+            IF(ReturnOnFatalError())     RETURN 
             self % numberOfOuterCurves = 1
             
-         END IF
+         END IF 
 !
-!        -------------------------------
-!        Import inner boundaries, if any
-!        -------------------------------
+!        ----------------------------------
+!        Construct inner boundaries, if any
+!        ----------------------------------
 !
-         rewind( fUnit )
-         CALL MoveToBlock( "\begin{InnerBoundaries}" , fUnit, ios )
-         
-         IF( ios == 0 )     THEN
+         IF ( modelDict% containsKey(key = INNER_BOUNDARIES_BLOCK_KEY) )     THEN
          
             ALLOCATE( self % innerBoundaries )
             CALL self % innerBoundaries % init()
             
-            CALL ReadInnerBoundaryBlock( self, INNER_BOUNDARY_BLOCK, fUnit )
+            obj                 => modelDict % objectForKey(key = INNER_BOUNDARIES_BLOCK_KEY)
+            innerBoundariesDict => valueDictionaryFromObject(obj)
+            obj                 => innerBoundariesDict % objectForKey(key = "LIST")
+            innerBoundariesList => linkedListFromObject(obj)
+
+            CALL ConstructInnerBoundaries( self, INNER_BOUNDARY_BLOCK, innerBoundariesList )
+            IF(ReturnOnFatalError())     RETURN 
             
-            IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               CALL release(self % innerBoundaries)
-               exception => errorObject()
-               CALL throw(exception)
-               RETURN
-            END IF 
-         END IF
+         END IF 
+
          IF ( ASSOCIATED(self % innerBoundaries) )     THEN
             ALLOCATE(self % innerBoundariesIterator)
             CALL  self % innerBoundariesIterator % initWithFTLinkedList(self % innerboundaries)
@@ -221,23 +228,20 @@
 !        Import iterface boundaries, if any
 !        ----------------------------------
 !
-         rewind( fUnit )
-         CALL MoveToBlock( "\begin{InterfaceBoundaries}" , fUnit, ios )
-         
-         IF( ios == 0 )     THEN
-         
+         IF ( modelDict% containsKey(key = INTERFACE_BOUNDARIES_BLOCK_KEY) )     THEN
             ALLOCATE( self % interfaceBoundaries )
             CALL self % interfaceBoundaries % init()
             
-            CALL ReadInnerBoundaryBlock( self, INTERFACE_BOUNDARY_BLOCK, fUnit )
+            obj                 => modelDict % objectForKey(key = INTERFACE_BOUNDARIES_BLOCK_KEY)
+            innerBoundariesDict => valueDictionaryFromObject(obj)
+            obj                 => innerBoundariesDict % objectForKey(key = "LIST")
+            innerBoundariesList => linkedListFromObject(obj)
             
-            IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               CALL release(self % interfaceBoundaries)
-               exception => errorObject()
-               CALL throw(exception)
-               RETURN
-            END IF 
-         END IF
+            CALL ConstructInnerBoundaries( self, INTERFACE_BOUNDARY_BLOCK,innerBoundariesList )
+            IF(ReturnOnFatalError())     RETURN 
+            
+         END IF 
+
          IF ( ASSOCIATED(self % interfaceBoundaries) )     THEN
             ALLOCATE(self % interfaceBoundariesIterator)
             CALL  self % interfaceBoundariesIterator % initWithFTLinkedList(self % interfaceBoundaries)
@@ -249,276 +253,210 @@
 !
          CALL MakeCurveToChainConnections(self)
                  
-      END SUBROUTINE constructModelFromFile
+      END SUBROUTINE constructModelFromDictionary
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ReadOuterBoundaryBlock( self, fUnit ) 
+      SUBROUTINE ConstructOuterBoundary( self, outerBoundaryDict ) 
          IMPLICIT NONE  
 !
 !        -----------
 !        Arguments  
 !        -----------
 !
-         CLASS(SMModel)  :: self
-         INTEGER         :: fUnit
+         CLASS(SMModel)                    :: self
+         CLASS(FTValueDictionary), POINTER :: outerBoundaryDict
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                                 :: ios
-         INTEGER                                 :: cStart, cEnd
-         CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: blockName
-         CHARACTER(LEN=LINE_LENGTH)              :: inputLine = " "
-         CLASS(FTException), POINTER             :: exception => NULL()
+         CLASS(FTLinkedList)       , POINTER :: outerBoundaryList
+         CLASS(FTObject)           , POINTER :: obj
+         CLASS(FTValueDictionary)  , POINTER :: blockDict
+         TYPE(FTLinkedListIterator)          :: iterator
+                  
+         obj               => outerBoundaryDict % objectForKey(key = "LIST")
+         outerBoundaryList => linkedListFromObject(obj)
+         CALL iterator % initWithFTLinkedList(list = outerBoundaryList)
          
-         DO WHILE( INDEX(inputLine,"\end{OuterBoundary}") == 0 )
-         
-            READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-            IF( ios /= 0 )     THEN
-               CALL ThrowModelReadException("OuterBoundary","\end{OuterBoundary} not found")
-               RETURN
-            END IF
+         DO WHILE (.NOT. iterator % isAtEnd())
+            obj       => iterator % object()
+            blockDict => valueDictionaryFromObject(obj)
             
-           IF( INDEX(inputLine, "\begin{") /= 0 )   THEN
-           
-              cStart    = INDEX(inputLine,"{")
-              cEnd      = INDEX(inputLine,"}")
-              blockName = inputLine(cStart+1:cEnd-1)
-
-              CALL ImportCurve( self, fUnit, blockName, self % outerBoundary )
+            CALL ConstructCurve( self, self % outerBoundary, blockDict )
             
-              IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-                 exception => errorObject()
-                 CALL throw(exception)
-                 RETURN
-              END IF 
-              
-           END IF
-           
-         END DO
+            CALL iterator % moveToNext()
+         END DO 
 !
 !        ------------------
 !        Finalize the chain
 !        ------------------
 !
          CALL self % outerBoundary % complete(OUTER)
+         CALL iterator % destruct()
          
-      END SUBROUTINE ReadOuterBoundaryBlock
+      END SUBROUTINE ConstructOuterBoundary
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadInnerBoundaryBlock( self, blockType, fUnit ) 
+      SUBROUTINE ConstructInnerBoundaries( self, blockType, boundariesList ) 
          IMPLICIT NONE 
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(SMModel) :: self
-         INTEGER        :: fUnit
-         INTEGER        :: blockType
+         CLASS(SMModel)               :: self
+         INTEGER                      :: blockType
+         CLASS(FTLinkedList), POINTER :: boundariesList
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
+         CLASS(FTLinkedListIterator), POINTER    :: innerBoundariesIterator, listOfCurvesIterator
+         CLASS(FTValueDictionary)   , POINTER    :: chainDict, curveDict
+         CLASS(FTObject)            , POINTER    :: obj
+         CLASS(FTLinkedList)        , POINTER    :: listOfCurves
+         
          CLASS(SMChainedCurve), POINTER          :: chain => NULL()
-         CLASS(FTObject)      , POINTER          :: obj => NULL()
-         INTEGER                                 :: ios
-         INTEGER                                 :: cStart, cEnd
-         CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: blockName, chainName
-         CHARACTER(LEN=LINE_LENGTH)              :: inputLine = " "
-         CHARACTER(LEN=LINE_LENGTH)              :: bBlockEndName
+         CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: chainName
 
-         IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
-            bBlockEndName = "\end{InnerBoundaries}"
-         ELSE
-            bBlockEndName = "\end{InterfaceBoundaries}"
-         END IF
+         ALLOCATE(innerBoundariesIterator)
+         CALL innerBoundariesIterator % initWithFTLinkedList(list = boundariesList)
+         ALLOCATE(listOfCurvesIterator)
+         CALL listOfCurvesIterator % init()
+         
+         CALL innerBoundariesIterator % setToStart()
+         DO WHILE(.NOT. innerBoundariesIterator % isAtEnd())
 !
-!        -------------------------------
-!        Do until end of bondaries block
-!        -------------------------------
+!           ------------------------------------
+!           Inner boundaries is a list of chains
+!           ------------------------------------
 !
-         DO WHILE( INDEX(inputLine,TRIM(bBlockEndName)) == 0 )        
+            obj       => innerBoundariesIterator % object()
+            chainDict => valueDictionaryFromObject(obj)
+            chainName = chainDict % stringValueForKey(key = "name", &
+                                                      requestedLength = BLOCK_NAME_STRING_LENGTH)
+               
+            ALLOCATE(chain)
+            CALL chain % initChainWithNameAndID(chainName,0)
 !
-!           --------------------------------------------------------
-!           Read a line. If end of file is hit, something is wrong -
-!           the block is not closed.
-!           --------------------------------------------------------
+!           -------------------------------
+!           Chains contain a list of curves
+!           -------------------------------
 !
-            READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-            IF( ios /= 0 )     THEN
-               IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
-                  CALL ThrowModelReadException("Inner Boundaries","Inner Boundary block syntax error")
-               ELSE
-                  CALL ThrowModelReadException("Interface Boundaries","Interface Boundary block syntax error")
-               END IF
-               RETURN
+            obj          => chainDict % objectForKey(key = "LIST")
+            listOfCurves => linkedListFromObject(obj)
+            CALL listOfCurvesIterator % setLinkedList(list = listOfCurves)
+            CALL listOfCurvesIterator % setToStart()
+            
+            DO WHILE( .NOT. listOfCurvesIterator % isAtEnd())
+               obj       => listOfCurvesIterator % object()
+               curveDict => valueDictionaryFromObject(obj)
+               
+               CALL ConstructCurve(self, chain, curveDict )
+               
+               CALL listOfCurvesIterator % moveToNext()
+            END DO 
+               
+            IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
+              obj => chain
+              CALL self % innerBoundaries % add(obj)
+            ELSE
+              obj => chain
+              CALL self % interfaceBoundaries % add(obj)
             END IF
 !
-!           ---------------------------------------------------------
-!           If the line is a \begin block then construct the chains
-!           otherwise go back to the do-while and read the next line.
-!           ---------------------------------------------------------
+!           ------------------
+!           Finalize the chain
+!           ------------------
 !
-           IF( INDEX(inputLine, "\begin{") /= 0 )   THEN
-              cStart = INDEX(inputLine,"{")
-              cEnd   = INDEX(inputLine,"}")
-              blockName = inputLine(cStart+1:cEnd-1)
+            CALL chain % complete(INNER)
+            CALL release(chain)
 !
-!             -----------------------------------------------------
-!             If the block is a chain, so read all of the curves in 
-!             the chain.
-!             -----------------------------------------------------
+!           --------------------------------------------------------
+!           The chain has been created, clean up and then start over
+!           --------------------------------------------------------
 !
-              IF( blockName == "Chain" )     THEN
-                 READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-                 chainName = GetStringValue( inputLine )
-                 ALLOCATE(chain)
-                 CALL chain % initChainWithNameAndID(chainName,0)
-!
-!                ---------------------------------
-!                Read all the curves in this chain
-!                ---------------------------------
-!
-                 DO WHILE( INDEX(inputLine,"\end{Chain}") == 0 )
-                     READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-                     IF( ios /= 0 )     THEN
-                        CALL ThrowModelReadException(chainName,"Chain block syntax error")
-                        RETURN
-                     END IF
-                     
-                     IF( INDEX(inputLine, "\begin{") /= 0 )   THEN
-                        cStart    = INDEX(inputLine,"{")
-                        cEnd      = INDEX(inputLine,"}")
-                        blockName = inputLine(cStart+1:cEnd-1)
-                        CALL ImportCurve( self, fUnit, blockName, chain )
-                     END IF
-                     
-                 END DO ! Read chain
-!
-!                --------------------------------------------
-!                All the curves in this chain have been read. 
-!                --------------------------------------------
-!
-               IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
-                 obj => chain
-                 CALL self % innerBoundaries % add(obj)
-               ELSE
-                 obj => chain
-                 CALL self % interfaceBoundaries % add(obj)
-               END IF
-                 
-              ELSE
-!
-!                -----------------------------------------------------
-!                The user didn't specify a chain, so do it for him/her
-!                -----------------------------------------------------
-!
-                 ALLOCATE(chain)
-                 CALL chain % initChainWithNameAndID("Untitled",0)
-
-                 CALL ImportCurve( self, fUnit, blockName, chain )
-                 
-                 IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
-                    obj => chain
-                    CALL self % innerBoundaries % add(obj)
-                 ELSE
-                    obj => chain
-                    CALL self % interfaceBoundaries % add(obj)
-                 END IF
-              END IF
-!
-!             ------------------
-!             Finalize the chain
-!             ------------------
-!
-              CALL chain % complete(INNER)
-              CALL release(chain)
-!
-!             --------------------------------------------------------
-!             The chain has been created, clean up and then start over
-!             --------------------------------------------------------
-!
-               IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
-                  self % numberOfInnerCurves     = self % numberOfInnerCurves + 1
-               ELSE
-                  self % numberOfInterfaceCurves = self % numberOfInterfaceCurves + 1
-               END IF
-           END IF
-           
-         END DO !Read inner boundaries
+            IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
+               self % numberOfInnerCurves     = self % numberOfInnerCurves + 1
+            ELSE
+               self % numberOfInterfaceCurves = self % numberOfInterfaceCurves + 1
+            END IF
          
-      END SUBROUTINE ReadInnerBoundaryBlock
+            CALL innerBoundariesIterator % moveToNext()
+         END DO 
+         
+         CALL release(self = innerBoundariesIterator)
+         CALL release(self = listOfCurvesIterator)
+         
+      END SUBROUTINE ConstructInnerBoundaries
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ImportCurve( self, fUnit, equationType, chain )
+      SUBROUTINE ConstructCurve( self, chain, curveDict )
          IMPLICIT NONE 
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(SMModel)                 :: self
-         INTEGER                        :: fUnit
-         CLASS(SMChainedCurve), POINTER :: chain
-         CHARACTER(LEN=*)               :: equationType
-         CLASS(FTException)   , POINTER :: exception => NULL()
+         CLASS(SMModel)                    :: self
+         CLASS(SMChainedCurve)   , POINTER :: chain
+         CLASS(FTValueDictionary), POINTER :: curveDict
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
 
-         SELECT CASE ( equationType )
-            CASE("ParametricEquationCurve")
-            
-               CALL ImportParametricEquationBlock( self, fUnit, chain )
+         SELECT CASE ( curveDict % stringValueForKey(key = "TYPE", &
+                       requestedLength = BLOCK_NAME_STRING_LENGTH) )
          
-               IF ( catch(EQUATION_FORMAT_EXCEPTION) )     THEN  ! Pass the error up the chain
-                  exception => errorObject()
-                  CALL throw(exception)
-                  CALL ThrowModelReadException(equationType,"Error constructing parametric equation")
-                  RETURN
-               END IF 
-               
-            CASE ("SplineCurve" )
+            CASE("PARAMETRIC_EQUATION_CURVE")
             
-               CALL ImportSplineBlock( self, fUnit, chain )
+               CALL ConstructParametricEquationFromDict( self, chain, curveDict )
+               IF(ReturnOnFatalError())     RETURN 
                
-            CASE ("EndPointsCurve" )
+            CASE ("SPLINE_CURVE" )
             
-               CALL ImportLineEquationBlock( self, fUnit, chain )
+               CALL ImportSplineBlock( self, 6, chain )
+               
+            CASE ("END_POINTS_LINE" )
+            
+               CALL ImportLineEquationBlock( self, chain, curveDict )
                
             CASE DEFAULT
-               CALL ThrowModelReadException(equationType,"Unknown equation type")
+
                RETURN
          END SELECT
          
          self % curveCount = self % curveCount + 1
          
-      END SUBROUTINE ImportCurve
+      END SUBROUTINE ConstructCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ImportParametricEquationBlock( self, fUnit, chain ) 
+      SUBROUTINE ConstructParametricEquationFromDict( self, chain, curveDict ) 
          IMPLICIT NONE 
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(SMModel)                 :: self
-         INTEGER                        :: fUnit
-         CLASS(SMChainedCurve), POINTER :: chain
+         CLASS(SMModel)                    :: self
+         CLASS(SMChainedCurve)   , POINTER :: chain
+         CLASS(FTValueDictionary), POINTER :: curveDict
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         CHARACTER(LEN=LINE_LENGTH)                :: inputLine = " "
          CHARACTER(LEN=SM_CURVE_NAME_LENGTH)       :: curveName
          CHARACTER(LEN=EQUATION_STRING_LENGTH)     :: eqnX, eqnY, eqnZ
-         INTEGER                                   :: ios
          CLASS(SMParametricEquationCurve), POINTER :: cCurve => NULL()
          CLASS(FTException)              , POINTER :: exception => NULL()
          CLASS(SMCurve)                  , POINTER :: curvePtr => NULL()
@@ -527,14 +465,45 @@
 !        Get the data
 !        ------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         curveName = GetStringValue(inputLine)
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         eqnX = GetStringValue(inputLine)
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         eqnY = GetStringValue(inputLine)
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         eqnZ = GetStringValue(inputLine)
+         IF ( curveDict % containsKey(key = "name") )     THEN
+            curveName = curveDict % stringValueForKey(key = "name", &
+                                                      requestedLength = SM_CURVE_NAME_LENGTH) 
+         ELSE
+            curveName = "curve"
+            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+                                           msg = "PARAMETRIC_EQUATION_CURVE has no name. Use default 'curve'", &
+                                           typ = FT_ERROR_WARNING)
+         END IF 
+         
+         IF ( curveDict % containsKey(key = "xEqn") )     THEN
+            eqnX = curveDict % stringValueForKey(key = "xEqn", &
+                                                      requestedLength = SM_CURVE_NAME_LENGTH) 
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+                                           msg = "PARAMETRIC_EQUATION_CURVE has no xEqn.", &
+                                           typ = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
+         
+         IF ( curveDict % containsKey(key = "yEqn") )     THEN
+            eqnY = curveDict % stringValueForKey(key = "yEqn", &
+                                                      requestedLength = SM_CURVE_NAME_LENGTH) 
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+                                           msg = "PARAMETRIC_EQUATION_CURVE has no yEqn.", &
+                                           typ = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
+         
+         IF ( curveDict % containsKey(key = "zEqn") )     THEN
+            eqnZ = curveDict % stringValueForKey(key = "zEqn", &
+                                                      requestedLength = SM_CURVE_NAME_LENGTH) 
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+                                           msg = "PARAMETRIC_EQUATION_CURVE has no zEqn. Default is z = 0", &
+                                           typ = FT_ERROR_WARNING)
+            eqnZ = "z(t) = 0.0"
+         END IF 
 !
 !        ----------------
 !        Create the curve
@@ -547,24 +516,17 @@
             CALL release(cCurve)
             exception => errorObject()
             CALL throw(exception)
-            CALL ThrowModelReadException(curveName,"Equation format error")
+            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+                                           msg = "Equation Format error", &
+                                           typ = FT_ERROR_FATAL)
             RETURN
          END IF
          
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
          CALL release(cCurve)
-!
-!        ----------------------------
-!        Make sure the block is ended
-!        ----------------------------
-!
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF( INDEX(inputLine,"\end{ParametricEquationCurve}") == 0 )     THEN
-            CALL ThrowModelReadException(chain % curveName(),"\end{ParametricEquationCurve} not found")
-         END IF
          
-      END SUBROUTINE ImportParametricEquationBlock
+      END SUBROUTINE ConstructParametricEquationFromDict
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -631,16 +593,16 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ImportLineEquationBlock( self, fUnit, chain ) 
+      SUBROUTINE ImportLineEquationBlock( self, chain, lineBlockDict) 
          IMPLICIT NONE 
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(SMModel)                 :: self
-         INTEGER                        :: fUnit
-         CLASS(SMChainedCurve), POINTER :: chain
+         CLASS(SMModel)                    :: self
+         CLASS(SMChainedCurve)   , POINTER :: chain
+         CLASS(FTValueDictionary), POINTER :: lineBlockDict
 !
 !        ---------------
 !        Local variables
@@ -649,10 +611,10 @@
          CHARACTER(LEN=LINE_LENGTH)            :: inputLine = " "
          CHARACTER(LEN=SM_CURVE_NAME_LENGTH)   :: curveName
          REAL(KIND=RP), DIMENSION(3)           :: xStart, xEnd
-         INTEGER                               :: ios
          CLASS(SMLine)          , POINTER      :: cCurve => NULL()
          CLASS(SMCurve)         , POINTER      :: curvePtr => NULL()
-         
+!
+!        ------------------------------------------------         
          INTERFACE
             FUNCTION GetRealArray( inputLine ) RESULT(x)
                USE SMConstants
@@ -661,17 +623,44 @@
                CHARACTER ( LEN = * ) :: inputLine
             END FUNCTION GetRealArray
          END INTERFACE
+!        ________________________________________________
 !
 !        ------------
 !        Get the data
 !        ------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         curveName = GetStringValue(inputLine)
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         xStart = GetRealArray(inputLine)
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         xEnd = GetRealArray(inputLine)
+         IF( lineBlockDict % containsKey(key = 'name') )     THEN
+            curveName = lineBlockDict % stringValueForKey(key             = "name", &
+                                                          requestedLength = SM_CURVE_NAME_LENGTH)
+         ELSE
+            curveName = "line"
+            CALL ThrowErrorExceptionOfType(poster = "ImportLineEquationBlock",&
+                                           msg = "No name found in line curve definition. Using 'line' as default", &
+                                           typ = FT_ERROR_WARNING)
+            
+         END IF 
+         
+         IF( lineBlockDict % containsKey(key = 'xStart') )     THEN
+            inputLine = lineBlockDict % stringValueForKey(key             = "xStart", &
+                                                          requestedLength = LINE_LENGTH)
+            xStart = GetRealArray(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportLineEquationBlock",&
+                                           msg = "No xStart in line curve definition.", &
+                                           typ = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
+         
+         IF( lineBlockDict % containsKey(key = 'xEnd') )     THEN
+            inputLine = lineBlockDict % stringValueForKey(key             = "xEnd", &
+                                                          requestedLength = LINE_LENGTH)
+            xEnd = GetRealArray(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportLineEquationBlock",&
+                                           msg = "No xEnd in line curve definition.", &
+                                           typ = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
 !
 !        ----------------
 !        Create the curve
@@ -684,15 +673,6 @@
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
          CALL release(cCurve)
-!
-!        ----------------------------
-!        Make sure the block is ended
-!        ----------------------------
-!
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF( INDEX(inputLine,"\end{EndPointsCurve}") == 0 )     THEN
-            CALL ThrowModelReadException(chain % curveName(),"\end{EndPointsCurve} not found")
-         END IF
          
       END SUBROUTINE ImportLineEquationBlock
 !

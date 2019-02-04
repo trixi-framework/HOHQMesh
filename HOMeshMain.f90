@@ -1,7 +1,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-!      SpecMeshMain.f90
+!      HOMeshMain.f90
 !      Created: August 19, 2013 11:18 AM 
 !      By: David Kopriva  
 !
@@ -9,7 +9,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      PROGRAM SpecMeshMain 
+      PROGRAM HOMeshMain 
          USE MeshProjectClass
          USE FTTimerClass
          USE CommandLineReader
@@ -20,6 +20,8 @@
          USE MeshQualityAnalysisClass
          USE MeshController3D
          USE MeshOutputMethods3D
+         USE ControlFileReaderClass
+         USE FTValueDictionaryClass
          IMPLICIT NONE
 !
 !        --------------------
@@ -37,6 +39,7 @@
          CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: controlFileName
          INTEGER                               :: fUnit, preferencesFileUnit, ios
          INTEGER, EXTERNAL                     :: StdInFileUnitCopy, UnusedUnit
+         TYPE(ControlFileReader)               :: cfReader
 !
 !        -----
 !        Other
@@ -46,7 +49,8 @@
          CLASS(SMElement), POINTER :: e => NULL()
          
          CHARACTER(LEN=8) :: version = "7.16.18"
-         LOGICAL          :: debug = .FALSE., didGenerate3DMesh = .FALSE.
+         LOGICAL          :: debug = .FALSE.
+         LOGICAL          :: didGenerate3DMesh = .FALSE.
          INTEGER          :: k
          INTEGER          :: statsFileUnit
          TYPE(FTTimer)    :: stopWatch
@@ -57,73 +61,39 @@
 !        ***********************************************
 !
          CALL initializeFTExceptions
+         CALL SetUpPreferences
+         CALL ReadCommandLineArguments(version, debug, controlFileName)
+         CALL cfReader % init()
 !
-!        ----------------
-!        Read preferences
-!        ----------------
+!        ------------------------
+!        Read in the control file
+!        ------------------------
 !
-         preferencesFileUnit = UnusedUnit()
-         OPEN( UNIT = preferencesFileUnit, FILE = "SpecMesh2DPreferences.txt", &
-               STATUS = "OLD", IOSTAT = ios )
-         IF( ios == 0 )     THEN
-            CALL LoadPreferences(preferencesFileUnit)
-            CLOSE(preferencesFileUnit)
-         ELSE
-            OPEN( UNIT = preferencesFileUnit, FILE = "SpecMesh2DPreferences.txt", &
-                  STATUS = "NEW", IOSTAT = ios )
-            CALL WriteDefaultPreferences(preferencesFileUnit)
-            CLOSE(preferencesFileUnit)
-         END IF
-!
-!        ---------------------------
-!        Read command line Arguments
-!        ---------------------------
-!
-         IF ( CommandLineArgumentIsPresent("-version") )     THEN
-            PRINT *, "SpecMesh Version ", version
-         END IF
-         
-         IF ( CommandLineArgumentIsPresent("-help") )     THEN
-            PRINT *, "No help avalable yet. Sorry!"
-            STOP
-         END IF
-         
-         debug = .false.
-         IF ( CommandLineArgumentIsPresent("-debug") )     THEN
-            debug = .true.
-         END IF
-   
-         PrintMessage = .false.
-         IF ( CommandLineArgumentIsPresent("-verbose") )     THEN
-            PrintMessage = .true.
-         END IF
-         
-         controlFileName = "none"
-         IF ( CommandLineArgumentIsPresent(argument = "-f") )     THEN
-            controlFileName = StringValueForArgument(argument = "-f")
-         END IF 
-!
-!        ----------------------
-!        Initialize the project
-!        ----------------------
-!
-         ALLOCATE(project)
-         IF ( controlFileName == "none" )     THEN
+         ios = 0
+         IF ( controlFileName == "None" )     THEN
             fUnit   = StdInFileUnitCopy( )
          ELSE
             fUnit = UnusedUnit()
             OPEN(UNIT = fUnit, FILE = controlFileName, STATUS = "OLD",  IOSTAT = ios)
             IF(ios /= 0)  fUnit = NONE 
          END IF
-          
-         IF( fUnit /= NONE )     THEN
          
-            CALL project % initWithContentsOfFileUnit( fUnit )
-            CALL trapExceptions !Abort on fatal exceptions
+         IF ( ios == 0 )     THEN
+            CALL cfReader % importFromControlFile(fileUnit = fUnit)
          ELSE
             PRINT *, "Unable to open input file"
-            STOP
-         END IF
+            STOP !TODO be more gracious
+         END IF 
+         CLOSE(fUnit)
+!
+!        ----------------------
+!        Initialize the project
+!        ----------------------
+!
+         ALLOCATE(project)
+         
+         CALL project % initWithDictionary( cfReader % controlDict )
+         CALL trapExceptions !Abort on fatal exceptions
 !
 !        -----------------
 !        Generate the mesh
@@ -196,7 +166,7 @@
          IF ( project % runParams % statsFileName /= "None" )     THEN
          
             statsFileUnit = UnusedUnit()
-            OPEN(FILE=project % runParams % statsFileName,UNIT=statsFileUnit)
+            OPEN(FILE = project % runParams % statsFileName, UNIT = statsFileUnit)
             badElements => BadElementsInMesh( mesh  = project % mesh)
             
             IF ( ASSOCIATED(POINTER = badElements) )     THEN
@@ -251,36 +221,36 @@
 !        -----------------------------------------
 !        Generate a 3D Extrusion mesh if requested
 !        -----------------------------------------
-!
-         CALL InitMeshController3D
-         IF ( shouldGenerate3DMesh(fUnit) )     THEN
-            IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
-            
-            CALL stopWatch % start()
-            CALL generate3DMesh(fUnit,project) 
-            CALL stopWatch % stop()
-            CALL trapExceptions !Aborts on fatal exceptions
-            didGenerate3DMesh = .TRUE.
-            
-            IF ( didGenerate3DMesh )     THEN
-               IF(printMessage) PRINT *, "Hex mesh generated"
-!
-!              -----------------------------
-!              Gather and publish statistics
-!              -----------------------------
-!
-               PRINT *, " "
-               PRINT *, "3D Mesh Statistics:"
-               PRINT *, "    Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
-               PRINT *, "    Number of nodes    = ", SIZE(hex8Mesh % nodes)
-               PRINT *, "    Number of Faces    = ", SIZE(hex8Mesh % faces) + SIZE(hex8Mesh % capFaces)
-               PRINT *, "    Number of Elements = ", SIZE(hex8Mesh % elements)
-               PRINT *
-               
-            ELSE
-               IF(printMessage) PRINT *, "Hex mesh generation failed"
-            END IF 
-         END IF 
+!TODO: Convert to reading from the contril file dictionary
+!         CALL InitMeshController3D
+!         IF ( shouldGenerate3DMesh(fUnit) )     THEN
+!            IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
+!            
+!            CALL stopWatch % start()
+!            CALL generate3DMesh(fUnit,project) 
+!            CALL stopWatch % stop()
+!            CALL trapExceptions !Aborts on fatal exceptions
+!            didGenerate3DMesh = .TRUE.
+!            
+!            IF ( didGenerate3DMesh )     THEN
+!               IF(printMessage) PRINT *, "Hex mesh generated"
+!!
+!!              -----------------------------
+!!              Gather and publish statistics
+!!              -----------------------------
+!!
+!               PRINT *, " "
+!               PRINT *, "3D Mesh Statistics:"
+!               PRINT *, "    Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
+!               PRINT *, "    Number of nodes    = ", SIZE(hex8Mesh % nodes)
+!               PRINT *, "    Number of Faces    = ", SIZE(hex8Mesh % faces) + SIZE(hex8Mesh % capFaces)
+!               PRINT *, "    Number of Elements = ", SIZE(hex8Mesh % elements)
+!               PRINT *
+!               
+!            ELSE
+!               IF(printMessage) PRINT *, "Hex mesh generation failed"
+!            END IF 
+!         END IF 
 !
 !        -----------------------------------
 !        Write the mesh in requested formats
@@ -329,7 +299,7 @@
          CALL destructFTExceptions
          IF( PrintMessage ) PRINT *, "Execution complete. Exit."
          
-      END PROGRAM SpecMeshMain
+      END PROGRAM HOMeshMain
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -339,10 +309,14 @@
 
          INTEGER                    :: errorSeverity = FT_ERROR_NONE
          TYPE(FTException), POINTER :: exception
-          
+         
+         errorSeverity = FT_ERROR_NONE
+         
          IF ( catch() )     THEN
+            PRINT *
+            PRINT *, "------------------------------------------------------------------"
+            PRINT *
             PRINT *, "The following errors were found when constructing the project:"
-            PRINT *, " "
             
             DO
                exception => popLastException()
@@ -350,6 +324,9 @@
                CALL exception % printDescription(6)
                errorSeverity = MAX(errorSeverity, exception % severity())
             END DO
+            PRINT *
+            PRINT *, "------------------------------------------------------------------"
+            PRINT *
             
             IF ( errorSeverity > FT_ERROR_WARNING )     THEN
                STOP "The Errors were Fatal. Cannot generate mesh." 
@@ -357,3 +334,74 @@
          END IF 
 
       END SUBROUTINE trapExceptions
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE SetUpPreferences
+      USE ProgramGlobals
+         IMPLICIT NONE
+         INTEGER           :: preferencesFileUnit
+         INTEGER, EXTERNAL :: UnusedUnit
+         INTEGER           :: ios
+!
+!        ----------------------------------------------------
+!        Read in the preferences file if it exists, write out
+!        default values if it doesn't
+!        ----------------------------------------------------
+!
+         preferencesFileUnit = UnusedUnit()
+         OPEN( UNIT = preferencesFileUnit, FILE = "HOMesh2DPreferences.txt", &
+               STATUS = "OLD", IOSTAT = ios )
+         IF( ios == 0 )     THEN
+            CALL LoadPreferences(preferencesFileUnit)
+            CLOSE(preferencesFileUnit)
+         ELSE
+            OPEN( UNIT = preferencesFileUnit, FILE = "HOMesh2DPreferences.txt", &
+                  STATUS = "NEW", IOSTAT = ios )
+            CALL WriteDefaultPreferences(preferencesFileUnit)
+            CLOSE(preferencesFileUnit)
+         END IF
+         
+      END SUBROUTINE SetUpPreferences
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ReadCommandLineArguments(version, debug, controlFileName)  
+         USE CommandLineReader
+         USE ProgramGlobals
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: controlFileName
+         CHARACTER(LEN=8)                      :: version
+         LOGICAL                               :: debug
+         
+         
+         IF ( CommandLineArgumentIsPresent("-version") )     THEN
+            PRINT *, "HOMesh Version ", version
+         END IF
+         
+         IF ( CommandLineArgumentIsPresent("-help") )     THEN
+            PRINT *, "No help avalable yet. Sorry!"
+            STOP
+         END IF
+         
+         debug = .false.
+         IF ( CommandLineArgumentIsPresent("-debug") )     THEN
+            debug = .true.
+         END IF
+   
+         PrintMessage = .false.
+         IF ( CommandLineArgumentIsPresent("-verbose") )     THEN
+            printMessage = .true.
+         END IF
+         
+         controlFileName = "None"
+         IF ( CommandLineArgumentIsPresent(argument = "-f") )     THEN
+            controlFileName = StringValueForArgument(argument = "-f")
+         END IF 
+         
+      END SUBROUTINE ReadCommandLineArguments

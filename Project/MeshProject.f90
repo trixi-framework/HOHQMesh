@@ -15,13 +15,44 @@
       USE SharedExceptionManagerModule
       USE QuadTreeGridClass
       USE MeshSmootherClass
+      USE FTValueDictionaryClass
+      USE ErrorTypesModule
+      USE ValueSettingModule
       IMPLICIT NONE
 !
 !     ---------
 !     Constants
 !     ---------
 !
-      CHARACTER(LEN=18) :: PROJECT_READ_EXCEPTION = "Project read error"
+      CHARACTER(LEN=18)         , PARAMETER :: PROJECT_READ_EXCEPTION     = "Project read error"
+      
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: RUN_PARAMETERS_KEY         = "RUN_PARAMETERS"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MESH_FILE_NAME_KEY         = "mesh file name"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: PLOT_FILE_NAME_KEY         = "plot file name"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: STATS_FILE_NAME_KEY        = "stats file name"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MESH_FILE_FORMAT_NAME_KEY  = "mesh file format"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: POLYNOMIAL_ORDER_KEY       = "polynomial order"
+      
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MESH_PARAMETERS_KEY         = "MESH_PARAMETERS"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MESH_TYPE_KEY               = "mesh type"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: GRID_SIZE_KEY               = "background grid size"
+      
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MATERIAL_BLOCK_KEY          = "MATERIALS"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: BACKGROUND_MATERIAL_KEY     = "material"
+      
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: X_START_NAME_KEY            = "x0"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: X_END_NAME_KEY              = "x1"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: DX_NAME_KEY                 = "dx"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: SPACING_NAME_KEY            = "h"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: EXTENT_NAME_KEY             = "w"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: NUM_INTERVALS_NAME_KEY      = "N"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: TYPE_NAME_KEY               = "type"
+
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: REFINEMENT_REGIONS_KEY      = "REFINEMENT_REGIONS"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: REFINEMENT_CENTER_KEY       = "REFINEMENT_CENTER"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: REFINEMENT_LINE_KEY         = "REFINEMENT_LINE"
+      
+      
 !
 !     ------------------
 !     Private data types
@@ -83,7 +114,7 @@
          CONTAINS
 !        ========         
 !
-         PROCEDURE :: initWithContentsOfFileUnit         
+         PROCEDURE :: initWithDictionary         
       END TYPE MeshProject
       
       INTERFACE release
@@ -97,23 +128,32 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initWithContentsOfFileUnit(self, fUnit )
+      SUBROUTINE initWithDictionary(self, masterControlDictionary )
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         INTEGER            :: fUnit
-         CLASS(MeshProject) :: self
+         INTEGER                  :: fUnit
+         CLASS(MeshProject)       :: self
+         CLASS(FTValueDictionary) :: masterControlDictionary
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                     :: iOS
-         CHARACTER(LEN=LINE_LENGTH)  :: inputLine = " ", msg
-         CLASS(FTException), POINTER :: exception => NULL()
+         INTEGER                             :: iOS
+         CHARACTER(LEN=LINE_LENGTH)          :: inputLine = " ", msg
+         CLASS(FTException)        , POINTER :: exception => NULL()
+         CLASS(FTValueDictionary)  , POINTER :: controlDict, modelDict, matBlockdict
+         CLASS(FTObject)           , POINTER :: obj
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
 !
 !        ---------------------------
 !        Call superclass initializer
@@ -121,70 +161,55 @@
 !
          CALL self % FTObject % init()
 !
-!        ------------------
-!        Get run parameters
-!        ------------------
+!        ----------------------------
+!        Get run and model parameters
+!        ----------------------------
 !
-         REWIND(fUnit)
-         CALL MoveToBlock("\begin{RunParameters}", fUnit, iOS )
-         IF( ios /= 0 )     THEN
-            CALL ThrowProjectReadException(FT_ERROR_FATAL, "initWithContentsOfFileUnit",&
-                                           "Run parameters block not found in control file")
-            RETURN
-         END IF
-         CALL ReadRunParametersBlock( fUnit, self % runParams )
-!
-!        -----------------------------------------------------------------
-!        If this is a multiple material mesh, as given by the ism-mm flag,
-!        read the background material name.
-!        -----------------------------------------------------------------
-!
-         IF ( self % runParams % meshFileFormat == ISM_MM )     THEN
-            REWIND(fUnit)
-            CALL MoveToBlock("\begin{Materials}", fUnit, iOS )
-            IF( ios /= 0 )     THEN
-               msg = "Background material block not found in control file. Using default name = 'base'"
-               CALL ThrowProjectReadException(FT_ERROR_WARNING, "initWithContentsOfFileUnit",msg)
-               self % backgroundMaterialName = "base"
-            ELSE
-               READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-               self % backgroundMaterialName = GetStringValue( inputLine )
-            END IF
-         END IF
-!
-!        --------------------------
-!        Read mesh parameters block
-!        --------------------------
-!
-         REWIND(fUnit)
-         CALL MoveToBlock("\begin{MeshParameters}", fUnit, iOS )
-         IF( ios /= 0 )     THEN
-            msg = "Mesh parameters block not found in control file"
-            CALL ThrowProjectReadException(FT_ERROR_FATAL, "initWithContentsOfFileUnit",msg)
-            RETURN
-         END IF
-         CALL ReadMeshParametersBlock( fUnit, self % meshParams )
+         obj         => masterControlDictionary % objectForKey(key = "CONTROL_INPUT")
+         controlDict => valueDictionaryFromObject(obj)
+         obj         => masterControlDictionary % objectForKey(key = "MODEL")
+         modelDict   => valueDictionaryFromObject(obj)
+         
+         CALL SetRunParametersBlock( self % runParams, controlDict )
+         IF(ReturnOnFatalError())     RETURN 
+         CALL SetMeshParametersBlock( self % meshParams, controlDict )
+         IF(ReturnOnFatalError())     RETURN 
 !
 !        -------------------
 !        Read the model file
 !        -------------------
 !
          ALLOCATE(self % model)
-         CALL self % model % initWithContentsOfFile( fUnit )
-
-         IF ( catch(MODEL_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-            exception => errorObject()
-            CALL throw(exception)
-            RETURN
-         END IF 
+         CALL self % model % initWithContentsOfDictionary( modelDict )
+         IF(ReturnOnFatalError())     RETURN 
+!
+!        -----------------------------------------------------------------
+!        If this is a multiple material mesh, as given by the ISM-MM flag,
+!        read the background material name.
+!        -----------------------------------------------------------------
+!
+         IF ( self % runParams % meshFileFormat == ISM_MM )     THEN
+            IF ( modelDict % containsKey(key = MATERIAL_BLOCK_KEY) )     THEN
+               obj => modelDict % objectForKey(key = MATERIAL_BLOCK_KEY)
+               matBlockdict => valueDictionaryFromObject(obj)
+               self % backgroundMaterialName = matBlockdict % stringValueForKey(key = BACKGROUND_MATERIAL_KEY,&
+                                                                                requestedLength = LINE_LENGTH)
+            ELSE 
+               msg = "Background material block not found in control file. Using default name = 'base'"
+               CALL ThrowErrorExceptionOfType(poster = "initWithDictionary", &
+                                              msg    = msg, &
+                                              typ    = FT_ERROR_WARNING)
+               self % backgroundMaterialName = "base"
+            END IF 
+         END IF
 !
 !        -----------------
 !        Build the project
 !        -----------------
 !
-         CALL BuildProjectWithContentsOfFile( self, fUnit )
+         CALL BuildProject( self, controlDict )
 
-      END SUBROUTINE initWithContentsOfFileUnit
+      END SUBROUTINE initWithDictionary
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -234,7 +259,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE BuildProjectWithContentsOfFile( self, fUnit )
+      SUBROUTINE BuildProject( self, controlDict )
          USE ChainedSegmentedCurveClass
          USE SizerControls
          USE SMChainedCurveClass
@@ -247,18 +272,26 @@
 !        Arguments
 !        ---------
 !
-         INTEGER           :: fUnit
-         TYPE(MeshProject) :: self
+         CLASS(FTValueDictionary) :: controlDict
+         TYPE(MeshProject)        :: self
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
+         CLASS(FTValueDictionary)    , POINTER :: smootherDict, backgroundGridDict, refinementsDict, refinementObjectDict
+         CLASS(FTLinkedList)         , POINTER :: refinementsList
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary => NULL()
          CLASS(SMChainedCurve)       , POINTER :: chain => NULL()
          CLASS(FTException)          , POINTER :: exception => NULL()
-         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL(), refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(QuadTreeGrid)         , POINTER :: parent => NULL()
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
@@ -278,25 +311,26 @@
          INTEGER                        :: curveID
          LOGICAL                        :: smootherWasRead = .FALSE.
          
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         
          NULLIFY( self % grid )
          NULLIFY( self % sizer )
 !
 !-------------------------------------------------------------------------------
-!             Construct the Background Grid and initialize Sizer
-!-------------------------------------------------------------------------------
-!
-         REWIND(fUnit)
-         CALL MoveToBlock("\begin{BackgroundGrid}", fUnit, iOS )
-!
-!        -----------------------------------------------------------
+!        Construct the Background Grid and initialize Sizer
 !        The backgound grid size can eigher be specified or inferred
 !        from the model depending on if the background grid block is
 !        present or not.
-!        -----------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
-         IF( ios == 0 )     THEN
+         IF ( controlDict % containsKey(key = "BACKGROUND_GRID") )     THEN
          
-            CALL ReadbackgroundGridBlock( backgroundGrid, fUnit )
+            obj => controlDict % objectForKey(key = "BACKGROUND_GRID")
+            backgroundGridDict => valueDictionaryFromObject(obj)
+            
+            CALL SetBackgroundGridBlock( backgroundGrid, backgroundGridDict )
+            IF(ReturnOnFatalError())     RETURN 
+            
             self % meshParams % backgroundGridSize = 2*backgroundGrid % dx
             self % backgroundParams                = backgroundGrid
             
@@ -304,21 +338,23 @@
             
             ALLOCATE(self % sizer)
             CALL self % sizer % initWithProperties(backgroundGrid % dx, backgroundGrid % x0, xMax)
-         ELSE
+            
+         ELSE 
          
             CALL BuildbackgroundGridFromModel( backgroundGrid, self % model, self % meshParams % backgroundGridSize )
-         
-            IF ( catch(PROJECT_READ_EXCEPTION) )     THEN  ! Pass the error up the chain
-               exception => errorObject()
-               CALL throw(exception)
-               RETURN
-            END IF 
+            IF(ReturnOnFatalError())     RETURN 
             
             xMax = backgroundGrid % x0 + backgroundGrid % N*backgroundGrid % dx
             ALLOCATE(self % sizer)
             CALL self % sizer % initWithProperties( self % meshParams % backgroundGridSize, backgroundGrid % x0, xMax )
-         END IF
-         
+            IF(ReturnOnFatalError())     RETURN 
+            
+         END IF 
+!
+!        -----------------------
+!        Build the quadtree grid
+!        -----------------------
+!
          NULLIFY(parent)
          ALLOCATE(self % grid)
          CALL self % grid % initGridWithParameters( backgroundGrid % dx, backgroundGrid % x0, backgroundGrid % N,&
@@ -328,45 +364,92 @@
 !                               Build up Sizer properties
 !-------------------------------------------------------------------------------
 !
+         IF ( controlDict % containsKey(key = REFINEMENT_REGIONS_KEY) )     THEN
+         
+            ALLOCATE(refinementIterator)
+            obj             => controlDict % objectForKey(key = REFINEMENT_REGIONS_KEY)
+            refinementsDict => valueDictionaryFromObject(obj)
+            obj             => refinementsDict % objectForKey(key = "LIST")
+            refinementsList => linkedListFromObject(obj)
+            
+            CALL refinementIterator % initWithFTLinkedList(list = refinementsList)
+            CALL refinementIterator % setToStart()
+            DO WHILE (.NOT. refinementIterator % isAtEnd()) 
+               
+               obj                  => refinementIterator % object()
+               refinementObjectDict => valueDictionaryFromObject(obj)
+               str = refinementObjectDict % stringValueForKey(key = "TYPE", &
+                                                              requestedLength = DEFAULT_CHARACTER_LENGTH)
+               SELECT CASE ( str )
+               
+                  CASE( REFINEMENT_CENTER_KEY ) 
+                  
+                     CALL SetCenterMeshSizerBlock(centerParams = centerParams, centerDict = refinementObjectDict) 
+                     ALLOCATE(c)
+                     CALL c % initWithProperties( centerParams % x0, centerParams % centerExtent, &
+                                                centerParams % centerMeshSize, centerParams % centerType )
+                     CALL self % sizer % addSizerCenterControl(c)
+                     CALL release(c)
+                     
+                  CASE ( REFINEMENT_LINE_KEY)
+                  
+                     CALL SetLineMeshSizerBlock(lineParams = lineParams, lineSizerDict = refinementObjectDict)
+                     
+                     ALLOCATE(L)
+                     CALL L    % initWithProperties( lineParams % x0, lineParams % x1, lineParams % lineExtent, &
+                                                     lineParams % lineMeshSize, lineParams % lineControlType )
+                     CALL self % sizer % addSizerLineControl(L)
+                     CALL release(L)
+                  CASE DEFAULT 
+                  PRINT *, "Funny object"
+                  STOP 
+               END SELECT 
+               
+               CALL refinementIterator % moveToNext() 
+            END DO 
+            
+            CALL release(refinementIterator)
+         END IF 
+         !^ 
 !
 !        ------------------------------------------------------
 !        Construct any refinement centers as instructed by the 
 !        control file
 !        ------------------------------------------------------
 !
-         REWIND(fUnit)
-         ios = 0
-         DO WHILE (iOS == 0 )
-            CALL MoveToBlock("\begin{RefinementCenter}", fUnit, iOS )
-            IF( iOS /= 0 )   EXIT
-            
-            CALL ReadCenterMeshSizerBlock( centerParams, fUnit )
-            
-            ALLOCATE(c)
-            CALL c % initWithProperties( centerParams % x0, centerParams % centerExtent, &
-                                       centerParams % centerMeshSize, centerParams % centerType )
-            CALL self % sizer % addSizerCenterControl(c)
-            CALL release(c)
-         END DO
-!
-!        --------------------------------
-!        Do the same with RefinementLines
-!        --------------------------------
-!
-         REWIND(fUnit)
-         ios = 0
-         DO WHILE (iOS == 0 )
-            CALL MoveToBlock("\begin{RefinementLine}", fUnit, iOS )
-            IF( iOS /= 0 )   EXIT
-            
-            CALL ReadLineMeshSizerBlock( lineParams, fUnit )
-            
-            ALLOCATE(L)
-            CALL L    % initWithProperties( lineParams % x0, lineParams % x1, lineParams % lineExtent, &
-                                            lineParams % lineMeshSize, lineParams % lineControlType )
-            CALL self % sizer % addSizerLineControl(L)
-            CALL release(L)
-         END DO
+!         REWIND(fUnit)
+!         ios = 0
+!         DO WHILE (iOS == 0 )
+!            CALL MoveToBlock("\begin{RefinementCenter}", fUnit, iOS )
+!            IF( iOS /= 0 )   EXIT
+!            
+!            CALL SetCenterMeshSizerBlock( centerParams, fUnit )
+!            
+!            ALLOCATE(c)
+!            CALL c % initWithProperties( centerParams % x0, centerParams % centerExtent, &
+!                                       centerParams % centerMeshSize, centerParams % centerType )
+!            CALL self % sizer % addSizerCenterControl(c)
+!            CALL release(c)
+!         END DO      
+!!
+!!        --------------------------------
+!!        Do the same with RefinementLines
+!!        --------------------------------
+!!
+!         REWIND(fUnit)
+!         ios = 0
+!         DO WHILE (iOS == 0 )
+!            CALL MoveToBlock("\begin{RefinementLine}", fUnit, iOS )
+!            IF( iOS /= 0 )   EXIT
+!            
+!            CALL SetLineMeshSizerBlock( lineParams, fUnit )
+!            
+!            ALLOCATE(L)
+!            CALL L    % initWithProperties( lineParams % x0, lineParams % x1, lineParams % lineExtent, &
+!                                            lineParams % lineMeshSize, lineParams % lineControlType )
+!            CALL self % sizer % addSizerLineControl(L)
+!            CALL release(L)
+!         END DO
 !
 !        ------------------------------------------------
 !        Discretize boundary curves and add to sizer.
@@ -456,10 +539,14 @@
 !        Spring-Mass smoother
 !        --------------------
 !
-         rewind(fUnit)
-         CALL MoveToBlock("\begin{SpringSmoother}", fUnit, iOS )
-         IF( ios == 0 )     THEN
-            CALL ReadSpringSmootherBlock( fUnit, smootherParams )
+         IF ( controlDict % containsKey(key = "SPRING_SMOOTHER") )     THEN
+         
+            obj          => controlDict % objectForKey(key = "SPRING_SMOOTHER")
+            smootherDict => valueDictionaryFromObject(obj)
+            
+            CALL SetSpringSmootherBlock( smootherDict, smootherParams )
+            IF(ReturnOnFatalError())     RETURN 
+            
             IF( smootherParams % smoothingOn )     THEN
                ALLOCATE(springSmoother)
                CALL springSmoother % init(  smootherParams % springConstant, &
@@ -472,27 +559,28 @@
                self % smoother => springSmoother
                smootherWasRead = .TRUE.
             END IF
-         END IF
-         IF(smootherWasRead) RETURN 
-!
-!        ------------------
-!        Laplacian Smoother
-!        ------------------
-!
-         rewind(fUnit)
-         CALL MoveToBlock("\begin{LaplaceSmoother}", fUnit, iOS )
-         IF ( ios == 0 )     THEN
-            CALL ReadLaplaceSmootherBlock( fUnit, laplaceParameters )
-            IF ( laplaceParameters % smoothingOn )     THEN
-               ALLOCATE(laplaceSmoother)
-               CALL laplaceSmoother % init(laplaceParameters)
-               self % smoother => laplaceSmoother
-               smootherWasRead = .TRUE.
-            END IF 
          END IF 
-         IF(smootherWasRead) RETURN 
+         IF(smootherWasRead) RETURN
+!!
+!TODO: Implement laplacian smoother? It hasn't worked so well.
+!!        ------------------
+!!        Laplacian Smoother
+!!        ------------------
+!!
+!         rewind(fUnit)
+!         CALL MoveToBlock("\begin{LaplaceSmoother}", fUnit, iOS )
+!         IF ( ios == 0 )     THEN
+!            CALL ReadLaplaceSmootherBlock( fUnit, laplaceParameters )
+!            IF ( laplaceParameters % smoothingOn )     THEN
+!               ALLOCATE(laplaceSmoother)
+!               CALL laplaceSmoother % init(laplaceParameters)
+!               self % smoother => laplaceSmoother
+!               smootherWasRead = .TRUE.
+!            END IF 
+!         END IF 
+!         IF(smootherWasRead) RETURN 
          
-      END SUBROUTINE BuildProjectWithContentsOfFile
+      END SUBROUTINE BuildProject
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -642,7 +730,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadRunParametersBlock( fUnit, params ) 
+      SUBROUTINE SetRunParametersBlock( params, controlDict ) 
 !
 !        Example block is:
 !
@@ -660,30 +748,57 @@
 !        Arguments
 !        ---------
 !
-         INTEGER             :: fUnit
-         TYPE(RunParameters) :: params
+         TYPE(RunParameters)               :: params
+         CLASS(FTValueDictionary), POINTER :: controlDict
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                    :: ios
-         CHARACTER(LEN=32)          :: fileFormat
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
-         INTEGER, EXTERNAL          :: GetIntValue
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fileFormat
+         CLASS(FTValueDictionary), POINTER       :: paramsDict
+         CLASS(FTObject)         , POINTER       :: obj
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
          
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         params % meshFileName = GetStringValue( inputLine )
+         obj        => controlDict % objectForKey(key = RUN_PARAMETERS_KEY)
+         paramsDict => valueDictionaryFromObject(obj)
          
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         params % plotFileName = GetStringValue( inputLine )
+         params % MeshFileName = "MeshFile.mesh"
+         msg = "Control file is missing the Mesh file name. Using default name, MeshFile.mesh."
+         CALL SetStringValueFromDictionary(valueToSet = params % MeshFileName,  &
+                                           sourceDict = paramsDict,             &
+                                           key        = MESH_FILE_NAME_KEY,     &
+                                           errorLevel = FT_ERROR_WARNING,       &
+                                           message    = msg,                    &
+                                           poster     = "SetRunParametersBlock")
          
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         params % statsFileName = GetStringValue( inputLine )
          
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         fileFormat = GetStringValue( inputLine )
+         params % plotFileName = "PlotFile.tec"
+         msg = "Control file is missing the plot file name. Using default name, PlotFile.tec."
+         CALL SetStringValueFromDictionary(valueToSet = params % plotFileName,  &
+                                           sourceDict = paramsDict,             &
+                                           key        = PLOT_FILE_NAME_KEY,     &
+                                           errorLevel = FT_ERROR_WARNING,       &
+                                           message    = msg,                    &
+                                           poster     = "SetRunParametersBlock")
          
+         params % statsFileName = "None"
+         msg = "Control file is missing the stats file name. Stats not written."
+         CALL SetStringValueFromDictionary(valueToSet = params % statsFileName, &
+                                           sourceDict = paramsDict,             &
+                                           key        = STATS_FILE_NAME_KEY,    &
+                                           errorLevel = FT_ERROR_WARNING,       &
+                                           message    = msg,                    &
+                                           poster     = "SetRunParametersBlock")
+                                           
+         msg = "Unknown mesh file format or mesh file format not set. Set to ISM"
+         CALL SetStringValueFromDictionary(valueToSet = fileFormat,                &
+                                           sourceDict = paramsDict,                &
+                                           key        = MESH_FILE_FORMAT_NAME_KEY, &
+                                           errorLevel = FT_ERROR_WARNING,          &
+                                           message    = msg,                       &
+                                           poster     = "SetRunParametersBlock")
+
          IF( fileFormat == "Basic" )     THEN
             params % meshFileFormat = BASIC_MESH_FORMAT
          ELSE IF ( fileFormat == "BasicWithEdges" )     THEN
@@ -695,24 +810,29 @@
          ELSE IF( fileFormat == "ISM-MM" )     THEN
             params % meshFileFormat = ISM_MM
          ELSE
-            CALL ThrowProjectReadException(FT_ERROR_FATAL, "ReadRunParametersBlock",&
-                                           "Unknown mesh file format")
+            params % meshFileFormat = ISM
          END IF
-   
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         params % polynomialOrder = GetIntValue( inputLine )
 
-      END SUBROUTINE ReadRunParametersBlock
+         msg = "Control file is missing the polynomial order. Using default N = 5."
+         params % polynomialOrder = 5
+         CALL SetIntegerValueFromDictionary(valueToSet = params % polynomialOrder, &
+                                           sourceDict = paramsDict,               &
+                                           key        = POLYNOMIAL_ORDER_KEY,     &
+                                           errorLevel = FT_ERROR_WARNING,         &
+                                           message    = msg,                      &
+                                           poster     = "SetRunParametersBlock")
+         
+      END SUBROUTINE SetRunParametersBlock
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadMeshParametersBlock( fUnit, params ) 
+      SUBROUTINE SetMeshParametersBlock( params, controlDict ) 
 !
 !        Example block is:
 !
 !         \begin{MeshParameters}
 !            mesh type = "conforming"
-!            background grid size = 1.0
+!            background grid size = [1.0, 1.0, 1.0]
 !         \end{MeshParameters}
 !
          IMPLICIT NONE
@@ -721,45 +841,68 @@
 !        Arguments
 !        ---------
 !
-         INTEGER              :: fUnit
-         TYPE(MeshParameters) :: params
+         TYPE(MeshParameters)              :: params
+         CLASS(FTValueDictionary), POINTER :: controlDict
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
+         CLASS(FTValueDictionary), POINTER       :: paramsDict
+         CLASS(FTObject)         , POINTER       :: obj
          
-         INTERFACE
-            FUNCTION GetRealArray( inputLine ) RESULT(x)
-               USE SMConstants
-               IMPLICIT NONE
-               REAL(KIND=RP), DIMENSION(3) :: x
-               CHARACTER ( LEN = * ) :: inputLine
-            END FUNCTION GetRealArray
-         END INTERFACE
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: typeName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str, msg
          
-         INTEGER                    :: ios
-         CHARACTER(LEN=32)          :: typeName
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
-         REAL(KIND=RP), EXTERNAL    :: GetRealValue
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         typeName = GetStringValue( inputLine )
-         
+         obj        => controlDict % objectForKey(key = MESH_PARAMETERS_KEY)
+         paramsDict => valueDictionaryFromObject(obj)
+!
+!        -----------------------------------------
+!        Make sure mesh parameters are in the file
+!        -----------------------------------------
+!
+         IF(.NOT.ASSOCIATED(paramsDict)) THEN
+            CALL ThrowErrorExceptionOfType(poster = "SetMeshParametersBlock", &
+                                           msg    = "Control file is missing the mesh parameters block.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN 
+         END IF
+!
+!        ---------
+!        Mesh type
+!        ---------
+!
+         typeName = "conforming"
+         msg      = "Control file is missing the mesh type. Using default 'conforming'."
+         CALL SetStringValueFromDictionary(valueToSet = typeName,               &
+                                           sourceDict = paramsDict,             &
+                                           key        = MESH_TYPE_KEY,          &
+                                           errorLevel = FT_ERROR_WARNING,       &
+                                           message    = msg,                    &
+                                           poster     = "SetMeshParametersBlock")         
          IF( typeName == "conforming" )     THEN
             params % meshType = 0! CONFORMING
          ELSE
             params % meshType = 1 !NON_CONFORMING
          END IF
+!
+!        ---------
+!        Mesh size
+!        ---------
+!
+         msg      = "Control file is missing the mesh size."
+         CALL SetRealArrayValueFromDictionary(arrayToSet = params % backgroundGridSize, &
+                                              sourceDict = paramsDict,                  &
+                                              key = GRID_SIZE_KEY,                      &
+                                              errorLevel = FT_ERROR_FATAL,              &
+                                              message = msg,                            &
+                                              poster = "SetMeshParametersBlock")
    
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         params % backgroundGridSize = GetRealArray( inputLine )
-
-      END SUBROUTINE ReadMeshParametersBlock
+      END SUBROUTINE SetMeshParametersBlock
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadBackgroundGridBlock( backgroundGrid, fUnit )
+      SUBROUTINE SetBackgroundGridBlock( backgroundGrid, backgroundGridDict )
 !
 !        Example block is:
 !
@@ -775,44 +918,57 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                        :: fUnit
-         TYPE(BackgroundGridParameters) :: backgroundGrid
+         CLASS(FTValueDictionary), POINTER :: backgroundGridDict
+         TYPE(BackgroundGridParameters)    :: backgroundGrid
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                    :: ios
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str, msg
+!
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
+!
+!        ------------------------------------------------
+!
+         msg = "Background grid block missing parameter " // TRIM(X_START_NAME_KEY)
+         CALL SetRealArrayValueFromDictionary(arrayToSet =  backgroundGrid % x0,      &
+                                              sourceDict = backgroundGridDict,        &
+                                              key        = X_START_NAME_KEY,          &
+                                              errorLevel = FT_ERROR_FATAL,            &
+                                              message    = msg,                       &
+                                              poster     = "SetBackgroundGridBlock")
+         IF(ReturnOnFatalError()) RETURN
+
+         msg = "Background grid block missing parameter " // TRIM(DX_NAME_KEY)
+         CALL SetRealArrayValueFromDictionary(arrayToSet = backgroundGrid % dx,       &
+                                              sourceDict = backgroundGridDict,        &
+                                              key        = DX_NAME_KEY,               &
+                                              errorLevel = FT_ERROR_FATAL,            &
+                                              message    = msg,                       &
+                                              poster     = "SetBackgroundGridBlock")
+         IF(ReturnOnFatalError()) RETURN
+          
+         msg = "Background grid block missing parameter " // TRIM(NUM_INTERVALS_NAME_KEY)
+         CALL SetIntegerArrayValueFromDictionary(arrayToSet = backgroundGrid % N,        &
+                                                 sourceDict = backgroundGridDict,        &
+                                                 key        = NUM_INTERVALS_NAME_KEY,    &
+                                                 errorLevel = FT_ERROR_FATAL,            &
+                                                 message    = msg,                       &
+                                                 poster     = "SetBackgroundGridBlock")
+         IF(ReturnOnFatalError()) RETURN
+
          
-         INTERFACE
-            FUNCTION GetRealArray( inputLine ) RESULT(x)
-               USE SMConstants
-               IMPLICIT NONE
-               REAL(KIND=RP), DIMENSION(3) :: x
-               CHARACTER ( LEN = * ) :: inputLine
-            END FUNCTION GetRealArray
-            FUNCTION GetIntArray( inputLine ) RESULT(x)
-               IMPLICIT NONE
-               INTEGER, DIMENSION(3) :: x
-               CHARACTER ( LEN = * ) :: inputLine
-            END FUNCTION GetIntArray
-         END INTERFACE
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         backgroundGrid % x0 = GetRealArray( inputLine )
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         backgroundGrid % dx = GetRealArray( inputLine )
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         backgroundGrid % N = GetIntArray( inputLine )
-         
-      END SUBROUTINE ReadBackgroundGridBlock
+      END SUBROUTINE SetBackgroundGridBlock
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadCenterMeshSizerBlock( centerParams, fUnit ) 
+      SUBROUTINE SetCenterMeshSizerBlock( centerParams, centerDict ) 
 !
 !        Example block is:
 !
@@ -829,48 +985,84 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                 :: fUnit
-         TYPE(CentersParameters) :: centerParams
-         REAL(KIND=RP), EXTERNAL :: GetRealValue
-         INTERFACE
-            FUNCTION GetRealArray( inputLine ) RESULT(x)
-               USE SMConstants
-               IMPLICIT NONE
-               REAL(KIND=RP), DIMENSION(3) :: x
-               CHARACTER ( LEN = * ) :: inputLine
-            END FUNCTION GetRealArray
-         END INTERFACE
+         CLASS(FTValueDictionary), POINTER :: centerDict
+         TYPE(CentersParameters)           :: centerParams
 !
-!        ---------------
+!        ----------
+!        Interfaces
+!        ----------
+!
+         logical, EXTERNAL :: ReturnOnFatalError
+!
+!        ----------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                    :: ios
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
-         CHARACTER(LEN=32)          :: str
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         str = GetStringValue( inputLine )
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str, msg
+!
+!        ---------------------------------
+!        Smooth OR sharp center variation 
+!        ---------------------------------
+!
+         str = "smooth"
+         msg = "Refinement center block missing smooth parameter. Using default smooth"
+         CALL SetStringValueFromDictionary(valueToSet = str,              &
+                                           sourceDict = centerDict,       &
+                                           key = TYPE_NAME_KEY,           &
+                                           errorLevel = FT_ERROR_WARNING, &
+                                           message = msg,                 &
+                                           poster = "SetCenterMeshSizerBlock")
          
          IF( str == "smooth" )     THEN
             centerParams % centerType = CENTER_SMOOTH
          ELSE
             centerParams % centerType = CENTER_SHARP
          END IF
+!
+!        --------
+!        Location
+!        --------
+!
+         msg = "Refinement center block missing parameter " // TRIM(X_START_NAME_KEY)
+         CALL SetRealArrayValueFromDictionary(arrayToSet = centerParams % x0,         &
+                                              sourceDict = centerDict,                &
+                                              key        = X_START_NAME_KEY,          &
+                                              errorLevel = FT_ERROR_FATAL,            &
+                                              message    = msg,                       &
+                                              poster     = "SetCenterMeshSizerBlock")
+         IF(ReturnOnFatalError()) RETURN
+!
+!        -----
+!        Size 
+!        -----
+!
+         msg = "Refinement center block missing parameter " // TRIM(SPACING_NAME_KEY)
+         CALL SetRealValueFromDictionary(valueToSet = centerParams % centerMeshSize, &
+                                         sourceDict = centerDict,                    &
+                                         key        = SPACING_NAME_KEY,              &
+                                         errorLevel = FT_ERROR_FATAL,                &
+                                         message    = msg,                           &
+                                         poster     = "SetCenterMeshSizerBlock")
+         IF(ReturnOnFatalError()) RETURN
+!
+!        ------
+!        Extent
+!        ------
+!
+         msg = "Refinement center block missing parameter " // TRIM(EXTENT_NAME_KEY)
+         CALL SetRealValueFromDictionary(valueToSet = centerParams % centerExtent,   &
+                                         sourceDict = centerDict,                    &
+                                         key        = EXTENT_NAME_KEY,               &
+                                         errorLevel = FT_ERROR_FATAL,                &
+                                         message    = msg,                           &
+                                         poster     = "SetCenterMeshSizerBlock")
+         IF(ReturnOnFatalError()) RETURN
          
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         centerParams % x0 = GetRealArray( inputLine )
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         centerParams % centerMeshSize = GetRealValue( inputLine )
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         centerParams % centerExtent = GetRealValue( inputLine )
-      END SUBROUTINE ReadCenterMeshSizerBlock
+      END SUBROUTINE SetCenterMeshSizerBlock
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadLineMeshSizerBlock( lineParams, fUnit ) 
+      SUBROUTINE SetLineMeshSizerBlock( lineParams, lineSizerDict ) 
 !
 !        Example block is:
 !
@@ -888,48 +1080,94 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                 :: fUnit
-         TYPE(lineParameters)    :: lineParams
-         REAL(KIND=RP), EXTERNAL :: GetRealValue
-         INTERFACE
-            FUNCTION GetRealArray( inputLine ) RESULT(x)
-               USE SMConstants
-               IMPLICIT NONE
-               REAL(KIND=RP), DIMENSION(3) :: x
-               CHARACTER ( LEN = * ) :: inputLine
-            END FUNCTION GetRealArray
-         END INTERFACE
+         CLASS(FTValueDictionary), POINTER :: lineSizerDict
+         TYPE(lineParameters)              :: lineParams
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         logical, EXTERNAL :: ReturnOnFatalError
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                    :: ios
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
-         CHARACTER(LEN=32)          :: str
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         str = GetStringValue( inputLine )
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str, msg
+!
+!        --------------------
+!        Smooth or sharp type
+!        --------------------
+!
+         str = "smooth"
+         msg = "Refinement line block missing smooth type parameter. Using default smooth"
+         CALL SetStringValueFromDictionary(valueToSet = str,                 &
+                                           sourceDict = lineSizerDict,       &
+                                           key        = TYPE_NAME_KEY,       &
+                                           errorLevel = FT_ERROR_WARNING,    &
+                                           message    = msg,                 &
+                                           poster = "SetLineMeshSizerBlock")
          
          IF( str == "smooth" )     THEN
             lineParams % lineControlType = CENTER_SMOOTH
          ELSE
             lineParams % lineControlType = CENTER_SHARP
          END IF
+!
+!        --------------
+!        Start location
+!        --------------
+!
+         msg = "Refinement line block missing parameter " // TRIM(X_START_NAME_KEY)
+         CALL SetRealArrayValueFromDictionary(arrayToSet = lineParams % x0,           &
+                                              sourceDict = lineSizerDict,             &
+                                              key        = X_START_NAME_KEY,          &
+                                              errorLevel = FT_ERROR_FATAL,            &
+                                              message    = msg,                       &
+                                              poster     = "SetLineMeshSizerBlock")
+         IF(ReturnOnFatalError()) RETURN
+!
+!        ------------
+!        End location
+!        ------------
+!
+         msg = "Refinement line block missing parameter " // TRIM(X_END_NAME_KEY)
+         CALL SetRealArrayValueFromDictionary(arrayToSet = lineParams % x1,           &
+                                              sourceDict = lineSizerDict,             &
+                                              key        = X_END_NAME_KEY,            &
+                                              errorLevel = FT_ERROR_FATAL,            &
+                                              message    = msg,                       &
+                                              poster     = "SetLineMeshSizerBlock")
+         IF(ReturnOnFatalError()) RETURN
          
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         lineParams % x0 = GetRealArray( inputLine )
+!
+!        ---------
+!        Mesh size
+!        ---------
+!
+         msg = "Refinement line block missing parameter " // TRIM(SPACING_NAME_KEY)
+         CALL SetRealValueFromDictionary(valueToSet = lineParams % lineMeshSize  ,   &
+                                         sourceDict = lineSizerDict,                 &
+                                         key        = SPACING_NAME_KEY,              &
+                                         errorLevel = FT_ERROR_FATAL,                &
+                                         message    = msg,                           &
+                                         poster     = "SetLineMeshSizerBlock")
+         IF(ReturnOnFatalError()) RETURN
+!
+!        ------
+!        Extent
+!        ------
+!
+         msg = "Refinement line block missing parameter " // TRIM(EXTENT_NAME_KEY)
+         CALL SetRealValueFromDictionary(valueToSet = lineParams % lineExtent,       &
+                                         sourceDict = lineSizerDict,                 &
+                                         key        = EXTENT_NAME_KEY,               &
+                                         errorLevel = FT_ERROR_FATAL,                &
+                                         message    = msg,                           &
+                                         poster     = "SetLineMeshSizerBlock")
+         IF(ReturnOnFatalError()) RETURN
          
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         lineParams % x1 = GetRealArray( inputLine )
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         lineParams % lineMeshSize = GetRealValue( inputLine )
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         lineParams % lineExtent = GetRealValue( inputLine )
-         
-      END SUBROUTINE ReadLineMeshSizerBlock
+      END SUBROUTINE SetLineMeshSizerBlock
       
 
    END MODULE MeshProjectClass
