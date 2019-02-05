@@ -645,7 +645,7 @@
             bottomB = segmentedOuterBoundary % boundingBox(BBOX_BOTTOM)
          ELSE
             msg = "To automatically create background grid, the model needs an outer boundary curve"
-            CALL ThrowProjectReadException( FT_ERROR_FATAL, "BuildbackgroundGridFromModel", msg )
+            CALL ThrowErrorExceptionOfType(poster = "BuildbackgroundGridFromModel",msg = msg,typ = FT_ERROR_FATAL)
             RETURN
          END IF
 !
@@ -666,70 +666,70 @@
          
       END SUBROUTINE BuildbackgroundGridFromModel
 !@mark -
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE ThrowProjectReadException( level, objectName, msg )  
-         USE FTValueClass
-         IMPLICIT NONE  
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         CHARACTER(LEN=*)  :: msg
-         CHARACTER(LEN=*)  :: objectName
-         INTEGER           :: level
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         CLASS(FTException)   , POINTER :: exception => NULL()
-         CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
-         CLASS(FTObject)      , POINTER :: obj => NULL()
-         CLASS(FTValue)       , POINTER :: v => NULL()
-!
-!        -----------------------------------------------------
-!        The userDictionary for this exception contains the
-!        message to be delivered under the name "message"
-!        and the object being read by the name "objectName"
-!        -----------------------------------------------------
-!
-         ALLOCATE(userDictionary)
-         CALL userDictionary  %  initWithSize(4)
-         
-         ALLOCATE(v)
-         CALL v  %  initWithValue(objectName)
-         obj => v
-         CALL userDictionary  %  addObjectForKey(obj,"objectName")
-         CALL release(v)
-         
-         ALLOCATE(v)
-         CALL v  %  initWithValue(msg)
-         obj => v
-         CALL userDictionary  %  addObjectForKey(obj,"message")
-         CALL release(v)
-!
-!        --------------------
-!        Create the exception
-!        --------------------
-!
-         ALLOCATE(exception)
-         
-         CALL exception  %  initFTException(level, &
-                              exceptionName   = PROJECT_READ_EXCEPTION, &
-                              infoDictionary  = userDictionary)
-         CALL release(userDictionary)
-!
-!        -------------------
-!        Throw the exception
-!        -------------------
-!
-         CALL throw(exception)
-         CALL release(exception)
-         
-      END SUBROUTINE ThrowProjectReadException
+!! TODO: To be eliminated
+!!//////////////////////////////////////////////////////////////////////// 
+!! 
+!      SUBROUTINE ThrowProjectReadException( level, objectName, msg )  
+!         USE FTValueClass
+!         IMPLICIT NONE  
+!!
+!!        ---------
+!!        Arguments
+!!        ---------
+!!
+!         CHARACTER(LEN=*)  :: msg
+!         CHARACTER(LEN=*)  :: objectName
+!         INTEGER           :: level
+!!
+!!        ---------------
+!!        Local variables
+!!        ---------------
+!!
+!         CLASS(FTException)   , POINTER :: exception => NULL()
+!         CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
+!         CLASS(FTObject)      , POINTER :: obj => NULL()
+!         CLASS(FTValue)       , POINTER :: v => NULL()
+!!
+!!        -----------------------------------------------------
+!!        The userDictionary for this exception contains the
+!!        message to be delivered under the name "message"
+!!        and the object being read by the name "objectName"
+!!        -----------------------------------------------------
+!!
+!         ALLOCATE(userDictionary)
+!         CALL userDictionary  %  initWithSize(4)
+!         
+!         ALLOCATE(v)
+!         CALL v  %  initWithValue(objectName)
+!         obj => v
+!         CALL userDictionary  %  addObjectForKey(obj,"objectName")
+!         CALL release(v)
+!         
+!         ALLOCATE(v)
+!         CALL v  %  initWithValue(msg)
+!         obj => v
+!         CALL userDictionary  %  addObjectForKey(obj,"message")
+!         CALL release(v)
+!!
+!!        --------------------
+!!        Create the exception
+!!        --------------------
+!!
+!         ALLOCATE(exception)
+!         
+!         CALL exception  %  initFTException(level, &
+!                              exceptionName   = PROJECT_READ_EXCEPTION, &
+!                              infoDictionary  = userDictionary)
+!         CALL release(userDictionary)
+!!
+!!        -------------------
+!!        Throw the exception
+!!        -------------------
+!!
+!         CALL throw(exception)
+!         CALL release(exception)
+!         
+!      END SUBROUTINE ThrowProjectReadException
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////

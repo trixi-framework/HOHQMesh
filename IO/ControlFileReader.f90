@@ -628,27 +628,28 @@
          CHARACTER(LEN=1), ALLOCATABLE    :: enc(:)
          CLASS(FTData)   , POINTER        :: dta
          CLASS(FTObject) , POINTER        :: obj
+         CHARACTER(LEN=1), POINTER        :: encA(:)
 !
 !        ----------------
 !        Number of points
 !        ----------------
-!
-         READ(fileUnit,"(A)", END = 1000) line
-         CALL replaceTabs(line)
-         CALL addKeyAndValueFromLineToDict(blockDict = dict, &
-                                           line      = line)
+!                                           
          N = dict % integerValueForKey("nKnots")
          IF ( N < HUGE(N) )     THEN
+         
             ALLOCATE(array(4,N))
             DO j = 1, N
                 READ(fileUnit, *) (array(k,j), k = 1,4)
             END DO
-            CALL encode(arrayIn = array,enc = enc)
+            
+            CALL encode(arrayIn = array, enc = enc)
+            
             ALLOCATE(dta)
             CALL dta % initWithDataOfType(genericData = enc,&
                                           dataType    = "Array2DReal")
+            
             obj => dta
-            CALL dict % addObjectForKey(object = obj,key = "data")
+            CALL dict % addObjectForKey(object = obj, key = "data")
             CALL release(dta)
 !
 !           ----------------------------------------
@@ -658,8 +659,9 @@
             READ(fileUnit,"(A)", END = 1000) line
             j = INDEX(STRING = line, SUBSTRING = "\end{SPLINE_DATA}")
             IF ( j <= 0 )     THEN
-               PRINT *,"No \end marker for spline data"!DEBUG
+               PRINT *,"No \end{SPLINE_DATA} marker for spline data"!DEBUG
             END IF 
+            
          ELSE 
             PRINT *, "Malformed spline block. No nKnots field"!DEBUG 
          END IF 

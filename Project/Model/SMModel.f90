@@ -423,7 +423,7 @@
                
             CASE ("SPLINE_CURVE" )
             
-               CALL ImportSplineBlock( self, 6, chain )
+               CALL ImportSplineBlock( self, chain, curveDict )
                
             CASE ("END_POINTS_LINE" )
             
@@ -530,23 +530,35 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ImportSplineBlock( self, fUnit, chain ) 
+      SUBROUTINE ImportSplineBlock( self, chain, splineDict ) 
+         USE ValueSettingModule
+         USE FTDataClass
+         USE EncoderModule
          IMPLICIT NONE 
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(SMModel)                 :: self
-         INTEGER                        :: fUnit
-         CLASS(SMChainedCurve), POINTER :: chain
+         CLASS(SMModel)                    :: self
+         CLASS(FTValueDictionary), POINTER :: splineDict
+         CLASS(SMChainedCurve)   , POINTER :: chain
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         CHARACTER(LEN=LINE_LENGTH)                 :: inputLine = " "
+         CLASS(FTObject) , POINTER                  :: obj
+         CLASS(FTData)   , POINTER                  :: splineData
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveName
+         CHARACTER(LEN=1), POINTER                  :: encodedData(:)
+         REAL(KIND=RP), ALLOCATABLE                 :: decodedArray(:,:)
          INTEGER                                    :: ios
          CLASS(SMSplineCurve)             , POINTER :: cCurve      => NULL()
          CLASS(SMCurve)                   , POINTER :: curvePtr    => NULL()
@@ -559,35 +571,51 @@
 !        Get the data
 !        ------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         curveName = GetStringValue(inputLine)
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         numKnots = GetIntValue(inputLine)
+         curveName = "spline"
+         CALL SetStringValueFromDictionary(valueToSet = curveName,                 &
+                                           sourceDict = splineDict,                &
+                                           key = "name",                           &
+                                           errorLevel = FT_ERROR_WARNING,          &
+                                           message = "spline block has no name. Using default name spline", &
+                                           poster = "ImportSplineBlock")
+
+         CALL SetIntegerValueFromDictionary(valueToSet = numKnots,             &
+                                            sourceDict = splineDict,           &
+                                            key = "nKnots",                    &
+                                            errorLevel = FT_ERROR_FATAL,       &
+                                            message = "nKnots keyword not found in spline definition", &
+                                            poster = "ImportSplineBlock")
+         IF(ReturnOnFatalError()) RETURN 
+!
+!        ---------------------
+!        Get the spline points
+!        ---------------------
+!
+         obj         => splineDict % objectForKey(key = "data")
+         splineData  => dataFromObject(obj)
+         encodedData => splineData % storedData()
+
+         IF(.NOT. ASSOCIATED(encodedData))     THEN
+            CALL ThrowErrorExceptionOfType(poster = "ImportSplineBlock", &
+                                           msg    = "Spline does not appear to contain any data",&
+                                           typ    = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
          
-         ALLOCATE( x(numKnots), y(numKnots), z(numKnots), t(numKnots) )
-         DO j = 1, numKnots 
-            READ( fUnit, * ) t(j), x(j), y(j), z(j)
-         END DO
+         CALL DECODE(enc = encodedData, N = 4, M = numKnots, arrayOut = decodedArray)
 !
 !        ----------------
 !        Create the curve
 !        ----------------
 !
          ALLOCATE(cCurve)
-         CALL cCurve % initWithPointsNameAndID(t, x, y, z, curveName, self % curveCount + 1 )
+         CALL cCurve % initWithPointsNameAndID(decodedArray(1,:), decodedArray(2,:), &
+                                               decodedArray(3,:), decodedArray(4,:), &
+                                               curveName, self % curveCount + 1 )
          !Spline curves have no exceptions thrown
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
          CALL release(cCurve)
-!
-!        ----------------------------
-!        Make sure the block is ended
-!        ----------------------------
-!
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF( INDEX(inputLine,"\end{SplineCurve}") == 0 )     THEN
-            CALL ThrowModelReadException(chain % curveName(),"\end{SplineCurve} not found")
-         END IF
          
       END SUBROUTINE ImportSplineBlock
 !
