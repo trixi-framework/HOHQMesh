@@ -251,7 +251,6 @@
       RECURSIVE SUBROUTINE DestructSMSegment(self)  
          IMPLICIT NONE
          CLASS(SMSegment)           :: self
-         CLASS(FTObject), POINTER :: obj
                   
          CALL release(self % leftNode)
          CALL release(self % rightNode)
@@ -444,11 +443,11 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(SMSegmentedCurveNode), POINTER   :: left => NULL(), right => NULL(), middle => NULL(), p => NULL()
+         CLASS(SMSegmentedCurveNode), POINTER   :: left => NULL(), right => NULL(), p => NULL()
          REAL(KIND=RP)                          :: t, x(3)
          REAL(KIND=RP)                          :: xL(3), xM(3), xR(3), tL, tM, tR, c, s
          REAL(KIND=RP)                          :: xPrimeL(3), xPrimeR(3), xPrime(3), xDoublePrime(3)
-         REAL(KIND=RP)                          :: norm, hLocal
+         REAL(KIND=RP)                          :: norm
          INTEGER                                :: j, N, jointType
          LOGICAL                                :: isCircular
          CLASS(SMSegment)   , POINTER           :: rootSegment

@@ -203,7 +203,7 @@
          CLASS(FTException)      , POINTER :: exception
 
          IF(catch()) RETURN  
-
+         
          DO
            READ(fileUnit,"(A)", IOSTAT = iStat, END = 1000) line
 
@@ -517,7 +517,6 @@
          IMPLICIT NONE  
          CLASS(FTValueDictionary)               , POINTER :: inputDict
          CLASS(FTObject)                        , POINTER :: obj
-         CLASS(FTLinkedList)                    , POINTER :: list
          CHARACTER(LEN=FTDICT_KWD_STRING_LENGTH), POINTER :: keys(:)
          INTEGER                                          :: i
 !

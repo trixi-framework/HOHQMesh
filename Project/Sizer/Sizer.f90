@@ -1008,5 +1008,6 @@
          INTEGER          :: iUnit
          
          WRITE(iUnit,*) "MeshSizer object"
+         IF(self % noOfInnerBoundaries >= 0)     CONTINUE 
       END SUBROUTINE printSizerDescription
       END MODULE MeshSizerClass

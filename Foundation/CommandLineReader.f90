@@ -53,7 +53,7 @@
       Module CommandLineReader 
       IMPLICIT NONE
       
-      INTEGER, PARAMETER :: COMMAND_LINE_ARGUMENT_LENGTH = 256
+      INTEGER, PARAMETER :: COMMAND_LINE_ARGUMENT_LENGTH = 128
       INTEGER, PRIVATE   :: lastArgumentID
       
       PUBLIC  :: CommandLineArgumentIsPresent, IntegerValueForArgument, &
@@ -321,7 +321,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      CHARACTER(LEN=256) FUNCTION StringValueForLastArgument() 
+      CHARACTER(LEN=COMMAND_LINE_ARGUMENT_LENGTH) FUNCTION StringValueForLastArgument() 
         IMPLICIT NONE 
 !
 !       ---------------

@@ -32,9 +32,9 @@
          REAL(KIND=RP)               :: c
          c = u(1)*v(2) - v(1)*u(2)
          IF( ABS(c) < EPSILON(c)     )   THEN
-            d = CO_LINEAR
+            d = INT(CO_LINEAR)
          ELSE
-            d = SIGN( 1.0_RP, c )
+            d = INT(SIGN( 1.0_RP, c ))
          END IF
       END FUNCTION CrossProductDirection
 !
@@ -232,7 +232,7 @@
                   w = w - 2
                END IF
             ELSE IF ( AlmostEqual(r,0.0_RP) )     THEN
-               w = 0.0_RP
+               w = 0
                RETURN
             END IF
          ELSE IF ( (y == 0.0_RP) .AND. (x > 0.0_RP) )     THEN 

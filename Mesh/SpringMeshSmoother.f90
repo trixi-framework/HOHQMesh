@@ -95,6 +95,7 @@
       SUBROUTINE DestructSpringMeshSmoother( self ) 
          IMPLICIT NONE 
          CLASS(SpringMeshSmoother) :: self
+         IF(self % restLength >= 0.0)     CONTINUE 
          !Do nothing
       END SUBROUTINE DestructSpringMeshSmoother
 !
@@ -386,6 +387,8 @@
             CALL nodeIterator % moveToNext()
          END DO
          
+         IF(self % restLength >= 0.0_RP)     CONTINUE 
+         
       END SUBROUTINE ConstrainBoundaryNodes
 !
 !////////////////////////////////////////////////////////////////////////
@@ -420,9 +423,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER                    :: ios
          CHARACTER(LEN=32)          :: str
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
          REAL(KIND=RP), EXTERNAL    :: GetRealValue
          INTEGER      , EXTERNAL    :: GetIntValue
 !

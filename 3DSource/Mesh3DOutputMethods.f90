@@ -75,7 +75,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE WriteISMHexMeshFile( mesh, fName, model, N, version )
+      SUBROUTINE WriteISMHexMeshFile( mesh, fName, N, version )
          IMPLICIT NONE 
 !
 !        ---------
@@ -83,7 +83,6 @@
 !        ---------
 !
          TYPE( StructuredHexMesh )          :: mesh
-         CLASS(SMModel)           , POINTER :: model
          CHARACTER(LEN=*)                   :: fName
          INTEGER                            :: N ! The polynomial order of the boundaries.
          INTEGER                            :: version !version number of the ISM format.

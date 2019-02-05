@@ -36,8 +36,8 @@
 !        File
 !        ----
 !
-         CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: controlFileName
-         INTEGER                               :: fUnit, preferencesFileUnit, ios
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName
+         INTEGER                               :: fUnit, ios
          INTEGER, EXTERNAL                     :: StdInFileUnitCopy, UnusedUnit
          TYPE(ControlFileReader)               :: cfReader
 !
@@ -48,7 +48,7 @@
          CLASS(FTObject) , POINTER :: obj => NULL()
          CLASS(SMElement), POINTER :: e => NULL()
          
-         CHARACTER(LEN=8) :: version = "7.16.18"
+         CHARACTER(LEN=8) :: version = "2.4.19"
          LOGICAL          :: debug = .FALSE.
          LOGICAL          :: didGenerate3DMesh = .FALSE.
          INTEGER          :: k
@@ -275,7 +275,6 @@
                IF ( didGenerate3DMesh )     THEN
                   CALL WriteISMHexMeshFile(mesh = hex8Mesh,&
                                            fName = project % runParams % MeshFileName,&
-                                           model = project % model,&
                                            N = project % runParams % polynomialOrder,&
                                            version = project % runParams % meshFileFormat) 
                ELSE
@@ -375,7 +374,7 @@
 !        Arguments
 !        ---------
 !
-         CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: controlFileName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName
          CHARACTER(LEN=8)                      :: version
          LOGICAL                               :: debug
          

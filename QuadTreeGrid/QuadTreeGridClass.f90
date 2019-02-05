@@ -1015,8 +1015,8 @@
          REAL(KIND=RP), DIMENSION(2), INTENT(IN)  :: x0, dx
          REAL(KIND=RP), DIMENSION(2), INTENT(IN)  :: x
          INTEGER                    , INTENT(OUT) :: i,j
-         i = (x(1) - x0(1))/dx(1)
-         j = (x(2) - x0(2))/dx(2)
+         i = NINT((x(1) - x0(1))/dx(1))
+         j = NINT((x(2) - x0(2))/dx(2))
       END SUBROUTINE GetGridLocation
 !@mark -
 !

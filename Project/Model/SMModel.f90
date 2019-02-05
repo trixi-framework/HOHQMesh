@@ -546,7 +546,7 @@
 !        ---------------
 !
          CHARACTER(LEN=LINE_LENGTH)                 :: inputLine = " "
-         CHARACTER(LEN=SM_CURVE_NAME_LENGTH)        :: curveName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveName
          INTEGER                                    :: ios
          CLASS(SMSplineCurve)             , POINTER :: cCurve      => NULL()
          CLASS(SMCurve)                   , POINTER :: curvePtr    => NULL()

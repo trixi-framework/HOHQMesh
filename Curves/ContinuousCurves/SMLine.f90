@@ -105,6 +105,7 @@
         
         x = self%xEnd - self%xStart
         x = x/SQRT(x(1)**2 + x(2)**2 + x(3)**2)
+        t = t
         
      END FUNCTION tangentOnLineAt
 !
@@ -115,6 +116,7 @@
         CLASS(SMLine) :: self
         INTEGER       :: iUnit
         WRITE(iUnit,*) "SMLine Object"
+        IF(self % refCount() >= 0)     CONTINUE 
      END SUBROUTINE printLineDescription
  
       END Module SMLineClass

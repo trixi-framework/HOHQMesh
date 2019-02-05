@@ -274,7 +274,6 @@
 !
          IMPLICIT NONE
          INTEGER, EXTERNAL  :: UnusedUnit
-         INTEGER            :: ios
          CHARACTER(LEN=132) :: inputLine
          
          fUnit = UnusedUnit( )

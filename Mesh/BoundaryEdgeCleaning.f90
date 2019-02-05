@@ -53,7 +53,7 @@
             IF( boundaryEdgesType(j) == BOUNDARY_EDGES ) THEN
                obj  => boundaryEdgesArray % objectAtIndex(j)
                list => linkedListFromObject(obj)
-               CALL CleanUpBoundaryEdges( list, mesh, model )
+               CALL CleanUpBoundaryEdges( list )
             END IF
          END DO
 !
@@ -83,25 +83,23 @@
       
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUpBoundaryEdges( list, mesh, model ) 
+      SUBROUTINE CleanUpBoundaryEdges( list ) 
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         TYPE(SMMesh)                 :: mesh
          CLASS(FTLinkedList), POINTER :: list
-         CLASS(SMModel)     , POINTER :: model
          
-         CALL RemoveCloseElements( list, model )
+         CALL RemoveCloseElements( list )
          CALL RemoveBumpOuts( list )
          
       END SUBROUTINE CleanUpBoundaryEdges
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE RemoveCloseElements( boundaryEdgeList, model )
+      SUBROUTINE RemoveCloseElements( boundaryEdgeList )
          USE ProgramGlobals, ONLY:edgeLengthFactor
 !
 !     ----------------------------------------------------------------
@@ -118,7 +116,6 @@
 !        ---------
 !
          CLASS(FTLinkedList), POINTER :: boundaryEdgeList
-         CLASS(SMModel)     , POINTER :: model
 !
 !        ---------------
 !        Local variables

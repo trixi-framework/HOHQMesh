@@ -135,7 +135,6 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                  :: fUnit
          CLASS(MeshProject)       :: self
          CLASS(FTValueDictionary) :: masterControlDictionary
 !
@@ -143,9 +142,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER                             :: iOS
-         CHARACTER(LEN=LINE_LENGTH)          :: inputLine = " ", msg
-         CLASS(FTException)        , POINTER :: exception => NULL()
+         CHARACTER(LEN=LINE_LENGTH)          :: msg
          CLASS(FTValueDictionary)  , POINTER :: controlDict, modelDict, matBlockdict
          CLASS(FTObject)           , POINTER :: obj
 !
@@ -161,12 +158,21 @@
 !
          CALL self % FTObject % init()
 !
-!        ----------------------------
+!        ------------------------------------
 !        Get run and model parameters
-!        ----------------------------
+!        there must be a CONTROL_INPUT block, 
+!        but a model is optional 
+!        ------------------------------------
 !
          obj         => masterControlDictionary % objectForKey(key = "CONTROL_INPUT")
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
+                                           msg = "CONTROL_INPUT block not available", &
+                                           typ = FT_ERROR_FATAL) 
+            RETURN 
+         END IF 
          controlDict => valueDictionaryFromObject(obj)
+         
          obj         => masterControlDictionary % objectForKey(key = "MODEL")
          modelDict   => valueDictionaryFromObject(obj)
          
@@ -290,21 +296,19 @@
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary => NULL()
          CLASS(SMChainedCurve)       , POINTER :: chain => NULL()
-         CLASS(FTException)          , POINTER :: exception => NULL()
          CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL(), refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(QuadTreeGrid)         , POINTER :: parent => NULL()
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
-         CLASS(LaplaceMeshSmoother)  , POINTER :: laplaceSmoother => NULL()
+!         CLASS(LaplaceMeshSmoother)  , POINTER :: laplaceSmoother => NULL()
          
          CLASS(SizerCentercontrol), POINTER :: c => NULL()
          CLASS(SizerLineControl)  , POINTER :: L => NULL()
          
-         INTEGER                        :: iOS
          TYPE(BackgroundGridParameters) :: backgroundGrid
          TYPE(CentersParameters)        :: centerParams
          TYPE(SpringSmootherParameters) :: smootherParams
-         TYPE(LaplaceSmootherParameters):: laplaceParameters
+!         TYPE(LaplaceSmootherParameters):: laplaceParameters
          TYPE(LineParameters)           :: lineParams
          
          REAL(KIND=RP)                  :: h, xMax(3)
@@ -852,7 +856,7 @@
          CLASS(FTObject)         , POINTER       :: obj
          
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: typeName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str, msg
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
          
          obj        => controlDict % objectForKey(key = MESH_PARAMETERS_KEY)
          paramsDict => valueDictionaryFromObject(obj)
@@ -925,7 +929,7 @@
 !        Local variables
 !        ---------------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str, msg
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
 !
 !
 !        ----------

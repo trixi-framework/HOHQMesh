@@ -130,7 +130,7 @@
                   CALL CleanUp7ValenceNode_InMesh(nodeID, mesh)
                   numberOfValenceChanges = numberOfValenceChanges + 1
                CASE( 8 )
-                  CALL CleanUp8ValenceNode_InMesh(nodeID, mesh)
+!                  CALL CleanUp8ValenceNode_InMesh(nodeID, mesh) TODO:
                CASE DEFAULT
                   !Do nothing
             END SELECT
@@ -407,30 +407,30 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUp8ValenceNode_InMesh(id,mesh) 
-         IMPLICIT NONE 
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         INTEGER                :: id
-         TYPE (SMMesh) :: mesh
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-!         INTEGER                  :: k
-!         CLASS(SMElement), POINTER :: e
-!         REAL(KIND=RP)            :: theta
-!
-!        ----------------------------------------
-!        Find the element with the smallest angle
-!        ----------------------------------------
-!
-         
-      END SUBROUTINE CleanUp8ValenceNode_InMesh 
+!      SUBROUTINE CleanUp8ValenceNode_InMesh(id,mesh) 
+!         IMPLICIT NONE 
+!!
+!!        ---------
+!!        Arguments
+!!        ---------
+!!
+!         INTEGER       :: id
+!         TYPE (SMMesh) :: mesh
+!!
+!!        ---------------
+!!        Local variables
+!!        ---------------
+!!
+!!         INTEGER                  :: k
+!!         CLASS(SMElement), POINTER :: e
+!!         REAL(KIND=RP)            :: theta
+!!
+!!        ----------------------------------------
+!!        Find the element with the smallest angle
+!!        ----------------------------------------
+!!
+!         
+!      END SUBROUTINE CleanUp8ValenceNode_InMesh 
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
