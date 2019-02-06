@@ -214,7 +214,8 @@
                CALL startNewCollectionInCollection(fileUnit,line,collection)
                IF(catch()) EXIT 
                
-            ELSE IF (INDEX(STRING = line, SUBSTRING = "end{") > 0)     THEN 
+            ELSE IF (INDEX(STRING = line, SUBSTRING = "end{") > 0)     THEN
+               IF(INDEX(STRING = line, SUBSTRING = "end{FILE}") > 0)   RETURN 
                CALL completeBlock(line,objectName)
                RETURN ! Done with this block, one way or another
                
