@@ -12,7 +12,6 @@
       PROGRAM HOMeshMain 
          USE MeshProjectClass
          USE FTTimerClass
-         USE CommandLineReader
          USE MeshGenerationMethods
          USE MeshOutputMethods
          USE FTTimerClass
@@ -23,6 +22,16 @@
          USE ControlFileReaderClass
          USE FTValueDictionaryClass
          IMPLICIT NONE
+         
+         INTERFACE
+            SUBROUTINE Write2DMeshStatistics(project)
+               USE FTMutableObjectArrayClass
+               USE MeshQualityAnalysisClass
+               USE MeshProjectClass
+               IMPLICIT NONE
+               CLASS( MeshProject ), POINTER :: project
+            END SUBROUTINE Write2DMeshStatistics
+         END INTERFACE 
 !
 !        --------------------
 !        Mesh project storage
@@ -37,24 +46,24 @@
 !        ----
 !
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName
-         INTEGER                               :: fUnit, ios
-         INTEGER, EXTERNAL                     :: StdInFileUnitCopy, UnusedUnit
-         TYPE(ControlFileReader)               :: cfReader
+         INTEGER                                 :: fUnit, ios
+         INTEGER, EXTERNAL                       :: StdInFileUnitCopy, UnusedUnit
+         TYPE(ControlFileReader)                 :: cfReader
 !
 !        -----
 !        Other
 !        -----
-!
-         CLASS(FTObject) , POINTER :: obj => NULL()
-         CLASS(SMElement), POINTER :: e => NULL()
-         
-         CHARACTER(LEN=8) :: version = "2.4.19"
-         LOGICAL          :: debug = .FALSE.
+!         
+         CHARACTER(LEN=8) :: version           = "2.4.19"
+         LOGICAL          :: debug             = .FALSE.
          LOGICAL          :: didGenerate3DMesh = .FALSE.
          INTEGER          :: k
-         INTEGER          :: statsFileUnit
          TYPE(FTTimer)    :: stopWatch
          CHARACTER(LEN=16):: namesFmt = "(   7A16 )", valuesFmt = '(  7F16.3)', numb = "9"
+         
+         CLASS(FTObject)         , POINTER :: obj
+         CLASS(FTValueDictionary), POINTER :: controlDict
+         
 !
 !        ***********************************************
 !                             Start
@@ -82,7 +91,7 @@
             CALL cfReader % importFromControlFile(fileUnit = fUnit)
          ELSE
             PRINT *, "Unable to open input file"
-            STOP !TODO be more gracious
+            STOP !TODO: be more gracious
          END IF 
          CLOSE(fUnit)
 !
@@ -104,10 +113,7 @@
             IF(PrintMessage) PRINT *, "Generate 2D mesh..."
             
             CALL GenerateQuadMeshForProject( project )
-            IF ( catch() )     THEN
-               CALL printAllExceptions
-               STOP 
-            END IF 
+            CALL trapExceptions !Abort on fatal exceptions
 !
 !           ------------------------
 !           Perform topology cleanup
@@ -164,37 +170,7 @@
 !
          
          IF ( project % runParams % statsFileName /= "None" )     THEN
-         
-            statsFileUnit = UnusedUnit()
-            OPEN(FILE = project % runParams % statsFileName, UNIT = statsFileUnit)
-            badElements => BadElementsInMesh( mesh  = project % mesh)
-            
-            IF ( ASSOCIATED(POINTER = badElements) )     THEN
-               PRINT *, badElements % COUNT()," Bad element(s) Found"
-               WRITE(statsFileUnit,*) " "
-               WRITE(statsFileUnit,*) "----------------"
-               WRITE(statsFileUnit,*) "Bad Element Info"
-               WRITE(statsFileUnit,*) "----------------"
-               WRITE(statsFileUnit,*) " "
-               
-               DO k = 1, badElements % COUNT()
-                  obj => badElements % objectAtIndex(indx = k)
-                  CALL cast(obj,e)
-                  CALL PrintBadElementInfo( e, statsFileUnit )
-               END DO
-               CALL release(badElements)
-               
-            ELSE IF (PrintMessage)     THEN 
-               PRINT *, "********* Elements are OK *********"
-            END IF 
-            
-            WRITE(statsFileUnit,*) " "
-            WRITE(statsFileUnit,*) "------------------------"
-            WRITE(statsFileUnit,*) "2D Mesh Quality Measures"
-            WRITE(statsFileUnit,*) "------------------------"
-            WRITE(statsFileUnit,*) " "
-            CALL OutputMeshQualityMeasures( mesh = project % mesh, fUnit  = statsFileUnit )
-            CLOSE(statsFileUnit)
+            CALL Write2DMeshStatistics(project)
          END IF
 !
 !        ---------------------------------
@@ -221,40 +197,42 @@
 !        -----------------------------------------
 !        Generate a 3D Extrusion mesh if requested
 !        -----------------------------------------
-!TODO: Convert to reading from the contril file dictionary
-!         CALL InitMeshController3D
-!         IF ( shouldGenerate3DMesh(fUnit) )     THEN
-!            IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
-!            
-!            CALL stopWatch % start()
-!            CALL generate3DMesh(fUnit,project) 
-!            CALL stopWatch % stop()
-!            CALL trapExceptions !Aborts on fatal exceptions
-!            didGenerate3DMesh = .TRUE.
-!            
-!            IF ( didGenerate3DMesh )     THEN
-!               IF(printMessage) PRINT *, "Hex mesh generated"
-!!
-!!              -----------------------------
-!!              Gather and publish statistics
-!!              -----------------------------
-!!
-!               PRINT *, " "
-!               PRINT *, "3D Mesh Statistics:"
-!               PRINT *, "    Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
-!               PRINT *, "    Number of nodes    = ", SIZE(hex8Mesh % nodes)
-!               PRINT *, "    Number of Faces    = ", SIZE(hex8Mesh % faces) + SIZE(hex8Mesh % capFaces)
-!               PRINT *, "    Number of Elements = ", SIZE(hex8Mesh % elements)
-!               PRINT *
-!               
-!            ELSE
-!               IF(printMessage) PRINT *, "Hex mesh generation failed"
-!            END IF 
-!         END IF 
 !
-!        -----------------------------------
-!        Write the mesh in requested formats
-!        -----------------------------------
+         obj => cfReader % controlDict % objectForKey(key = "CONTROL_INPUT")
+         controlDict => valueDictionaryFromObject(obj)
+         
+         IF ( shouldGenerate3DMesh( controlDict) )     THEN
+            IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
+            
+            CALL stopWatch % start()
+               CALL generate3DMesh(controlDict,project)
+            CALL stopWatch % stop()
+            CALL trapExceptions !Aborts on fatal exceptions
+            didGenerate3DMesh = .TRUE.
+            
+            IF ( didGenerate3DMesh )     THEN
+               IF(printMessage) PRINT *, "Hex mesh generated"
+!
+!              -----------------------------
+!              Gather and publish statistics
+!              -----------------------------
+!
+               PRINT *, " "
+               PRINT *, "3D Mesh Statistics:"
+               PRINT *, "    Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
+               PRINT *, "    Number of nodes    = ", SIZE(hex8Mesh % nodes)
+               PRINT *, "    Number of Faces    = ", SIZE(hex8Mesh % faces) + SIZE(hex8Mesh % capFaces)
+               PRINT *, "    Number of Elements = ", SIZE(hex8Mesh % elements)
+               PRINT *
+               
+            ELSE
+               IF(printMessage) PRINT *, "Hex mesh generation failed"
+            END IF 
+         END IF 
+!
+!        -------------------
+!        Write the Plot file
+!        -------------------
 !
          IF( project % runParams % plotFileName /= "None" )     THEN
             IF( PrintMessage ) PRINT *, "Writing tecplot file..."
@@ -265,7 +243,11 @@
                END IF 
             IF( PrintMessage ) PRINT *, "Tecplot file written"
          END IF
-         
+!
+!        -------------------
+!        Write the mesh file
+!        -------------------
+!
          IF( project % runParams % MeshFileName /= "None" )     THEN
             IF( PrintMessage ) PRINT *, "Writing mesh file..."
          
@@ -404,3 +386,58 @@
          END IF 
          
       END SUBROUTINE ReadCommandLineArguments
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE Write2DMeshStatistics(project)
+         USE FTMutableObjectArrayClass
+         USE MeshQualityAnalysisClass
+         USE MeshProjectClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS( MeshProject ), POINTER :: project
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTMutableObjectArray) , POINTER :: badElements => NULL()
+         INTEGER                               :: statsFileUnit, k
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(SMElement)            , POINTER :: e   => NULL()
+         
+         OPEN(FILE = project % runParams % statsFileName, UNIT = statsFileUnit)
+         badElements => BadElementsInMesh( mesh  = project % mesh)
+         
+         IF ( ASSOCIATED(POINTER = badElements) )     THEN
+            PRINT *, badElements % COUNT()," Bad element(s) Found"
+            WRITE(statsFileUnit,*) " "
+            WRITE(statsFileUnit,*) "----------------"
+            WRITE(statsFileUnit,*) "Bad Element Info"
+            WRITE(statsFileUnit,*) "----------------"
+            WRITE(statsFileUnit,*) " "
+            
+            DO k = 1, badElements % COUNT()
+               obj => badElements % objectAtIndex(indx = k)
+               CALL cast(obj,e)
+               CALL PrintBadElementInfo( e, statsFileUnit )
+            END DO
+            CALL release(badElements)
+            
+         ELSE IF (PrintMessage)     THEN 
+            PRINT *, "********* Elements are OK *********"
+         END IF 
+         
+         WRITE(statsFileUnit,*) " "
+         WRITE(statsFileUnit,*) "------------------------"
+         WRITE(statsFileUnit,*) "2D Mesh Quality Measures"
+         WRITE(statsFileUnit,*) "------------------------"
+         WRITE(statsFileUnit,*) " "
+         CALL OutputMeshQualityMeasures( mesh = project % mesh, fUnit  = statsFileUnit )
+         CLOSE(statsFileUnit)
+         
+      END SUBROUTINE Write2DMeshStatistics

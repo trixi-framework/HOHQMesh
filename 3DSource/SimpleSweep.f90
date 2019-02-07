@@ -27,15 +27,16 @@
 ! line extrusion or simple rotation
 !---------------------------------------------------------------
 ! 
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_ALGORITHM_KEY    = "SimpleExtrusion"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ALGORITHM_KEY     = "SimpleRotation"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_HEIGHT_KEY       = "ExtrusionHeight"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_SUBDIVISIONS_KEY     = "ExtrusionSubdivisions"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_STARTNAME_KEY        = "ExtrusionStartName"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_ENDNAME_KEY          = "ExtrusionEndName"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_DIRECTION_KEY        = "ExtrusionDirectionName"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ANGLE_KEY         = "RotationAngleName"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_PERIODIC_KEY         = "isPeriodicName"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_ALGORITHM_KEY    = "SIMPLE_EXTRUSION"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ALGORITHM_KEY     = "SIMPLE_ROTATION"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_HEIGHT_KEY       = "height"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_SUBDIVISIONS_KEY     = "subdivisions"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_STARTNAME_KEY        = "start surface name"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_ENDNAME_KEY          = "end surface name"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_DIRECTION_KEY        = "direction"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ANGLE_FRAC_KEY    = "rotation angle factor"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_PERIODIC_KEY         = "periodic"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ANGLE_KEY         = "rotation angle"
       
       INTEGER, PARAMETER :: SWEEP_FLOOR = 1, SWEEP_CEILING = 2
 !
@@ -55,7 +56,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadSimpleExtrusionBlock( fUnit, dict ) 
+      SUBROUTINE CheckSimpleExtrusionBlock( dict ) 
 !
 !        Example block is:
 !
@@ -94,87 +95,57 @@
 !        Direction
 !        ---------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            direction = GetIntValue(inputLine)
-            CALL dict % addValueForKey(direction,SIMPLE_SWEEP_DIRECTION_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                         "direction", "ReadSimpleExtrusionBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_SWEEP_DIRECTION_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleExtrusionBlock", &
+                                           msg = "key " // TRIM(SIMPLE_SWEEP_DIRECTION_KEY) // " not found in extrusion block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 !
 !        ------
 !        Height
 !        ------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            height = GetRealValue( inputLine )
-            CALL dict % addValueForKey(height,SIMPLE_EXTRUSION_HEIGHT_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                        "height", "ReadSimpleExtrusionBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_EXTRUSION_HEIGHT_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleExtrusionBlock", &
+                                           msg = "key " // TRIM(SIMPLE_EXTRUSION_HEIGHT_KEY) // " not found in extrusion block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 !
 !        ------------
 !        Subdivisions
 !        ------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            subdivisions = GetIntValue( inputLine )
-            CALL dict % addValueForKey(subdivisions,SIMPLE_SWEEP_SUBDIVISIONS_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                        "subdivisions", "ReadSimpleExtrusionBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_SWEEP_SUBDIVISIONS_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleExtrusionBlock", &
+                                           msg = "key " // TRIM(SIMPLE_SWEEP_SUBDIVISIONS_KEY) // " not found in extrusion block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 !
 !        -------------------
 !        Bottom surface name
 !        -------------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            nameString = GetStringValue( inputLine )
-            CALL dict % addValueForKey(nameString,SIMPLE_SWEEP_STARTNAME_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                        "start surface name", "ReadSimpleExtrusionBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_SWEEP_STARTNAME_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleExtrusionBlock", &
+                                           msg = "key " // TRIM(SIMPLE_SWEEP_STARTNAME_KEY) // " not found in extrusion block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 !
 !        ----------------
 !        Top surface name
 !        ----------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            nameString = GetStringValue( inputLine )
-            CALL dict % addValueForKey(nameString,SIMPLE_SWEEP_ENDNAME_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                       "end surface name", "ReadSimpleExtrusionBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_SWEEP_ENDNAME_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleExtrusionBlock", &
+                                           msg = "key " // TRIM(SIMPLE_SWEEP_ENDNAME_KEY) // " not found in extrusion block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 
-      END SUBROUTINE ReadSimpleExtrusionBlock
+      END SUBROUTINE CheckSimpleExtrusionBlock
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReadSimpleRotationBlock( fUnit, dict ) 
+      SUBROUTINE CheckSimpleRotationBlock( dict ) 
 !
 !        Example block is:
 !
@@ -213,83 +184,56 @@
 !        Direction
 !        ---------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            direction = GetIntValue(inputLine)
-            CALL dict % addValueForKey(direction,SIMPLE_SWEEP_DIRECTION_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                         "direction", "ReadSimpleRotationBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_SWEEP_DIRECTION_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleRotationBlock", &
+                                           msg = "key " // TRIM(SIMPLE_SWEEP_DIRECTION_KEY) // " not found in rotation block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 !
 !        ----------------------
 !        Angle (Fraction of PI)
 !        ----------------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            angleFactor = GetRealValue( inputLine )
+         IF ( dict % containsKey(key = SIMPLE_ROTATION_ANGLE_FRAC_KEY) )     THEN
+            angleFactor = dict % doublePrecisionValueForKey(key = SIMPLE_ROTATION_ANGLE_FRAC_KEY)
             CALL dict % addValueForKey(angleFactor,SIMPLE_ROTATION_ANGLE_KEY)
          ELSE 
-            exception => ReaderException("Simple rotation read error", "Error reading variable", &
-                                         "rotation angle", "ReadSimpleRotationBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleRotationBlock", &
+                                           msg = "key " // TRIM(SIMPLE_ROTATION_ANGLE_FRAC_KEY) // " not found in rotation block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 !
 !        ------------
 !        Subdivisions
 !        ------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            subdivisions = GetIntValue( inputLine )
-            CALL dict % addValueForKey(subdivisions,SIMPLE_SWEEP_SUBDIVISIONS_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                         "subdivisions", "ReadSimpleRotationBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_SWEEP_SUBDIVISIONS_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleRotationBlock", &
+                                           msg = "key " // TRIM(SIMPLE_SWEEP_SUBDIVISIONS_KEY) // " not found in rotation block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 !
 !        -------------------
 !        Bottom surface name
 !        -------------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            nameString = GetStringValue( inputLine )
-            CALL dict % addValueForKey(nameString,SIMPLE_SWEEP_STARTNAME_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                         "start surface name", "ReadSimpleRotationBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_SWEEP_STARTNAME_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleRotationBlock", &
+                                           msg = "key " // TRIM(SIMPLE_SWEEP_STARTNAME_KEY) // " not found in rotation block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 !
 !        ----------------
 !        Top surface name
 !        ----------------
 !
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            nameString = GetStringValue( inputLine )
-            CALL dict % addValueForKey(nameString,SIMPLE_SWEEP_ENDNAME_KEY)
-         ELSE 
-            exception => ReaderException("Simple extrusion read error", "Error reading variable", &
-                                         "end surface name", "ReadSimpleRotationBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN
-         END IF 
+         IF ( .NOT. dict % containsKey(key = SIMPLE_SWEEP_ENDNAME_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "CheckSimpleRotationBlock", &
+                                           msg = "key " // TRIM(SIMPLE_SWEEP_ENDNAME_KEY) // " not found in rotation block", &
+                                           typ = FT_ERROR_FATAL) 
+         END IF
 
-      END SUBROUTINE ReadSimpleRotationBlock
+      END SUBROUTINE CheckSimpleRotationBlock
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

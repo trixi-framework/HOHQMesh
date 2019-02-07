@@ -18,6 +18,7 @@
 !         MESH_PARAMETERS
 !         SPRING_SMOOTHER
 !         REFINEMENT_REGIONS
+!         3D_MESH_CONTROL
 !
 !      The MODEL dictionary contains the keys
 !         TYPE

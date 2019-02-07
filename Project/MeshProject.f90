@@ -26,32 +26,35 @@
 !
       CHARACTER(LEN=18)         , PARAMETER :: PROJECT_READ_EXCEPTION     = "Project read error"
       
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: RUN_PARAMETERS_KEY         = "RUN_PARAMETERS"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MESH_FILE_NAME_KEY         = "mesh file name"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: PLOT_FILE_NAME_KEY         = "plot file name"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: STATS_FILE_NAME_KEY        = "stats file name"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MESH_FILE_FORMAT_NAME_KEY  = "mesh file format"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: POLYNOMIAL_ORDER_KEY       = "polynomial order"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: RUN_PARAMETERS_KEY         = "RUN_PARAMETERS"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_NAME_KEY         = "mesh file name"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FILE_NAME_KEY         = "plot file name"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: STATS_FILE_NAME_KEY        = "stats file name"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_FORMAT_NAME_KEY  = "mesh file format"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: POLYNOMIAL_ORDER_KEY       = "polynomial order"
       
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MESH_PARAMETERS_KEY         = "MESH_PARAMETERS"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MESH_TYPE_KEY               = "mesh type"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: GRID_SIZE_KEY               = "background grid size"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_PARAMETERS_KEY         = "MESH_PARAMETERS"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_TYPE_KEY               = "mesh type"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: GRID_SIZE_KEY               = "background grid size"
       
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: MATERIAL_BLOCK_KEY          = "MATERIALS"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: BACKGROUND_MATERIAL_KEY     = "material"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MATERIAL_BLOCK_KEY          = "MATERIALS"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_MATERIAL_KEY     = "material"
       
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: X_START_NAME_KEY            = "x0"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: X_END_NAME_KEY              = "x1"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: DX_NAME_KEY                 = "dx"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: SPACING_NAME_KEY            = "h"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: EXTENT_NAME_KEY             = "w"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: NUM_INTERVALS_NAME_KEY      = "N"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: TYPE_NAME_KEY               = "type"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: X_START_NAME_KEY            = "x0"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: X_END_NAME_KEY              = "x1"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: DX_NAME_KEY                 = "dx"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SPACING_NAME_KEY            = "h"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: EXTENT_NAME_KEY             = "w"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: NUM_INTERVALS_NAME_KEY      = "N"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: TYPE_NAME_KEY               = "type"
 
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: REFINEMENT_REGIONS_KEY      = "REFINEMENT_REGIONS"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: REFINEMENT_CENTER_KEY       = "REFINEMENT_CENTER"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER :: REFINEMENT_LINE_KEY         = "REFINEMENT_LINE"
-      
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: REFINEMENT_REGIONS_KEY      = "REFINEMENT_REGIONS"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: REFINEMENT_CENTER_KEY       = "REFINEMENT_CENTER"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: REFINEMENT_LINE_KEY         = "REFINEMENT_LINE"
+
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ELEMENT_TYPE_KEY            = "element type"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_BLOCK_KEY  = "SIMPLE_EXTRUSION"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SIMPLE_ROTATION_BLOCK_KEY   = "SIMPLE_ROTATION"
       
 !
 !     ------------------
@@ -59,9 +62,9 @@
 !     ------------------
 !
       TYPE RunParameters
-         CHARACTER(LEN=LINE_LENGTH) :: MeshFileName
-         CHARACTER(LEN=LINE_LENGTH) :: plotFileName
-         CHARACTER(LEN=LINE_LENGTH) :: statsFileName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: MeshFileName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: plotFileName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
          INTEGER                    :: meshFileFormat
          INTEGER                    :: polynomialOrder
       END TYPE RunParameters
@@ -142,7 +145,7 @@
 !        Local variables
 !        ---------------
 !
-         CHARACTER(LEN=LINE_LENGTH)          :: msg
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)          :: msg
          CLASS(FTValueDictionary)  , POINTER :: controlDict, modelDict, matBlockdict
          CLASS(FTObject)           , POINTER :: obj
 !
@@ -199,7 +202,7 @@
                obj => modelDict % objectForKey(key = MATERIAL_BLOCK_KEY)
                matBlockdict => valueDictionaryFromObject(obj)
                self % backgroundMaterialName = matBlockdict % stringValueForKey(key = BACKGROUND_MATERIAL_KEY,&
-                                                                                requestedLength = LINE_LENGTH)
+                                                                                requestedLength = DEFAULT_CHARACTER_LENGTH)
             ELSE 
                msg = "Background material block not found in control file. Using default name = 'base'"
                CALL ThrowErrorExceptionOfType(poster = "initWithDictionary", &

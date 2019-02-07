@@ -13,6 +13,7 @@
       USE MeshProjectClass
       USE SMMeshObjectsModule
       USE HexMeshObjectsModule
+      USE ErrorTypesModule
 
       IMPLICIT NONE
 ! 
@@ -24,15 +25,9 @@
 !     Constants
 !     ---------
 !
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SM_3D_ALGORITHM_CHOICE_KEY = "AlgorithmChoice"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SM_ELEMENT_TYPE_KEY        = "elementType"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SM_GENERATE3D_MESH_KEY     = "generate3DMesh"
-!
-!     ----------------
-!     Module variables
-!     ----------------
-!
-      TYPE(FTValueDictionary) :: hexMeshParametersDictionary
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_3D_ALGORITHM_CHOICE_KEY = "AlgorithmChoice"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_ELEMENT_TYPE_KEY        = "elementType"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_GENERATE3D_MESH_KEY     = "generate3DMesh"
 !
 !     --------
 !     The mesh
@@ -44,214 +39,125 @@
       CONTAINS
 !     ========
 !
-!
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE InitMeshController3D  
-         IMPLICIT NONE
-         CALL hexMeshParametersDictionary % initWithSize(16)
-      END SUBROUTINE InitMeshController3D
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE DestructMeshController3D  
-         IMPLICIT NONE
-         CALL hexMeshParametersDictionary % destruct()
-          
-      END SUBROUTINE DestructMeshController3D
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      LOGICAL FUNCTION shouldGenerate3DMesh(fUnit)
+      LOGICAL FUNCTION shouldGenerate3DMesh(controlDict)
 !
 !     ---------------------------------------------
 !     See if we should generate a 3D mesh, as given
 !     by the presense of the Define3DMesh block
 !     ---------------------------------------------
 !
-         IMPLICIT NONE  
-         INTEGER :: fUnit
-         INTEGER :: iOS
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTValueDictionary), POINTER :: controlDict
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CLASS(FTObject)           , POINTER :: obj
+         CLASS(FTValueDictionary)  , POINTER :: runParamsDict
+         CHARACTER(DEFAULT_CHARACTER_LENGTH) :: str
          
-         REWIND(fUnit)
-         CALL MoveToBlock("\begin{Define3DMesh}", fUnit, iOS )
+          
+         shouldGenerate3DMesh = .FALSE.
          
-         IF ( iOS == 0 )     THEN
-            shouldGenerate3DMesh = .true. 
-         ELSE 
-            shouldGenerate3DMesh = .false. 
+         IF ( controlDict % containsKey(key = MESH_PARAMETERS_KEY) )     THEN
+         
+            obj => controlDict % objectForKey(key = MESH_PARAMETERS_KEY) 
+            runParamsDict => valueDictionaryFromObject(obj)
+            IF ( runParamsDict % containsKey( ELEMENT_TYPE_KEY) )     THEN
+               str = runParamsDict % stringValueForKey(key = ELEMENT_TYPE_KEY, &
+                                                       requestedLength = DEFAULT_CHARACTER_LENGTH) 
+               IF(TRIM(ADJUSTL(str)) == "hex") shouldGenerate3DMesh = .TRUE.
+            END IF 
+            
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "shouldGenerate3DMesh", &
+                                           msg = TRIM(MESH_PARAMETERS_KEY) // "not found in control file",&
+                                           typ = FT_ERROR_FATAL)
+            RETURN
          END IF 
-         CALL hexMeshParametersDictionary % addValueForKey( shouldGenerate3DMesh, SM_GENERATE3D_MESH_KEY )
 
       END FUNCTION shouldGenerate3DMesh
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE generate3DMesh(fUnit,project)
+      SUBROUTINE generate3DMesh(controlDict, project)
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         INTEGER                  :: fUnit
-         TYPE(MeshProject)        :: project
+         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE(MeshProject)                 :: project
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                                :: iOS
-         INTEGER                                :: algorithmChoice
+         CLASS(FTObject)           , POINTER :: obj
+         CLASS(FTValueDictionary)  , POINTER :: generatorDict
+         
+         INTEGER                                :: algorithmChoice = NONE
          CHARACTER(LEN=LINE_LENGTH)             :: meshAlgorithm, algorithmName
          CHARACTER(LEN=ERROR_MSG_STRING_LENGTH) :: msg
-         CLASS(FTException), POINTER            :: exception
 !
-!        --------------------------------
-!        Read in control file information
-!        --------------------------------
+!        ----------
+!        Interfaces
+!        ----------
 !
-         REWIND(fUnit)
-         CALL MoveToBlock("\begin{Define3DMesh}", fUnit, iOS )
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
+!
+!
+!        ----------------------------------------
+!        Get the included 3D generator dictionary
+!        and check its integrity.
+!        ----------------------------------------
+!
          
-         IF( ios == 0 )     THEN
+         IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY) )     THEN
          
-            CALL Read3DMeshBlock( fUnit, hexMeshParametersDictionary )
+            obj             => controlDict % objectForKey(key = SIMPLE_EXTRUSION_BLOCK_KEY)
+            generatorDict   => valueDictionaryFromObject(obj) 
+            algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
+            CALL CheckSimpleExtrusionBlock(dict = generatorDict)
+            IF(ReturnOnFatalError())     RETURN 
             
-            algorithmName = hexMeshParametersDictionary % stringValueForKey( SM_3D_ALGORITHM_CHOICE_KEY, LINE_LENGTH )
-            meshAlgorithm = "\begin{" //ADJUSTL(TRIM(algorithmName)) // "}"
+         ELSE IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN 
+         
+            obj             => controlDict % objectForKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)
+            generatorDict   => valueDictionaryFromObject(obj) 
+            algorithmChoice = SIMPLE_ROTATION_ALGORITHM
+            CALL CheckSimpleRotationBlock(dict = generatorDict)
+            IF(ReturnOnFatalError())     RETURN 
             
-            REWIND(fUnit)
-            CALL MoveToBlock(meshAlgorithm, fUnit, iOS )
-            IF( ios /= 0 )     THEN
-               msg = "Missing algorithm block"
-               exception => ReaderException("Block read error", msg, meshAlgorithm, "generate3DMesh")
-               CALL throw(exception)
-               CALL release(exception)
-               CALL hexMeshParametersDictionary % destruct()
-               RETURN
-            END IF
-            
-            CALL Read3DAlgorithmBlock(fUnit,hexMeshParametersDictionary)
-            
-         END IF
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
+                                           msg = "No generator for 3D mesh found in control file", &
+                                           typ = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
 !
 !        ---------------------
 !        Generate the Hex mesh
 !        ---------------------
 !
-         algorithmName = hexMeshParametersDictionary % stringValueForKey(SM_3D_ALGORITHM_CHOICE_KEY,LINE_LENGTH)
-         IF(algorithmName == SIMPLE_EXTRUSION_ALGORITHM_KEY)     THEN
-            algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
-         ELSE
-            algorithmChoice = SIMPLE_ROTATION_ALGORITHM
-         END IF 
-
          SELECT CASE ( algorithmChoice )
             CASE( SIMPLE_EXTRUSION_ALGORITHM, SIMPLE_ROTATION_ALGORITHM )
-               CALL PerformSimpleMeshSweep(project,hex8Mesh,hexMeshParametersDictionary, algorithmChoice)
+               CALL PerformSimpleMeshSweep( project, hex8Mesh, generatorDict, algorithmChoice)
             CASE DEFAULT
-               exception => ReaderException("Generate 3D Mesh Algorithm",&
-                                            "Unknown algorithm specified", algorithmName, "generate3DMesh")
-               CALL throw(exception)
-               CALL release(exception)
+            CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
+                                           msg = "unknown generator for 3D mesh found in control file", &
+                                           typ = FT_ERROR_FATAL)
          END SELECT 
          
       END SUBROUTINE generate3DMesh
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE Read3DMeshBlock( fUnit, dict ) 
-!
-!        Example block is:
-!
-!         \begin{Define3DMesh}
-!            meshType  = "HEX"
-!            algorithm = "SimpleExtrusion" or "SimpleRotation"
-!         \end{Define3DMesh}
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         INTEGER                  :: fUnit
-         CLASS(FTValueDictionary) :: dict
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER                     :: ios
-         CHARACTER(LEN=LINE_LENGTH)  :: inputLine = " ", tmpString
-         CLASS(FTException), POINTER :: exception
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            tmpString = GetStringValue( inputLine )
-            CALL dict % addValueForKey(tmpString,SM_ELEMENT_TYPE_KEY)
-         ELSE
-            exception => ReaderException("Read Variable","Error reading variable", "Element type", "Read3DMeshBlock")
-            CALL throw(exception)
-            CALL release(exception)
-            RETURN 
-         END IF 
-         
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         IF ( ios == 0 )     THEN
-            tmpString = GetStringValue( inputLine )
-            CALL dict % addValueForKey(tmpString,SM_3D_ALGORITHM_CHOICE_KEY)
-         ELSE 
-            exception => ReaderException("Read Variable","Error reading variable", "algorithm", "Read3DMeshBlock")
-            CALL throw(exception)
-            CALL release(exception)
-           RETURN 
-         END IF 
-
-      END SUBROUTINE Read3DMeshBlock
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE Read3DAlgorithmBlock( fUnit, dict ) 
-         USE SimpleSweepModule
-!
-!     -----------------------------------------
-!     Select among the choices of 3D algorithms
-!     -----------------------------------------
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         INTEGER                  :: fUnit
-         CLASS(FTValueDictionary) :: dict
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         CHARACTER(LEN=LINE_LENGTH)  :: algorithmName
-         CLASS(FTException), POINTER :: exception
-         
-         algorithmName = dict % stringValueForKey(SM_3D_ALGORITHM_CHOICE_KEY,LINE_LENGTH)
-
-         SELECT CASE ( TRIM(algorithmName) )
-            CASE( SIMPLE_EXTRUSION_ALGORITHM_KEY ) 
-               CALL ReadSimpleExtrusionBlock( fUnit, dict )
-               IF ( errorCount() > 0 )     RETURN ! Don't deal with errors at this point
-            CASE (SIMPLE_ROTATION_ALGORITHM_KEY)
-               CALL ReadSimpleRotationBlock(fUnit = fUnit,dict = dict)
-            CASE DEFAULT
-               exception => ReaderException("Read Algorithm","Unknown algorithm specified", &
-                                           algorithmName, "Read3DAlgorithmBlock")
-               CALL throw(exception)
-            CALL release(exception)
-         END SELECT 
-
-         
-      END SUBROUTINE Read3DAlgorithmBlock
 
    END Module MeshController3D 
