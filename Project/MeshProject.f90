@@ -417,46 +417,6 @@
             
             CALL release(refinementIterator)
          END IF 
-         !^ 
-!
-!        ------------------------------------------------------
-!        Construct any refinement centers as instructed by the 
-!        control file
-!        ------------------------------------------------------
-!
-!         REWIND(fUnit)
-!         ios = 0
-!         DO WHILE (iOS == 0 )
-!            CALL MoveToBlock("\begin{RefinementCenter}", fUnit, iOS )
-!            IF( iOS /= 0 )   EXIT
-!            
-!            CALL SetCenterMeshSizerBlock( centerParams, fUnit )
-!            
-!            ALLOCATE(c)
-!            CALL c % initWithProperties( centerParams % x0, centerParams % centerExtent, &
-!                                       centerParams % centerMeshSize, centerParams % centerType )
-!            CALL self % sizer % addSizerCenterControl(c)
-!            CALL release(c)
-!         END DO      
-!!
-!!        --------------------------------
-!!        Do the same with RefinementLines
-!!        --------------------------------
-!!
-!         REWIND(fUnit)
-!         ios = 0
-!         DO WHILE (iOS == 0 )
-!            CALL MoveToBlock("\begin{RefinementLine}", fUnit, iOS )
-!            IF( iOS /= 0 )   EXIT
-!            
-!            CALL SetLineMeshSizerBlock( lineParams, fUnit )
-!            
-!            ALLOCATE(L)
-!            CALL L    % initWithProperties( lineParams % x0, lineParams % x1, lineParams % lineExtent, &
-!                                            lineParams % lineMeshSize, lineParams % lineControlType )
-!            CALL self % sizer % addSizerLineControl(L)
-!            CALL release(L)
-!         END DO
 !
 !        ------------------------------------------------
 !        Discretize boundary curves and add to sizer.

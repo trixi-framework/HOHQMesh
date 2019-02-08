@@ -62,10 +62,15 @@
 !     ---------------------------
 !
       REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE, PRIVATE :: nodeAcceleration, nodeVelocity
-      
-!      INTERFACE release
-!         MODULE PROCEDURE releaseSpringMeshSmoother 
-!      END INTERFACE  
+!
+!     Default parameters
+!
+      REAL(KIND=RP), PRIVATE :: defaultSpringConstant           = 1.0_RP
+      REAL(KIND=RP), PRIVATE :: defaultSpringMass               = 1.0_RP
+      REAL(KIND=RP), PRIVATE :: defaultSpringRestLength         = 0.0_RP
+      REAL(KIND=RP), PRIVATE :: defaultSpringDampingCoefficient = 5.0_RP
+      REAL(KIND=RP), PRIVATE :: defaultSpringTimeStep           = 0.1_RP
+      INTEGER      , PRIVATE :: defaultSpringIterations         = 15
 !
 !     ========
       CONTAINS 
@@ -400,14 +405,14 @@
 !        Example block is:
 !
 !         \begin{Smoother}
-!            smoothing            = "ON"
+!            smoothing            = "ON" (optional)
 !            smoothing type       = "linearSpring"
-!            spring constant      = 1.0
-!            mass                 = 1.0
-!            rest length          = 1.0
-!            damping coefficient  = 5.0
-!            number of iterations = 25
-!            time step            = 0.1
+!            spring constant      = 1.0 (optional)
+!            mass                 = 1.0 (optional)
+!            rest length          = 1.0 (optional)
+!            damping coefficient  = 5.0 (optional)
+!            number of iterations = 25 (optional)
+!            time step            = 0.1 (optional)
 !         \end{Smoother}
 !
          IMPLICIT NONE
@@ -431,14 +436,9 @@
 !        Smoothing On or OFF
 !        -------------------
 !
+         str = "ON"
          IF ( smootherDict % containsKey(key = "smoothing") )     THEN
             str = smootherDict % stringValueForKey(key = "smoothing", requestedLength = 32) 
-         ELSE 
-            str = "OFF"
-            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
-                                           msg    = "smoother block is missing smoothing keyword. &
-                                                  &  Using default, smoothing = OFF.", &
-                                           typ    = FT_ERROR_WARNING)
          END IF 
          
          IF( str == "ON" )     THEN
@@ -473,64 +473,34 @@
 !        Smoother parameters
 !        -------------------
 !
+         smp % springConstant = defaultSpringConstant
          IF ( smootherDict % containsKey(key = "spring constant") )     THEN
             smp % springConstant = smootherDict % doublePrecisionValueForKey(key = "spring constant") 
-         ELSE 
-            smp % springConstant = 1.0_RP
-            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
-                                           msg    = "Smoother block is missing spring constant keyword. &
-                                                  &  Using default, spring constant = 1.0.", &
-                                           typ    = FT_ERROR_WARNING)
          END IF 
          
+         smp % mass = defaultSpringMass
          IF ( smootherDict % containsKey(key = "mass") )     THEN
             smp % mass = smootherDict % doublePrecisionValueForKey(key = "mass") 
-         ELSE 
-            smp % mass = 1.0_RP
-            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
-                                           msg    = "Smoother block is missing mass keyword. &
-                                                  &  Using default, mass = 1.0.", &
-                                           typ    = FT_ERROR_WARNING)
          END IF 
          
+         smp % restLength = defaultSpringRestLength
          IF ( smootherDict % containsKey(key = "rest length") )     THEN
             smp % restLength = smootherDict % doublePrecisionValueForKey(key = "rest length") 
-         ELSE 
-            smp % restLength = 0.0_RP
-            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
-                                           msg    = "Smoother block is missing the rest length keyword. &
-                                                  &  Using default, rest length = 0.0.", &
-                                           typ    = FT_ERROR_WARNING)
          END IF 
          
+         smp % dampingCoefficient = defaultSpringDampingCoefficient
          IF ( smootherDict % containsKey(key = "damping coefficient") )     THEN
             smp % dampingCoefficient = smootherDict % doublePrecisionValueForKey(key = "damping coefficient") 
-         ELSE 
-            smp % dampingCoefficient = 5.0_RP
-            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
-                                           msg    = "Smoother block is missing the damping coefficient keyword. &
-                                                  &  Using default, damping coefficient = 5.0.", &
-                                           typ    = FT_ERROR_WARNING)
          END IF 
          
+         smp % numSteps = defaultSpringIterations
          IF ( smootherDict % containsKey(key = "number of iterations") )     THEN
             smp % numSteps = smootherDict % integerValueForKey(key = "number of iterations") 
-         ELSE 
-            smp % numSteps = 25
-            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
-                                           msg    = "Smoother block is missing the number of iterations keyword. &
-                                                  &  Using default, number of iterations = 25.", &
-                                           typ    = FT_ERROR_WARNING)
          END IF 
          
+         smp % deltaT = defaultSpringTimeStep
          IF ( smootherDict % containsKey(key = "time step") )     THEN
             smp % deltaT = smootherDict % doublePrecisionValueForKey(key = "time step") 
-         ELSE 
-            smp % deltaT = 0.1_RP
-            CALL ThrowErrorExceptionOfType(poster = "SetSpringSmootherBlock", &
-                                           msg    = "Smoother block is missing the time step keyword. &
-                                                  &  Using default, time step = 0.1.", &
-                                           typ    = FT_ERROR_WARNING)
          END IF 
 
       END SUBROUTINE SetSpringSmootherBlock
