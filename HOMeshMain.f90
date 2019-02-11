@@ -38,7 +38,6 @@
 !        --------------------
 !
          CLASS( MeshProject )        , POINTER :: project     => NULL()
-         CLASS(FTMutableObjectArray) , POINTER :: badElements => NULL()
          TYPE( MeshStatistics )                :: stats
 !
 !        ----

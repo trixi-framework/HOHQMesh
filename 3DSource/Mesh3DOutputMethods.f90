@@ -107,8 +107,11 @@
 !        Print out header
 !        ----------------
 !
-         WRITE(iUnit, *) SIZE(mesh % nodes), SIZE(mesh % faces) + SIZE(mesh % capFaces), SIZE(mesh % elements), N
-!         WRITE(iUnit, *) SIZE(mesh % nodes), SIZE(mesh % elements), N
+         IF(version == ISM2)     THEN 
+            WRITE(iUnit, *) SIZE(mesh % nodes), SIZE(mesh % faces) + SIZE(mesh % capFaces), SIZE(mesh % elements), N
+         ELSE
+            WRITE(iUnit, *) SIZE(mesh % nodes), SIZE(mesh % elements), N
+         END IF 
 !
 !        -----------
 !        Print Nodes
@@ -124,19 +127,21 @@
 !        Print out the face information
 !        ------------------------------
 !
-         DO j = 1, SIZE(mesh % faces,2)
-            DO k = 1, SIZE(mesh % faces,1)
-               WRITE( iUnit, "(10(2x,i8))") mesh % faces(k,j) % elementIDs, mesh % faces(k,j) % faceNumber &
-               ,mesh % faces(k,j) % inc, mesh % faces(k,j) % nodeIDs
-            END DO   
-         END DO  
-         
-         DO j = 0, SIZE(mesh % capFaces,2)-1
-            DO k = 1, SIZE(mesh % capFaces,1)
-               WRITE( iUnit, "(10(2x,i8))") mesh % capFaces(k,j) % elementIDs, mesh % capFaces(k,j) % faceNumber &
-               ,mesh % capFaces(k,j) % inc, mesh % capFaces(k,j) % nodeIDs
-            END DO
-         END DO  
+         IF( version == ISM2)     THEN 
+            DO j = 1, SIZE(mesh % faces,2)
+               DO k = 1, SIZE(mesh % faces,1)
+                  WRITE( iUnit, "(10(2x,i8))") mesh % faces(k,j) % elementIDs, mesh % faces(k,j) % faceNumber &
+                  ,mesh % faces(k,j) % inc, mesh % faces(k,j) % nodeIDs
+               END DO   
+            END DO  
+            
+            DO j = 0, SIZE(mesh % capFaces,2)-1
+               DO k = 1, SIZE(mesh % capFaces,1)
+                  WRITE( iUnit, "(10(2x,i8))") mesh % capFaces(k,j) % elementIDs, mesh % capFaces(k,j) % faceNumber &
+                  ,mesh % capFaces(k,j) % inc, mesh % capFaces(k,j) % nodeIDs
+               END DO
+            END DO  
+         END IF 
 !
 !        ---------------------------------------------------------
 !        Print element connectivity with boundary face information
