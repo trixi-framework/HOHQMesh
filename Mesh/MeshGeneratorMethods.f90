@@ -237,7 +237,7 @@
       CALL mesh % syncEdges()
       CALL mesh % renumberAllLists()
       
-     IF(PrintMessage) PRINT *, "   Nodes and elements generated"
+      IF(PrintMessage) PRINT *, "   Nodes and elements generated"
 
       END SUBROUTINE GenerateQuadMeshForProject
 !
@@ -1553,6 +1553,194 @@
          DEALLOCATE( nodeArray )
          
       END SUBROUTINE FlagEndNodes
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE setElementBoundaryInfo(project)
+!
+!     ------------------------------------------------------------------------
+!     Go through the mesh and gather the boundary information for each element
+!     ------------------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshProject) :: project
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER                              :: N
+         CLASS(SMMesh)              , POINTER :: mesh
+         CLASS(FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMElement)           , POINTER :: e
+         CLASS(SMModel)             , POINTER :: model
+
+         N     =  project % runParams % polynomialOrder
+         mesh  => project % mesh
+         model => project % model
+         
+         iterator => mesh % elementsIterator
+         CALL iterator % setToStart()
+         
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+         
+            obj => iterator % object()
+            CALL cast(obj,e)
+            CALL ElementBoundaryInfoInit( e % boundaryInfo, N)
+            CALL gatherElementBoundaryInfo( e, model )
+                       
+            CALL iterator % moveToNext()
+         END DO
+       
+      END SUBROUTINE setElementBoundaryInfo
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE gatherElementBoundaryInfo( e, model  )
+!
+!     --------------------------------------------------------------------------
+!     Gather together the boundary information for the four
+!     edges of the element. This info is
+!
+!     nodeIDs(4)    = integer id # of the 4 corner nodes
+!     bCurveFlag(4) = integer ON or OFF of whether a boundary 
+!                     curve is defined or NOT
+!     bCurveName(4) = Name of the 4 boundary curves. Equals "---" IF
+!                     the element side is interior,
+!     x(2,0:N,4)    = location (x,y) of the j=0:N Chebyshev-Lobatto points
+!                     along boundary k = 1,2,3,4. The kth entry will be zero if
+!                     bCurveFlag(k) = OFF.
+!     -------------------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMElement)         , POINTER :: e
+         CLASS(SMModel)           , POINTER :: model
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER                        :: j, k
+         INTEGER                        :: N
+         CLASS(SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
+         CLASS(SMCurve)       , POINTER :: c     => NULL()
+         CLASS(SMChainedCurve), POINTER :: chain => NULL()
+         CLASS(FTObject)      , POINTER :: obj   => NULL()
+         
+         REAL(KIND=RP)            :: tStart(4), tEnd(4), t_j, deltaT
+         INTEGER                  :: curveId(4)
+         CHARACTER(LEN=32)        :: noCurveName(-4:-1) = (/"Right ", "Left  ", "Bottom", "Top   " /)
+         
+         N = SIZE(e % boundaryInfo%x,2)-1
+!
+!        -----
+!        Nodes
+!        -----
+!
+         DO k = 1, 4 
+            obj => e % nodes % objectAtIndex(k)
+            CALL cast(obj,node1)
+            e % boundaryInfo % nodeIDs(k) = node1 % id
+         END DO
+!
+!        -----------------------------------
+!        Gather up boundary edge information
+!        -----------------------------------
+!
+         e % boundaryInfo%bCurveName = "---"
+         e % boundaryInfo%bCurveFlag = OFF
+         
+         DO k = 1, 4 
+            obj => e % nodes % objectAtIndex(edgeMap(1,k))
+            CALL cast(obj,node1) 
+            obj => e % nodes % objectAtIndex(edgeMap(2,k))
+            CALL cast(obj,node2)
+!
+!           ---------------------------------------------------------------------------
+!           See if this edge is on a boundary. One of the two nodes should be
+!           a ROW_SIDE, and that one is on a curve rather than the joint of two curves.
+!           The edge could be on an outer box, in which case it is a straight line, but
+!           still needs boundary name information
+!           ---------------------------------------------------------------------------
+!
+            IF( IsOnBoundaryCurve(node1) .AND. IsOnBoundaryCurve(node2) )     THEN
+!
+!              -----------------------------------------------------------
+!              Mark as on a boundary curve needing interpolant information
+!              -----------------------------------------------------------
+!
+               e % boundaryInfo % bCurveFlag(k) = ON
+               IF( node1 % nodeType == ROW_SIDE )     THEN
+                  curveID(k)    = node1 % bCurveID
+                  c             => model % curveWithID(node1 % bCurveID, chain)
+               ELSE
+                  curveID(k)    = node2 % bCurveID
+                  c             => model % curveWithID(node2 % bCurveID, chain)
+               END IF
+               
+               e % boundaryInfo % bCurveName(k) = c % curveName()
+               tStart(k)            = node1 % gWhereOnBoundary
+               tEnd(k)              = node2 % gWhereOnBoundary
+               
+            ELSE IF ( IsOnOuterBox(node1) .AND. IsOnOuterBox(node2) )     THEN
+!
+!              --------------------------------------------------------------
+!              Only mark the boundary names for output, no interpolant needed
+!              --------------------------------------------------------------
+!
+               IF( node1 % nodeType == CORNER_NODE )     THEN
+                  e % boundaryInfo % bCurveName(k) = noCurveName(node2 % bCurveID)
+               ELSE
+                  e % boundaryInfo % bCurveName(k) = noCurveName(node1 % bCurveID)
+               END IF
+               
+            END IF
+         END DO
+!
+!        --------------------------------------------
+!        Construct boundary information
+!        Use a Chebyshev interpolant for the points.
+!        --------------------------------------------
+!
+         DO k = 1, 4
+         
+            IF( e % boundaryInfo%bCurveFlag(k) == ON )     THEN
+              c      => model % curveWithID(curveID(k), chain)
+              
+              deltaT = tEnd(k) - tStart(k)
+              IF( deltaT > maxParameterChange )     THEN !Crossing over the start
+                 deltaT = deltaT - 1.0_RP
+              ELSE IF (deltaT < -maxParameterChange ) THEN
+                 deltaT = 1.0_RP + deltaT
+              END IF
+              
+              DO j = 0, N 
+              
+                  t_j = tStart(k) + deltaT*(1.0_RP - COS(j*PI/N))/2.0_RP
+                  IF( t_j > 1.0_RP )     THEN
+                     t_j = t_j - 1.0_RP
+                  ELSE IF( t_j < 0.0_RP )     THEN
+                     t_j = t_j + 1.0_RP
+                  END IF
+                  
+                  e % boundaryInfo%x(:,j,k) = chain % PositionAt( t_j )
+                  
+                END DO
+             END IF
+         END DO
+
+      END SUBROUTINE gatherElementBoundaryInfo
 
    END MODULE MeshGenerationMethods
 !

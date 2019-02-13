@@ -33,7 +33,7 @@
 !     The mesh
 !     --------
 !
-      TYPE(StructuredHexMesh) :: hex8Mesh
+      TYPE(StructuredHexMesh)    :: hex8Mesh
 !
 !     ======== 
       CONTAINS
@@ -121,7 +121,6 @@
 !        and check its integrity.
 !        ----------------------------------------
 !
-         
          IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY) )     THEN
          
             obj             => controlDict % objectForKey(key = SIMPLE_EXTRUSION_BLOCK_KEY)
@@ -143,7 +142,7 @@
                                            msg = "No generator for 3D mesh found in control file", &
                                            typ = FT_ERROR_FATAL)
             RETURN 
-         END IF 
+         END IF
 !
 !        ---------------------
 !        Generate the Hex mesh

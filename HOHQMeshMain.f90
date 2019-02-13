@@ -147,6 +147,12 @@
                CALL project % smoother % smoothMesh(  project % mesh, project % model )
                IF(PrintMessage) PRINT *, "   final Smoothing done."
             END IF
+!
+!           -----------------------------------------
+!           Set boundary information for the elements
+!           -----------------------------------------
+!
+            CALL setElementBoundaryInfo(project)
             
          CALL stopwatch % stop()
          
@@ -197,7 +203,7 @@
 !        Generate a 3D Extrusion mesh if requested
 !        -----------------------------------------
 !
-         obj => cfReader % controlDict % objectForKey(key = "CONTROL_INPUT")
+         obj         => cfReader % controlDict % objectForKey(key = "CONTROL_INPUT")
          controlDict => valueDictionaryFromObject(obj)
          
          IF ( shouldGenerate3DMesh( controlDict) )     THEN

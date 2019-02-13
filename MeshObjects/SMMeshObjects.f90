@@ -71,6 +71,17 @@
          CLASS(SMNode), POINTER :: node => NULL()
       END TYPE SMNodePtr
 !
+!     ----------------------------
+!     Element boundary information
+!     ----------------------------
+!
+      TYPE ElementBoundaryInfo
+         INTEGER                        :: nodeIDs(4)
+         INTEGER                        :: bCurveFlag(4)
+         CHARACTER(LEN=32)              :: bCurveName(4)
+         REAL(KIND=RP)    , ALLOCATABLE :: x (:,:,:)
+      END TYPE ElementBoundaryInfo
+!
 !     ------------------
 !     Element Definition
 !     ------------------
@@ -87,6 +98,7 @@
          INTEGER                     :: materialID
          CHARACTER(LEN=32)           :: materialName
          TYPE (FTMutableObjectArray) :: nodes
+         TYPE(ElementBoundaryInfo)   :: boundaryInfo
 !
 !        ========
          CONTAINS
@@ -722,5 +734,19 @@
          INTEGER         :: iUnit
          WRITE(iUnit,*) "SMQuad object"
       END SUBROUTINE printQuadDescription
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ElementBoundaryInfoInit( self, N ) 
+         IMPLICIT NONE
+         TYPE(ElementBoundaryInfo) :: self
+         INTEGER                 :: N ! = polynomial order
+         
+         ALLOCATE( self%x(3,0:N,4) )
+         
+         self % x          = 0.0_RP
+         self % bCurveFlag = 0
+         self % bCurveName = '---'
+      END SUBROUTINE ElementBoundaryInfoInit
       
       END Module SMMeshObjectsModule

@@ -12,15 +12,6 @@
       USE SMModelClass
       USE SMMeshObjectsModule
       IMPLICIT NONE
-      
-      TYPE ElementOutputInfo
-         INTEGER                        :: nodeIDs(4)
-         INTEGER                        :: bCurveFlag(4)
-         CHARACTER(LEN=32)              :: bCurveName(4)
-         REAL(KIND=RP)    , ALLOCATABLE :: x (:,:,:)
-      END TYPE ElementOutputInfo
-      
-      PRIVATE :: ElementOutputInfo        
 !
 !     ========
       CONTAINS 
@@ -121,7 +112,6 @@
          CLASS(SMNode)      , POINTER         :: node => NULL()
          CLASS(SMEdge)      , POINTER         :: edge => NULL()
          CLASS(SMElement)   , POINTER         :: e    => NULL()
-         TYPE(ElementOutputInfo)              :: elementInfo
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          
          INTEGER                  :: iUnit, j, k
@@ -146,7 +136,6 @@
 !!        ----------------
 !!
          IF ( version == ISM )     THEN
-            !WRITE(iUnit,*) "ISM-V1"
             WRITE(iUnit, *) mesh % nodes % COUNT(), mesh % elements % COUNT(), N
          ELSE IF( version == ISM2 )     THEN
             WRITE(iUnit,*) "ISM-V2"
@@ -204,195 +193,35 @@
 !        Print element connectivity with boundary edge information
 !        ---------------------------------------------------------
 !
-         CALL elementOutputInfoInit( elementInfo, N)
          iterator => mesh % elementsIterator
          CALL iterator % setToStart
          
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL cast(obj,e)
-            CALL gatherElementOutputInfo( elementInfo, e, model )
             
             IF ( version == ISM_MM )     THEN
-               WRITE( iUnit, *) elementInfo % nodeIDs, TRIM(e % materialName)
+               WRITE( iUnit, *) e % boundaryInfo % nodeIDs, TRIM(e % materialName)
             ELSE
-               WRITE( iUnit, *) elementInfo % nodeIDs
+               WRITE( iUnit, *) e % boundaryInfo % nodeIDs
             END IF
             
-            WRITE( iUnit, *) elementInfo % bCurveFlag            
+            WRITE( iUnit, *) e % boundaryInfo % bCurveFlag            
 !
             DO k = 1, 4
-               IF( elementInfo%bCurveFlag(k) == ON )     THEN
+               IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN
                   DO j = 0, N 
-                     WRITE( iUnit, * ) elementInfo % x(:,j,k)
+                     WRITE( iUnit, * ) e % boundaryInfo % x(:,j,k)
                   END DO
                END IF
             END DO
             
-            WRITE( iUnit, *) (TRIM(elementInfo%bCurveName(k)), " ", k = 1, 4)
+            WRITE( iUnit, *) (TRIM(e % boundaryInfo % bCurveName(k)), " ", k = 1, 4)
             
             CALL iterator % moveToNext()
          END DO
 !         
       END SUBROUTINE WriteISMMeshFile
-!@mark -
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE gatherElementOutputInfo( self, e, model  )
-!
-!     --------------------------------------------------------------------------
-!     Gather together the boundary information for the four
-!     edges of the element. This info is
-!
-!     nodeIDs(4)    = integer id # of the 4 corner nodes
-!     bCurveFlag(4) = integer ON or OFF of whether a boundary 
-!                     curve is defined or NOT
-!     bCurveName(4) = Name of the 4 boundary curves. Equals "---" IF
-!                     the element side is interior,
-!     x(2,0:N,4)    = location (x,y) of the j=0:N Chebyshev-Lobatto points
-!                     along boundary k = 1,2,3,4. The kth entry will be zero if
-!                     bCurveFlag(k) = OFF.
-!     -------------------------------------------------------------------------
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE(ElementOutputInfo)            :: self
-         CLASS(SMElement)         , POINTER :: e
-         CLASS(SMModel)           , POINTER :: model
-!
-!        ---------------
-!        Local Variables
-!        ---------------
-!
-         INTEGER                        :: j, k
-         INTEGER                        :: N
-         CLASS(SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
-         CLASS(SMCurve)       , POINTER :: c     => NULL()
-         CLASS(SMChainedCurve), POINTER :: chain => NULL()
-         CLASS(FTObject)      , POINTER :: obj   => NULL()
-         
-         REAL(KIND=RP)            :: tStart(4), tEnd(4), t_j, deltaT
-         INTEGER                  :: curveId(4)
-         CHARACTER(LEN=32)        :: noCurveName(-4:-1) = (/"Right ", "Left  ", "Bottom", "Top   " /)
-         
-         N = SIZE(self%x,2)-1
-!
-!        -----
-!        Nodes
-!        -----
-!
-         DO k = 1, 4 
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj,node1)
-            self % nodeIDs(k) = node1 % id
-         END DO
-!
-!        -----------------------------------
-!        Gather up boundary edge information
-!        -----------------------------------
-!
-         self%bCurveName = "---"
-         self%bCurveFlag = OFF
-         
-         DO k = 1, 4 
-            obj => e % nodes % objectAtIndex(edgeMap(1,k))
-            CALL cast(obj,node1) 
-            obj => e % nodes % objectAtIndex(edgeMap(2,k))
-            CALL cast(obj,node2)
-!
-!           ---------------------------------------------------------------------------
-!           See if this edge is on a boundary. One of the two nodes should be
-!           a ROW_SIDE, and that one is on a curve rather than the joint of two curves.
-!           The edge could be on an outer box, in which case it is a straight line, but
-!           still needs boundary name information
-!           ---------------------------------------------------------------------------
-!
-            IF( IsOnBoundaryCurve(node1) .AND. IsOnBoundaryCurve(node2) )     THEN
-!
-!              -----------------------------------------------------------
-!              Mark as on a boundary curve needing interpolant information
-!              -----------------------------------------------------------
-!
-               self % bCurveFlag(k) = ON
-               IF( node1 % nodeType == ROW_SIDE )     THEN
-                  curveID(k)    = node1 % bCurveID
-                  c             => model % curveWithID(node1 % bCurveID, chain)
-               ELSE
-                  curveID(k)    = node2 % bCurveID
-                  c             => model % curveWithID(node2 % bCurveID, chain)
-               END IF
-               
-               self % bCurveName(k) = c % curveName()
-               tStart(k)            = node1 % gWhereOnBoundary
-               tEnd(k)              = node2 % gWhereOnBoundary
-               
-            ELSE IF ( IsOnOuterBox(node1) .AND. IsOnOuterBox(node2) )     THEN
-!
-!              --------------------------------------------------------------
-!              Only mark the boundary names for output, no interpolant needed
-!              --------------------------------------------------------------
-!
-               IF( node1 % nodeType == CORNER_NODE )     THEN
-                  self % bCurveName(k) = noCurveName(node2 % bCurveID)
-               ELSE
-                  self % bCurveName(k) = noCurveName(node1 % bCurveID)
-               END IF
-               
-            END IF
-         END DO
-!
-!        --------------------------------------------
-!        Construct boundary information
-!        Use a Chebyshev interpolant for the points.
-!        --------------------------------------------
-!
-         DO k = 1, 4
-         
-            IF( self%bCurveFlag(k) == ON )     THEN
-              c      => model % curveWithID(curveID(k), chain)
-              
-              deltaT = tEnd(k) - tStart(k)
-              IF( deltaT > maxParameterChange )     THEN !Crossing over the start
-                 deltaT = deltaT - 1.0_RP
-              ELSE IF (deltaT < -maxParameterChange ) THEN
-                 deltaT = 1.0_RP + deltaT
-              END IF
-              
-              DO j = 0, N 
-              
-                  t_j = tStart(k) + deltaT*(1.0_RP - COS(j*PI/N))/2.0_RP
-                  IF( t_j > 1.0_RP )     THEN
-                     t_j = t_j - 1.0_RP
-                  ELSE IF( t_j < 0.0_RP )     THEN
-                     t_j = t_j + 1.0_RP
-                  END IF
-                  
-                  self%x(:,j,k) = chain % PositionAt( t_j )
-                  
-                END DO
-             END IF
-         END DO
-
-      END SUBROUTINE gatherElementOutputInfo
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE elementOutputInfoInit( self, N ) 
-         IMPLICIT NONE
-         TYPE(ElementOutputInfo) :: self
-         INTEGER                 :: N ! = polynomial order
-         
-         ALLOCATE( self%x(3,0:N,4) )
-         
-         self % x          = 0.0_RP
-         self % bCurveFlag = 0
-         self % bCurveName = '---'
-      END SUBROUTINE elementOutputInfoInit
 !
 !////////////////////////////////////////////////////////////////////////
 !
