@@ -240,7 +240,7 @@
                   PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
                   PRINT *, "**************************************************************************"
                   PRINT *, " "
-                  CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                  CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
                   STOP "Meshing Terminated"
                END IF
                
@@ -257,7 +257,7 @@
                      PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
                      PRINT *, "**************************************************************************"
                      PRINT *, " "
-                     CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
                      STOP "Unassociated edge pointers in CollectBoundaryEdges"
                   END IF 
                   obj => edge
@@ -519,7 +519,7 @@
                   PRINT *, "Plot the file 'DebugPlot.tec' to see where additional resolution is needed"
                   PRINT *, "**************************************************************************"
                   PRINT *, " "
-                  CALL WriteToTecplot( mesh, "DebugPlot.tec" )
+                  CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
                   STOP "Meshing Terminated"
                END IF 
                edge => edgeArray(eId) % edge

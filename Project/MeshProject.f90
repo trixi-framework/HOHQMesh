@@ -32,6 +32,7 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: STATS_FILE_NAME_KEY        = "stats file name"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_FORMAT_NAME_KEY  = "mesh file format"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: POLYNOMIAL_ORDER_KEY       = "polynomial order"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FORMAT_KEY            = "plot file format"
       
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_PARAMETERS_KEY         = "MESH_PARAMETERS"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_TYPE_KEY               = "mesh type"
@@ -67,6 +68,7 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
          INTEGER                    :: meshFileFormat
          INTEGER                    :: polynomialOrder
+         INTEGER                    :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
       END TYPE RunParameters
       PRIVATE :: RunParameters
       
@@ -97,6 +99,8 @@
          INTEGER       :: lineControlType
       END TYPE lineParameters
       PRIVATE :: lineParameters
+      
+      INTEGER, PARAMETER :: SKELETON_FORMAT = 0, SEM_FORMAT = 1
 !
 !     ------------------------
 !     Project class definition
@@ -706,7 +710,8 @@
 !            mesh file name = "fname.mesh"
 !            stats file name = "fname.txt" (Optional)
 !            mesh file format = "Basic", ...
-!            tecplot file name = "tName.tec"  (Optional)
+!            plot file name = "tName.tec"  (Optional)
+!            plot file format = "skeleton" OR "sem"
 !         \end{RunParameters}
 !
          IMPLICIT NONE
@@ -788,7 +793,22 @@
                                            errorLevel = FT_ERROR_WARNING,         &
                                            message    = msg,                      &
                                            poster     = "SetRunParametersBlock")
-         
+                                           
+         msg = "Unknown plot file format or plot file format not set. Set to skeleton"
+         CALL SetStringValueFromDictionary(valueToSet = fileFormat,                &
+                                           sourceDict = paramsDict,                &
+                                           key        = PLOT_FORMAT_KEY, &
+                                           errorLevel = FT_ERROR_WARNING,          &
+                                           message    = msg,                       &
+                                           poster     = "SetRunParametersBlock")
+         IF ( fileFormat == "skeleton" )     THEN
+            params % plotFileFormat = SKELETON_FORMAT 
+         ELSE IF(fileFormat == "sem")     THEN 
+            params % plotFileFormat = SEM_FORMAT 
+         ELSE
+            params % plotFileFormat = SEM_FORMAT
+         END IF 
+          
       END SUBROUTINE SetRunParametersBlock
 !
 !////////////////////////////////////////////////////////////////////////

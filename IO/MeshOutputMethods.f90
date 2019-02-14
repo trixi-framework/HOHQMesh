@@ -19,7 +19,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE WriteToTecplot( mesh, fName ) 
+      SUBROUTINE WriteSkeletonToTecplot( mesh, fName ) 
          IMPLICIT NONE
 !
 !        ---------
@@ -87,7 +87,64 @@
 
          CLOSE( iUnit )
          
-      END SUBROUTINE WriteToTecplot
+      END SUBROUTINE WriteSkeletonToTecplot
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE WriteSEMMeshToTecplot( mesh, fName, N ) 
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE( SMMesh )   :: mesh
+         CHARACTER(LEN=*) :: fName
+         INTEGER          :: N
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER            :: fUnit
+         INTEGER            :: i, j, k
+         
+         CLASS(SMElement), POINTER :: e    => NULL()
+         CLASS(FTObject) , POINTER :: obj  => NULL()
+!
+!        ----------
+!        Interfaces 
+!        ----------
+!
+         INTEGER, EXTERNAL  :: UnusedUnit
+!
+!        -----------
+!        Open a file
+!        -----------
+!
+         fUnit = UnusedUnit()
+         OPEN( UNIT = fUnit, FILE = fName )
+!
+         
+         WRITE(fUnit,*) ' TITLE = "SEM Quad mesh" '
+         WRITE(fUnit,*) ' VARIABLES = "x","y", "z"'
+         
+         CALL mesh % elementsIterator % setToStart()
+         DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
+            obj => mesh % elementsIterator % object()
+            CALL castToSMelement(obj,e)
+            
+            WRITE(fUnit,*) "ZONE I=", N+1, ",J=",N+1,", F=POINT"
+            DO j= 0, N 
+               DO i = 0, N 
+                  WRITE(fUnit,'(6E13.5)') e % xPatch(1, i, j), e % xPatch(2, i, j), e % xPatch(3, i, j)
+               END DO
+            END DO
+           
+            CALL mesh % elementsIterator % moveToNext()
+         END DO
+
+      END SUBROUTINE WriteSEMMeshToTecplot
 !
 !////////////////////////////////////////////////////////////////////////
 !

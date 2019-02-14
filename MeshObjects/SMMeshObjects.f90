@@ -99,6 +99,7 @@
          CHARACTER(LEN=32)           :: materialName
          TYPE (FTMutableObjectArray) :: nodes
          TYPE(ElementBoundaryInfo)   :: boundaryInfo
+         REAL(KIND=RP), ALLOCATABLE  :: xPatch(:,:,:)
 !
 !        ========
          CONTAINS

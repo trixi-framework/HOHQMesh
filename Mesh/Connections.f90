@@ -94,7 +94,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE makeNodeToElementConnections( mesh )
-      USE MeshOutputMethods, ONLY : WriteToTecplot
+      USE MeshOutputMethods, ONLY : WriteSkeletonToTecplot
 !
 !     --------------------------------------------------------
 !     Collect which elements are used by each node and store 
@@ -156,7 +156,7 @@
                   PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
                   PRINT *, "**************************************************************************"
                   PRINT *, " "
-                  CALL WriteToTecplot( mesh, "DebugPlot.tec" )
+                  CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
                   STOP "Meshing Terminated"
                END IF 
                

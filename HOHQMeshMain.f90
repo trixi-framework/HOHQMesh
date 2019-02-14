@@ -150,9 +150,11 @@
 !
 !           -----------------------------------------
 !           Set boundary information for the elements
+!           and compute the patch interpolated points
+!           inside the element
 !           -----------------------------------------
 !
-            CALL setElementBoundaryInfo(project)
+            CALL CompleteElementConstruction(project)
             
          CALL stopwatch % stop()
          
@@ -244,7 +246,14 @@
                IF ( didGenerate3DMesh )     THEN
                   CALL WriteHex8MeshToTecplot(hex8Mesh,fName = project % runParams % plotFileName)
                ELSE
-                  CALL WriteToTecplot( project % mesh, project % runParams % plotFileName )
+                  IF ( project % runParams % plotFileFormat == SKELETON_FORMAT )     THEN
+                     CALL WriteSkeletonToTecplot( project % mesh, project % runParams % plotFileName )
+                  ELSE 
+                     CALL WriteSEMMeshToTecplot(mesh  = project % mesh, &
+                                                fName = project % runParams % plotFileName, &
+                                                N     = project % runParams % polynomialOrder ) 
+                  END IF 
+                  
                END IF 
             IF( PrintMessage ) PRINT *, "Tecplot file written"
          END IF

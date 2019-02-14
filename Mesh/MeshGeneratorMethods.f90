@@ -345,7 +345,7 @@
 !
       SUBROUTINE GenerateBoundaryElements( mesh, model, list ) 
          USE fMinModule
-         USE MeshOutputMethods, ONLY: writeToTecplot
+         USE MeshOutputMethods, ONLY: WriteSkeletonToTecplot
          IMPLICIT NONE
 !
 !        ---------
@@ -683,7 +683,7 @@
                  PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
                  PRINT *, "**************************************************************************"
                  PRINT *, " "
-                  CALL WriteToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                  CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
                   STOP "Meshing Terminated"
             END SELECT
             k = k + 1
@@ -1715,7 +1715,8 @@
 !
          DO k = 1, 4
          
-            IF( e % boundaryInfo%bCurveFlag(k) == ON )     THEN
+            IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN ! Use boundary curves to compute interpolant
+            
               c      => model % curveWithID(curveID(k), chain)
               
               deltaT = tEnd(k) - tStart(k)
@@ -1734,13 +1735,150 @@
                      t_j = t_j + 1.0_RP
                   END IF
                   
-                  e % boundaryInfo%x(:,j,k) = chain % PositionAt( t_j )
+                  e % boundaryInfo % x(:,j,k) = chain % PositionAt( t_j )
                   
                 END DO
+             ELSE ! Use a straight line between end nodes
+             
+               obj => e % nodes % objectAtIndex(edgeMap(1,k))
+               CALL cast(obj,node1) 
+               obj => e % nodes % objectAtIndex(edgeMap(2,k))
+               CALL cast(obj,node2)
+               
+               DO j = 0, N 
+                  t_j = (1.0_RP - COS(j*PI/N))/2.0_RP
+                  e % boundaryInfo % x(:,j,k) = (1.0_RP - t_j)*node1 % x + t_j*node2 % x
+               END DO 
+                
              END IF
          END DO
 
       END SUBROUTINE gatherElementBoundaryInfo
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE CompleteElementConstruction(project)
+!
+!     ---------------------------------------------------------------
+!     Compute the boundary and interior face patch interpolant points
+!     ---------------------------------------------------------------
+!
+         USE CurveInterpolantClass
+         USE TransfiniteMapClass
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshProject) :: project
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                              :: N, j, k
+         CLASS(SMMesh)              , POINTER :: mesh
+         CLASS(FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMElement)           , POINTER :: e
+         TYPE(TransfiniteQuadMap)             :: quadMap
+         TYPE(CurveInterpolant)     , POINTER :: boundaryCurves(:)
+         REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
+         REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: values
+!
+!        --------------------
+!        Boundary information
+!        --------------------
+!
+         CALL setElementBoundaryInfo(project)
+!
+!        -------------------
+!        Interior face patch
+!        -------------------
+!
+         N     =  project % runParams % polynomialOrder
+         mesh  => project % mesh
+         
+         iterator => mesh % elementsIterator
+         CALL iterator % setToStart()
 
+         ALLOCATE( boundaryCurves(4) )
+         ALLOCATE( nodes(0:N) )
+         ALLOCATE( values(0:N,3) )
+         
+         DO j = 0, N 
+            nodes(j) = -COS(j*PI/N)
+         END DO
+         values = 0.0_RP
+         DO k = 1, 4 
+            CALL Construct( boundaryCurves(k), N, nodes, values )
+         END DO
+         quadMap = NewTransfiniteQuadMap( boundaryCurves )
+         
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+         
+            obj => iterator % object()
+            CALL cast(obj,e)
+            
+            CALL ComputeElementFacePatch(e, quadMap, nodes, N)
+            
+            CALL iterator % moveToNext()
+         END DO
+
+         DEALLOCATE( boundaryCurves)
+         
+      END SUBROUTINE CompleteElementConstruction
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ComputeElementFacePatch(e, quadMap, nodes, N)
+         USE TransfiniteMapClass
+         USE CurveInterpolantClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMElement), POINTER :: e
+         INTEGER                   :: N
+         TYPE(TransfiniteQuadMap)  :: quadMap
+         REAL(KIND=RP)             :: nodes(0:N)
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         REAL(KIND=RP) :: values(0:N,3)
+         INTEGER       :: i, j, k
+         
+         ALLOCATE(e % xPatch(3,0:N,0:N))
+!
+!        -------------------
+!        Set up the quad map
+!        -------------------
+!
+         DO k = 1, 4 
+            DO j = 0, N
+               DO i = 1,3 
+                  values(j,i) = e % boundaryInfo % x(i,j,k) 
+               END DO 
+            END DO 
+            
+            CALL SetValues( quadMap % boundaryCurves(k), values )
+         END DO
+         nodes = quadMap % boundaryCurves(1) % nodes
+         
+         DO j = 0, N 
+            DO i = 0, N 
+               CALL EvaluateTransfiniteMapAt(this = quadMap,  &
+                                             xi   = nodes(i), &
+                                             eta  = nodes(j), &
+                                             res  = e % xPatch(:,i,j) ) 
+            END DO 
+         END DO 
+          
+      END SUBROUTINE ComputeElementFacePatch
    END MODULE MeshGenerationMethods
 !
