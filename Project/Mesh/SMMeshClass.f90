@@ -35,6 +35,7 @@
 !        Data
 !        ----
 !
+         INTEGER                      :: polynomialOrder
          CLASS(FTLinkedList), POINTER :: nodes    => NULL()
          CLASS(FTLinkedList), POINTER :: elements => NULL()
          CLASS(FTLinkedList), POINTER :: edges    => NULL()
@@ -361,7 +362,7 @@
             obj => self % nodesIterator % object()
             CALL castToSMNode(obj,node)
             
-            x  = CSHIFT(node % x, SHIFT = -pmutation)
+            x  = CSHIFT(node % x, SHIFT = -pmutation) ! ALSO found in permutePosition in Geometry3D
             node % x = x
             
             CALL self % nodesIterator % moveToNext()

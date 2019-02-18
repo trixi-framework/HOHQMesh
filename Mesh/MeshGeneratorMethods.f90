@@ -70,7 +70,8 @@
 !     ---------------
 !
       ALLOCATE( project % mesh )
-      CALL project % mesh % init()
+      CALL project % mesh % init( )
+      project % mesh % polynomialOrder =  project % runParams % polynomialOrder
       
       mesh  => project % mesh
       model => project % model
@@ -1821,6 +1822,7 @@
             obj => iterator % object()
             CALL cast(obj,e)
             
+            e % N = N
             CALL ComputeElementFacePatch(e, quadMap, nodes, N)
             
             CALL iterator % moveToNext()

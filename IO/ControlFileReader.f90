@@ -630,7 +630,6 @@
          CHARACTER(LEN=1), ALLOCATABLE    :: enc(:)
          CLASS(FTData)   , POINTER        :: dta
          CLASS(FTObject) , POINTER        :: obj
-         CHARACTER(LEN=1), POINTER        :: encA(:)
 !
 !        ----------------
 !        Number of points

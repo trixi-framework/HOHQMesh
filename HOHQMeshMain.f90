@@ -55,7 +55,7 @@
 !         
          CHARACTER(LEN=8) :: version           = "2.4.19"
          LOGICAL          :: debug             = .FALSE.
-         LOGICAL          :: didGenerate3DMesh = .FALSE.
+         LOGICAL          :: didGenerate3DMesh = .FALSE., shouldGenerate3D = .FALSE.
          INTEGER          :: k
          TYPE(FTTimer)    :: stopWatch
          CHARACTER(LEN=16):: namesFmt = "(   7A16 )", valuesFmt = '(  7F16.3)', numb = "9"
@@ -94,13 +94,24 @@
          END IF 
          CLOSE(fUnit)
 !
-!        ----------------------
-!        Initialize the project
-!        ----------------------
+!        -----------------------------------------------------
+!        Initialize the project and check the integrity of the
+!        control file
+!        -----------------------------------------------------
 !
          ALLOCATE(project)
          
          CALL project % initWithDictionary( cfReader % controlDict )
+         CALL trapExceptions !Abort on fatal exceptions
+         
+         obj              => cfReader % controlDict % objectForKey(key = "CONTROL_INPUT")
+         controlDict      => valueDictionaryFromObject(obj)
+         CALL controlDict % retain()
+         
+         shouldGenerate3D = shouldGenerate3DMesh(controlDict = controlDict)
+         IF ( shouldGenerate3D )     THEN
+            CALL Check3DMeshParametersIntegrity(controlDict) 
+         END IF 
          CALL trapExceptions !Abort on fatal exceptions
 !
 !        -----------------
@@ -204,16 +215,14 @@
 !        -----------------------------------------
 !        Generate a 3D Extrusion mesh if requested
 !        -----------------------------------------
-!
-         obj         => cfReader % controlDict % objectForKey(key = "CONTROL_INPUT")
-         controlDict => valueDictionaryFromObject(obj)
-         
-         IF ( shouldGenerate3DMesh( controlDict) )     THEN
+!         
+         IF ( shouldGenerate3D )     THEN
             IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
             
             CALL stopWatch % start()
-               CALL generate3DMesh(controlDict,project)
+               CALL generate3DMesh( controlDict, project )
             CALL stopWatch % stop()
+            
             CALL trapExceptions !Aborts on fatal exceptions
             didGenerate3DMesh = .TRUE.
             
@@ -227,9 +236,8 @@
                PRINT *, " "
                PRINT *, "3D Mesh Statistics:"
                PRINT *, "    Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
-               PRINT *, "    Number of nodes    = ", SIZE(hex8Mesh % nodes)
-               PRINT *, "    Number of Faces    = ", SIZE(hex8Mesh % faces) + SIZE(hex8Mesh % capFaces)
-               PRINT *, "    Number of Elements = ", SIZE(hex8Mesh % elements)
+               PRINT *, "    Number of nodes    = ", SIZE(project % hexMesh % nodes)
+               PRINT *, "    Number of Elements = ", SIZE(project % hexMesh % elements)
                PRINT *
                
             ELSE
@@ -243,9 +251,19 @@
 !
          IF( project % runParams % plotFileName /= "None" )     THEN
             IF( PrintMessage ) PRINT *, "Writing tecplot file..."
+            
                IF ( didGenerate3DMesh )     THEN
-                  CALL WriteHex8MeshToTecplot(hex8Mesh,fName = project % runParams % plotFileName)
+               
+                  IF ( project % runParams % plotFileFormat == SKELETON_FORMAT )     THEN
+                     CALL WriteHex8SkeletonToTecplot( project % hexMesh, fName = project % runParams % plotFileName)
+                  ELSE
+                     CALL WriteHex8MeshToTecplot(hex8Mesh = project % hexMesh, &
+                                                 fName    = project % runParams % plotFileName, &
+                                                 N        = project % runParams % polynomialOrder)
+                  END IF 
+                 
                ELSE
+               
                   IF ( project % runParams % plotFileFormat == SKELETON_FORMAT )     THEN
                      CALL WriteSkeletonToTecplot( project % mesh, project % runParams % plotFileName )
                   ELSE 
@@ -269,10 +287,10 @@
                PRINT *, "*** BSC Format needs to be implemented ***"
             ELSE
                IF ( didGenerate3DMesh )     THEN
-                  CALL WriteISMHexMeshFile(mesh    = hex8Mesh,&
-                                           fName   = project % runParams % MeshFileName,&
-                                           N       = project % runParams % polynomialOrder,&
-                                           version = project % runParams % meshFileFormat) 
+!                  CALL WriteISMHexMeshFile(mesh    = hex8Mesh,&
+!                                           fName   = project % runParams % MeshFileName,&
+!                                           N       = project % runParams % polynomialOrder,&
+!                                           version = project % runParams % meshFileFormat) 
                ELSE
                   CALL WriteISMMeshFile( project % mesh, project % runParams % MeshFileName, &
                                          project % model, &
@@ -288,9 +306,8 @@
 !        Clean up
 !        --------
 !
-         CLOSE( fUnit )
+         CALL release(controlDict)
          CALL release(project)
-         
          CALL destructFTExceptions
          IF( PrintMessage ) PRINT *, "Execution complete. Exit."
          

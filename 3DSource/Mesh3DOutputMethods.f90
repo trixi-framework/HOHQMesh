@@ -17,7 +17,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE WriteHex8MeshToTecplot( hex8Mesh, fName )
+      SUBROUTINE WriteHex8SkeletonToTecplot( hex8Mesh, fName )
          IMPLICIT NONE
 !
 !        ---------
@@ -71,6 +71,55 @@
 
          CLOSE( iUnit )
          
+      END SUBROUTINE WriteHex8SkeletonToTecplot
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE WriteHex8MeshToTecplot( hex8Mesh, fName, N ) 
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE( StructuredHexMesh ) :: hex8Mesh
+         CHARACTER(LEN=*)          :: fName
+         INTEGER                   :: N
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER           :: iUnit, i, j, k, m, l, p
+         INTEGER, EXTERNAL :: UnusedUnit
+!
+!        -----------
+!        Open a file
+!        -----------
+!
+         iUnit = UnusedUnit()
+         OPEN( UNIT = iUnit, FILE = fName )
+!
+!        -------------
+!        Set up header
+!        -------------
+!
+         WRITE(iUnit,*) ' TITLE = "SEM hex mesh" '
+         WRITE(iUnit,*) ' VARIABLES = "x","y", "z"'
+                  
+         DO l = 1, hex8Mesh % numberofLayers
+            DO m = 1, hex8Mesh % numberOfQuadElements
+               WRITE(iUnit,*) "ZONE I=", N+1, ",J=",N+1, ",K=",N+1,", F=POINT"
+               DO k = 0, N
+                  DO j = 0, N 
+                     DO i = 0, N 
+                        WRITE(iUnit,*) (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3)
+                     END DO 
+                  END DO 
+               END DO 
+            END DO   
+         END DO  
+                  
       END SUBROUTINE WriteHex8MeshToTecplot
 !
 !////////////////////////////////////////////////////////////////////////
@@ -108,7 +157,7 @@
 !        ----------------
 !
          IF(version == ISM2)     THEN 
-            WRITE(iUnit, *) SIZE(mesh % nodes), SIZE(mesh % faces) + SIZE(mesh % capFaces), SIZE(mesh % elements), N
+!            WRITE(iUnit, *) SIZE(mesh % nodes), SIZE(mesh % faces) + SIZE(mesh % capFaces), SIZE(mesh % elements), N
          ELSE
             WRITE(iUnit, *) SIZE(mesh % nodes), SIZE(mesh % elements), N
          END IF 
@@ -128,19 +177,19 @@
 !        ------------------------------
 !
          IF( version == ISM2)     THEN 
-            DO j = 1, SIZE(mesh % faces,2)
-               DO k = 1, SIZE(mesh % faces,1)
-                  WRITE( iUnit, "(10(2x,i8))") mesh % faces(k,j) % elementIDs, mesh % faces(k,j) % faceNumber &
-                  ,mesh % faces(k,j) % inc, mesh % faces(k,j) % nodeIDs
-               END DO   
-            END DO  
-            
-            DO j = 0, SIZE(mesh % capFaces,2)-1
-               DO k = 1, SIZE(mesh % capFaces,1)
-                  WRITE( iUnit, "(10(2x,i8))") mesh % capFaces(k,j) % elementIDs, mesh % capFaces(k,j) % faceNumber &
-                  ,mesh % capFaces(k,j) % inc, mesh % capFaces(k,j) % nodeIDs
-               END DO
-            END DO  
+!            DO j = 1, SIZE(mesh % faces,2)
+!               DO k = 1, SIZE(mesh % faces,1)
+!                  WRITE( iUnit, "(10(2x,i8))") mesh % faces(k,j) % elementIDs, mesh % faces(k,j) % faceNumber &
+!                  ,mesh % faces(k,j) % inc, mesh % faces(k,j) % nodeIDs
+!               END DO   
+!            END DO  
+!            
+!            DO j = 0, SIZE(mesh % capFaces,2)-1
+!               DO k = 1, SIZE(mesh % capFaces,1)
+!                  WRITE( iUnit, "(10(2x,i8))") mesh % capFaces(k,j) % elementIDs, mesh % capFaces(k,j) % faceNumber &
+!                  ,mesh % capFaces(k,j) % inc, mesh % capFaces(k,j) % nodeIDs
+!               END DO
+!            END DO  
          END IF 
 !
 !        ---------------------------------------------------------
@@ -161,46 +210,46 @@
                          
                DO f = 1, 6
                   
-                  IF( mesh % elements(k,j) % bFaceFlag(f) == ON )     THEN
-                     SELECT CASE ( f )
-                        CASE( 3 ) 
-                          DO jj = 0, N 
-                              DO ii = 0, N
-                                 WRITE( iUnit, * ) mesh % capFaces(k,j-1) % x(:,ii,jj)
-                              END DO
-                           END DO
-                        CASE (5) 
-                          DO jj = 0, N 
-                              DO ii = 0, N
-                                 WRITE( iUnit, * ) mesh % capFaces(k,j) % x(:,ii,jj)
-                              END DO
-                           END DO
-                        CASE DEFAULT 
-                        
-                          faceID = mesh % elements(k,j) % faceID(f)
-                          IF ( eID == mesh % faces(faceID,j) % elementIDs(1) )     THEN
-                             start     = 0
-                             nde       = N
-                             increment = 1
-                          ELSE 
-                             increment = mesh % faces(faceID,j) % inc(1)
-                             IF ( increment > 0 )     THEN
-                                start = 0
-                                nde   = N
-                             ELSE 
-                                start = N
-                                nde   = 0
-                             END IF 
-                             
-                          END IF 
-                          
-                          DO jj = 0, N 
-                              DO ii = start , nde, increment
-                                 WRITE( iUnit, * ) mesh % faces(faceID,j) % x(:,ii,jj)
-                              END DO
-                           END DO
-                     END SELECT 
-                  END IF
+!                  IF( mesh % elements(k,j) % bFaceFlag(f) == ON )     THEN
+!                     SELECT CASE ( f )
+!                        CASE( 3 ) 
+!                          DO jj = 0, N 
+!                              DO ii = 0, N
+!                                 WRITE( iUnit, * ) mesh % capFaces(k,j-1) % x(:,ii,jj)
+!                              END DO
+!                           END DO
+!                        CASE (5) 
+!                          DO jj = 0, N 
+!                              DO ii = 0, N
+!                                 WRITE( iUnit, * ) mesh % capFaces(k,j) % x(:,ii,jj)
+!                              END DO
+!                           END DO
+!                        CASE DEFAULT 
+!                        
+!                          faceID = mesh % elements(k,j) % faceID(f)
+!                          IF ( eID == mesh % faces(faceID,j) % elementIDs(1) )     THEN
+!                             start     = 0
+!                             nde       = N
+!                             increment = 1
+!                          ELSE 
+!                             increment = mesh % faces(faceID,j) % inc(1)
+!                             IF ( increment > 0 )     THEN
+!                                start = 0
+!                                nde   = N
+!                             ELSE 
+!                                start = N
+!                                nde   = 0
+!                             END IF 
+!                             
+!                          END IF 
+!                          
+!                          DO jj = 0, N 
+!                              DO ii = start , nde, increment
+!                                 WRITE( iUnit, * ) mesh % faces(faceID,j) % x(:,ii,jj)
+!                              END DO
+!                           END DO
+!                     END SELECT 
+!                  END IF
                END DO
                
                WRITE( iUnit, *) (TRIM(mesh % elements(k,j) % bFaceName(f)), " ", f = 1, 6)

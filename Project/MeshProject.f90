@@ -18,6 +18,7 @@
       USE FTValueDictionaryClass
       USE ErrorTypesModule
       USE ValueSettingModule
+      USE HexMeshObjectsModule
       IMPLICIT NONE
 !
 !     ---------
@@ -112,6 +113,7 @@
          CLASS(MeshSizer)         , POINTER :: sizer    => NULL()
          CLASS(QuadTreeGrid)      , POINTER :: grid     => NULL()
          CLASS(MeshSmoother)      , POINTER :: smoother => NULL()
+         TYPE(StructuredHexMesh)  , POINTER :: hexMesh  => NULL()
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
@@ -250,6 +252,10 @@
             CALL self % smoother % destruct()
             DEALLOCATE(self % smoother) 
          END IF 
+         
+         IF (  ASSOCIATED(self % hexMesh) )     THEN
+            CALL DestructStructuredHexMesh(hexMesh  = self % hexMesh) 
+         END IF  
          
       END SUBROUTINE DestructMeshProject
 !
@@ -632,71 +638,6 @@
          backgroundGrid % x0 = (/leftB, bottomB, 0.0_RP /)
          
       END SUBROUTINE BuildbackgroundGridFromModel
-!@mark -
-!! TODO: To be eliminated
-!!//////////////////////////////////////////////////////////////////////// 
-!! 
-!      SUBROUTINE ThrowProjectReadException( level, objectName, msg )  
-!         USE FTValueClass
-!         IMPLICIT NONE  
-!!
-!!        ---------
-!!        Arguments
-!!        ---------
-!!
-!         CHARACTER(LEN=*)  :: msg
-!         CHARACTER(LEN=*)  :: objectName
-!         INTEGER           :: level
-!!
-!!        ---------------
-!!        Local variables
-!!        ---------------
-!!
-!         CLASS(FTException)   , POINTER :: exception => NULL()
-!         CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
-!         CLASS(FTObject)      , POINTER :: obj => NULL()
-!         CLASS(FTValue)       , POINTER :: v => NULL()
-!!
-!!        -----------------------------------------------------
-!!        The userDictionary for this exception contains the
-!!        message to be delivered under the name "message"
-!!        and the object being read by the name "objectName"
-!!        -----------------------------------------------------
-!!
-!         ALLOCATE(userDictionary)
-!         CALL userDictionary  %  initWithSize(4)
-!         
-!         ALLOCATE(v)
-!         CALL v  %  initWithValue(objectName)
-!         obj => v
-!         CALL userDictionary  %  addObjectForKey(obj,"objectName")
-!         CALL release(v)
-!         
-!         ALLOCATE(v)
-!         CALL v  %  initWithValue(msg)
-!         obj => v
-!         CALL userDictionary  %  addObjectForKey(obj,"message")
-!         CALL release(v)
-!!
-!!        --------------------
-!!        Create the exception
-!!        --------------------
-!!
-!         ALLOCATE(exception)
-!         
-!         CALL exception  %  initFTException(level, &
-!                              exceptionName   = PROJECT_READ_EXCEPTION, &
-!                              infoDictionary  = userDictionary)
-!         CALL release(userDictionary)
-!!
-!!        -------------------
-!!        Throw the exception
-!!        -------------------
-!!
-!         CALL throw(exception)
-!         CALL release(exception)
-!         
-!      END SUBROUTINE ThrowProjectReadException
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////

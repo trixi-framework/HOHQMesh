@@ -29,12 +29,6 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_ELEMENT_TYPE_KEY        = "elementType"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_GENERATE3D_MESH_KEY     = "generate3DMesh"
 !
-!     --------
-!     The mesh
-!     --------
-!
-      TYPE(StructuredHexMesh)    :: hex8Mesh
-!
 !     ======== 
       CONTAINS
 !     ========
@@ -71,8 +65,9 @@
          
             obj => controlDict % objectForKey(key = MESH_PARAMETERS_KEY) 
             runParamsDict => valueDictionaryFromObject(obj)
+            
             IF ( runParamsDict % containsKey( ELEMENT_TYPE_KEY) )     THEN
-               str = runParamsDict % stringValueForKey(key = ELEMENT_TYPE_KEY, &
+               str = runParamsDict % stringValueForKey(key             = ELEMENT_TYPE_KEY, &
                                                        requestedLength = DEFAULT_CHARACTER_LENGTH) 
                IF(TRIM(ADJUSTL(str)) == "hex") shouldGenerate3DMesh = .TRUE.
             END IF 
@@ -88,15 +83,14 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE generate3DMesh(controlDict, project)
-         IMPLICIT NONE
+      SUBROUTINE Check3DMeshParametersIntegrity( controlDict )  
+         IMPLICIT NONE  
 !
 !        ---------
 !        Arguments
 !        ---------
 !
          CLASS(FTValueDictionary), POINTER :: controlDict
-         TYPE(MeshProject)                 :: project
 !
 !        ---------------
 !        Local variables
@@ -104,17 +98,13 @@
 !
          CLASS(FTObject)           , POINTER :: obj
          CLASS(FTValueDictionary)  , POINTER :: generatorDict
-         
-         INTEGER                                :: algorithmChoice = NONE
-         CHARACTER(LEN=LINE_LENGTH)             :: meshAlgorithm, algorithmName
-         CHARACTER(LEN=ERROR_MSG_STRING_LENGTH) :: msg
+         INTEGER                             :: algorithmChoice
 !
 !        ----------
 !        Interfaces
 !        ----------
 !
          LOGICAL, EXTERNAL :: ReturnOnFatalError
-!
 !
 !        ----------------------------------------
 !        Get the included 3D generator dictionary
@@ -143,6 +133,69 @@
                                            typ = FT_ERROR_FATAL)
             RETURN 
          END IF
+      END SUBROUTINE Check3DMeshParametersIntegrity
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE generate3DMesh( controlDict, project )
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE(MeshProject)                 :: project
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTObject)           , POINTER :: obj
+         CLASS(FTValueDictionary)  , POINTER :: generatorDict
+         INTEGER                             :: numberOfLayers
+         
+         INTEGER                             :: algorithmChoice = NONE
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
+!
+!        ----------------------------------------
+!        Get the included 3D generator dictionary
+!        ----------------------------------------
+!
+         IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY) )     THEN
+         
+            obj             => controlDict % objectForKey(key = SIMPLE_EXTRUSION_BLOCK_KEY)
+            generatorDict   => valueDictionaryFromObject(obj) 
+            algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
+            
+         ELSE IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN 
+         
+            obj             => controlDict % objectForKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)
+            generatorDict   => valueDictionaryFromObject(obj) 
+            algorithmChoice = SIMPLE_ROTATION_ALGORITHM
+            
+         END IF
+!
+!        ---------------------------------------------------------------------
+!        Allocate memory for the hex mesh. Since the extrusion is 
+!        structured in the new direction, the data structures can be accessed
+!        as arrays. We also know exactly how many nodes and elements are to be
+!        created, so we don't need pointers for most things.
+!        ---------------------------------------------------------------------
+!
+         ALLOCATE(project % hexMesh)
+         numberOfLayers = generatorDict % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
+         CALL InitializeStructuredHexMesh(hexMesh              = project % hexMesh,                   &
+                                          numberOf2DNodes      = project % mesh % nodes % count(),    &
+                                          numberOfEdges        = project % mesh % edges % count(),    &
+                                          numberOfQuadElements = project % mesh % elements % count(), &
+                                          numberOfLayers       = numberOfLayers,                      &
+                                          N                    = project % mesh % polynomialOrder)
 !
 !        ---------------------
 !        Generate the Hex mesh
@@ -150,7 +203,7 @@
 !
          SELECT CASE ( algorithmChoice )
             CASE( SIMPLE_EXTRUSION_ALGORITHM, SIMPLE_ROTATION_ALGORITHM )
-               CALL PerformSimpleMeshSweep( project, hex8Mesh, generatorDict, algorithmChoice)
+               CALL PerformSimpleMeshSweep( project, generatorDict, algorithmChoice)
             CASE DEFAULT
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg = "unknown generator for 3D mesh found in control file", &
