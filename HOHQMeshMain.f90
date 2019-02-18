@@ -287,10 +287,10 @@
                PRINT *, "*** BSC Format needs to be implemented ***"
             ELSE
                IF ( didGenerate3DMesh )     THEN
-!                  CALL WriteISMHexMeshFile(mesh    = hex8Mesh,&
-!                                           fName   = project % runParams % MeshFileName,&
-!                                           N       = project % runParams % polynomialOrder,&
-!                                           version = project % runParams % meshFileFormat) 
+                  CALL WriteISMHexMeshFile(mesh    = project % hexMesh,&
+                                           fName   = project % runParams % MeshFileName,&
+                                           N       = project % runParams % polynomialOrder,&
+                                           version = project % runParams % meshFileFormat) 
                ELSE
                   CALL WriteISMMeshFile( project % mesh, project % runParams % MeshFileName, &
                                          project % model, &

@@ -335,7 +335,7 @@
          ALLOCATE( locAndLevelForNodeID(2, numberOfNodes) )
 !
 !        ------------------------------------------------
-!        Ratation is done sby sweeping then applying the 
+!        Ratation is done by sweeping then applying the 
 !        rotation to the result.
 !        ------------------------------------------------
 !
@@ -505,6 +505,7 @@
          INTEGER                           :: elementID, nodeID, node2DID, quadElementID
          INTEGER                           :: j, k
          INTEGER                           :: pMutation
+         INTEGER   :: flagMap(4) = [1,4,2,6]
          
          
          CLASS(SMNode)                   , POINTER     :: node
@@ -568,9 +569,24 @@
                   parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_ENDNAME_KEY,&
                                                            requestedLength = LINE_LENGTH)
                END IF 
+!
+!              ----------------------------------------------------------------
+!              Use edge info of parent quad element to set boundary curve flags
+!              and names for the new hex element
+!              ----------------------------------------------------------------
+!
+               DO k = 1, 4 
+                  IF ( currentQuadElement % boundaryInfo % bCurveFlag(k) == ON )     THEN
+                     hex8Mesh % elements(quadElementID,j) % bFaceFlag(flagMap(k)) = ON 
+                     hex8Mesh % elements(quadElementID,j) % bFaceFlag(3) = ON 
+                     hex8Mesh % elements(quadElementID,j) % bFaceFlag(5) = ON 
+                  END IF 
+                  hex8Mesh % elements(quadElementID,j) % bFaceName(flagMap(k)) &
+                                      = currentQuadElement % boundaryInfo % bCurveName(k)
+               END DO 
                
-               quadElementID                                 = quadElementID + 1
-               elementID                                     = elementID + 1
+               quadElementID  = quadElementID + 1
+               elementID      = elementID + 1
                
                CALL quadMesh % elementsIterator % moveToNext()
             END DO 

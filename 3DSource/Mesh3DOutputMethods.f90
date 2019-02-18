@@ -144,6 +144,7 @@
          INTEGER                    :: f, jj, ii, faceID
          INTEGER, EXTERNAL          :: UnusedUnit
          INTEGER                    :: start, nde, increment, eID
+         REAL(KIND=RP), ALLOCATABLE :: faceX(:,:,:)
 !
 !        -----------
 !        Open a file
@@ -151,6 +152,12 @@
 !
          iUnit = UnusedUnit()
          OPEN( UNIT = iUnit, FILE = fName )
+!
+!        ----------------------------------------------------------
+!        To print out face locations, use this as a temporary array
+!        ----------------------------------------------------------
+!
+         ALLOCATE( faceX(3,0:N,0:N) )         
 !
 !        ----------------
 !        Print out header
@@ -177,6 +184,12 @@
 !        ------------------------------
 !
          IF( version == ISM2)     THEN 
+!
+!        --------------------------------------------------------------------------------
+!        TODO: This information is no longer available to write out ISM2 format. It needs
+!        to be added back in
+!        --------------------------------------------------------------------------------
+!
 !            DO j = 1, SIZE(mesh % faces,2)
 !               DO k = 1, SIZE(mesh % faces,1)
 !                  WRITE( iUnit, "(10(2x,i8))") mesh % faces(k,j) % elementIDs, mesh % faces(k,j) % faceNumber &
@@ -196,8 +209,8 @@
 !        Print element connectivity with boundary face information
 !        ---------------------------------------------------------
 !
-         DO j = 1, SIZE(mesh % elements,2)       ! level
-            DO k = 1, SIZE(mesh % elements,1)    ! element on original quad mesh
+         DO j = 1, mesh % numberofLayers             ! level
+            DO k = 1, mesh % numberOfQuadElements    ! element on original quad mesh
                
                eID = mesh % elements(k,j) % globalID
                
@@ -209,47 +222,17 @@
                WRITE( iUnit, *) mesh % elements(k,j) % bFaceFlag
                          
                DO f = 1, 6
-                  
-!                  IF( mesh % elements(k,j) % bFaceFlag(f) == ON )     THEN
-!                     SELECT CASE ( f )
-!                        CASE( 3 ) 
-!                          DO jj = 0, N 
-!                              DO ii = 0, N
-!                                 WRITE( iUnit, * ) mesh % capFaces(k,j-1) % x(:,ii,jj)
-!                              END DO
-!                           END DO
-!                        CASE (5) 
-!                          DO jj = 0, N 
-!                              DO ii = 0, N
-!                                 WRITE( iUnit, * ) mesh % capFaces(k,j) % x(:,ii,jj)
-!                              END DO
-!                           END DO
-!                        CASE DEFAULT 
-!                        
-!                          faceID = mesh % elements(k,j) % faceID(f)
-!                          IF ( eID == mesh % faces(faceID,j) % elementIDs(1) )     THEN
-!                             start     = 0
-!                             nde       = N
-!                             increment = 1
-!                          ELSE 
-!                             increment = mesh % faces(faceID,j) % inc(1)
-!                             IF ( increment > 0 )     THEN
-!                                start = 0
-!                                nde   = N
-!                             ELSE 
-!                                start = N
-!                                nde   = 0
-!                             END IF 
-!                             
-!                          END IF 
-!                          
-!                          DO jj = 0, N 
-!                              DO ii = start , nde, increment
-!                                 WRITE( iUnit, * ) mesh % faces(faceID,j) % x(:,ii,jj)
-!                              END DO
-!                           END DO
-!                     END SELECT 
-!                  END IF
+                  IF ( mesh % elements(k,j) % bFaceFlag(f) == ON )     THEN
+                     CALL FaceFromVolume(xFace   = faceX,                      &
+                                         xVolume = mesh % elements(k,j) % x,   &
+                                         faceID  = f,                          &
+                                         N       = N ) 
+                     DO jj = 0, N 
+                        DO ii = 0, N 
+                           WRITE(iUnit, *) faceX(:,ii,jj) 
+                        END DO 
+                     END DO 
+                  END IF 
                END DO
                
                WRITE( iUnit, *) (TRIM(mesh % elements(k,j) % bFaceName(f)), " ", f = 1, 6)
@@ -257,6 +240,58 @@
          END DO
          
       END SUBROUTINE WriteISMHexMeshFile
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE FaceFromVolume(xFace, xVolume, faceID, N)  
+!
+!        ----------------------------------------------------------------
+!        Given a volume array, return the face array for the given faceID
+!        ----------------------------------------------------------------
+!
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         REAL(KIND=RP) :: xFace(3,0:N,0:N)
+         REAL(KIND=RP) :: xVolume(3,0:N,0:N,0:N)
+         INTEGER       :: N
+         INTEGER       :: faceID
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER   :: NMap(6)
+         INTEGER   :: i, j, k
+         
+         NMap  = [0, N, 0, N, N, 0]
+         SELECT CASE ( faceID )
+            CASE( 1,2 ) 
+               DO j = 0, N 
+                  DO i = 0, N 
+                     xFace(:,i,j) = xVolume(:,i,NMap(faceID),j)
+                  END DO 
+               END DO 
+            CASE( 3,5 )
+               DO j = 0, N 
+                  DO i = 0, N 
+                     xFace(:,i,j) = xVolume(:,i, j, NMap(faceID))
+                  END DO 
+               END DO 
+            CASE( 4,6 )
+               DO j = 0, N 
+                  DO i = 0, N 
+                     xFace(:,i,j) = xVolume(:,NMap(faceID),i,j)
+                  END DO 
+               END DO 
+            CASE DEFAULT 
+            ERROR STOP 
+         END SELECT          
+          
+      END SUBROUTINE FaceFromVolume
       
       END Module MeshOutputMethods3D
       
