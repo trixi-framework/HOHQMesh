@@ -270,6 +270,7 @@
          CLASS(FTObject)                 , POINTER     :: obj
          
          INTEGER                     :: rotMap(3) = [3, 3, 1]
+         INTEGER                     :: rotAxis
 !                  
 !
          quadMesh              => project % mesh
@@ -283,20 +284,13 @@
 !        -----------------------------------------------------------------
 !
          pMutation = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
+         IF(algorithmChoice == SIMPLE_ROTATION_ALGORITHM)   THEN
+            rotAxis = pMutation
+            pMutation = rotMap(pMutation)
+         END IF 
          
-         IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
-            IF ( pMutation < 3 )     THEN
-               CALL quadMesh % permuteMeshDirection(pmutation)
-            END IF 
-         ELSE 
-!
-!           -------------------------------------------------------------------------
-!           Rotation about the z axis requires the 2D mesh to be in a different plane
-!           -------------------------------------------------------------------------
-!
-            IF ( rotMap(pMutation) < 3 )     THEN
-               CALL quadMesh % permuteMeshDirection(rotMap(pMutation))
-            END IF 
+         IF ( pMutation < 3 )     THEN
+            CALL quadMesh % permuteMeshDirection(pmutation)
          END IF 
 !
 !        ---------------------------------------------------------------
@@ -352,7 +346,8 @@
 !        ------------------------------
 !
          CALL sweepNodes( quadMeshNodes, project % hexMesh, dz, pMutation )
-         CALL sweepElements( quadMesh, project % hexMesh, numberofLayers, algorithmChoice, parametersDictionary )
+         CALL sweepElements( quadMesh, project % hexMesh, &
+                             numberofLayers, algorithmChoice, parametersDictionary )
 !
 !        -------------------------------------
 !        Sweep the internal degrees of freedom
@@ -370,7 +365,7 @@
 !        ------------------------------
 !
          IF ( algorithmChoice == SIMPLE_ROTATION_ALGORITHM )     THEN
-            !^ TODO:
+            CALL RotateAll(mesh = project % hexMesh, N = N, rotAxis = rotAxis)
          END IF 
           
          CALL release(quadElementsArray)
@@ -501,10 +496,10 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER                           :: numberOfQuadElements
-         INTEGER                           :: elementID, nodeID, node2DID, quadElementID
-         INTEGER                           :: j, k
-         INTEGER                           :: pMutation
+         INTEGER   :: numberOfQuadElements
+         INTEGER   :: elementID, nodeID, node2DID, quadElementID
+         INTEGER   :: j, k
+         INTEGER   :: pMutation
          INTEGER   :: flagMap(4) = [1,4,2,6]
          
          
@@ -609,15 +604,15 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      FUNCTION rotatedNodeLocation(baseLocation,theta,pmutation)  RESULT(x)
+      FUNCTION rotatedNodeLocation(baseLocation,theta,rotAxis)  RESULT(x)
          IMPLICIT NONE  
          REAL(KIND=RP) :: baseLocation(3), theta
-         INTEGER       :: pmutation
+         INTEGER       :: rotAxis
          REAL(KIND=RP) :: x(3)
          REAL(KIND=RP) :: r
                
          x              = baseLocation
-         SELECT CASE ( pmutation )
+         SELECT CASE ( rotAxis )
             CASE( 1 ) ! rotation about x-Axis
                r    = baseLocation(2)
                x(2) = r*COS(theta)
@@ -645,5 +640,62 @@
          y  = CSHIFT(x, SHIFT = -pmutation)
 
       END FUNCTION permutePosition
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE RotateAll(mesh, N, rotAxis)  
+        IMPLICIT NONE  
+!
+!       ----------
+!       Arguments 
+!       ----------
+!
+        TYPE(StructuredHexMesh) :: mesh
+        INTEGER                 :: rotAxis
+        INTEGER                 :: N
+!
+!       ---------------
+!       Local Variables
+!       ---------------
+!
+         INTEGER       :: rotMap(3) = [3, 3, 1]
+         INTEGER       :: k, j, i, l, m
+         REAL(KIND=RP) :: rotated(3)
+!
+!        ----------------
+!        Rotate the nodes
+!        ----------------
+!
+         DO l = 0, SIZE(mesh % nodes,2)-1
+            DO m = 1, SIZE(mesh % nodes,1)
+               rotated = rotatedNodeLocation(baseLocation = mesh % nodes(m,l) % x,            &
+                                             theta        = mesh % nodes(m,l) % x(rotMap(rotAxis)), &
+                                             rotAxis    = rotAxis)
+               mesh % nodes(m,l) % x = rotated
+            END DO   
+         END DO  
+!
+!        -----------------------------------
+!        Rotate the internal DOFs
+!        With rotation, all faces are curved
+!        -----------------------------------
+!
+         DO l = 1, mesh % numberofLayers             ! level
+            DO m = 1, mesh % numberOfQuadElements    ! element on original quad mesh
+               mesh % elements(m,l) % bFaceFlag = ON
+               DO k = 0, N 
+                  DO j = 0, N 
+                     DO i = 0, N 
+                        rotated = rotatedNodeLocation(baseLocation = mesh % elements(m,l) % x(:,i,j,k), &
+                                                      theta        = mesh % elements(m,l) % x((rotMap(rotAxis)),i,j,k),  &
+                                                      rotAxis    = rotAxis)
+                        mesh % elements(m,l) % x(:,i,j,k) = rotated
+                     END DO 
+                  END DO 
+               END DO 
+            END DO 
+         END DO
+        
+      END SUBROUTINE RotateAll
 
       END Module SimpleSweepModule 
