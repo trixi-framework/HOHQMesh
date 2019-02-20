@@ -759,7 +759,6 @@
 !        Example block is:
 !
 !         \begin{MeshParameters}
-!            mesh type = "conforming"
 !            background grid size = [1.0, 1.0, 1.0]
 !         \end{MeshParameters}
 !
@@ -801,13 +800,13 @@
 !        ---------
 !
          typeName = "conforming"
-         msg      = "Control file is missing the mesh type. Using default 'conforming'."
-         CALL SetStringValueFromDictionary(valueToSet = typeName,               &
-                                           sourceDict = paramsDict,             &
-                                           key        = MESH_TYPE_KEY,          &
-                                           errorLevel = FT_ERROR_WARNING,       &
-                                           message    = msg,                    &
-                                           poster     = "SetMeshParametersBlock")         
+!         msg      = "Control file is missing the mesh type. Using default 'conforming'."
+!         CALL SetStringValueFromDictionary(valueToSet = typeName,               &
+!                                           sourceDict = paramsDict,             &
+!                                           key        = MESH_TYPE_KEY,          &
+!                                           errorLevel = FT_ERROR_WARNING,       &
+!                                           message    = msg,                    &
+!                                           poster     = "SetMeshParametersBlock")         
          IF( typeName == "conforming" )     THEN
             params % meshType = 0! CONFORMING
          ELSE
