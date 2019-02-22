@@ -653,9 +653,9 @@
 !                    mesh sizes adjusted to have enough between them
 !                    -----------------------------------------------------------
 !
-                     dot = DOT_PRODUCT(nHatInner,nHatOuter)
                      
-                     IF( dot > closeCurveNormalAlignment )     THEN
+                     dot = DOT_PRODUCT(nHatInner,nHatOuter)
+                     IF( dot< -closeCurveNormalAlignment )     THEN
                         outerInvScale = MAX(d,outerInvScale)
                         innerInvScale = MAX(d,innerInvScale)
                         CALL outerSegment % setCurveInvScaleForIndex(outerInvScale,i)
@@ -741,7 +741,7 @@
                   d = closeCurveFactor/d ! Inverse length - 3 cells
 !
                   dot = DOT_PRODUCT(nHatInner,nHatOuter)
-                  IF( dot > closeCurveNormalAlignment )     THEN
+                  IF( dot < -closeCurveNormalAlignment )     THEN
                      innerInvScale = MAX(d,innerInvScale)
                      CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,j)
                   END IF
