@@ -44,6 +44,7 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE initWithPointsNameAndID( self, t, x, y, z, curveName, id )  
+         USE Geometry
          IMPLICIT NONE  
 !
 !        ---------
@@ -59,11 +60,30 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER :: N, nDim
+         INTEGER       :: N, nDim
+         REAL(KIND=RP) :: xx(2,SIZE(x)), tmp
+         INTEGER       :: circ, j
+!
+!        -----------------------------
+!        Check orientation of the data
+!        -----------------------------
+!
+         N       = SIZE(x)
+         xx(1,:) = x
+         xx(2,:) = y
+         circ = Circulation(x = xx)
+         IF(circ == CLOCKWISE)     THEN
+            CALL swapOrder(x = x,N = N)
+            CALL swapOrder(x = y,N = N)
+            CALL swapOrder(x = z,N = N)
+            CALL swapOrder(x = t,N = N)
+            DO j = 1, N 
+               t(j) = 1.0_RP - t(j)
+            END DO 
+         END IF
 
          CALL self % SMCurve % initWithNameAndID(curveName,id)
          
-         N              = SIZE(x)
          nDim           = N
          self%numKnots  = N
          
@@ -258,5 +278,21 @@
       return 
                                                                         
    END FUNCTION seval                                          
-      
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE swapOrder(x,N)  
+         IMPLICIT NONE
+         INTEGER       :: N
+         REAL(KIND=RP) :: x(N)
+         INTEGER       :: j
+         REAL(KIND=RP) :: tmp
+         
+         DO j = 1, N/2
+            tmp      =  x(N-j+1)
+            x(N-j+1) = x(j)
+            x(j)     = tmp
+         END DO 
+         
+      END SUBROUTINE swapOrder
       END Module SMSplineCurveClass
