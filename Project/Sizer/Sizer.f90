@@ -43,6 +43,7 @@
          PROCEDURE :: addSizerLineControl
          PROCEDURE :: addBoundaryCurve
          PROCEDURE :: sizeFunctionMinimumOnBox
+         PROCEDURE :: setBaseSize
          
       END TYPE MeshSizer
       
@@ -68,7 +69,8 @@
          
          CALL self % FTObject % init()
          
-         self % baseSize                = MAXVAL(baseSize)
+         CALL self % setBaseSize(MAXVAL(baseSize))
+         
          self % noOfInnerBoundaries     = 0
          self % noOfInterfaceBoundaries = 0
          self % xMin                    = xMin
@@ -126,6 +128,15 @@
             self => NULL() 
          END IF      
       END SUBROUTINE releaseSizer
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE setBaseSize(self, baseSize)  
+         IMPLICIT NONE  
+         CLASS(MeshSizer) :: self
+         REAL(KIND=RP)    :: baseSize
+         self % baseSize = baseSize          
+      END SUBROUTINE setBaseSize
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

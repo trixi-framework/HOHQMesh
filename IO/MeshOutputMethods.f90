@@ -280,6 +280,61 @@
 !         
       END SUBROUTINE WriteISMMeshFile
 !
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE Write2DMeshStatistics( mesh, statsFileName)
+         USE FTMutableObjectArrayClass
+         USE MeshQualityAnalysisClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS( SMMesh )  , POINTER :: mesh
+         CHARACTER(LEN=*)          :: statsFileName
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTMutableObjectArray) , POINTER :: badElements => NULL()
+         INTEGER                               :: statsFileUnit, k
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(SMElement)            , POINTER :: e   => NULL()
+         
+         OPEN(FILE = statsFileName, UNIT = statsFileUnit)
+         badElements => BadElementsInMesh( mesh )
+         
+         IF ( ASSOCIATED(POINTER = badElements) )     THEN
+            PRINT *, badElements % COUNT()," Bad element(s) Found"
+            WRITE(statsFileUnit,*) " "
+            WRITE(statsFileUnit,*) "----------------"
+            WRITE(statsFileUnit,*) "Bad Element Info"
+            WRITE(statsFileUnit,*) "----------------"
+            WRITE(statsFileUnit,*) " "
+            
+            DO k = 1, badElements % COUNT()
+               obj => badElements % objectAtIndex(indx = k)
+               CALL cast(obj,e)
+               CALL PrintBadElementInfo( e, statsFileUnit )
+            END DO
+            CALL release(badElements)
+            
+         ELSE IF (PrintMessage)     THEN 
+            PRINT *, "********* Elements are OK *********"
+         END IF 
+         
+         WRITE(statsFileUnit,*) " "
+         WRITE(statsFileUnit,*) "------------------------"
+         WRITE(statsFileUnit,*) "2D Mesh Quality Measures"
+         WRITE(statsFileUnit,*) "------------------------"
+         WRITE(statsFileUnit,*) " "
+         CALL OutputMeshQualityMeasures( mesh, fUnit  = statsFileUnit )
+         CLOSE(statsFileUnit)
+         
+      END SUBROUTINE Write2DMeshStatistics
+!
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE gatherEdgeInfo( edge, info )

@@ -107,3 +107,37 @@
       ReturnOnFatalError = catch() .AND. (maximumErrorSeverity() > FT_ERROR_WARNING)
  
    END FUNCTION ReturnOnFatalError
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE trapExceptions  
+         USE SharedExceptionManagerModule
+         IMPLICIT NONE 
+
+         INTEGER                    :: errorSeverity = FT_ERROR_NONE
+         TYPE(FTException), POINTER :: exception
+         
+         errorSeverity = FT_ERROR_NONE
+         
+         IF ( catch() )     THEN
+            PRINT *
+            PRINT *, "------------------------------------------------------------------"
+            PRINT *
+            PRINT *, "The following errors were found when constructing the project:"
+            
+            DO
+               exception => popLastException()
+               IF ( .NOT.ASSOCIATED(exception) )     EXIT
+               CALL exception % printDescription(6)
+               errorSeverity = MAX(errorSeverity, exception % severity())
+            END DO
+            PRINT *
+            PRINT *, "------------------------------------------------------------------"
+            PRINT *
+            
+            IF ( errorSeverity > FT_ERROR_WARNING )     THEN
+               STOP "The Errors were Fatal. Cannot generate mesh." 
+            END IF 
+         END IF 
+
+      END SUBROUTINE trapExceptions

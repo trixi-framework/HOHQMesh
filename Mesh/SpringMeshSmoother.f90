@@ -122,7 +122,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE SpringSmoothMesh( self, mesh, model )
+      SUBROUTINE SpringSmoothMesh( self, mesh, model, errorCode )
          IMPLICIT NONE
 !
 !        ---------
@@ -132,6 +132,7 @@
          CLASS (SpringMeshSmoother)    :: self
          CLASS (SMMesh)      , POINTER :: mesh
          CLASS (SMModel)     , POINTER :: model
+         INTEGER                       :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -162,7 +163,7 @@
             node  %  activeStatus = ACTIVE
             CALL mesh % nodesIterator % moveToNext()
          END DO
-         CALL SetNodeActiveStatus( mesh, model )
+         CALL SetNodeActiveStatus( mesh, model, errorCode )
 !
 !        ------------------------
 !        Do spring-mass smoothing

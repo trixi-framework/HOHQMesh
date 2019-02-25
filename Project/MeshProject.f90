@@ -272,8 +272,29 @@
          CALL releaseFTObject(self = obj)
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             self => NULL() 
-         END IF      
+         END IF     
+          
       END SUBROUTINE releaseMeshProject
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE resetProject(self)  
+         IMPLICIT NONE  
+         CLASS(MeshProject), POINTER :: self
+         
+         IF ( ASSOCIATED(self % grid) )     THEN
+            CALL release(self = self % grid) 
+            self % grid => NULL()
+         END IF
+
+         CALL BuildQuadtreeGrid(self)
+         
+         IF ( ASSOCIATED( self % mesh) )     THEN
+            CALL release(self = self % mesh) 
+            self % mesh => NULL()
+         END IF 
+
+      END SUBROUTINE resetProject
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -349,7 +370,6 @@
             IF(ReturnOnFatalError())     RETURN 
             
             self % meshParams % backgroundGridSize = 2*backgroundGrid % dx
-            self % backgroundParams                = backgroundGrid
             
             xMax = backgroundGrid % x0 + backgroundGrid % N*backgroundGrid % dx
             
@@ -367,19 +387,17 @@
             IF(ReturnOnFatalError())     RETURN 
             
          END IF 
+         self % backgroundParams = backgroundGrid
 !
 !        -----------------------
 !        Build the quadtree grid
 !        -----------------------
 !
-         NULLIFY(parent)
-         ALLOCATE(self % grid)
-         CALL self % grid % initGridWithParameters( backgroundGrid % dx, backgroundGrid % x0, backgroundGrid % N,&
-                                   parent, (/0,0,0/), 0)
+         CALL BuildQuadtreeGrid(self)
 !
-!-------------------------------------------------------------------------------
-!                               Build up Sizer properties
-!-------------------------------------------------------------------------------
+!        -------------------------
+!        Build up Sizer properties
+!        -------------------------
 !
          IF ( controlDict % containsKey(key = REFINEMENT_REGIONS_KEY) )     THEN
          
@@ -558,6 +576,36 @@
 !         IF(smootherWasRead) RETURN 
          
       END SUBROUTINE BuildProject
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE BuildQuadtreeGrid(self)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshProject)        :: self
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CLASS(QuadTreeGrid), POINTER :: parent => NULL()
+         NULLIFY(parent)
+         
+         IF(ASSOCIATED(self % grid))      THEN
+            CALL release(self % grid)
+            self % grid => NULL()
+         END IF 
+         
+         ALLOCATE(self % grid)
+         CALL self % grid % initGridWithParameters( self % backgroundParams % dx, &
+                                                    self % backgroundParams % x0, &
+                                                    self % backgroundParams % N,  &
+                                                     parent, (/0,0,0/), 0)
+      END SUBROUTINE BuildQuadtreeGrid
 !
 !////////////////////////////////////////////////////////////////////////
 !

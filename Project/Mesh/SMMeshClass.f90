@@ -158,6 +158,11 @@
          CALL release(self % elements)
          CALL release(self % edges)
          
+         IF(ALLOCATED(curveTypeForID))       DEALLOCATE(curveTypeForID)
+         IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
+         
+         CALL destroyEdgeArrays(self)
+         
       END SUBROUTINE destructSMMesh
 !
 !//////////////////////////////////////////////////////////////////////// 

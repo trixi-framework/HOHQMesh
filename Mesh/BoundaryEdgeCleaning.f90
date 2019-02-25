@@ -16,7 +16,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUpBoundaryCurves( mesh, model ) 
+      SUBROUTINE CleanUpBoundaryCurves( mesh, model, errorCode ) 
       IMPLICIT NONE 
 !
 !        ---------
@@ -25,6 +25,7 @@
 !
          TYPE(SMMesh)            :: mesh
          CLASS(SMModel), POINTER :: model
+         INTEGER                 :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -41,7 +42,7 @@
 !
          CALL MakeElementToEdgeConnections( mesh )
          CALL MakeNodeToEdgeConnections   ( mesh )
-         CALL MakeNodeToElementConnections( mesh )
+         CALL MakeNodeToElementConnections( mesh, errorCode )
          
          numBoundaries = boundaryEdgesArray % COUNT()
 !

@@ -93,7 +93,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE makeNodeToElementConnections( mesh )
+      SUBROUTINE makeNodeToElementConnections( mesh, errorCode )
       USE MeshOutputMethods, ONLY : WriteSkeletonToTecplot
 !
 !     --------------------------------------------------------
@@ -110,13 +110,14 @@
 !        ---------
 !
          TYPE(SMMesh) :: mesh
+         INTEGER      :: errorCode
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
          CLASS(SMNode)               , POINTER :: node => NULL()
-         CLASS(SMElement)            , POINTER :: e => NULL()
+         CLASS(SMElement)            , POINTER :: e    => NULL()
          INTEGER                               :: k, id, numNodes
          CLASS(FTLinkedListIterator), POINTER  :: iterator => NULL()
          CLASS(FTObject)            , POINTER  :: obj => NULL()
@@ -127,6 +128,7 @@
 !        grid based method is 8.
 !        -----------------------------------------------------
 !
+         errorCode = NONE 
          CALL deallocateNodeToElementConnections
          
          numNodes = mesh % nodes % COUNT()
@@ -157,14 +159,18 @@
                   PRINT *, "**************************************************************************"
                   PRINT *, " "
                   CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
+                  errorCode = VALENCE_TOO_HIGH_ERROR_CODE
+                  EXIT
                   STOP "Meshing Terminated"
                END IF 
                
                elementsForNodes(numElementsForNode(id),id) % element => e
             END DO
-           
+            IF(errorCode > NONE )     EXIT 
             CALL iterator % moveToNext()
          END DO
+         
+         IF(errorCode > NONE ) CALL deallocateNodeToElementConnections
          
       END SUBROUTINE makeNodeToElementConnections
 !

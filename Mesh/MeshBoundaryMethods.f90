@@ -1090,7 +1090,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE SetNodeActiveStatus(mesh,model)
+      SUBROUTINE SetNodeActiveStatus(mesh, model, errorCode)
 !
 !     ------------------------------------------------------------------
 !     Note: In this routine it should not be necessary to use the edges.
@@ -1108,6 +1108,7 @@
 !
          CLASS(SMMesh) , POINTER :: mesh
          CLASS(SMModel), POINTER :: model
+         INTEGER                 :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -1136,7 +1137,7 @@
          CALL iterator % init()
    
          CALL CollectBoundaryEdges( mesh )
-         CALL MakeNodeToElementConnections( mesh )
+         CALL MakeNodeToElementConnections( mesh, errorCode )
          CALL MakeElementToEdgeConnections( mesh )
         
         IF ( model % numberOfInnerCurves + model % numberOfOuterCurves > 0 )     THEN

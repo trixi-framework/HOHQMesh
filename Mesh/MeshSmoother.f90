@@ -75,11 +75,12 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE smoothMesh( self, mesh, model )
+      SUBROUTINE smoothMesh( self, mesh, model, errorCode )
          IMPLICIT NONE
-         CLASS (MeshSmoother)   :: self
+         CLASS (MeshSmoother)          :: self
          CLASS (SMMesh)      , POINTER :: mesh
          CLASS (SMModel)     , POINTER :: model
+         INTEGER                       :: errorCode
       END SUBROUTINE smoothMesh
       
       END MODULE MeshSmootherClass

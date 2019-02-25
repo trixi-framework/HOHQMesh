@@ -97,11 +97,47 @@
          
          INTEGER       :: refinementType          = 2
          INTEGER       :: boundarySmoothingPasses = 1
-
+!
+!        -----------
+!        Error Codes
+!        -----------
+!
+         INTEGER, PARAMETER :: A_OK_ERROR_CODE             = 0
+         INTEGER, PARAMETER :: VALENCE_TOO_HIGH_ERROR_CODE = 1
+         
 !        ========
          CONTAINS
 !        ========
 !         
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE SetUpPreferences
+         IMPLICIT NONE
+         INTEGER           :: preferencesFileUnit
+         INTEGER, EXTERNAL :: UnusedUnit
+         INTEGER           :: ios
+!
+!        ----------------------------------------------------
+!        Read in the preferences file if it exists, write out
+!        default values if it doesn't
+!        ----------------------------------------------------
+!
+         preferencesFileUnit = UnusedUnit()
+         OPEN( UNIT   = preferencesFileUnit, &
+               FILE   = "HOMesh2DPreferences.txt", &
+               STATUS = "OLD", IOSTAT = ios )
+         IF( ios == 0 )     THEN
+            CALL LoadPreferences(preferencesFileUnit)
+            CLOSE(preferencesFileUnit)
+         ELSE
+            OPEN( UNIT = preferencesFileUnit, FILE = "HOMesh2DPreferences.txt", &
+                  STATUS = "NEW", IOSTAT = ios )
+            CALL WriteDefaultPreferences(preferencesFileUnit)
+            CLOSE(preferencesFileUnit)
+         END IF
+         
+      END SUBROUTINE SetUpPreferences
 !
 !////////////////////////////////////////////////////////////////////////
 !

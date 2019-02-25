@@ -22,6 +22,68 @@
       CONTAINS 
 !     ========
 !
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE GenerateQuadMesh(project, errorCode)  
+         USE MeshProjectClass
+         USE MeshCleaner
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(MeshProject), POINTER :: project
+         INTEGER                     :: errorCode
+!
+         IF(PrintMessage) PRINT *, "Generate 2D mesh..."
+         
+         CALL GenerateQuadMeshForProject( project )
+         CALL trapExceptions !Abort on fatal exceptions
+!
+!        ------------------------
+!        Perform topology cleanup
+!        ------------------------
+!
+         CALL PerformTopologyCleanup(project % mesh, errorCode)
+!
+!        ------------------------
+!        Smooth mesh if requested
+!        ------------------------
+!
+         IF(Associated(project % smoother))     THEN
+            IF(PrintMessage) PRINT *, "   Begin Smoothing..."
+            CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
+            IF(PrintMessage) PRINT *, "   Smoothing done."
+         END IF
+!
+!        -------------
+!        Clean up mesh
+!        -------------
+!
+         IF(PrintMessage) PRINT *, "   Performing final mesh cleanup..."
+            CALL PerformFinalMeshCleanup( project % mesh, project % model, errorCode )
+         IF(PrintMessage) PRINT *, "   Mesh cleanup done."
+!
+!        --------------------------------------
+!        Smooth mesh one more time if requested
+!        --------------------------------------
+!
+         IF(Associated(project % smoother))     THEN
+            IF(PrintMessage) PRINT *, "   Begin Final Smoothing..."
+            CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
+            IF(PrintMessage) PRINT *, "   final Smoothing done."
+         END IF
+!
+!        -----------------------------------------
+!        Set boundary information for the elements
+!        and compute the patch interpolated points
+!        inside the element
+!        -----------------------------------------
+!
+         CALL CompleteElementConstruction(project)
+         
+      END SUBROUTINE GenerateQuadMesh
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -55,6 +117,7 @@
       INTEGER                      :: numberOfBoundaries,numBoundaryEdgeLists
       INTEGER                      :: j
       INTEGER                      :: idOfOuterBoundary
+      INTEGER                      :: errorCode
 !
 !     ---------------------
 !     Generate the quadtree
@@ -92,6 +155,7 @@
 !     ---------------------------------------------
 !
       CALL release(grid)
+      NULLIFY(project % grid)
 !
 !     --------------------------------------------------------------
 !     Now make the mesh conform to exterior or interface boundaries. 
@@ -176,7 +240,7 @@
          RETURN
       END IF 
 
-      CALL CleanUpBoundaryCurves( mesh, model )
+      CALL CleanUpBoundaryCurves( mesh, model, errorCode )
 !
 !     ------------------------------------------
 !     The edge lists are also no longer in sync.

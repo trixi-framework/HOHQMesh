@@ -89,7 +89,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE laplaceSmoothMesh( self, mesh, model )  
+      SUBROUTINE laplaceSmoothMesh( self, mesh, model, errorCode )  
          IMPLICIT NONE
 !
 !        ---------
@@ -99,6 +99,7 @@
          CLASS (LaplaceMeshSmoother)   :: self
          CLASS (SMMesh)      , POINTER :: mesh
          CLASS (SMModel)     , POINTER :: model
+         INTEGER                       :: errorCode
 !
 !        ---------------
 !        local variables

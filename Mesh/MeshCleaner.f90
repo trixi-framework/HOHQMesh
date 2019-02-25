@@ -28,7 +28,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE PerformTopologyCleanup( mesh )
+      SUBROUTINE PerformTopologyCleanup( mesh, errorCode )
          USE SMMeshClass
          IMPLICIT NONE 
 !
@@ -37,6 +37,7 @@
 !        ---------
 !
          CLASS(SMMesh) :: mesh
+         INTEGER       :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -52,7 +53,7 @@
 !        Reduce valence at high valence nodes
 !        ------------------------------------
 !
-         CALL ReduceNodeValences( mesh, numberOfValenceChanges )
+         CALL ReduceNodeValences( mesh, numberOfValenceChanges, errorCode )
           
          IF ( numberOfValenceChanges > 0 )     THEN
             valenceHasChanged = .true.
@@ -65,7 +66,7 @@
 !        Remove diamonds
 !        ---------------
 !
-         CALL RemoveDiamondElements( mesh, numberOfDiamondsRemoved )
+         CALL RemoveDiamondElements( mesh, numberOfDiamondsRemoved, errorCode )
          
          IF ( numberOfDiamondsRemoved > 0 )     THEN
             diamondsHaveBeenRemoved = .true.
@@ -89,7 +90,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReduceNodeValences( mesh, numberOfValenceChanges )
+      SUBROUTINE ReduceNodeValences( mesh, numberOfValenceChanges, errorCode )
          IMPLICIT NONE 
 !
 !        ---------
@@ -98,6 +99,7 @@
 !
          TYPE (SMMesh) :: mesh
          INTEGER       :: numberOfValenceChanges
+         INTEGER       :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -115,7 +117,7 @@
 !        cleanup routines.
 !        -------------------------------------------------------------
 !                  
-         CALL MakeNodeToElementConnections( mesh )
+         CALL MakeNodeToElementConnections( mesh, errorCode )
          
          ALLOCATE(localNumElementsForNode(SIZE(numElementsForNode)))
          localNumElementsForNode = numElementsForNode
@@ -127,7 +129,7 @@
          DO nodeID = 1, SIZE(localNumElementsForNode)
             SELECT CASE ( localNumElementsForNode(nodeID) )
                CASE( 7 )
-                  CALL CleanUp7ValenceNode_InMesh(nodeID, mesh)
+                  CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode)
                   numberOfValenceChanges = numberOfValenceChanges + 1
                CASE( 8 )
 !                  CALL CleanUp8ValenceNode_InMesh(nodeID, mesh) TODO:
@@ -142,7 +144,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE RemoveDiamondElements( mesh, numberOfDiamondsRemoved ) 
+      SUBROUTINE RemoveDiamondElements( mesh, numberOfDiamondsRemoved, errorCode ) 
          IMPLICIT NONE 
 !
 !        ---------
@@ -150,7 +152,8 @@
 !        ---------
 !
          TYPE (SMMesh) :: mesh
-         INTEGER                :: numberOfDiamondsRemoved
+         INTEGER       :: numberOfDiamondsRemoved
+         INTEGER       :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -161,7 +164,7 @@
          CLASS(FTObject)            , POINTER :: obj             => NULL()
 !
          numberOfDiamondsRemoved = 0
-         CALL MakeNodeToElementConnections( mesh )
+         CALL MakeNodeToElementConnections( mesh, errorCode )
 !
 !        -------------------------------------------
 !        Go through each element and remove diamonds
@@ -174,7 +177,7 @@
             obj => elementIterator % object()
             CALL cast(obj,currentElement)
             
-            CALL DeleteElementIfDiamond( currentElement, mesh )
+            CALL DeleteElementIfDiamond( currentElement, mesh, errorCode )
             
             IF ( currentElement % remove )     THEN
                numberOfDiamondsRemoved = numberOfDiamondsRemoved + 1
@@ -198,7 +201,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUp7ValenceNode_InMesh(id,mesh) 
+      SUBROUTINE CleanUp7ValenceNode_InMesh(id, mesh, errorCode) 
       USE ErrorTypesModule
 !
 !     ----------------------------------------------
@@ -213,8 +216,9 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                :: id
+         INTEGER       :: id
          TYPE (SMMesh) :: mesh
+         INTEGER       :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -242,7 +246,7 @@
 !        Make current connections
 !        ------------------------
 !                  
-         CALL MakeNodeToElementConnections( mesh )
+         CALL MakeNodeToElementConnections( mesh, errorCode )
          CALL MakeNodeToEdgeConnections   ( mesh )
 !
 !        ---------------------------------------
@@ -435,7 +439,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE PerformFinalMeshCleanup( mesh , model ) 
+      SUBROUTINE PerformFinalMeshCleanup( mesh , model, errorCode ) 
          USE SMModelClass
          IMPLICIT NONE
 !
@@ -445,6 +449,7 @@
 !
          CLASS(SMMesh) , POINTER :: mesh
          CLASS(SMModel), POINTER :: model
+         INTEGER                 :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -477,7 +482,7 @@
 !           Clean up boundary elements
 !           --------------------------
 !
-            CALL CleanUpBoundaryElements( mesh, model )
+            CALL CleanUpBoundaryElements( mesh, model, errorCode )
          ELSE
 !
 !           -----------------------
@@ -509,7 +514,7 @@
 !           Fix triangular/chevron elements
 !           -------------------------------
 !
-            CALL MakeNodeToElementConnections( mesh )
+            CALL MakeNodeToElementConnections( mesh, errorCode )
             CALL CleanUpChevronElements( badElements, shapeMeasures, numberOfChevrons )
             CALL deallocateNodeToElementConnections
 !
@@ -560,7 +565,7 @@
 !           --------------------------
 !
             CALL UnmarkNodesNearBoundaries( mesh % nodesIterator )
-            CALL CleanUpBoundaryElements( mesh, model )
+            CALL CleanUpBoundaryElements( mesh, model, errorCode )
          END IF
          
          
@@ -598,7 +603,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUpBoundaryElements( mesh, model ) 
+      SUBROUTINE CleanUpBoundaryElements( mesh, model, errorCode ) 
          USE SMModelClass
          USE ConectionsModule
          IMPLICIT NONE 
@@ -609,6 +614,7 @@
 !
          CLASS(SMMesh) , POINTER :: mesh
          CLASS(SMModel), POINTER :: model
+         INTEGER                 :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -634,14 +640,14 @@
 !        Gather boundary Edges, etc in the following call
 !        ------------------------------------------------
 !
-         CALL SetNodeActiveStatus(mesh,model)
+         CALL SetNodeActiveStatus(mesh,model, errorCode)
 !
 !        -----------------------------------------------
 !        Run through physical boundary elements and make
 !        the boundary angles 90 degrees.
 !        -----------------------------------------------
 !
-         CALL makeNodeToElementConnections(mesh)
+         CALL makeNodeToElementConnections(mesh, errorCode)
          DO j = 1, numBoundaries
             IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
             
@@ -718,7 +724,7 @@
 !          falls on the interface boundary.
 !          ----------------------------------------------------
 !
-            CALL makeNodeToElementConnections(mesh)
+            CALL makeNodeToElementConnections(mesh, errorCode)
             
             nodesIterator => mesh % nodesIterator
             CALL nodesIterator % setToStart()
@@ -1086,7 +1092,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE DeleteElementIfDiamond(e, mesh) 
+      SUBROUTINE DeleteElementIfDiamond(e, mesh, errorCode) 
          IMPLICIT NONE
 !
 !        ---------
@@ -1095,6 +1101,7 @@
 !
          CLASS(SMElement), POINTER :: e
          TYPE(SMMesh)              :: mesh
+         INTEGER                   :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -1198,7 +1205,7 @@
 !        New nodes were added, so we must re-compute the element connections
 !        -------------------------------------------------------------------
 !
-         CALL makeNodeToElementConnections(mesh)
+         CALL makeNodeToElementConnections(mesh, errorCode)
                
       END SUBROUTINE DeleteElementIfDiamond 
 
