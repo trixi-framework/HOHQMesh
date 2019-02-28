@@ -177,7 +177,7 @@
 !        -----------------------------------------------------------------------
 !
          globalGridCount = 0
-         CALL GatherGridsAtLevel_FromRtGrid_( level, self )
+         CALL GatherGridsAtLevel_FromRtGrid_( level, self ) !Contains weak references
          
          SELECT CASE ( operation )
          

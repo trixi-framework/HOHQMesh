@@ -356,6 +356,11 @@
          END IF
          
          NULLIFY( self % neighborL, self % neighborR, self % neighborT, self % neighborB )
+         
+         highestLevel         = 0
+         globalNodeCount      = 0
+         globalGridCount      = 0
+         numberOfGridsAtLevel = 0
 
       END SUBROUTINE DestructGrid
 !

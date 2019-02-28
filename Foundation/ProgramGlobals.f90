@@ -102,8 +102,10 @@
 !        Error Codes
 !        -----------
 !
-         INTEGER, PARAMETER :: A_OK_ERROR_CODE             = 0
-         INTEGER, PARAMETER :: VALENCE_TOO_HIGH_ERROR_CODE = 1
+         INTEGER, PARAMETER :: A_OK_ERROR_CODE                  = 0
+         INTEGER, PARAMETER :: VALENCE_TOO_HIGH_ERROR_CODE      = 1
+         INTEGER, PARAMETER :: CURVE_NOT_FOUND_ERROR_CODE       = 2
+         INTEGER, PARAMETER :: UNASSOCIATED_POINTER_ERROR_CODE  = 3
          
 !        ========
          CONTAINS

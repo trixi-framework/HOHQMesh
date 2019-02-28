@@ -324,7 +324,7 @@
 !        ----------------------
 !
          p % node => q % node
-         CALL p % node % retain()
+         CALL q % node % retain()
          
       END SUBROUTINE PointNodePtr_To_
 !

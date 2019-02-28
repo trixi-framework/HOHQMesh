@@ -115,7 +115,7 @@
 !
          PROCEDURE :: initWithCurve    => initFRSegmentedCurve
          PROCEDURE :: destruct         => DestructFRSegmentedCurve
-         PROCEDURE :: printDescription => printFRSegmentedCurve;
+         PROCEDURE :: printDescription => printFRSegmentedCurve
          PROCEDURE :: reverse          => reverseFRSegmentedCurve
          PROCEDURE :: COUNT            => FRSegmentedCurveCount
          PROCEDURE :: setCurveInvScaleForIndex

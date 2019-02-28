@@ -54,6 +54,7 @@
 !        ------------------------------------
 !
          CALL ReduceNodeValences( mesh, numberOfValenceChanges, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
           
          IF ( numberOfValenceChanges > 0 )     THEN
             valenceHasChanged = .true.
@@ -67,6 +68,7 @@
 !        ---------------
 !
          CALL RemoveDiamondElements( mesh, numberOfDiamondsRemoved, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
          
          IF ( numberOfDiamondsRemoved > 0 )     THEN
             diamondsHaveBeenRemoved = .true.
@@ -118,6 +120,7 @@
 !        -------------------------------------------------------------
 !                  
          CALL MakeNodeToElementConnections( mesh, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
          
          ALLOCATE(localNumElementsForNode(SIZE(numElementsForNode)))
          localNumElementsForNode = numElementsForNode
@@ -647,31 +650,37 @@
 !        the boundary angles 90 degrees.
 !        -----------------------------------------------
 !
-         CALL makeNodeToElementConnections(mesh, errorCode)
-         DO j = 1, numBoundaries
-            IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
-            
-            obj  => boundaryEdgesArray % objectAtIndex(j)
-            CALL cast(obj,currentEdgeList)
-            
-            CALL edgeListIterator % initWithFTLinkedList(currentEdgeList)
-            CALL edgeListIterator % setToStart()
-            
-            DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
-               obj => EdgeListIterator % object()
-               CALL cast(obj,currentEdge)
-               IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
-                  e   => currentEdge % elements(1) % element
+         IF( errorCode == A_OK_ERROR_CODE)     THEN 
+            CALL makeNodeToElementConnections(mesh, errorCode)
+            DO j = 1, numBoundaries
+               IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
+               
+               obj  => boundaryEdgesArray % objectAtIndex(j)
+               CALL cast(obj,currentEdgeList)
+               
+               CALL edgeListIterator % initWithFTLinkedList(currentEdgeList)
+               CALL edgeListIterator % setToStart()
+               
+               DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
+                  obj => EdgeListIterator % object()
+                  CALL cast(obj,currentEdge)
+                  IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
+                     e   => currentEdge % elements(1) % element
 !               BUG: puts boundary points in the wrong place.
-                  CALL CleanUpBoundaryElement( e, model )
-               END IF 
-
-               CALL EdgeListIterator % moveToNext()
+                     CALL CleanUpBoundaryElement( e, model )
+                  END IF 
+   
+                  CALL EdgeListIterator % moveToNext()
+               END DO
+               
+               CALL edgeListIterator % destruct()
             END DO
-            
-            CALL edgeListIterator % destruct()
-         END DO
-         CALL deallocateNodeToEdgeConnections
+            CALL deallocateNodeToEdgeConnections
+         ELSE
+            CALL mesh % destroyEdgeArrays()
+            CALL deallocateNodeToElementConnections
+            RETURN 
+         END IF 
 !
 !        -------------------------------------------
 !        Run through the interface elements
@@ -726,52 +735,59 @@
 !
             CALL makeNodeToElementConnections(mesh, errorCode)
             
-            nodesIterator => mesh % nodesIterator
-            CALL nodesIterator % setToStart()
-            DO WHILE ( .NOT.nodesIterator % isAtEnd() )
-               obj => nodesIterator % object()
-               CALL cast(obj,meshNode)
+            IF( errorCode == A_OK_ERROR_CODE)     THEN 
+               nodesIterator => mesh % nodesIterator
+               CALL nodesIterator % setToStart()
+               DO WHILE ( .NOT.nodesIterator % isAtEnd() )
+                  obj => nodesIterator % object()
+                  CALL cast(obj,meshNode)
 !
 !              ------------------------------
 !              See it this is a boundary node
 !              ------------------------------
 !
-               IF ( meshNode % bCurveID > UNDEFINED .AND. meshNode % distToBoundary == 0.0_RP )     THEN
+                  IF ( meshNode % bCurveID > UNDEFINED .AND. meshNode % distToBoundary == 0.0_RP )     THEN
 !
 !                 --------------------------------------------
 !                 See if it is a boundary node on an interface
 !                 --------------------------------------------
 !
-                  IF ( boundaryEdgesType(meshNode % bCurveID) == INTERFACE_EDGES )     THEN
+                     IF ( boundaryEdgesType(meshNode % bCurveID) == INTERFACE_EDGES )     THEN
 !
 !                    ------------------------------------------------
 !                    Find the elements associated with this node that
 !                    ave only one node on the boundary
 !                    ------------------------------------------------
 !
-                     DO j = 1, numElementsForNode( meshNode % id )
-                        e         => elementsForNodes(j,meshNode % id) % element
-                        nodecount = 0
-                        DO k = 1, 4
-                           obj => e % nodes % objectAtIndex(k)
-                           CALL cast(obj,elementNode)
-                           IF ( elementNode % distToBoundary == 0.0_RP )     THEN
-                              nodeCount = nodeCount + 1 
-                           END IF
-                        END DO
-                        
-                        IF ( nodeCount == 1 )     THEN
-                           obj => e
-                           CALL interfaceElements % add(obj)
-                        END IF 
-                        
-                     END DO   
+                        DO j = 1, numElementsForNode( meshNode % id )
+                           e         => elementsForNodes(j,meshNode % id) % element
+                           nodecount = 0
+                           DO k = 1, 4
+                              obj => e % nodes % objectAtIndex(k)
+                              CALL cast(obj,elementNode)
+                              IF ( elementNode % distToBoundary == 0.0_RP )     THEN
+                                 nodeCount = nodeCount + 1 
+                              END IF
+                           END DO
+                           
+                           IF ( nodeCount == 1 )     THEN
+                              obj => e
+                              CALL interfaceElements % add(obj)
+                           END IF 
+                           
+                        END DO   
+                     END IF 
                   END IF 
-               END IF 
-               
-               CALL nodesIterator % moveToNext()
-            END DO
-            CALL deallocateNodeToElementConnections()
+                  
+                  CALL nodesIterator % moveToNext()
+               END DO
+               CALL deallocateNodeToElementConnections()
+            ELSE 
+               CALL mesh % destroyEdgeArrays()
+               CALL deallocateNodeToElementConnections
+               RETURN 
+            END IF
+           
 !
 !          -------------------------------
 !          Split the elements as necessary

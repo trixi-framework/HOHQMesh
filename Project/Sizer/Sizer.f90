@@ -44,6 +44,7 @@
          PROCEDURE :: addBoundaryCurve
          PROCEDURE :: sizeFunctionMinimumOnBox
          PROCEDURE :: setBaseSize
+         PROCEDURE :: clearBoundaryCurves
          
       END TYPE MeshSizer
       
@@ -106,9 +107,7 @@
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             CALL release(self % outerBoundary)
          END IF 
-         
-         CALL release(self % controlsList)
-         
+                  
          CALL self % FTObject % destruct()
          
       END SUBROUTINE destructMeshSizer
@@ -118,7 +117,7 @@
       SUBROUTINE releaseSizer(self)  
          IMPLICIT NONE
          CLASS(MeshSizer), POINTER :: self
-         CLASS(FTObject)           , POINTER :: obj
+         CLASS(FTObject) , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
          
@@ -128,6 +127,33 @@
             self => NULL() 
          END IF      
       END SUBROUTINE releaseSizer
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE clearBoundaryCurves( self )  
+         IMPLICIT NONE  
+         CLASS(MeshSizer) :: self
+         
+         IF ( ASSOCIATED(self % innerBoundariesList) )     THEN
+            CALL release(self % innerBoundariesList)
+         END IF 
+         
+         IF ( ASSOCIATED(self % interfaceBoundariesList) )     THEN
+            CALL release(self % interfaceBoundariesList)
+         END IF 
+         
+         IF ( ASSOCIATED(self % outerBoundary) )     THEN
+            CALL release(self % outerBoundary)
+         END IF 
+         
+         NULLIFY(self % outerBoundary)
+         NULLIFY(self % interfaceBoundariesList)
+         NULLIFY(self % innerBoundariesList)
+
+         self % noOfInnerBoundaries     = 0
+         self % noOfInterfaceBoundaries = 0
+     
+      END SUBROUTINE clearBoundaryCurves
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -1015,7 +1041,10 @@
          CLASS(MeshSizer) :: self
          INTEGER          :: iUnit
          
-         WRITE(iUnit,*) "MeshSizer object"
-         IF(self % noOfInnerBoundaries >= 0)     CONTINUE 
+         PRINT *, "Number of inner boundries = ", self % noOfInnerBoundaries
+         PRINT *, "Number of interface boundaries = ", self % noOfInterfaceBoundaries
+         PRINT *, "Base Size = ", self % baseSize
+         PRINT *, "xMin = ", self % xMin
+         PRINT *, "xMax = ", self % xMax
       END SUBROUTINE printSizerDescription
       END MODULE MeshSizerClass

@@ -75,22 +75,15 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                  :: fUnit
          CLASS(FTValueDictionary) :: dict
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                                :: ios
-         INTEGER                                :: direction
-         REAL(KIND=RP)                          :: height
-         INTEGER                                :: subdivisions
-         CHARACTER(LEN=LINE_LENGTH)             :: inputLine = " ", nameString
          INTEGER      , EXTERNAL                :: GetIntValue
          REAL(KIND=RP), EXTERNAL                :: GetRealValue
          CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
-         CLASS(FTException), POINTER            :: exception
 !
 !        ---------
 !        Direction
@@ -164,22 +157,16 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                  :: fUnit
          CLASS(FTValueDictionary) :: dict
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                                :: ios
-         INTEGER                                :: direction
-         INTEGER                                :: subdivisions
          REAL(KIND=RP)                          :: angleFactor
-         CHARACTER(LEN=LINE_LENGTH)             :: inputLine = " ", nameString
          INTEGER      , EXTERNAL                :: GetIntValue
          REAL(KIND=RP), EXTERNAL                :: GetRealValue
          CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
-         CLASS(FTException), POINTER            :: exception
 !
 !        ---------
 !        Direction
@@ -262,7 +249,7 @@
          INTEGER                :: node2DID
          INTEGER                :: N, pMutation
          INTEGER                :: algorithmChoice
-         REAL(KIND=RP)          :: j, dz, h
+         REAL(KIND=RP)          :: dz, h
          
          
          TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes

@@ -152,25 +152,27 @@
                id   = node % id
                numElementsForNode(id) = numElementsForNode(id) + 1
                IF ( numElementsForNode(id) > 8 )     THEN
-                  PRINT *, " "
-                  PRINT *, "**************************************************************************"
-                  PRINT *, "Valence too high for node ",id, " x = ",node % x
-                  PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
-                  PRINT *, "**************************************************************************"
-                  PRINT *, " "
-                  CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
+                  IF(printMessage)     THEN 
+                     PRINT *, " "
+                     PRINT *, "**************************************************************************"
+                     PRINT *, "Valence too high for node ",id, " x = ",node % x
+                     PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     PRINT *, "**************************************************************************"
+                     PRINT *, " "
+                     CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
+                  END IF 
                   errorCode = VALENCE_TOO_HIGH_ERROR_CODE
-                  EXIT
-                  STOP "Meshing Terminated"
+                  CALL deallocateNodeToElementConnections
+                  RETURN 
                END IF 
                
                elementsForNodes(numElementsForNode(id),id) % element => e
             END DO
-            IF(errorCode > NONE )     EXIT 
+            IF(errorCode > A_OK_ERROR_CODE )     EXIT 
             CALL iterator % moveToNext()
          END DO
          
-         IF(errorCode > NONE ) CALL deallocateNodeToElementConnections
+         IF(errorCode > A_OK_ERROR_CODE ) CALL deallocateNodeToElementConnections
          
       END SUBROUTINE makeNodeToElementConnections
 !

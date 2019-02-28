@@ -461,6 +461,12 @@
          CLASS(FTException)              , POINTER :: exception => NULL()
          CLASS(SMCurve)                  , POINTER :: curvePtr => NULL()
 !
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL :: returnOnFatalError
+!
 !        ------------
 !        Get the data
 !        ------------
@@ -477,7 +483,7 @@
          
          IF ( curveDict % containsKey(key = "xEqn") )     THEN
             eqnX = curveDict % stringValueForKey(key = "xEqn", &
-                                                      requestedLength = SM_CURVE_NAME_LENGTH) 
+                                                      requestedLength = DEFAULT_CHARACTER_LENGTH) 
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
                                            msg = "PARAMETRIC_EQUATION_CURVE has no xEqn.", &
@@ -487,7 +493,7 @@
          
          IF ( curveDict % containsKey(key = "yEqn") )     THEN
             eqnY = curveDict % stringValueForKey(key = "yEqn", &
-                                                      requestedLength = SM_CURVE_NAME_LENGTH) 
+                                                      requestedLength = DEFAULT_CHARACTER_LENGTH) 
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
                                            msg = "PARAMETRIC_EQUATION_CURVE has no yEqn.", &
@@ -497,7 +503,7 @@
          
          IF ( curveDict % containsKey(key = "zEqn") )     THEN
             eqnZ = curveDict % stringValueForKey(key = "zEqn", &
-                                                      requestedLength = SM_CURVE_NAME_LENGTH) 
+                                                      requestedLength = DEFAULT_CHARACTER_LENGTH) 
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
                                            msg = "PARAMETRIC_EQUATION_CURVE has no zEqn. Default is z = 0", &
@@ -511,16 +517,7 @@
 !
          ALLOCATE(cCurve)
          CALL cCurve % initWithEquationsNameAndID(eqnX, eqnY, eqnZ, curveName, self % curveCount + 1)
-
-         IF ( catch(EQUATION_FORMAT_EXCEPTION) )     THEN  ! Pass the error up the chain
-            CALL release(cCurve)
-            exception => errorObject()
-            CALL throw(exception)
-            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
-                                           msg = "Equation Format error", &
-                                           typ = FT_ERROR_FATAL)
-            RETURN
-         END IF
+         IF(ReturnOnFatalError())     RETURN 
          
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)

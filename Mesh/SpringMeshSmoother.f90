@@ -164,11 +164,11 @@
             CALL mesh % nodesIterator % moveToNext()
          END DO
          CALL SetNodeActiveStatus( mesh, model, errorCode )
-!
-!        ------------------------
-!        Do spring-mass smoothing
-!        ------------------------
-!
+!!
+!!        ------------------------
+!!        Do spring-mass smoothing
+!!        ------------------------
+!!
          DO k = 1, self % numSmoothingSteps
             nodeAcceleration = 0.0_RP
             CALL AccumulateAcceleration( self, mesh )

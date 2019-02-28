@@ -189,7 +189,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CollectBoundaryEdges( mesh )
+      SUBROUTINE CollectBoundaryEdges( mesh, errorCode )
       USE MeshOutputMethods
 !
 !     ---------------------------------------------------
@@ -204,6 +204,7 @@
 !        ---------
 !
          TYPE( SMMesh ) :: mesh
+         INTEGER        :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -214,6 +215,8 @@
          CLASS(FTObject)            , POINTER :: obj      => NULL()
          CLASS(FTLinkedList)        , POINTER :: edgeList => NULL()
          INTEGER                              :: curveID, curveSide
+
+         errorCode = A_OK_ERROR_CODE
 !
 !        --------------------------------
 !        Gather "exterior" boundary edges
@@ -233,15 +236,18 @@
                edge % edgeType = ON_BOUNDARY
                
                IF( curveID == 0 .OR. curveSide == 0 )     THEN 
-                  PRINT *, " "
-                  PRINT *, "**************************************************************************"
-                  PRINT *, "Curve not found for boundary point"
-                  PRINT *,  edge % nodes(1) % node % x, edge % nodes(2) % node % x
-                  PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
-                  PRINT *, "**************************************************************************"
-                  PRINT *, " "
-                  CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
-                  STOP "Meshing Terminated"
+                  IF( printMessage )     THEN 
+                     PRINT *, " "
+                     PRINT *, "**************************************************************************"
+                     PRINT *, "Curve not found for boundary point"
+                     PRINT *,  edge % nodes(1) % node % x, edge % nodes(2) % node % x
+                     PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     PRINT *, "**************************************************************************"
+                     PRINT *, " "
+                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                  END IF 
+                  errorCode = CURVE_NOT_FOUND_ERROR_CODE
+                  RETURN 
                END IF
                
                IF( IsOnBoundaryCurve(edge % nodes(1) % node) .OR. &
@@ -250,15 +256,18 @@
                   obj      => boundaryEdgesArray % objectAtIndex(curveID)
                   edgeList => linkedListFromObject(obj)
                   IF ( .NOT.ASSOCIATED(edgeList) )     THEN
-                     PRINT *, " "
-                     PRINT *, "**************************************************************************"
-                     PRINT *, "edge list not associated"
-                     PRINT *, ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
-                     PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
-                     PRINT *, "**************************************************************************"
-                     PRINT *, " "
-                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
-                     STOP "Unassociated edge pointers in CollectBoundaryEdges"
+                     IF( printMessage )     THEN 
+                        PRINT *, " "
+                        PRINT *, "**************************************************************************"
+                        PRINT *, "edge list not associated"
+                        PRINT *, ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
+                        PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                        PRINT *, "**************************************************************************"
+                        PRINT *, " "
+                        CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                     END IF
+                     errorCode = UNASSOCIATED_POINTER_ERROR_CODE
+                     RETURN 
                   END IF 
                   obj => edge
                   CALL edgeList % add(obj)
@@ -1131,71 +1140,77 @@
                        
          IF ( numBoundaries == 0 )     RETURN 
          
-        CALL AllocateBoundaryEdgesArray(numBoundaries)
+         CALL AllocateBoundaryEdgesArray(numBoundaries)
 
          ALLOCATE(iterator)
          CALL iterator % init()
    
-         CALL CollectBoundaryEdges( mesh )
+         CALL CollectBoundaryEdges( mesh, errorCode )
+         IF ( errorCode > A_OK_ERROR_CODE )     THEN
+            RETURN  
+         END IF 
+         
          CALL MakeNodeToElementConnections( mesh, errorCode )
-         CALL MakeElementToEdgeConnections( mesh )
+         
+         IF( errorCode == A_OK_ERROR_CODE)     THEN 
+            CALL MakeElementToEdgeConnections( mesh )
         
-        IF ( model % numberOfInnerCurves + model % numberOfOuterCurves > 0 )     THEN
-        
-            DO j = 1, numBoundaries
-               IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
-               
-               obj => boundaryEdgesArray % objectAtIndex(j)
-               CALL cast(obj,currentEdgeList)
-               IF(.NOT. ASSOCIATED(currentEdgeList)) THEN
-                  PRINT *, "Unnassociated edgelist in SetNodeActiveStatus number",j
-                  CYCLE
-               END IF 
-               
-               CALL iterator % setLinkedList(currentEdgeList)
-               CALL iterator % setToStart()
-               DO WHILE ( .NOT.iterator % isAtEnd() )
-                  obj => iterator % object()
-                  CALL cast(obj,currentEdge)
+            IF ( model % numberOfInnerCurves + model % numberOfOuterCurves > 0 )     THEN
+           
+               DO j = 1, numBoundaries
+                  IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
                   
-                  IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
+                  obj => boundaryEdgesArray % objectAtIndex(j)
+                  CALL cast(obj,currentEdgeList)
+                  IF(.NOT. ASSOCIATED(currentEdgeList)) THEN
+                     PRINT *, "Unnassociated edgelist in SetNodeActiveStatus number",j
+                     CYCLE
+                  END IF 
                   
-                     IF ( currentEdge % nodes(1) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
-                        currentEdge % nodes(1) % node % activeStatus = ACTIVE
-                     ELSE
-                        currentEdge % nodes(1) % node % activeStatus = INACTIVE
-                     END IF
+                  CALL iterator % setLinkedList(currentEdgeList)
+                  CALL iterator % setToStart()
+                  DO WHILE ( .NOT.iterator % isAtEnd() )
+                     obj => iterator % object()
+                     CALL cast(obj,currentEdge)
                      
-                     IF ( currentEdge%nodes(2) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
-                        currentEdge % nodes(2) % node % activeStatus = ACTIVE
-                     ELSE
-                        currentEdge % nodes(2) % node % activeStatus = INACTIVE
-                     END IF
+                     IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
                      
-                  END IF
+                        IF ( currentEdge % nodes(1) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
+                           currentEdge % nodes(1) % node % activeStatus = ACTIVE
+                        ELSE
+                           currentEdge % nodes(1) % node % activeStatus = INACTIVE
+                        END IF
+                        
+                        IF ( currentEdge%nodes(2) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
+                           currentEdge % nodes(2) % node % activeStatus = ACTIVE
+                        ELSE
+                           currentEdge % nodes(2) % node % activeStatus = INACTIVE
+                        END IF
+                        
+                     END IF
 !
 !                 ----------------------------------------------------
 !                 Nevertheless, deactivate when at the end of a curve.
 !                 ----------------------------------------------------
 !
-                   IF ( currentEdge % nodes(1) % node % whereOnBoundary == 0.0_RP .OR. &
-                        currentEdge % nodes(1) % node % whereOnBoundary == 1.0_RP)     THEN
-                        currentEdge % nodes(1) % node % activeStatus    = INACTIVE
-                   END IF
-                   IF ( currentEdge % nodes(2) % node % whereOnBoundary == 0.0_RP .OR. &
-                        currentEdge % nodes(2) % node % whereOnBoundary == 1.0_RP)     THEN
-                        currentEdge % nodes(2) % node % activeStatus    = INACTIVE
-                   END IF
-                   
-                  CALL iterator % moveToNext()
+                      IF ( currentEdge % nodes(1) % node % whereOnBoundary == 0.0_RP .OR. &
+                           currentEdge % nodes(1) % node % whereOnBoundary == 1.0_RP)     THEN
+                           currentEdge % nodes(1) % node % activeStatus    = INACTIVE
+                      END IF
+                      IF ( currentEdge % nodes(2) % node % whereOnBoundary == 0.0_RP .OR. &
+                           currentEdge % nodes(2) % node % whereOnBoundary == 1.0_RP)     THEN
+                           currentEdge % nodes(2) % node % activeStatus    = INACTIVE
+                      END IF
+                      
+                     CALL iterator % moveToNext()
+                  END DO
                END DO
-            END DO
-            
+               
+            END IF
+            CALL deallocateElementToEdgeConnections()
          END IF
-
          CALL release(iterator)
          CALL deallocateNodeToElementConnections()
-         CALL deallocateElementToEdgeConnections()
          
       END SUBROUTINE SetNodeActiveStatus
 !

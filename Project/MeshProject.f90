@@ -83,6 +83,7 @@
          INTEGER       :: N(3)
          REAL(KIND=RP) :: dx(3)
          REAL(KIND=RP) :: x0(3)
+         REAL(KIND=RP) :: xMax(3)
       END TYPE backgroundGridParameters
       
       TYPE CentersParameters
@@ -278,7 +279,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE resetProject(self)  
+      SUBROUTINE ResetProject(self)  
          IMPLICIT NONE  
          CLASS(MeshProject), POINTER :: self
          
@@ -294,7 +295,7 @@
             self % mesh => NULL()
          END IF 
 
-      END SUBROUTINE resetProject
+      END SUBROUTINE ResetProject
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -325,42 +326,108 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(FTValueDictionary)    , POINTER :: smootherDict, backgroundGridDict, refinementsDict, refinementObjectDict
+         CLASS(FTValueDictionary)    , POINTER :: smootherDict, refinementsDict
          CLASS(FTLinkedList)         , POINTER :: refinementsList
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary => NULL()
-         CLASS(SMChainedCurve)       , POINTER :: chain => NULL()
-         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL(), refinementIterator => NULL()
+         CLASS(FTLinkedListIterator) , POINTER :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
-         CLASS(QuadTreeGrid)         , POINTER :: parent => NULL()
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
-!         CLASS(LaplaceMeshSmoother)  , POINTER :: laplaceSmoother => NULL()
-         
-         CLASS(SizerCentercontrol), POINTER :: c => NULL()
-         CLASS(SizerLineControl)  , POINTER :: L => NULL()
-         
-         TYPE(BackgroundGridParameters) :: backgroundGrid
-         TYPE(CentersParameters)        :: centerParams
+                  
          TYPE(SpringSmootherParameters) :: smootherParams
-!         TYPE(LaplaceSmootherParameters):: laplaceParameters
-         TYPE(LineParameters)           :: lineParams
-         
-         REAL(KIND=RP)                  :: h, xMax(3)
-         INTEGER                        :: curveID
-         LOGICAL                        :: smootherWasRead = .FALSE.
-         
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
-         
+                           
          NULLIFY( self % grid )
          NULLIFY( self % sizer )
 !
+         CALL BuildBackgroundGrid(self, controlDict )
+         CALL BuildQuadtreeGrid(self)
+!
+!        -------------------------
+!        Build up Sizer properties
+!        -------------------------
+!
+         ALLOCATE(self % sizer)
+         CALL self % sizer % initWithProperties( self % backgroundParams % dx, &
+                                                 self % backgroundParams % x0, &
+                                                 self % backgroundParams % xMax )
+         IF(ReturnOnFatalError())     RETURN 
+         
+         IF ( controlDict % containsKey(key = REFINEMENT_REGIONS_KEY) )     THEN
+         
+            ALLOCATE(refinementIterator)
+            obj             => controlDict % objectForKey(key = REFINEMENT_REGIONS_KEY)
+            refinementsDict => valueDictionaryFromObject(obj)
+            obj             => refinementsDict % objectForKey(key = "LIST")
+            refinementsList => linkedListFromObject(obj)
+            
+            CALL AddRefinementRegionsToSizer(refinementsList, sizer = self % sizer)
+            
+         END IF 
+         CALL BuildSizerBoundaryCurves(self)
+!
+!        ------------------
+!        Construct smoother
+!        ------------------
+!
+         NULLIFY(self % smoother)
+         IF ( controlDict % containsKey(key = "SPRING_SMOOTHER") )     THEN
+         
+            obj          => controlDict % objectForKey(key = "SPRING_SMOOTHER")
+            smootherDict => valueDictionaryFromObject(obj)
+            
+            CALL SetSpringSmootherBlock( smootherDict, smootherParams )
+            IF(ReturnOnFatalError())     RETURN 
+            
+            IF( smootherParams % smoothingOn )     THEN
+               ALLOCATE(springSmoother)
+               CALL springSmoother % init(  smootherParams % springConstant, &
+                                            smootherParams % mass, &
+                                            smootherParams % restLength, &
+                                            smootherParams % dampingCoefficient, &
+                                            smootherParams % springType, &
+                                            smootherParams % deltaT, &
+                                            smootherParams % numSteps )
+               self % smoother => springSmoother
+            END IF
+         ELSE
+            ! For other possibilities added later
+         END IF 
+         
+      END SUBROUTINE BuildProject
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE BuildBackgroundGrid(self, controlDict)  
+!
 !-------------------------------------------------------------------------------
-!        Construct the Background Grid and initialize Sizer
-!        The backgound grid size can eigher be specified or inferred
-!        from the model depending on if the background grid block is
-!        present or not.
+!     Construct the Background Grid and initialize Sizer
+!     The backgound grid size can eigher be specified or inferred
+!     from the model depending on if the background grid block is
+!     present or not.
 !-------------------------------------------------------------------------------
 !
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTValueDictionary) :: controlDict
+         TYPE(MeshProject)        :: self
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP)                  ::xMax(3)
+         TYPE(BackgroundGridParameters) :: backgroundGrid
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(FTValueDictionary)    , POINTER :: backgroundGridDict
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
+         
          IF ( controlDict % containsKey(key = "BACKGROUND_GRID") )     THEN
          
             obj => controlDict % objectForKey(key = "BACKGROUND_GRID")
@@ -371,10 +438,8 @@
             
             self % meshParams % backgroundGridSize = 2*backgroundGrid % dx
             
-            xMax = backgroundGrid % x0 + backgroundGrid % N*backgroundGrid % dx
-            
-            ALLOCATE(self % sizer)
-            CALL self % sizer % initWithProperties(backgroundGrid % dx, backgroundGrid % x0, xMax)
+            xMax                   = backgroundGrid % x0 + backgroundGrid % N*backgroundGrid % dx
+            backgroundGrid % xMax = xMax
             
          ELSE 
          
@@ -382,69 +447,144 @@
             IF(ReturnOnFatalError())     RETURN 
             
             xMax = backgroundGrid % x0 + backgroundGrid % N*backgroundGrid % dx
-            ALLOCATE(self % sizer)
-            CALL self % sizer % initWithProperties( self % meshParams % backgroundGridSize, backgroundGrid % x0, xMax )
-            IF(ReturnOnFatalError())     RETURN 
+            backgroundGrid % xMax = xMax
             
          END IF 
          self % backgroundParams = backgroundGrid
-!
-!        -----------------------
-!        Build the quadtree grid
-!        -----------------------
-!
-         CALL BuildQuadtreeGrid(self)
-!
-!        -------------------------
-!        Build up Sizer properties
-!        -------------------------
-!
-         IF ( controlDict % containsKey(key = REFINEMENT_REGIONS_KEY) )     THEN
          
-            ALLOCATE(refinementIterator)
-            obj             => controlDict % objectForKey(key = REFINEMENT_REGIONS_KEY)
-            refinementsDict => valueDictionaryFromObject(obj)
-            obj             => refinementsDict % objectForKey(key = "LIST")
-            refinementsList => linkedListFromObject(obj)
-            
-            CALL refinementIterator % initWithFTLinkedList(list = refinementsList)
-            CALL refinementIterator % setToStart()
-            DO WHILE (.NOT. refinementIterator % isAtEnd()) 
-               
-               obj                  => refinementIterator % object()
-               refinementObjectDict => valueDictionaryFromObject(obj)
-               str = refinementObjectDict % stringValueForKey(key = "TYPE", &
-                                                              requestedLength = DEFAULT_CHARACTER_LENGTH)
-               SELECT CASE ( str )
-               
-                  CASE( REFINEMENT_CENTER_KEY ) 
-                  
-                     CALL SetCenterMeshSizerBlock(centerParams = centerParams, centerDict = refinementObjectDict) 
-                     ALLOCATE(c)
-                     CALL c % initWithProperties( centerParams % x0, centerParams % centerExtent, &
-                                                centerParams % centerMeshSize, centerParams % centerType )
-                     CALL self % sizer % addSizerCenterControl(c)
-                     CALL release(c)
-                     
-                  CASE ( REFINEMENT_LINE_KEY)
-                  
-                     CALL SetLineMeshSizerBlock(lineParams = lineParams, lineSizerDict = refinementObjectDict)
-                     
-                     ALLOCATE(L)
-                     CALL L    % initWithProperties( lineParams % x0, lineParams % x1, lineParams % lineExtent, &
-                                                     lineParams % lineMeshSize, lineParams % lineControlType )
-                     CALL self % sizer % addSizerLineControl(L)
-                     CALL release(L)
-                  CASE DEFAULT 
-                  PRINT *, "Funny object"
-                  STOP 
-               END SELECT 
-               
-               CALL refinementIterator % moveToNext() 
-            END DO 
-            
-            CALL release(refinementIterator)
+      END SUBROUTINE BuildBackgroundGrid
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE BuildQuadtreeGrid(self)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshProject)        :: self
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CLASS(QuadTreeGrid), POINTER :: parent => NULL()
+         NULLIFY(parent)
+         
+         IF(ASSOCIATED(self % grid))      THEN
+            CALL release(self % grid)
+            self % grid => NULL()
          END IF 
+         
+         ALLOCATE(self % grid)
+         CALL self % grid % initGridWithParameters( self % backgroundParams % dx, &
+                                                    self % backgroundParams % x0, &
+                                                    self % backgroundParams % N,  &
+                                                     parent, (/0,0,0/), 0)
+      END SUBROUTINE BuildQuadtreeGrid
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE AddRefinementRegionsToSizer( refinementsList, sizer)
+         IMPLICIT NONE 
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTLinkedList)         , POINTER :: refinementsList
+         CLASS(MeshSizer)            , POINTER :: sizer
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CLASS(FTLinkedListIterator) , POINTER   :: refinementIterator => NULL()
+         CLASS(FTObject)             , POINTER   :: obj => NULL()
+         CLASS(FTValueDictionary)    , POINTER   :: refinementObjectDict
+         
+         CLASS(SizerCentercontrol), POINTER      :: c => NULL()
+         CLASS(SizerLineControl)  , POINTER      :: L => NULL()
+         
+         TYPE(CentersParameters)                 :: centerParams
+         TYPE(LineParameters)                    :: lineParams
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+!
+!        --------------------------------------------------------------
+!        Refinement regions are stored in a linked list of dictionaries
+!        --------------------------------------------------------------
+!
+         ALLOCATE(refinementIterator)
+         CALL refinementIterator % initWithFTLinkedList(list = refinementsList)
+         CALL refinementIterator % setToStart()
+         
+         DO WHILE (.NOT. refinementIterator % isAtEnd()) 
+            
+            obj                  => refinementIterator % object()
+            refinementObjectDict => valueDictionaryFromObject(obj)
+            str = refinementObjectDict % stringValueForKey(key = "TYPE", &
+                                                           requestedLength = DEFAULT_CHARACTER_LENGTH)
+            SELECT CASE ( str )
+            
+               CASE( REFINEMENT_CENTER_KEY ) 
+               
+                  CALL SetCenterMeshSizerBlock(centerParams = centerParams, centerDict = refinementObjectDict) 
+                  
+                  ALLOCATE(c)
+                  CALL c % initWithProperties( centerParams % x0, centerParams % centerExtent, &
+                                             centerParams % centerMeshSize, centerParams % centerType )
+                  CALL sizer % addSizerCenterControl(c)
+                  CALL release(c)
+                  
+               CASE ( REFINEMENT_LINE_KEY)
+               
+                  CALL SetLineMeshSizerBlock(lineParams = lineParams, lineSizerDict = refinementObjectDict)
+                  
+                  ALLOCATE(L)
+                  CALL L    % initWithProperties( lineParams % x0, lineParams % x1, lineParams % lineExtent, &
+                                                  lineParams % lineMeshSize, lineParams % lineControlType )
+                  CALL sizer % addSizerLineControl(L)
+                  CALL release(L)
+                  
+               CASE DEFAULT 
+                  CALL ThrowErrorExceptionOfType(poster = "AddRefinementRegionsToSizer", &
+                                                 msg    = "Unknown refinement region is ignored: "// TRIM(str), &
+                                                 typ    = FT_ERROR_WARNING)
+            END SELECT 
+            
+            CALL refinementIterator % moveToNext() 
+         END DO 
+         
+         CALL release(refinementIterator)
+ 
+      END SUBROUTINE AddRefinementRegionsToSizer
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE BuildSizerBoundaryCurves(self)  
+         USE ChainedSegmentedCurveClass
+         USE SMChainedCurveClass
+         USE CurveConversionsModule
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshProject)        :: self
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER                               :: curveID
+         REAL(KIND=RP)                         :: h
+         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary => NULL()
+         CLASS(SMChainedCurve)       , POINTER :: chain => NULL()
 !
 !        ------------------------------------------------
 !        Discretize boundary curves and add to sizer.
@@ -464,7 +604,7 @@
                                                                            h, self % sizer % controlsList, curveID )
             CALL self % sizer % addBoundaryCurve(segmentedOuterBoundary,OUTER)
             CALL release(segmentedOuterBoundary)
-         END IF
+        END IF
 !
 !        --------------------------------------
 !        Step through each inner boundary curve
@@ -473,7 +613,7 @@
 !
          IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
             iterator => self % model % innerBoundariesIterator
-            CALL iterator % setToStart
+            CALL iterator % setToStart()
             DO WHILE (.NOT.iterator % isAtEnd())
                curveID =  curveID + 1
                obj     => iterator % object()
@@ -522,90 +662,8 @@
          IF ( ASSOCIATED( self % model % interfaceBoundaries ) ) THEN
             CALL ComputeInterfaceCurveScales( self % sizer )
          END IF
-!
-!-------------------------------------------------------------------------------
-!                          Construct Smoother, if requested
-!-------------------------------------------------------------------------------
-!
-         smootherWasRead = .FALSE.
-         NULLIFY(self % smoother)
-!
-!        --------------------
-!        Spring-Mass smoother
-!        --------------------
-!
-         IF ( controlDict % containsKey(key = "SPRING_SMOOTHER") )     THEN
          
-            obj          => controlDict % objectForKey(key = "SPRING_SMOOTHER")
-            smootherDict => valueDictionaryFromObject(obj)
-            
-            CALL SetSpringSmootherBlock( smootherDict, smootherParams )
-            IF(ReturnOnFatalError())     RETURN 
-            
-            IF( smootherParams % smoothingOn )     THEN
-               ALLOCATE(springSmoother)
-               CALL springSmoother % init(  smootherParams % springConstant, &
-                                            smootherParams % mass, &
-                                            smootherParams % restLength, &
-                                            smootherParams % dampingCoefficient, &
-                                            smootherParams % springType, &
-                                            smootherParams % deltaT, &
-                                            smootherParams % numSteps )
-               self % smoother => springSmoother
-               smootherWasRead = .TRUE.
-            END IF
-         END IF 
-         IF(smootherWasRead) RETURN
-!!
-!TODO: Implement laplacian smoother? It hasn't worked so well.
-!!        ------------------
-!!        Laplacian Smoother
-!!        ------------------
-!!
-!         rewind(fUnit)
-!         CALL MoveToBlock("\begin{LaplaceSmoother}", fUnit, iOS )
-!         IF ( ios == 0 )     THEN
-!            CALL ReadLaplaceSmootherBlock( fUnit, laplaceParameters )
-!            IF ( laplaceParameters % smoothingOn )     THEN
-!               ALLOCATE(laplaceSmoother)
-!               CALL laplaceSmoother % init(laplaceParameters)
-!               self % smoother => laplaceSmoother
-!               smootherWasRead = .TRUE.
-!            END IF 
-!         END IF 
-!         IF(smootherWasRead) RETURN 
-         
-      END SUBROUTINE BuildProject
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE BuildQuadtreeGrid(self)  
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE(MeshProject)        :: self
-!
-!        ---------------
-!        Local Variables
-!        ---------------
-!
-         CLASS(QuadTreeGrid), POINTER :: parent => NULL()
-         NULLIFY(parent)
-         
-         IF(ASSOCIATED(self % grid))      THEN
-            CALL release(self % grid)
-            self % grid => NULL()
-         END IF 
-         
-         ALLOCATE(self % grid)
-         CALL self % grid % initGridWithParameters( self % backgroundParams % dx, &
-                                                    self % backgroundParams % x0, &
-                                                    self % backgroundParams % N,  &
-                                                     parent, (/0,0,0/), 0)
-      END SUBROUTINE BuildQuadtreeGrid
+      END SUBROUTINE BuildSizerBoundaryCurves
 !
 !////////////////////////////////////////////////////////////////////////
 !

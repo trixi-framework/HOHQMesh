@@ -22,10 +22,59 @@
       CONTAINS 
 !     ========
 !
+!
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE GenerateQuadMesh(project, errorCode)  
-         USE MeshProjectClass
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(MeshProject), POINTER :: project
+         INTEGER                     :: errorCode
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER :: k
+               
+         CALL GenerateAQuadMesh( project, errorCode ) 
+!
+!        -------------------------------------------------------------------------
+!        If there is a problem, ususally it is because the initial background grid
+!        is too large. Try again with a smaller background grid, just in case.
+!        -------------------------------------------------------------------------
+!
+         IF ( errorCode > A_OK_ERROR_CODE )     THEN ! Try again at most two times
+            DO k = 1, 2
+            
+               errorCode = A_OK_ERROR_CODE
+               IF(printMessage)     THEN 
+                  PRINT *, "Background grid is too large. Trying again with 1/2 size" ! Throw exception here
+               END IF
+               
+               project % backgroundParams % dx           =   project % backgroundParams % dx/2.0_RP
+               project % backgroundParams % N            = 2*project % backgroundParams % N
+               project % sizer % baseSize                = 0.5_RP*project % sizer % baseSize
+               project % meshParams % backgroundGridSize = 0.5_RP*project % meshParams % backgroundGridSize
+               
+               CALL ResetProject(project)
+               CALL clearBoundaryCurves(self = project % sizer)
+               CALL BuildSizerBoundaryCurves(self = project)
+               
+               CALL GenerateAQuadMesh(project,errorCode) 
+               
+               IF( errorCode == A_OK_ERROR_CODE)     EXIT 
+            END DO 
+        END IF 
+        
+      END SUBROUTINE GenerateQuadMesh
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE GenerateAQuadMesh(project, errorCode)  
          USE MeshCleaner
          IMPLICIT NONE  
 !
@@ -38,14 +87,16 @@
 !
          IF(PrintMessage) PRINT *, "Generate 2D mesh..."
          
-         CALL GenerateQuadMeshForProject( project )
+         CALL GenerateQuadMeshFromGrid( project, errorCode )
          CALL trapExceptions !Abort on fatal exceptions
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
 !
 !        ------------------------
 !        Perform topology cleanup
 !        ------------------------
 !
          CALL PerformTopologyCleanup(project % mesh, errorCode)
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
 !
 !        ------------------------
 !        Smooth mesh if requested
@@ -63,6 +114,7 @@
 !
          IF(PrintMessage) PRINT *, "   Performing final mesh cleanup..."
             CALL PerformFinalMeshCleanup( project % mesh, project % model, errorCode )
+            IF(errorCode > A_OK_ERROR_CODE)     RETURN 
          IF(PrintMessage) PRINT *, "   Mesh cleanup done."
 !
 !        --------------------------------------
@@ -72,6 +124,7 @@
          IF(Associated(project % smoother))     THEN
             IF(PrintMessage) PRINT *, "   Begin Final Smoothing..."
             CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
+            IF(errorCode > A_OK_ERROR_CODE)     RETURN 
             IF(PrintMessage) PRINT *, "   final Smoothing done."
          END IF
 !
@@ -83,11 +136,11 @@
 !
          CALL CompleteElementConstruction(project)
          
-      END SUBROUTINE GenerateQuadMesh
+      END SUBROUTINE GenerateAQuadMesh
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE GenerateQuadMeshForProject( project )
+      SUBROUTINE GenerateQuadMeshFromGrid( project, errorCode )
       USE BoundaryEdgeCleaningModule
 !
 !     ------------------------------------------------------------
@@ -101,6 +154,7 @@
 !     ---------
 !
       CLASS( MeshProject ), POINTER :: project
+      INTEGER                       :: errorCode
 !
 !     ---------------
 !     Local variables
@@ -117,7 +171,6 @@
       INTEGER                      :: numberOfBoundaries,numBoundaryEdgeLists
       INTEGER                      :: j
       INTEGER                      :: idOfOuterBoundary
-      INTEGER                      :: errorCode
 !
 !     ---------------------
 !     Generate the quadtree
@@ -206,7 +259,10 @@
                              model%numberOfInterfaceCurves
                              
       CALL AllocateBoundaryEdgesArray(numBoundaryEdgeLists)
-      CALL CollectBoundaryEdges( mesh )
+      CALL CollectBoundaryEdges( mesh, errorCode )
+      
+      IF( errorCode > A_OK_ERROR_CODE)     RETURN 
+      
       CALL OrderBoundaryEdges( mesh )
       
       IF ( catch(WARNING_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
@@ -241,6 +297,7 @@
       END IF 
 
       CALL CleanUpBoundaryCurves( mesh, model, errorCode )
+      IF(errorCode > A_OK_ERROR_CODE)     RETURN 
 !
 !     ------------------------------------------
 !     The edge lists are also no longer in sync.
@@ -304,7 +361,7 @@
       
       IF(PrintMessage) PRINT *, "   Nodes and elements generated"
 
-      END SUBROUTINE GenerateQuadMeshForProject
+      END SUBROUTINE GenerateQuadMeshFromGrid
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -533,7 +590,7 @@
                   obj => e
                   CALL mesh % elements % add(obj)
                   CALL release(e)
-                  IF( k == nodeArraySize )   CALL release(newNodes(2) % node)
+!                  IF( k == nodeArraySize )   CALL release(newNodes(2) % node)
                   prevNode => newNodes(2) % node
                   
                CASE( ROW_END )
@@ -575,7 +632,7 @@
                   CALL mesh % elements % add(obj)
                   CALL release(e)
                   prevNode => newNodes(2) % node
-                  CALL release(newNodes(2) % node)
+!                  CALL release(newNodes(2) % node) !??? extra release ?
 !
 !                 -------------
 !                 Wedge Element
