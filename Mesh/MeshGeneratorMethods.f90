@@ -59,7 +59,7 @@
                project % backgroundParams % dx           =   project % backgroundParams % dx/2.0_RP
                project % backgroundParams % N            = 2*project % backgroundParams % N
                project % sizer % baseSize                = 0.5_RP*project % sizer % baseSize
-               project % meshParams % backgroundGridSize = 0.5_RP*project % meshParams % backgroundGridSize
+               project % backgroundParams % backgroundGridSize = 0.5_RP*project % backgroundParams % backgroundGridSize
                
                CALL ResetProject(project)
                CALL clearBoundaryCurves(self = project % sizer)

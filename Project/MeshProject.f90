@@ -38,6 +38,7 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_PARAMETERS_KEY         = "MESH_PARAMETERS"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_TYPE_KEY               = "mesh type"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: GRID_SIZE_KEY               = "background grid size"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_GRID_KEY         = "BACKGROUND_GRID"
       
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MATERIAL_BLOCK_KEY          = "MATERIALS"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_MATERIAL_KEY     = "material"
@@ -75,11 +76,11 @@
       
       TYPE MeshParameters
          INTEGER       :: meshType
-         REAL(KIND=RP) :: backgroundGridSize(3)
       END TYPE MeshParameters
       PRIVATE :: MeshParameters
       
       TYPE BackgroundGridParameters
+         REAL(KIND=RP) :: backgroundGridSize(3)
          INTEGER       :: N(3)
          REAL(KIND=RP) :: dx(3)
          REAL(KIND=RP) :: x0(3)
@@ -177,14 +178,29 @@
          obj         => masterControlDictionary % objectForKey(key = "CONTROL_INPUT")
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
-                                           msg = "CONTROL_INPUT block not available", &
+                                           msg = "CONTROL_INPUT block is missing from control file", &
                                            typ = FT_ERROR_FATAL) 
             RETURN 
          END IF 
          controlDict => valueDictionaryFromObject(obj)
          
-         obj         => masterControlDictionary % objectForKey(key = "MODEL")
-         modelDict   => valueDictionaryFromObject(obj)
+         modelDict => NULL()
+         obj       => masterControlDictionary % objectForKey(key = "MODEL")
+         IF ( ASSOCIATED(obj) )     THEN
+            modelDict   => valueDictionaryFromObject(obj)
+         END IF 
+!
+!        --------------------------------------------------------------------
+!        The MESH_PARAMETERS block is optional, but the BACKGROUND_GRID block
+!        must be present
+!        --------------------------------------------------------------------
+!
+         IF ( .NOT. controlDict % containsKey(key =  BACKGROUND_GRID_KEY) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
+                                           msg    = "Control file needs a BACKGROUND_GRID block", &
+                                           typ    = FT_ERROR_FATAL) 
+            RETURN 
+         END IF 
          
          CALL SetRunParametersBlock( self % runParams, controlDict )
          IF(ReturnOnFatalError())     RETURN 
@@ -428,22 +444,22 @@
 !
          LOGICAL, EXTERNAL :: ReturnOnFatalError
          
-         IF ( controlDict % containsKey(key = "BACKGROUND_GRID") )     THEN
+         obj => controlDict % objectForKey(key = BACKGROUND_GRID_KEY)
+         backgroundGridDict => valueDictionaryFromObject(obj)
+         CALL SetBackgroundGridBlock( backgroundGrid, backgroundGridDict )
+         IF(ReturnOnFatalError())     RETURN 
          
-            obj => controlDict % objectForKey(key = "BACKGROUND_GRID")
-            backgroundGridDict => valueDictionaryFromObject(obj)
+         IF( .NOT. backgroundGridDict % containsKey(key = GRID_SIZE_KEY))     THEN 
             
-            CALL SetBackgroundGridBlock( backgroundGrid, backgroundGridDict )
-            IF(ReturnOnFatalError())     RETURN 
+            backgroundGrid % backgroundGridSize = 2*backgroundGrid % dx
             
-            self % meshParams % backgroundGridSize = 2*backgroundGrid % dx
-            
-            xMax                   = backgroundGrid % x0 + backgroundGrid % N*backgroundGrid % dx
+            xMax                  = backgroundGrid % x0 + backgroundGrid % N*backgroundGrid % dx
             backgroundGrid % xMax = xMax
             
          ELSE 
          
-            CALL BuildbackgroundGridFromModel( backgroundGrid, self % model, self % meshParams % backgroundGridSize )
+            CALL BuildbackgroundGridFromModel( backgroundGrid, self % model, &
+                                               backgroundGrid % backgroundGridSize )
             IF(ReturnOnFatalError())     RETURN 
             
             xMax = backgroundGrid % x0 + backgroundGrid % N*backgroundGrid % dx
@@ -596,7 +612,7 @@
 !        ------------------------------------------------
 !
          curveID = 0
-         h       = MINVAL(self % meshParams % backgroundGridSize(1:2))
+         h       = MINVAL(self % backgroundParams % backgroundGridSize(1:2))
          
          IF( ASSOCIATED( self % model % outerBoundary ) )     THEN
             curveID                =  curveID + 1
@@ -780,6 +796,14 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
          
          obj        => controlDict % objectForKey(key = RUN_PARAMETERS_KEY)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            msg = "Control file is missing the block: " // TRIM(RUN_PARAMETERS_KEY)
+            CALL ThrowErrorExceptionOfType(poster = "SetRunParametersBlock", &
+                                           msg    = msg,                     &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
+          
          paramsDict => valueDictionaryFromObject(obj)
          
          params % MeshFileName = "MeshFile.mesh"
@@ -841,7 +865,8 @@
                                            message    = msg,                      &
                                            poster     = "SetRunParametersBlock")
                                            
-         msg = "Unknown plot file format or plot file format not set. Set to skeleton"
+         msg        = "Unknown plot file format or plot file format not set. Set to skeleton"
+         fileFormat = "skeleton"
          CALL SetStringValueFromDictionary(valueToSet = fileFormat,                &
                                            sourceDict = paramsDict,                &
                                            key        = PLOT_FORMAT_KEY, &
@@ -865,7 +890,7 @@
 !        Example block is:
 !
 !         \begin{MeshParameters}
-!            background grid size = [1.0, 1.0, 1.0]
+!            element type = quad OR hex
 !         \end{MeshParameters}
 !
          IMPLICIT NONE
@@ -890,46 +915,32 @@
          obj        => controlDict % objectForKey(key = MESH_PARAMETERS_KEY)
          paramsDict => valueDictionaryFromObject(obj)
 !
-!        -----------------------------------------
-!        Make sure mesh parameters are in the file
-!        -----------------------------------------
+!        ----------------------------
+!        mnesh parameters is optional
+!        ----------------------------
 !
-         IF(.NOT.ASSOCIATED(paramsDict)) THEN
-            CALL ThrowErrorExceptionOfType(poster = "SetMeshParametersBlock", &
-                                           msg    = "Control file is missing the mesh parameters block.", &
-                                           typ    = FT_ERROR_FATAL)
+         IF(.NOT.ASSOCIATED(paramsDict)) THEN 
+            params % meshType = 0! CONFORMING
             RETURN 
-         END IF
+         END IF 
 !
 !        ---------
 !        Mesh type
 !        ---------
 !
-         typeName = "conforming"
-!         msg      = "Control file is missing the mesh type. Using default 'conforming'."
-!         CALL SetStringValueFromDictionary(valueToSet = typeName,               &
-!                                           sourceDict = paramsDict,             &
-!                                           key        = MESH_TYPE_KEY,          &
-!                                           errorLevel = FT_ERROR_WARNING,       &
-!                                           message    = msg,                    &
-!                                           poster     = "SetMeshParametersBlock")         
-         IF( typeName == "conforming" )     THEN
-            params % meshType = 0! CONFORMING
-         ELSE
-            params % meshType = 1 !NON_CONFORMING
-         END IF
-!
-!        ---------
-!        Mesh size
-!        ---------
-!
-         msg      = "Control file is missing the mesh size."
-         CALL SetRealArrayValueFromDictionary(arrayToSet = params % backgroundGridSize, &
-                                              sourceDict = paramsDict,                  &
-                                              key = GRID_SIZE_KEY,                      &
-                                              errorLevel = FT_ERROR_FATAL,              &
-                                              message = msg,                            &
-                                              poster = "SetMeshParametersBlock")
+!         typeName = "conforming"
+!!         msg      = "Control file is missing the mesh type. Using default 'conforming'."
+!!         CALL SetStringValueFromDictionary(valueToSet = typeName,               &
+!!                                           sourceDict = paramsDict,             &
+!!                                           key        = MESH_TYPE_KEY,          &
+!!                                           errorLevel = FT_ERROR_WARNING,       &
+!!                                           message    = msg,                    &
+!!                                           poster     = "SetMeshParametersBlock")         
+!         IF( typeName == "conforming" )     THEN
+!            params % meshType = 0! CONFORMING
+!         ELSE
+!            params % meshType = 1 !NON_CONFORMING
+!         END IF
    
       END SUBROUTINE SetMeshParametersBlock
 !
@@ -939,11 +950,18 @@
 !
 !        Example block is:
 !
-!         \begin{BackgroundMesh}
+!         \begin{BACKROUND_GRID}
 !            x0 = [-15.0, -15.0, 0.0]
 !            dx = [1.0, 1.0, 0.0]
 !            N  = [10,10, 0]
-!         \end{BackgroundMesh}
+!         \end{BACKROUND_GRID}
+!
+!         OR
+!
+!         \begin{BACKROUND_GRID}
+!            background grid size = [1.0, 1.0, 1.0]
+!         \end{BACKROUND_GRID}
+!
 !
          IMPLICIT NONE
 !
@@ -969,33 +987,47 @@
 !
 !        ------------------------------------------------
 !
-         msg = "Background grid block missing parameter " // TRIM(X_START_NAME_KEY)
-         CALL SetRealArrayValueFromDictionary(arrayToSet =  backgroundGrid % x0,      &
-                                              sourceDict = backgroundGridDict,        &
-                                              key        = X_START_NAME_KEY,          &
-                                              errorLevel = FT_ERROR_FATAL,            &
-                                              message    = msg,                       &
-                                              poster     = "SetBackgroundGridBlock")
-         IF(ReturnOnFatalError()) RETURN
-
-         msg = "Background grid block missing parameter " // TRIM(DX_NAME_KEY)
-         CALL SetRealArrayValueFromDictionary(arrayToSet = backgroundGrid % dx,       &
-                                              sourceDict = backgroundGridDict,        &
-                                              key        = DX_NAME_KEY,               &
-                                              errorLevel = FT_ERROR_FATAL,            &
-                                              message    = msg,                       &
-                                              poster     = "SetBackgroundGridBlock")
-         IF(ReturnOnFatalError()) RETURN
-          
-         msg = "Background grid block missing parameter " // TRIM(NUM_INTERVALS_NAME_KEY)
-         CALL SetIntegerArrayValueFromDictionary(arrayToSet = backgroundGrid % N,        &
+!
+!        ---------
+!        Mesh size
+!        ---------
+!
+         IF ( backgroundGridDict % containsKey(key = GRID_SIZE_KEY) )     THEN
+            msg      = "Control file is missing the mesh size."
+            CALL SetRealArrayValueFromDictionary(arrayToSet = backgroundGrid % backgroundGridSize, &
+                                                 sourceDict = backgroundGridDict,                  &
+                                                 key        = GRID_SIZE_KEY,                       &
+                                                 errorLevel = FT_ERROR_NONE,                       &
+                                                 message    = msg,                                 &
+                                                 poster     = "SetBackgroundGridBlock")
+         ELSE 
+            msg = "Background grid block missing parameter " // TRIM(X_START_NAME_KEY)
+            CALL SetRealArrayValueFromDictionary(arrayToSet =  backgroundGrid % x0,      &
                                                  sourceDict = backgroundGridDict,        &
-                                                 key        = NUM_INTERVALS_NAME_KEY,    &
+                                                 key        = X_START_NAME_KEY,          &
                                                  errorLevel = FT_ERROR_FATAL,            &
                                                  message    = msg,                       &
                                                  poster     = "SetBackgroundGridBlock")
-         IF(ReturnOnFatalError()) RETURN
-
+            IF(ReturnOnFatalError()) RETURN
+   
+            msg = "Background grid block missing parameter " // TRIM(DX_NAME_KEY)
+            CALL SetRealArrayValueFromDictionary(arrayToSet = backgroundGrid % dx,       &
+                                                 sourceDict = backgroundGridDict,        &
+                                                 key        = DX_NAME_KEY,               &
+                                                 errorLevel = FT_ERROR_FATAL,            &
+                                                 message    = msg,                       &
+                                                 poster     = "SetBackgroundGridBlock")
+            IF(ReturnOnFatalError()) RETURN
+             
+            msg = "Background grid block missing parameter " // TRIM(NUM_INTERVALS_NAME_KEY)
+            CALL SetIntegerArrayValueFromDictionary(arrayToSet = backgroundGrid % N,        &
+                                                    sourceDict = backgroundGridDict,        &
+                                                    key        = NUM_INTERVALS_NAME_KEY,    &
+                                                    errorLevel = FT_ERROR_FATAL,            &
+                                                    message    = msg,                       &
+                                                    poster     = "SetBackgroundGridBlock")
+            IF(ReturnOnFatalError()) RETURN
+         END IF 
          
       END SUBROUTINE SetBackgroundGridBlock
 !

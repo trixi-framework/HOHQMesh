@@ -106,7 +106,7 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE SetRealArrayValueFromDictionary( arrayToSet, sourceDict, key, &
-                                                 errorLevel, message, poster)  
+                                                  errorLevel, message, poster)  
          IMPLICIT NONE
 !
 !        ---------
