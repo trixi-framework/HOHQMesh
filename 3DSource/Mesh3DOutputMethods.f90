@@ -141,9 +141,9 @@
 !        ---------------
 !
          INTEGER                    :: iUnit, j, k
-         INTEGER                    :: f, jj, ii, faceID
+         INTEGER                    :: f, jj, ii
          INTEGER, EXTERNAL          :: UnusedUnit
-         INTEGER                    :: start, nde, increment, eID
+         INTEGER                    :: eID
          REAL(KIND=RP), ALLOCATABLE :: faceX(:,:,:)
 !
 !        -----------
@@ -265,7 +265,7 @@
 !        ---------------
 !
          INTEGER   :: NMap(6)
-         INTEGER   :: i, j, k
+         INTEGER   :: i, j
          
          NMap  = [0, N, 0, N, N, 0]
          SELECT CASE ( faceID )

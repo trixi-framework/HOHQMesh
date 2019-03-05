@@ -107,7 +107,7 @@
 !        ---------------
 !
          INTEGER            :: fUnit
-         INTEGER            :: i, j, k
+         INTEGER            :: i, j
          
          CLASS(SMElement), POINTER :: e    => NULL()
          CLASS(FTObject) , POINTER :: obj  => NULL()
@@ -148,7 +148,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE WriteISMMeshFile( mesh, fName, model, N, version )
+      SUBROUTINE WriteISMMeshFile( mesh, fName, N, version )
          IMPLICIT NONE 
 !
 !        ---------
@@ -156,7 +156,6 @@
 !        ---------
 !
          CLASS( SMMesh )   , POINTER :: mesh
-         CLASS( SMModel)   , POINTER :: model
          CHARACTER(LEN=*)            :: fName
          INTEGER                     :: N       ! The polynomial order of the boundaries.
          INTEGER                     :: version !version number of the ISM format.

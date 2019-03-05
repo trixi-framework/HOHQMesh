@@ -458,7 +458,6 @@
          CHARACTER(LEN=SM_CURVE_NAME_LENGTH)       :: curveName
          CHARACTER(LEN=EQUATION_STRING_LENGTH)     :: eqnX, eqnY, eqnZ
          CLASS(SMParametricEquationCurve), POINTER :: cCurve => NULL()
-         CLASS(FTException)              , POINTER :: exception => NULL()
          CLASS(SMCurve)                  , POINTER :: curvePtr => NULL()
 !
 !        ----------
@@ -556,11 +555,9 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveName
          CHARACTER(LEN=1), POINTER                  :: encodedData(:)
          REAL(KIND=RP), ALLOCATABLE                 :: decodedArray(:,:)
-         INTEGER                                    :: ios
          CLASS(SMSplineCurve)             , POINTER :: cCurve      => NULL()
          CLASS(SMCurve)                   , POINTER :: curvePtr    => NULL()
-         REAL(KIND=RP) , DIMENSION(:), ALLOCATABLE  :: t, x, y, z
-         INTEGER                                    :: numKnots, j
+         INTEGER                                    :: numKnots
          
          INTEGER, EXTERNAL :: GetIntValue
 !

@@ -72,7 +72,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE InitializeStructuredHexMesh( hexMesh, numberOf2DNodes, numberOfEdges, &
+      SUBROUTINE InitializeStructuredHexMesh( hexMesh, numberOf2DNodes, &
                                               numberOfQuadElements, numberOfLayers, N )
 !
 !     ---------------------------------
@@ -89,14 +89,13 @@
          INTEGER                           :: numberOfLayers
          INTEGER                           :: numberOf2DNodes
          INTEGER                           :: numberOfQuadElements
-         INTEGER                           :: numberOfEdges
          INTEGER                           :: N
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER  :: j, k, l, m
+         INTEGER  :: l, m
          INTEGER  :: elementID
          
          hexMesh % numberofLayers       = numberOfLayers

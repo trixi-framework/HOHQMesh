@@ -919,6 +919,7 @@
 !        mnesh parameters is optional
 !        ----------------------------
 !
+         params % meshType = 0! CONFORMING
          IF(.NOT.ASSOCIATED(paramsDict)) THEN 
             params % meshType = 0! CONFORMING
             RETURN 

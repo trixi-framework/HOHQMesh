@@ -1041,10 +1041,10 @@
          CLASS(MeshSizer) :: self
          INTEGER          :: iUnit
          
-         PRINT *, "Number of inner boundries = ", self % noOfInnerBoundaries
-         PRINT *, "Number of interface boundaries = ", self % noOfInterfaceBoundaries
-         PRINT *, "Base Size = ", self % baseSize
-         PRINT *, "xMin = ", self % xMin
-         PRINT *, "xMax = ", self % xMax
+         WRITE(iUnit, *) "Number of inner boundries = ", self % noOfInnerBoundaries
+         WRITE(iUnit, *) "Number of interface boundaries = ", self % noOfInterfaceBoundaries
+         WRITE(iUnit, *) "Base Size = ", self % baseSize
+         WRITE(iUnit, *) "xMin = ", self % xMin
+         WRITE(iUnit, *) "xMax = ", self % xMax
       END SUBROUTINE printSizerDescription
       END MODULE MeshSizerClass

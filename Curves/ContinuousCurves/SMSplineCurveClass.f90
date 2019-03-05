@@ -61,7 +61,7 @@
 !        ---------------
 !
          INTEGER       :: N, nDim
-         REAL(KIND=RP) :: xx(2,SIZE(x)), tmp
+         REAL(KIND=RP) :: xx(2,SIZE(x))
          INTEGER       :: circ, j
 !
 !        -----------------------------

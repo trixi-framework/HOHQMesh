@@ -192,7 +192,6 @@
          numberOfLayers = generatorDict % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
          CALL InitializeStructuredHexMesh(hexMesh              = project % hexMesh,                   &
                                           numberOf2DNodes      = project % mesh % nodes % count(),    &
-                                          numberOfEdges        = project % mesh % edges % count(),    &
                                           numberOfQuadElements = project % mesh % elements % count(), &
                                           numberOfLayers       = numberOfLayers,                      &
                                           N                    = project % mesh % polynomialOrder)

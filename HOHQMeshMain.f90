@@ -249,7 +249,6 @@
                                            version = project % runParams % meshFileFormat) 
                ELSE
                   CALL WriteISMMeshFile( project % mesh, project % runParams % MeshFileName, &
-                                         project % model, &
                                          project % runParams % polynomialOrder, &
                                          project % runParams % meshFileFormat )
                END IF 
