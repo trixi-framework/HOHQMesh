@@ -5,80 +5,24 @@
 !      Created: 2010-08-27 12:14:31 -0400 
 !      By: David Kopriva  
 !
-!////////////////////////////////////////////////////////////////////////
+! /////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE MoveToBlock( blockName, fileUnit, ios )
-         USE ProgramGlobals
-         IMPLICIT NONE
+   SUBROUTINE toLower(str)
 !
-!        ---------
-!        Arguments
-!        ---------
+!  ----------------
+!  From ResettaCode
+!  ----------------
 !
-         CHARACTER( LEN=* ) :: blockName
-         INTEGER            :: fileUnit
-!
-!        ---------------
-!        Local Variables
-!        ---------------
-!
-         INTEGER                    :: ios
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine
-!
-!        -------------------------
-!        Test for non-comment line
-!        -------------------------
-!
-         DO
-           READ ( fileUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-           IF( ios /= 0 )                           RETURN
-           
-           IF( INDEX(inputline, "\end{File}") /= 0 )     EXIT
-           
-           IF( INDEX(inputLine, TRIM(blockName)) /= 0 )   THEN
-              ios = 0
-              RETURN
-           END IF
-         END DO
-         ios = -1
-!
-      END SUBROUTINE MoveToBlock
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE FindNextBlock( blockName, fileUnit, ios )
-         USE ProgramGlobals
-         IMPLICIT NONE 
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         CHARACTER( LEN=* ) :: blockName
-         INTEGER            :: fileUnit
-         INTEGER            :: ios
-!
-!        ---------------
-!        Local Variables
-!        ---------------
-!
-         INTEGER                    :: cStart, cEnd
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine
-         
-         DO
-           READ ( fileUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-           IF( ios /= 0 )                           RETURN
-           IF( INDEX(inputline, "\end{File}") /= 0 )     EXIT
-           IF( INDEX(inputLine, "\begin{") /= 0 )   THEN
-              cStart = INDEX(inputLine,"{")
-              cEnd   = INDEX(inputLine,"}")
-              blockName = inputLine(cStart+1:cEnd-1)
-              RETURN
-           END IF
-         END DO
-         ios = -1
-
-      END SUBROUTINE FindNextBlock
+     character(*), intent(in out) :: str
+     integer :: i
+ 
+     do i = 1, len(str)
+       select case(str(i:i))
+         case("A":"Z")
+           str(i:i) = achar(iachar(str(i:i))+32)
+       end select
+     end do  
+   END SUBROUTINE toLower
 !
 !///////////////////////////////////////////////////////////////////////
 !
@@ -130,7 +74,7 @@
          IF ( k /=0 )     THEN
             PRINT *, "Bad real array syntax in input line:"
             PRINT *, TRIM(inputLine)
-            PRINT *, "Syntax: [real,real,real]"
+            PRINT *, "Syntax is: [real,real,real]"
             STOP "Input file synax error"
          END IF 
 !
@@ -183,7 +127,7 @@
          IF ( k /=0 )     THEN
             PRINT *, "Bad integer array value in input line:"
             PRINT *, TRIM(inputLine)
-            PRINT *, "Syntax: [integer,integer,integer]"
+            PRINT *, "Syntax is: [integer,integer,integer]"
             STOP "Input file synax error"
          END IF 
 !
