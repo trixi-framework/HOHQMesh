@@ -27,8 +27,8 @@
 !        Mesh project storage
 !        --------------------
 !
-         CLASS( MeshProject )        , POINTER :: project     => NULL()
-         TYPE( MeshStatistics )                :: stats
+         CLASS( MeshProject )  , POINTER :: project     => NULL()
+         TYPE( MeshStatistics )          :: stats
 !
 !        ----
 !        File
@@ -43,17 +43,21 @@
 !        Other
 !        -----
 !         
-         CHARACTER(LEN=8) :: version           = "2.4.19"
+         CHARACTER(LEN=8) :: version           = "3.5.19"
          LOGICAL          :: debug             = .FALSE.
-         LOGICAL          :: didGenerate3DMesh = .FALSE., shouldGenerate3D = .FALSE.
+         LOGICAL          :: didGenerate3DMesh = .FALSE.
+         LOGICAL          :: shouldGenerate3D  = .FALSE.
          INTEGER          :: errorCode = NONE 
          INTEGER          :: k
          TYPE(FTTimer)    :: stopWatch
-         CHARACTER(LEN=16):: namesFmt = "(   7A16 )", valuesFmt = '(  7F16.3)', numb = "9"
+         
+         CHARACTER(LEN=16)                       :: namesFmt = "(   7A16 )"
+         CHARACTER(LEN=16)                       :: valuesFmt = '(  7F16.3)'
+         CHARACTER(LEN=16)                       :: numb = "9"
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
          
          CLASS(FTObject)         , POINTER :: obj
          CLASS(FTValueDictionary), POINTER :: controlDict
-         
 !
 !        ***********************************************
 !                             Start
@@ -69,7 +73,9 @@
 !        ------------------------
 !
          ios = 0
-         IF ( controlFileName == "None" )     THEN
+         str = controlFileName
+         CALL toLower(str)
+         IF ( str == "none" )     THEN
             fUnit   = StdInFileUnitCopy( )
          ELSE
             fUnit = UnusedUnit()
@@ -80,8 +86,8 @@
          IF ( ios == 0 )     THEN
             CALL cfReader % importFromControlFile(fileUnit = fUnit)
          ELSE
-            PRINT *, "Unable to open input file"
-            STOP !TODO: be more gracious
+            PRINT *, "Unable to open input file: ", TRIM(controlFileName)
+            STOP
          END IF 
          CLOSE(fUnit)
 !
@@ -130,7 +136,9 @@
 !        Write mesh quality statistics to a file
 !        ---------------------------------------
 !
-         IF ( project % runParams % statsFileName /= "None" )     THEN
+         str = project % runParams % statsFileName
+         CALL toLower(str)
+         IF ( str /= "none" )     THEN
             CALL Write2DMeshStatistics(mesh          = project % mesh, &
                                        statsFileName = project % runParams % statsFileName)
          END IF
@@ -193,7 +201,9 @@
 !        Write the Plot file
 !        -------------------
 !
-         IF( project % runParams % plotFileName /= "None" )     THEN
+         str = project % runParams % plotFileName
+         CALL toLower(str)
+         IF( str /= "none" )     THEN
             IF( PrintMessage ) PRINT *, "Writing tecplot file..."
             
                IF ( didGenerate3DMesh )     THEN
@@ -224,7 +234,9 @@
 !        Write the mesh file
 !        -------------------
 !
-         IF( project % runParams % MeshFileName /= "None" )     THEN
+         str = project % runParams % MeshFileName
+         CALL toLower(str)
+         IF( str /= "none" )     THEN
             IF( PrintMessage ) PRINT *, "Writing mesh file..."
          
             IF ( project % runParams % meshFileFormat == BASIC_MESH_FORMAT )     THEN
@@ -292,7 +304,7 @@
             printMessage = .true.
          END IF
          
-         controlFileName = "None"
+         controlFileName = "none"
          IF ( CommandLineArgumentIsPresent(argument = "-f") )     THEN
             controlFileName = StringValueForArgument(argument = "-f")
          END IF 
