@@ -291,7 +291,7 @@
 !        ---------
 !
          CLASS( SMMesh )  , POINTER :: mesh
-         CHARACTER(LEN=*)          :: statsFileName
+         CHARACTER(LEN=*)           :: statsFileName
 !
 !        ---------------
 !        Local variables

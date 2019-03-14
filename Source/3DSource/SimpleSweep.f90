@@ -17,7 +17,6 @@
       USE SMConstants
       USE ProgramGlobals
       USE FTExceptionClass
-      USE ReaderExceptions
       USE SharedExceptionManagerModule
       USE HexMeshObjectsModule
       USE ErrorTypesModule
