@@ -25,6 +25,8 @@
          TYPE( SMEdgePtr    ), DIMENSION(:,:), ALLOCATABLE :: edgesForElements
          INTEGER             , DIMENSION(:)  , ALLOCATABLE :: numEdgesForNodes
          INTEGER             , DIMENSION(:)  , ALLOCATABLE :: numElementsForNode
+         
+         INTEGER                             , PARAMETER   :: maxValence = 11
 !
 !        ========
          CONTAINS
@@ -116,23 +118,23 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)               , POINTER :: node => NULL()
-         CLASS(SMElement)            , POINTER :: e    => NULL()
-         INTEGER                               :: k, id, numNodes
-         CLASS(FTLinkedListIterator), POINTER  :: iterator => NULL()
-         CLASS(FTObject)            , POINTER  :: obj => NULL()
+         CLASS(SMNode)               , POINTER  :: node => NULL()
+         CLASS(SMElement)            , POINTER  :: e    => NULL()
+         INTEGER                                :: k, id, numNodes
+         CLASS(FTLinkedListIterator), POINTER   :: iterator => NULL()
+         CLASS(FTObject)            , POINTER   :: obj => NULL()
 !
 !        -----------------------------------------------------
 !        Make sure that the temporary array has been allocated
 !        Note that the maximum valence of a node using the
-!        grid based method is 8.
+!        grid based method is set to 11.
 !        -----------------------------------------------------
 !
          errorCode = NONE 
          CALL deallocateNodeToElementConnections
          
          numNodes = mesh % nodes % COUNT()
-         ALLOCATE( elementsForNodes(8,numNodes) )
+         ALLOCATE( elementsForNodes(maxValence,numNodes) )
          ALLOCATE( numElementsForNode(numNodes) )
          numElementsForNode = 0
          
@@ -151,11 +153,11 @@
                
                id   = node % id
                numElementsForNode(id) = numElementsForNode(id) + 1
-               IF ( numElementsForNode(id) > 8 )     THEN
+               IF ( numElementsForNode(id) > maxValence )     THEN
                   IF(printMessage)     THEN 
                      PRINT *, " "
                      PRINT *, "**************************************************************************"
-                     PRINT *, "Valence too high for node ",id, " x = ",node % x
+                     PRINT *, "Valence ",numElementsForNode(id), " too high for node ",id, " x = ",node % x
                      PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
                      PRINT *, "**************************************************************************"
                      PRINT *, " "
@@ -218,7 +220,7 @@
 !        -----------------------------------------------------
 !        Make sure that the temporary array has been allocated
 !        Note that the maximum valence of a node using the
-!        grid based method is 8.
+!        grid based method is maxValence.
 !        -----------------------------------------------------
 !
          CALL deallocateNodeToEdgeConnections
@@ -226,7 +228,7 @@
          CALL renumberObjects(mesh,NODES)
          
          numNodes = mesh % nodes % COUNT()
-         ALLOCATE( edgesForNodes(8,numNodes) )
+         ALLOCATE( edgesForNodes(maxValence,numNodes) )
          ALLOCATE( numEdgesForNodes(numNodes) )
          numEdgesForNodes = 0
          
