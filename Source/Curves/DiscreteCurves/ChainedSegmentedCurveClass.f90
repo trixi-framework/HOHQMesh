@@ -44,7 +44,7 @@
 !        ========
 !
          PROCEDURE :: initwithNameAndID => initChain
-         PROCEDURE :: destruct          => destructChain
+         FINAL     :: destructChain
          PROCEDURE :: add               => addSegmentedCurveToChain
          PROCEDURE :: printDescription  => printChainedCurveDescription
          PROCEDURE :: curveCount        => numberOfCurvesInChainFunction
@@ -57,10 +57,6 @@
          PROCEDURE :: curveIDAtChainIndex
          
       END TYPE ChainedSegmentedCurve
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseChain 
-      END INTERFACE  
 !
 !     ========      
       CONTAINS 
@@ -91,17 +87,19 @@
 ! 
       SUBROUTINE destructChain(self)  
          IMPLICIT NONE  
-         CLASS(ChainedSegmentedCurve) :: self
+         TYPE(ChainedSegmentedCurve) :: self
+         CLASS(FTObject), POINTER    :: obj
          
          IF ( ASSOCIATED(self % chain) )     THEN
-            CALL release(self % chain)
+            obj => self % chain
+            CALL release(obj)
          END IF 
          
       END SUBROUTINE destructChain
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE releaseChain(self)  
+      SUBROUTINE releaseChainChainedSegmentedCurve(self)  
          IMPLICIT NONE
          CLASS(ChainedSegmentedCurve), POINTER :: self
          CLASS(FTObject)             , POINTER :: obj
@@ -113,7 +111,7 @@
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             self => NULL() 
          END IF      
-      END SUBROUTINE releaseChain
+      END SUBROUTINE releaseChainChainedSegmentedCurve
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -604,13 +602,13 @@
          CALL v % initWithValue(self % curveName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"chainName")
-         CALL release(v)
+         CALL release(obj)
            
          ALLOCATE(v)
          CALL v % initWithValue( c % curveName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"curveName")
-         CALL release(v)
+         CALL release(obj)
          
          dataLength = SIZE(TRANSFER(xStart,dat))
          ALLOCATE(dat(dataLength))
@@ -619,14 +617,14 @@
          CALL d % initWithDataOfType(dat,"REAL,DIMENSION(3)")
          obj => d
          CALL userDictionary % addObjectForKey(obj,"startPosition")
-         CALL release(d)
+         CALL release(obj)
          
          dat = TRANSFER(xEnd,dat)
          ALLOCATE(d)
          CALL d % initWithDataOfType(dat,"REAL,DIMENSION(3)")
          obj => d
          CALL userDictionary % addObjectForKey(obj,"endPosition")
-         CALL release(d)
+         CALL release(obj)
 !
 !        --------------------
 !        Create the exception
@@ -637,14 +635,16 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = SEGMENTED_CURVES_DONT_JOIN_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL release(userDictionary)
+         obj => userDictionary
+         CALL release(obj)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL release(exception)
+         obj => exception  
+         CALL release(obj)
          
       END SUBROUTINE throwCurvedoesntFollowException
 

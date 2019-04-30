@@ -55,7 +55,7 @@
 !        ========
 !
          PROCEDURE :: init             => initSMMesh        
-         PROCEDURE :: destruct         => destructSMMesh
+         FINAL     :: destructSMMesh
          PROCEDURE :: printDescription => printMeshDescription
          PROCEDURE :: buildEdgeList
          PROCEDURE :: newNodeID
@@ -101,10 +101,6 @@
 !
       TYPE(FTMutableObjectArray), POINTER     :: boundaryEdgesArray => NULL()
       INTEGER                   , ALLOCATABLE :: boundaryEdgesType(:)
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseMesh 
-      END INTERFACE  
 !
 !     ========     
       CONTAINS
@@ -149,14 +145,15 @@
 !  
       SUBROUTINE destructSMMesh(self)  
          IMPLICIT NONE  
-         CLASS(SMMesh) :: self
+         TYPE(SMMesh) :: self
          
-         CALL release(self % nodesIterator)
-         CALL release(self % edgesIterator)
-         CALL release(self % elementsIterator)
-         CALL release(self % nodes)
-         CALL release(self % elements)
-         CALL release(self % edges)
+         CALL releaseFTLinkedListIterator(self % nodesIterator)
+         CALL releaseFTLinkedListIterator(self % edgesIterator)
+         CALL releaseFTLinkedListIterator(self % elementsIterator)
+         
+         CALL releaseFTLinkedList(self % nodes)
+         CALL releaseFTLinkedList(self % elements)
+         CALL releaseFTLinkedList(self % edges)
          
          IF(ALLOCATED(curveTypeForID))       DEALLOCATE(curveTypeForID)
          IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
@@ -169,7 +166,7 @@
 ! 
       SUBROUTINE releaseMesh(self)  
          IMPLICIT NONE
-         CLASS(SMMesh)  , POINTER :: self
+         TYPE(SMMesh)  , POINTER :: self
          CLASS(FTObject), POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -322,7 +319,7 @@
 !
                   obj => edge
                   CALL self % edges % add(obj)
-                  CALL release(edge)
+                  CALL releaseSMEdge(self = edge)
                   
                   CALL hashTable % addObjectForKeys(obj,key1,key2)
                END IF 
@@ -331,13 +328,6 @@
             
             CALL elementIterator % moveToNext()
          END DO
-!
-!        --------
-!        Clean up
-!        --------
-!
-         CALL elementIterator % destruct()
-         CALL hashTable % destruct()
          
       END SUBROUTINE buildEdgeList
 !
@@ -590,7 +580,7 @@
 !        Local varaiables
 !        ----------------
 !
-         IF(ASSOCIATED(boundaryEdgesArray)) CALL release(boundaryEdgesArray)
+         IF(ASSOCIATED(boundaryEdgesArray)) CALL releaseFTMutableObjectArray(boundaryEdgesArray)
          IF ( .NOT. ASSOCIATED(boundaryEdgesArray) )     THEN
             IF(ALLOCATED(boundaryEdgesType)) DEALLOCATE(boundaryEdgesType)
          END IF 
@@ -607,9 +597,9 @@
 !        Ensure edges are in sync
 !        ------------------------
 !
-         CALL release(self % edgesIterator)
-         
-         CALL release(self % edges)
+         CALL releaseFTLinkedListIterator(self % edgesIterator)
+         CALL releaseFTLinkedList(self = self % edges)
+
          ALLOCATE(self % edges)
          ALLOCATE(self % edgesIterator)
          

@@ -46,11 +46,6 @@
 !
          PROCEDURE :: initwithProperties => initSizerLineControl
       END TYPE SizerLineControl
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseSizerLineControl
-         MODULE PROCEDURE releaseSizerCenterControl
-      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -284,8 +279,8 @@
                
                CALL iterator % moveToNext()
             END DO
-            
-            CALL release(iterator)
+            obj => iterator
+            CALL release(obj)
 !
 !           -------------------------
 !           Compute the size function

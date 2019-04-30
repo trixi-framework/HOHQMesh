@@ -34,14 +34,10 @@
 !        ========
 !
          PROCEDURE :: initWithEquationsNameAndID
-         PROCEDURE :: destruct   => destructPECurve
+         FINAL     :: destructPECurve
          PROCEDURE :: positionAt => positionOnPECurveAt
          PROCEDURE :: printDescription => printPEDescription
       END TYPE SMParametricEquationCurve
-      
-      INTERFACE release
-         MODULE PROCEDURE releasePECurve
-      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -83,13 +79,11 @@
 ! 
        SUBROUTINE destructPECurve(self)  
          IMPLICIT NONE
-         CLASS(SMParametricEquationCurve) :: self
+         TYPE(SMParametricEquationCurve) :: self
          
          CALL DestructEquationEvaluator( self%xEqn )
          CALL DestructEquationEvaluator( self%yEqn )
          CALL DestructEquationEvaluator( self%zEqn )
-         
-         CALL self % SMCurve % destruct()
          
        END SUBROUTINE destructPECurve
 !
@@ -174,25 +168,25 @@
          CALL v % initWithValue(curveName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"curveName")
-         CALL release(v)
+         CALL release(obj)
            
          ALLOCATE(v)
          CALL v % initWithValue(eqn)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"Equation String")
-         CALL release(v)
+         CALL release(obj)
        
          ALLOCATE(v)
          CALL v % initWithValue(objectName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"objectName")
-         CALL release(v)
+         CALL release(obj)
          
          ALLOCATE(v)
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL release(v)
+         CALL release(obj)
 !
 !        --------------------
 !        Create the exception
@@ -203,14 +197,16 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = EQUATION_FORMAT_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL release(userDictionary)
+         obj => userDictionary
+         CALL release(obj)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL release(exception)
+         obj => exception
+         CALL release(obj)
          
       END SUBROUTINE ThrowEquationFormatException
       

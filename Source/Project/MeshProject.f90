@@ -127,10 +127,6 @@
 !
          PROCEDURE :: initWithDictionary         
       END TYPE MeshProject
-      
-      INTERFACE release
-         MODULE PROCEDURE :: releaseMeshProject 
-      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -250,23 +246,22 @@
          CLASS(MeshProject) :: self
          
          IF ( ASSOCIATED(self % model) )     THEN
-            CALL release(self % model)
+            CALL releaseModel(self % model)
          END IF 
          
          IF ( ASSOCIATED(self % mesh) )     THEN
-            CALL release(self % mesh)
+            CALL releaseMesh(self % mesh)
          END IF 
          
          IF ( ASSOCIATED(self % sizer) )     THEN
-            CALL release(self % sizer)
+            CALL releaseSizer(self % sizer)
          END IF 
          
          IF ( ASSOCIATED(self % grid) )     THEN
-            CALL release(self % grid)
+            CALL releaseGrid(self % grid)
          END IF 
          
          IF ( ASSOCIATED(self % smoother) )     THEN
-            CALL self % smoother % destruct()
             DEALLOCATE(self % smoother) 
          END IF 
          
@@ -300,15 +295,13 @@
          CLASS(MeshProject), POINTER :: self
          
          IF ( ASSOCIATED(self % grid) )     THEN
-            CALL release(self = self % grid) 
-            self % grid => NULL()
+            CALL releaseGrid(self % grid)
          END IF
 
          CALL BuildQuadtreeGrid(self)
          
          IF ( ASSOCIATED( self % mesh) )     THEN
-            CALL release(self = self % mesh) 
-            self % mesh => NULL()
+            CALL releaseMesh(self % mesh)
          END IF 
 
       END SUBROUTINE ResetProject
@@ -489,8 +482,7 @@
          NULLIFY(parent)
          
          IF(ASSOCIATED(self % grid))      THEN
-            CALL release(self % grid)
-            self % grid => NULL()
+            CALL releaseGrid(self % grid)
          END IF 
          
          ALLOCATE(self % grid)
@@ -551,7 +543,8 @@
                   CALL c % initWithProperties( centerParams % x0, centerParams % centerExtent, &
                                              centerParams % centerMeshSize, centerParams % centerType )
                   CALL sizer % addSizerCenterControl(c)
-                  CALL release(c)
+                  obj => c
+                  CALL release(obj)
                   
                CASE ( REFINEMENT_LINE_KEY)
                
@@ -561,7 +554,8 @@
                   CALL L    % initWithProperties( lineParams % x0, lineParams % x1, lineParams % lineExtent, &
                                                   lineParams % lineMeshSize, lineParams % lineControlType )
                   CALL sizer % addSizerLineControl(L)
-                  CALL release(L)
+                  obj => L
+                  CALL release(obj)
                   
                CASE DEFAULT 
                   CALL ThrowErrorExceptionOfType(poster = "AddRefinementRegionsToSizer", &
@@ -572,7 +566,7 @@
             CALL refinementIterator % moveToNext() 
          END DO 
          
-         CALL release(refinementIterator)
+         CALL releaseFTLinkedListIterator(refinementIterator)
  
       END SUBROUTINE AddRefinementRegionsToSizer
 !
@@ -619,7 +613,8 @@
             segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( self % model % outerBoundary, &
                                                                            h, self % sizer % controlsList, curveID )
             CALL self % sizer % addBoundaryCurve(segmentedOuterBoundary,OUTER)
-            CALL release(segmentedOuterBoundary)
+            
+            CALL releaseChainChainedSegmentedCurve(segmentedOuterBoundary)
         END IF
 !
 !        --------------------------------------
@@ -637,7 +632,7 @@
                segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, h, self % sizer % controlsList, curveID )
                 
                CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INNER)
-               CALL release(segmentedInnerBoundary)
+               CALL releaseChainChainedSegmentedCurve(segmentedInnerBoundary)
                 
                CALL iterator % moveToNext()           
             END DO
@@ -658,7 +653,7 @@
                 segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, h, self % sizer % controlsList, curveID )
                 
                 CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INTERIOR_INTERFACE)
-                CALL release(segmentedInnerBoundary)
+                CALL releaseChainChainedSegmentedCurve(segmentedInnerBoundary)
                 
                 CALL iterator % moveToNext()           
              END DO  

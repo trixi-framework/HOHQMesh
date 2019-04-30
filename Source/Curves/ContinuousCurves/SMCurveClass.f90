@@ -31,7 +31,7 @@
 !        ========
 !
          PROCEDURE, NON_OVERRIDABLE :: initWithNameAndID
-         PROCEDURE                  :: destruct           => destructBaseCurve
+         FINAL                      :: destructBaseCurve
          PROCEDURE                  :: printDescription   => printCurveDescription
          PROCEDURE                  :: positionAt
          PROCEDURE                  :: tangentAt
@@ -48,10 +48,6 @@
       INTERFACE cast
          MODULE PROCEDURE castToSMCurve
       END INTERFACE cast
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseBaseCurve 
-      END INTERFACE  
 !
 !     ----------------
 !     Module variables
@@ -84,12 +80,10 @@
 ! 
       SUBROUTINE destructBaseCurve(self)  
          IMPLICIT NONE
-         CLASS(SMCurve) :: self
+         TYPE(SMCurve) :: self
          
          CALL self % setCurveName("")
          CALL self % setID(0)
-         
-         CALL self % FTObject % destruct()
          
       END SUBROUTINE destructBaseCurve
 !

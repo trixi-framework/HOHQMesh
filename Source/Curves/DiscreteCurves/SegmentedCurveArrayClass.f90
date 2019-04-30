@@ -63,14 +63,10 @@
          PROCEDURE :: PointIsInsideCurve
          PROCEDURE :: setBoundingBox
          
-         PROCEDURE :: destruct         => destructSegmentedCurveArray
+         FINAL     :: destructSegmentedCurveArray
          PROCEDURE :: printDescription => PrintSegmentedCurveArray
          
       END TYPE SegmentedCurveArray
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseCurveArray 
-      END INTERFACE  
 !
 !     ========
       CONTAINS 
@@ -144,11 +140,9 @@
 !
       SUBROUTINE DestructSegmentedCurveArray( self ) 
          IMPLICIT NONE
-         CLASS(SegmentedCurveArray) :: self
+         TYPE(SegmentedCurveArray) :: self
          self % nSegments = 0
          DEALLOCATE( self % x, self % t, self % curvature )
-         
-         CALL self % FTObject % destruct()
          
       END SUBROUTINE DestructSegmentedCurveArray
 !

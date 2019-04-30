@@ -261,8 +261,8 @@
 !        Clean up
 !        --------
 !
-         CALL release(controlDict)
-         CALL release(project)
+         CALL releaseFTValueDictionary(controlDict)
+         CALL releaseMeshProject(project)
          CALL destructFTExceptions
          IF( PrintMessage ) PRINT *, "Execution complete. Exit."
          

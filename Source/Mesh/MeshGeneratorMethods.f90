@@ -207,7 +207,7 @@
 !     Free up memory since grid is no longer needed
 !     ---------------------------------------------
 !
-      CALL release(grid)
+      CALL releaseGrid(grid)
       NULLIFY(project % grid)
 !
 !     --------------------------------------------------------------
@@ -437,7 +437,7 @@
                CALL e % initWithNodesIDAndType(eNodes, elementID, QUAD )
                obj => e
                CALL mesh % elements % add(obj)
-               CALL release(e)
+               CALL releaseSMElement(e)
             END IF
          END DO
       END DO
@@ -531,7 +531,7 @@
          CALL initBoundaryNode( cStart, chain, t, bCurveSide, mesh % newNodeID(), node )
          obj => node
          CALL mesh % nodes % add(obj)
-         CALL release(node)! We won't be keeping it beyond this scope
+         CALL releaseSMNode(node)
          prevNode  => node
          startNode => node
 !
@@ -576,7 +576,7 @@
                      newNodes(2) % node => node
                      obj => node
                      CALL mesh % nodes % add(obj)
-                     CALL release(node)
+                     CALL releaseSMNode(node)
                   ELSE
                      boundaryEdgeNodes(2) % node => nodeArray(1) % node
                      newNodes(2) % node          => startNode
@@ -589,8 +589,7 @@
                   e   => boundaryElementForNodes( mesh % newElementID(), boundaryEdgeNodes, newNodes )
                   obj => e
                   CALL mesh % elements % add(obj)
-                  CALL release(e)
-!                  IF( k == nodeArraySize )   CALL release(newNodes(2) % node)
+                  CALL releaseSMElement(e)
                   prevNode => newNodes(2) % node
                   
                CASE( ROW_END )
@@ -625,14 +624,13 @@
                   newNodes(2) % node => node
                   obj => node
                   CALL mesh % nodes % add(obj)
-                  CALL release(node)
+                  CALL releaseSMNode(node)
 !
                   e => boundaryElementForNodes( mesh % newElementID(), boundaryEdgeNodes, newNodes )
                   obj => e
                   CALL mesh % elements % add(obj)
-                  CALL release(e)
+                  CALL releaseSMElement(e)
                   prevNode => newNodes(2) % node
-!                  CALL release(newNodes(2) % node) !??? extra release ?
 !
 !                 -------------
 !                 Wedge Element
@@ -652,7 +650,7 @@
                   elementNodes(3) % node => node
                   obj => node
                   CALL mesh % nodes % add(obj)
-                  CALL release(node)
+                  CALL releaseSMNode(node)
                   elementNodes(3) % node % nodeType = ROW_END
 !
 !                 ----------------------------------------------
@@ -676,7 +674,7 @@
                   elementNodes(4) % node => node
                   obj => node
                   CALL mesh % nodes % add(obj)
-                  CALL release(node)
+                  CALL releaseSMNode(node)
 !
 !                 ----------------------------------------
 !                 Create wedge element and add to the mesh
@@ -685,7 +683,7 @@
                   e   => boundaryElementFor4Nodes( mesh % newElementID(), elementNodes )
                   obj => e
                   CALL mesh % elements % add(obj)
-                  CALL release(e)
+                  CALL releaseSMElement(e)
 !
 !                 ----------------------------------------------------------------
 !                 Prepare for the next element, which should be a row-side element
@@ -736,7 +734,7 @@
                   e => boundaryElementFor4Nodes( mesh % newElementID(), elementNodes )
                   obj => e
                   CALL mesh % elements % add(obj)
-                  CALL release(e)
+                  CALL releaseSMElement(e)
 !
 !                 ----------------------------------------
 !                 Get ready to move on - skip the k+1 node
@@ -772,7 +770,7 @@
                   e => boundaryElementFor4Nodes( mesh % newElementID(), elementNodes )
                   obj => e
                   CALL mesh % elements % add(obj)
-                  CALL release(e)
+                  CALL releaseSMElement(e)
 !
 !                 ----------------------------------------------
 !                 Get ready to move on - skip the next two nodes
@@ -793,7 +791,7 @@
                   e => boundaryElementFor4Nodes( mesh % newElementID(), elementNodes )
                   obj => e
                   CALL mesh % elements % add(obj)
-                  CALL release(e)
+                  CALL releaseSMElement(e)
                   
                   prevNode => elementNodes(1) % node
                   k = k + 1

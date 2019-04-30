@@ -60,7 +60,7 @@
 !
          PROCEDURE :: initGridWithParameters
          PROCEDURE :: initWithTemplateType => TemplateInit
-         PROCEDURE :: destruct => destructGrid
+         FINAL     :: destructGrid
          PROCEDURE :: printDescription => printQuadTreeGridDescription
          
       END TYPE QuadTreeGrid
@@ -83,10 +83,6 @@
       
       INTEGER                                                :: numberOfGridsAtLevel
       TYPE(NestedQuadTreeGridPtr), DIMENSION(:), ALLOCATABLE :: gridsAtLevel
-      
-      INTERFACE release
-         MODULE PROCEDURE :: releaseGrid 
-      END INTERFACE  
 !
 !     ========
       CONTAINS 
@@ -308,10 +304,11 @@
 !
       RECURSIVE SUBROUTINE DestructGrid(self) 
          IMPLICIT NONE 
-         CLASS(QuadTreeGrid)          :: self
+         TYPE(QuadTreeGrid)          :: self
          INTEGER                      :: i,j, N, M
          CLASS(SMQuad)      , POINTER :: quad => NULL()
          CLASS(SMNode)      , POINTER :: node => NULL()
+         CLASS(FTObject)    , POINTER :: obj 
          
          N = self % N(1)
          M = self % N(2)
@@ -324,7 +321,9 @@
             DO j = 1, M
                DO i = 1, N 
                   IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN
-                     CALL release(self % children(i,j) % grid)
+                     obj => self % children(i,j) % grid
+                     CALL release(obj)
+                     self % children(i,j) % grid => NULL()
                   END IF
                END DO
             END DO
@@ -339,7 +338,10 @@
             DO j = 1, self % N(2) 
                DO i = 1, self % N(1)
                   quad => self % quads(i,j) % quad
-                  IF( ASSOCIATED(quad) ) CALL release(quad)
+                  IF( ASSOCIATED(quad) ) THEN
+                     obj => quad
+                     CALL release(obj)
+                     END IF 
                END DO 
             END DO
             DEALLOCATE(self % quads)
@@ -349,7 +351,10 @@
             DO j = 0, self % N(2) 
                DO i = 0, self % N(1)
                   node => self % nodes(i,j) % node
-                  IF( ASSOCIATED(node) ) CALL release(node)
+                  IF( ASSOCIATED(node) )    THEN
+                     obj => node
+                     CALL release(obj)
+                  END IF 
                END DO 
             END DO
             DEALLOCATE( self % nodes )

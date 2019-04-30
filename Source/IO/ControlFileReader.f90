@@ -147,7 +147,7 @@
          IMPLICIT NONE  
          CLASS(ControlFileReader) :: self
          
-         CALL release(self % controlDict)
+         CALL releaseFTValueDictionary(self % controlDict)
          blockStack    = ""
          blockStackTop = 0
          
@@ -228,7 +228,7 @@
                CALL exception % initFatalException( "Syntax error in control file line: "// TRIM(ADJUSTL(line)) // &
                                                      ". Commands are lower case.")
                CALL throw(exceptionToThrow = exception)
-               CALL release(exception)
+               CALL releaseFTException(exception)
                RETURN 
             ELSE 
                dict => valueDictionaryFromObject(collection)
@@ -295,7 +295,7 @@
               CALL newList % init()
               obj => newList
               CALL newDict % addObjectForKey(obj,"LIST")
-              CALL release(newList)
+              CALL releaseFTLinkedList(self = newList)
               
               IF(objectName == "CHAIN")     THEN ! Read the name of the chain
                  READ(fileUnit,"(A)", END = 1000) line
@@ -305,7 +305,7 @@
               obj => newList
          END IF
          
-         CALL release(newDict)
+         CALL releaseFTValueDictionary(self = newDict)
          CALL performImport(fileUnit, obj, objectName)
 1000     CONTINUE
          
@@ -337,7 +337,7 @@
             ALLOCATE(exception)
             CALL exception % initFatalException(msg)
             CALL throw(exceptionToThrow = exception)
-            CALL release(exception)
+            CALL releaseFTException(self = exception)
             RETURN 
          END IF 
          blockStack(blockStackTop) = ""
@@ -433,7 +433,7 @@
                   ALLOCATE(exception)
                   CALL exception % initFatalException(errMsg)
                   CALL throw(exceptionToThrow = exception)
-                  CALL release(exception)
+                  CALL releaseFTException(self = exception)
                END IF 
                blockStack(blockStackTop) = ""
                blockStackTop = blockStackTop - 1
@@ -651,7 +651,7 @@
             
             obj => dta
             CALL dict % addObjectForKey(object = obj, key = "data")
-            CALL release(dta)
+            CALL releaseFTData(self = dta)
 !
 !           ----------------------------------------
 !           Data is followed by an \end{SPLINE_DATA}

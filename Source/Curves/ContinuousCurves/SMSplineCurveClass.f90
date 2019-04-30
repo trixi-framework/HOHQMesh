@@ -28,13 +28,9 @@
 !        ========
 !
          PROCEDURE :: initWithPointsNameAndID
-         PROCEDURE :: destruct   => destructSplineCurve
+         FINAL     :: destructSplineCurve
          PROCEDURE :: positionAt => positionOnSplineCurveAt
       END TYPE SMSplineCurve
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseSplineCurve 
-      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -116,11 +112,9 @@
 !
       SUBROUTINE DestructSplineCurve( self )
          IMPLICIT NONE 
-         CLASS(SMSplineCurve)           :: self
+         TYPE(SMSplineCurve)           :: self
          
          self%numKnots = 0
-         
-         CALL self % SMCurve % destruct()
 
       END SUBROUTINE DestructSplineCurve
 !

@@ -110,7 +110,7 @@
 !        ----------
 !
          PROCEDURE :: initWithNodesIDAndType => initElementWithNodesIDAndType
-         PROCEDURE :: destruct               => destructElement
+         FINAL     :: destructElement
          PROCEDURE :: printDescription       => printElementDescription
       END TYPE SMElement
       
@@ -135,7 +135,7 @@
 !        ========
 !
          PROCEDURE :: initWithNodesAndID => initEdgeWithNodesAndID
-         PROCEDURE :: destruct           => destructEdge
+         FINAL     :: destructEdge
          PROCEDURE :: printDescription   => printEdgeDescription
          PROCEDURE :: addAuxiliaryNode
       END TYPE SMEdge
@@ -154,7 +154,7 @@
          CONTAINS 
          PROCEDURE :: initWithNodes => initQuadWithNodes
          PROCEDURE :: init          => initQuad
-         PROCEDURE :: destruct      => destructQuad
+         FINAL     :: destructQuad
          PROCEDURE :: printDescription => printQuadDescription
       END TYPE SMQuad
       
@@ -177,13 +177,6 @@
       INTERFACE cast
          MODULE PROCEDURE castToSMEdge
       END INTERFACE cast
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseSMNode 
-         MODULE PROCEDURE releaseSMElement
-         MODULE PROCEDURE releaseSMEdge
-         MODULE PROCEDURE releaseSMQuad
-      END INTERFACE  
 !
 !     ========      
       CONTAINS
@@ -309,7 +302,8 @@
 !
       SUBROUTINE PointNodePtr_To_( p, q )
          IMPLICIT NONE 
-         TYPE(SMNodePtr) :: p, q
+         TYPE(SMNodePtr)          :: p, q
+         CLASS(FTObject), POINTER :: obj
          
          IF( .NOT.ASSOCIATED(q % node) ) THEN
             PRINT *, "Unassociated target node pointer"
@@ -317,7 +311,8 @@
             STOP
          END IF
 !
-         CALL release(p % node)
+         obj => p % node
+         CALL release(obj)
 !
 !        ----------------------
 !        End of offending block
@@ -472,10 +467,8 @@
 ! 
       SUBROUTINE destructelement(self) 
          IMPLICIT NONE  
-         CLASS(SMElement) :: self
+         TYPE(SMElement) :: self
          
-         CALL self % nodes % destruct()
-
       END SUBROUTINE destructelement
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -567,10 +560,11 @@
 ! 
       SUBROUTINE destructEdge(self)  
          IMPLICIT NONE  
-         CLASS(SMEdge)             :: self
+         TYPE(SMEdge)             :: self
          CLASS(SMNode)   , POINTER :: np => NULL()
          CLASS(SMElement), POINTER :: ep => NULL()
          INTEGER                   :: k
+         CLASS(FTObject), POINTER  :: obj
          
          DO k = 1,2
 !
@@ -578,20 +572,21 @@
 !           Release nodes
 !           -------------
 !
-            CALL release(self % nodes(k) % node)
+            obj => self % nodes(k) % node
+            CALL release(obj)
 !
 !           ----------------
 !           Release elements
 !           ----------------
 !
-            CALL release(self % elements(k) % element)
+            obj => self % elements(k) % element
+            CALL release(obj)
          END DO  
 
          IF(ASSOCIATED(self % auxiliaryNode))     THEN
-            CALL release(self % auxiliaryNode)
+            obj => self % auxiliaryNode
+            CALL release(obj)
          END IF
-         
-         CALL self % FTObject % destruct()
          
       END SUBROUTINE destructEdge
 !
@@ -703,11 +698,13 @@
 ! 
       SUBROUTINE destructQuad(self)  
          IMPLICIT NONE  
-         CLASS(SMQuad)   :: self
-         INTEGER         :: k
+         TYPE(SMQuad)              :: self
+         INTEGER                   :: k
+         CLASS(FTObject), POINTER  :: obj
          
          DO k = 1, 4
-            CALL release(self % nodes(k) % node)
+            obj => self % nodes(k) % node
+            CALL release(obj)
          END DO  
       END SUBROUTINE destructQuad
 !

@@ -75,7 +75,7 @@
 !        ========
 !
          PROCEDURE :: initSMSegmentedCurveNode
-         PROCEDURE :: destruct => destructSMSegmentedCurveNode
+         FINAL     :: destructSMSegmentedCurveNode
          PROCEDURE :: printDescription => printNodeDescription
          
       END TYPE SMSegmentedCurveNode
@@ -114,7 +114,7 @@
 !        ========
 !
          PROCEDURE :: initWithCurve    => initFRSegmentedCurve
-         PROCEDURE :: destruct         => DestructFRSegmentedCurve
+         FINAL     :: DestructFRSegmentedCurve
          PROCEDURE :: printDescription => printFRSegmentedCurve
          PROCEDURE :: reverse          => reverseFRSegmentedCurve
          PROCEDURE :: COUNT            => FRSegmentedCurveCount
@@ -125,12 +125,6 @@
          PROCEDURE :: normalAtIndex
          
       END TYPE FRSegmentedCurve
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseFRSegmentedCurve 
-         MODULE PROCEDURE releaseSMSegmentedCurveNode
-         MODULE PROCEDURE releaseSMSegment
-      END INTERFACE  
 
       INTERFACE cast
          MODULE PROCEDURE castToSMSegmentedCurveNode
@@ -162,9 +156,7 @@
 ! 
       SUBROUTINE destructSMSegmentedCurveNode(self)  
          IMPLICIT NONE
-         CLASS(SMSegmentedCurveNode) :: self
-         
-         CALL self % FTObject % destruct()
+         TYPE(SMSegmentedCurveNode) :: self
          
       END SUBROUTINE destructSMSegmentedCurveNode
 !
@@ -251,14 +243,17 @@
       RECURSIVE SUBROUTINE DestructSMSegment(self)  
          IMPLICIT NONE
          CLASS(SMSegment)           :: self
+         CLASS(FTObject), POINTER   :: obj
                   
-         CALL release(self % leftNode)
-         CALL release(self % rightNode)
+         CALL releaseSMSegmentedCurveNode(self % leftNode)
+         CALL releaseSMSegmentedCurveNode(self % rightNode)
          
-         IF(ASSOCIATED(self % segmentRight))    CALL release(self % segmentRight)
-         IF(ASSOCIATED(self % segmentLeft))     CALL release(self % segmentLeft)
-         
-         CALL self % FTObject % destruct()
+         IF(ASSOCIATED(self % segmentRight))     THEN
+            CALL releaseSMSegment(self % segmentRight)
+         END IF 
+         IF(ASSOCIATED(self % segmentLeft))     THEN 
+            CALL releaseSMSegment(self % segmentLeft)
+         END IF 
 
       END SUBROUTINE DestructSMSegment
 !
@@ -349,7 +344,7 @@
             
          END IF
          
-         CALL release(nodeMid)
+         CALL releaseSMSegmentedCurveNode(self = nodeMid)
 !
 !        ---------------------------------------------------------------
 !        Add the right node to the list, as long as it is not duplicated
@@ -480,8 +475,8 @@
          
          ALLOCATE(rootSegment)
          CALL rootSegment % initSMSegment(nodeLeft = left, nodeRight = right)
-         CALL release(left)
-         CALL release(right)
+         CALL releaseSMSegmentedCurveNode(self = left)
+         CALL releaseSMSegmentedCurveNode(self = right)
 !
          self % h = h
 !
@@ -514,9 +509,7 @@
          CALL initArrayWithLinkedList( self % nodeArray, nodes )
          N = self % nodeArray % COUNT()
 
-         CALL release(rootSegment)
-         CALL nodes % destruct()
-!         CALL release(self = nodes) !TODO why isn't release called right???
+         CALL releaseSMSegment(self = rootSegment)
 !
 !        ----------------------------
 !        See if the curve is circular
@@ -669,9 +662,10 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE DestructFRSegmentedCurve( self )
-         CLASS( FRSegmentedCurve )      :: self
-
-         CALL release(self % nodeArray)
+         TYPE( FRSegmentedCurve )      :: self
+         CLASS(FTObject), POINTER      :: obj
+         
+         CALL releaseFTMutableObjectArray(self % nodeArray)
                
       END SUBROUTINE DestructFRSegmentedCurve
 !
@@ -728,7 +722,7 @@
             CALL newNodes % addObject(obj)
          END DO
          
-         CALL release(self % nodeArray)
+         CALL releaseFTMutableObjectArray(self % nodeArray)
          
          self % nodeArray => newNodes
          

@@ -318,7 +318,7 @@
                CALL cast(obj,e)
                CALL PrintBadElementInfo( e, statsFileUnit )
             END DO
-            CALL release(badElements)
+            CALL releaseFTMutableObjectArray(badElements)
             
          ELSE IF (PrintMessage)     THEN 
             PRINT *, "********* Elements are OK *********"

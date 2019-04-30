@@ -44,6 +44,7 @@
 !
          CLASS(SMCurve)         , POINTER :: cCurve   => NULL()
          CLASS(FRSegmentedCurve), POINTER :: frsCurve => NULL()
+         CLASS(FTObject)        , POINTER :: obj
          INTEGER                          :: k
          
          ALLOCATE(segmentedChain)
@@ -54,7 +55,7 @@
             ALLOCATE(frsCurve)
             CALL frsCurve % initWithCurve(cCurve, h, controls, cCurve % id())
             CALL segmentedChain % add(frsCurve)
-            CALL release(frsCurve)
+            CALL releaseFRSegmentedCurve(self = frsCurve)
          END DO
          
          CALL segmentedChain % complete()

@@ -366,7 +366,7 @@
          CALL node % initWithLocationAndID(x,mesh % newNodeID())
          obj               => node
          CALL mesh % nodes % add(obj)
-         CALL release(node)
+         CALL releaseSMNode(node)
 !
 !        --------------------------------------------
 !        Change the corners to point to this new node
@@ -405,7 +405,7 @@
          CALL e % initWithNodesIDAndType( elementNodes, newID, QUAD )
          obj => e
          CALL mesh % elements % add(obj)
-         CALL release(e)
+         CALL releaseSMElement(e)
 !
          CALL deallocateNodeToEdgeConnections()
          CALL deallocateNodeToElementConnections()
@@ -525,7 +525,7 @@
 !           Do lazy deletes
 !           ---------------
 !
-            CALL release(badElements)
+            CALL releaseFTMutableObjectArray(badElements)
             DEALLOCATE( shapeMeasures, badElementMeasure )
             
             IF ( numberOfChevrons > 0 )     THEN
@@ -631,7 +631,7 @@
          CLASS(SMElement)           , POINTER :: e => NULL()
          CLASS(SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
-         TYPE (FTLinkedListIterator)          :: edgeListIterator
+         CLASS(FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
          
          numBoundaries = model % numberOfInnerCurves &
@@ -653,6 +653,7 @@
          IF( errorCode == A_OK_ERROR_CODE)     THEN 
             CALL makeNodeToElementConnections(mesh, errorCode)
             DO j = 1, numBoundaries
+               ALLOCATE(edgeListIterator)
                IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
                
                obj  => boundaryEdgesArray % objectAtIndex(j)
@@ -673,7 +674,7 @@
                   CALL EdgeListIterator % moveToNext()
                END DO
                
-               CALL edgeListIterator % destruct()
+               CALL releaseFTLinkedListIterator(edgeListIterator)
             END DO
             CALL deallocateNodeToEdgeConnections
          ELSE
@@ -703,6 +704,7 @@
                obj  => boundaryEdgesArray % objectAtIndex(j)
                CALL cast(obj,currentEdgeList)
                
+               ALLOCATE(edgeListIterator)
                CALL edgeListIterator % initWithFTLinkedList(currentEdgeList)
                CALL edgeListIterator % setToStart()
                
@@ -725,7 +727,7 @@
                   CALL EdgeListIterator % moveToNext()
                END DO
                
-               CALL edgeListIterator % destruct()
+               CALL releaseFTLinkedListIterator(edgeListIterator)
            END DO
 !
 !          ----------------------------------------------------
@@ -795,7 +797,7 @@
 !
            CALL splitInterfaceElements( mesh, interfaceElements )
 !
-           CALL release(interfaceElements)
+           CALL releaseFTLinkedList(interfaceElements)
          END IF 
 !
 !        --------
@@ -1189,7 +1191,7 @@
          CALL node % initWithLocationAndID(x,mesh % newNodeID())
          obj => node
          CALL mesh % nodes % add(obj)
-         CALL release(node)
+         CALL releaseSMNode(node)
 !
 !        ----------------------------------------------
 !        Find the elements that share the two nodes,

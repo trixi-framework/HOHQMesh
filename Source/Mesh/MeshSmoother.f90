@@ -22,7 +22,7 @@
 !        ========
 !         
          PROCEDURE  :: smoothMesh
-         PROCEDURE  :: destruct
+         FINAL      :: destruct
       END TYPE MeshSmoother
 !
 !     ========
@@ -70,7 +70,7 @@
 ! 
       SUBROUTINE destruct( self )
          IMPLICIT NONE
-         CLASS (MeshSmoother)   :: self
+         TYPE (MeshSmoother)   :: self
       END SUBROUTINE destruct
 !
 !//////////////////////////////////////////////////////////////////////// 

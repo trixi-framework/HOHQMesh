@@ -354,7 +354,7 @@
             CALL RotateAll(mesh = project % hexMesh, N = N, rotAxis = rotAxis)
          END IF 
           
-         CALL release(quadElementsArray)
+         CALL releaseFTMutableObjectArray(quadElementsArray)
          DEALLOCATE(quadMeshNodes)
 !
 

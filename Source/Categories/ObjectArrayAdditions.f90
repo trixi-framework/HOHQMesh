@@ -58,8 +58,6 @@
             CALL iterator % moveToNext()
          END DO
          
-         CALL iterator % destruct()
-         
       END SUBROUTINE initArrayWithLinkedList
       
       END Module ObjectArrayAdditionsModule

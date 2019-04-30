@@ -159,8 +159,8 @@
 !        -------------------------------------------------
 !
          CALL mesh % elements % addObjectsFromList(newElementsList)
-         CALL release(newElementsList)
-         CALL release(elementIterator)
+         CALL releaseFTLinkedList(newElementsList)
+         CALL releaseFTLinkedListIterator(elementIterator)
 
          CALL DoLazyDelete( mesh )
          CALL mesh % renumberAllLists()
@@ -417,7 +417,7 @@
          obj   => node
          nodeC => node
          CALL mesh % nodes % add(obj)
-         CALL release(node)
+         CALL releaseSMNode(node)
 !
 !        ------------------------------------------------------------------
 !        Construct three new elements depending on what the orientation is.
@@ -546,7 +546,7 @@
          
          obj => eNew
          CALL newElementsList % add(obj)
-         CALL release(eNew)
+         CALL releaseSMElement(eNew)
            
       END SUBROUTINE CreateAndAddElement
 !
@@ -567,7 +567,7 @@
          
          obj => eNew
          CALL newElementsList % add(obj)
-         CALL release(eNew)
+         CALL releaseSMElement(eNew)
          
       END SUBROUTINE constructNewElement
 !
@@ -587,7 +587,7 @@
          obj => node
          CALL mesh % nodes % add(obj)
          CALL setAuxiliaryNode( edge, node )
-         CALL release(node)
+         CALL releaseSMNode(node)
          
       END SUBROUTINE constructNewNode
       

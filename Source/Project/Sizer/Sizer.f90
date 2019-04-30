@@ -37,7 +37,7 @@
 !        ========
 !
          PROCEDURE :: initWithProperties => initMeshSizer
-         PROCEDURE :: destruct           => destructMeshSizer
+         FINAL     :: destructMeshSizer
          PROCEDURE :: printDescription   => printSizerDescription
          PROCEDURE :: addSizerCenterControl
          PROCEDURE :: addSizerLineControl
@@ -47,10 +47,6 @@
          PROCEDURE :: clearBoundaryCurves
          
       END TYPE MeshSizer
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseSizer 
-      END INTERFACE  
       
       TYPE SizerCurvePtr
          CLASS(ChainedSegmentedCurve), POINTER :: curve => NULL()
@@ -90,25 +86,28 @@
 ! 
       SUBROUTINE destructMeshSizer(self)  
          IMPLICIT NONE  
-         CLASS(MeshSizer) :: self
+         TYPE(MeshSizer) :: self
+         CLASS(FTObject), POINTER  :: obj
          
          IF ( ASSOCIATED(self % controlsList) )     THEN
-            CALL release(self % controlsList)
+            obj => self % controlsList
+            CALL release(obj)
          END IF 
          
          IF ( ASSOCIATED(self % innerBoundariesList) )     THEN
-            CALL release(self % innerBoundariesList)
+            obj => self % innerBoundariesList
+            CALL release(obj)
          END IF 
          
          IF ( ASSOCIATED(self % interfaceBoundariesList) )     THEN
-            CALL release(self % interfaceBoundariesList)
+            obj => self % interfaceBoundariesList
+            CALL release(obj)
          END IF 
          
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
-            CALL release(self % outerBoundary)
+            obj => self % outerBoundary
+            CALL release(obj)
          END IF 
-                  
-         CALL self % FTObject % destruct()
          
       END SUBROUTINE destructMeshSizer
 !
@@ -133,17 +132,21 @@
       SUBROUTINE clearBoundaryCurves( self )  
          IMPLICIT NONE  
          CLASS(MeshSizer) :: self
+         CLASS(FTObject), POINTER  :: obj
          
          IF ( ASSOCIATED(self % innerBoundariesList) )     THEN
-            CALL release(self % innerBoundariesList)
+            obj => self % innerBoundariesList
+            CALL release(obj)
          END IF 
          
          IF ( ASSOCIATED(self % interfaceBoundariesList) )     THEN
-            CALL release(self % interfaceBoundariesList)
+            obj => self % interfaceBoundariesList
+            CALL release(obj)
          END IF 
          
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
-            CALL release(self % outerBoundary)
+            obj => self % outerBoundary
+            CALL release(obj)
          END IF 
          
          NULLIFY(self % outerBoundary)
@@ -341,7 +344,8 @@
    
                CALL iterator % moveToNext()
             END DO
-            CALL release(iterator)
+            obj => iterator
+            CALL release(obj)
          END IF 
 !
 !        -------------------------
@@ -383,8 +387,8 @@
             cSize = MAX( cSize, invCurveSizeForBox(segmentedCurveChain, xMin, xMax ) )
             CALL iterator % moveToNext()
          END DO
-         
-            CALL release(iterator)
+         obj => iterator
+         CALL release(obj)
    
       END SUBROUTINE cSizeForCurvesInList
 !
@@ -438,8 +442,8 @@
                
                CALL iterator % moveToNext()
             END DO
-            
-            CALL release(iterator)
+            obj => iterator
+            CALL release(obj)
             
          END IF 
 !
@@ -543,7 +547,8 @@
                k = k + 1
                CALL iterator % moveToNext()           
             END DO  
-            CALL release(iterator)
+            obj => iterator
+            CALL release(obj)
          END IF 
             
          IF ( self % noOfInterfaceBoundaries > 0 )     THEN
@@ -558,7 +563,8 @@
                k                           = k + 1
                CALL iterator % moveToNext()           
             END DO  
-            CALL release(iterator)
+            obj => iterator
+            CALL release(obj)
          END IF
 !
 !        -----------------------------------------------
@@ -942,7 +948,8 @@
             
             CALL iterator % moveToNext()
          END DO  
-         CALL release(iterator)
+         obj => iterator
+         CALL release(obj)
                
       END SUBROUTINE ComputeInterfaceCurveScales
 !

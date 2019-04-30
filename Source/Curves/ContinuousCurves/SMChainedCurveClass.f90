@@ -89,7 +89,7 @@
 !        ========
 !
          PROCEDURE :: initChainWithNameAndID  => initChainedCurveWithNameAndID
-         PROCEDURE :: destruct                => destructChainedCurve
+         FINAL     :: destructChainedCurve
          PROCEDURE :: addCurve                => addCurveToChain
          PROCEDURE :: COUNT                   => chainedCurveCount
          PROCEDURE :: positionAt              => positionOnChainedCurveAt
@@ -104,10 +104,6 @@
          PROCEDURE :: ChainTForCurveTInCurve
 
       END TYPE SMChainedCurve
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseChainedCurve 
-      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -135,13 +131,13 @@
 ! 
       SUBROUTINE destructChainedCurve(self)  
          IMPLICIT NONE  
-         CLASS(SMChainedCurve) :: self
+         TYPE(SMChainedCurve)    :: self
+         CLASS(FTObject), POINTER :: obj
          
          IF ( ASSOCIATED(self % curvesArray) )     THEN
-            CALL release(self % curvesArray)
+            obj => self % curvesArray
+            CALL release(obj)
          END IF 
-         
-         CALL self % SMCurve % destruct()
          
       END SUBROUTINE destructChainedCurve
 !
@@ -659,7 +655,7 @@
          CALL v % initWithValue(self % curveName())
          obj => v
          CALL userDictionary % addObjectForKey(obj,"chainName")
-         CALL release(v)
+         CALL release(obj)
          
          obj => curve
          CALL userDictionary % addObjectForKey(obj,"curve")
@@ -670,7 +666,7 @@
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL release(v)
+         CALL release(obj)
 !
 !        --------------------
 !        Create the exception
@@ -681,14 +677,16 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = CURVES_DONT_JOIN_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL release(userDictionary)
+         obj => userDictionary
+         CALL release(obj)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL release(exception)
+         obj => exception
+         CALL release(obj)
          
       END SUBROUTINE ThrowCurvesDontJoinException
 

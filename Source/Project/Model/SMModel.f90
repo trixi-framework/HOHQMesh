@@ -56,16 +56,10 @@
 !        ========
 !
          PROCEDURE :: initWithContentsOfDictionary         
-         PROCEDURE :: destruct    => destructModel
+         FINAL     :: destructModel
          PROCEDURE :: chainWithID
          PROCEDURE :: curveWithID => curveInModelWithID
       END TYPE SMModel
-      
-      PRIVATE :: destroyIterator, destroyList
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseModel 
-      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -99,14 +93,19 @@
 ! 
       SUBROUTINE destructModel(self)  
          IMPLICIT NONE  
-         CLASS(SMModel)   :: self
+         TYPE(SMModel)            :: self
+         CLASS(FTObject), POINTER :: obj
          
-         CALL destroyIterator(self % innerBoundariesIterator)
-         CALL destroyIterator(self % interfaceBoundariesIterator)
-         CALL destroyList    (self % innerBoundaries)
-         CALL destroyList    (self % interfaceBoundaries)
-         
-         CALL release(self % outerBoundary)
+         obj => self % innerBoundariesIterator
+         CALL release(self = obj)
+         obj => self % interfaceBoundariesIterator
+         CALL release(self = obj)
+         obj => self % innerBoundaries
+         CALL release(self = obj)
+         obj => self % interfaceBoundaries
+         CALL release(self = obj)
+         obj => self % outerBoundary
+         CALL release(obj)
          
          IF ( ALLOCATED(self % boundaryCurveMap) )     THEN
             DEALLOCATE(self % boundaryCurveMap)
@@ -133,26 +132,6 @@
             self => NULL() 
          END IF      
       END SUBROUTINE releaseModel
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE destroyIterator(obj)  
-         IMPLICIT NONE  
-         CLASS(FTLinkedListIterator), POINTER :: obj
-         
-         CALL release(obj)
-         
-      END SUBROUTINE destroyIterator
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE destroyList(obj)  
-         IMPLICIT NONE  
-         CLASS(FTLinkedList), POINTER :: obj
-         
-         CALL release(obj)
-         
-      END SUBROUTINE destroyList
 !@mark -
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -294,7 +273,6 @@
 !        ------------------
 !
          CALL self % outerBoundary % complete(OUTER)
-         CALL iterator % destruct()
          
       END SUBROUTINE ConstructOuterBoundary
 !
@@ -374,7 +352,8 @@
 !           ------------------
 !
             CALL chain % complete(INNER)
-            CALL release(chain)
+            obj => chain
+            CALL release(obj)
 !
 !           --------------------------------------------------------
 !           The chain has been created, clean up and then start over
@@ -389,8 +368,10 @@
             CALL innerBoundariesIterator % moveToNext()
          END DO 
          
-         CALL release(self = innerBoundariesIterator)
-         CALL release(self = listOfCurvesIterator)
+         obj => innerBoundariesIterator
+         CALL release(self = obj)
+         obj => listOfCurvesIterator
+         CALL release(self = obj)
          
       END SUBROUTINE ConstructInnerBoundaries
 !
@@ -459,6 +440,7 @@
          CHARACTER(LEN=EQUATION_STRING_LENGTH)     :: eqnX, eqnY, eqnZ
          CLASS(SMParametricEquationCurve), POINTER :: cCurve => NULL()
          CLASS(SMCurve)                  , POINTER :: curvePtr => NULL()
+         CLASS(FTObject)                 , POINTER :: obj
 !
 !        ----------
 !        Interfaces
@@ -520,7 +502,8 @@
          
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
-         CALL release(cCurve)
+         obj => cCurve
+         CALL release(obj)
          
       END SUBROUTINE ConstructParametricEquationFromDict
 !
@@ -609,7 +592,8 @@
          !Spline curves have no exceptions thrown
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
-         CALL release(cCurve)
+         obj => cCurve
+         CALL release(obj)
          
       END SUBROUTINE ImportSplineBlock
 !
@@ -635,6 +619,7 @@
          REAL(KIND=RP), DIMENSION(3)           :: xStart, xEnd
          CLASS(SMLine)          , POINTER      :: cCurve => NULL()
          CLASS(SMCurve)         , POINTER      :: curvePtr => NULL()
+         CLASS(FTObject)        , POINTER      :: obj
 !
 !        ------------------------------------------------         
          INTERFACE
@@ -694,7 +679,8 @@
          
          curvePtr => cCurve
          CALL chain  % addCurve(curvePtr)
-         CALL release(cCurve)
+         obj => cCurve
+         CALL release(obj)
          
       END SUBROUTINE ImportLineEquationBlock
 !
@@ -798,7 +784,8 @@
                 
                CALL iterator % moveToNext()
             END DO
-           CALL release(iterator)
+            obj => iterator
+           CALL release(obj)
         END IF
 !!
 !!        --------------------
@@ -837,7 +824,8 @@
                 
                CALL iterator % moveToNext()
             END DO
-           CALL release(iterator)
+            obj => iterator
+           CALL release(obj)
         END IF
 
       END SUBROUTINE MakeCurveToChainConnections
@@ -877,13 +865,13 @@
          CALL v % initWithValue(objectName)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"objectName")
-         CALL release(v)
+         CALL release(obj)
          
          ALLOCATE(v)
          CALL v % initWithValue(msg)
          obj => v
          CALL userDictionary % addObjectForKey(obj,"message")
-         CALL release(v)
+         CALL release(obj)
 !
 !        --------------------
 !        Create the exception
@@ -894,14 +882,16 @@
          CALL exception % initFTException(FT_ERROR_FATAL, &
                               exceptionName   = MODEL_READ_EXCEPTION, &
                               infoDictionary  = userDictionary)
-         CALL release(userDictionary)
+         obj => userDictionary
+         CALL release(obj)
 !
 !        -------------------
 !        Throw the exception
 !        -------------------
 !
          CALL throw(exception)
-         CALL release(exception)
+         obj => exception
+         CALL release(obj)
          
       END SUBROUTINE ThrowModelReadException
 !@mark -

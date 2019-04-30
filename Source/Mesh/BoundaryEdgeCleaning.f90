@@ -239,8 +239,8 @@
 !
          CALL removeMarkedEdges(iterator)
 !
-         CALL release(iterator)
-         CALL release(newlyExposedBoundaryEdges)
+         CALL releaseFTLinkedListIterator(iterator)
+         CALL releaseFTLinkedList(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveCloseElements
 !
@@ -367,8 +367,8 @@
 !
          CALL removeMarkedEdges(iterator)
          
-         CALL release(iterator)
-         CALL release(newlyExposedBoundaryEdges)
+         CALL releaseFTLinkedListIterator(iterator)
+         CALL releaseFTLinkedList(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveBumpOuts
 !     
@@ -417,7 +417,7 @@
             
             CALL iterator % moveToNext()
          END DO
-         CALL release(iterator)
+         CALL releaseFTLinkedListIterator(iterator)
          
       END SUBROUTINE MoveInterfaceNodesToBoundary
 !

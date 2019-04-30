@@ -24,15 +24,11 @@
 !        ========
 !
          PROCEDURE :: initWithStartEndNameAndID
-         PROCEDURE :: destruct         => destructLine
+         FINAL     :: destructLine
          PROCEDURE :: positionAt       => positionOnLineAt
          PROCEDURE :: tangentAt        => tangentOnLineAt
          PROCEDURE :: printDescription => printLineDescription
       END TYPE SMLine
-      
-      INTERFACE release
-         MODULE PROCEDURE releaseLine 
-      END INTERFACE  
 !
 !     ========
       CONTAINS
@@ -58,12 +54,10 @@
 ! 
       SUBROUTINE destructLine(self)  
          IMPLICIT NONE
-         CLASS(SMLine) :: self
+         TYPE(SMLine) :: self
          
          self % xStart = 0.0_RP
          self % xEnd   = 0.0_RP
-         
-         CALL self % SMCurve % destruct()
          
       END SUBROUTINE destructLine
 !
