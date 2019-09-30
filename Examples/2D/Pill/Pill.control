@@ -1,0 +1,91 @@
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/2D/Pill/Pill.mesh
+      plot file name   = Examples/2D/Pill/Pill.tec
+      stats file name  = Examples/2D/Pill/Pill.txt
+      mesh file format = ISM
+      polynomial order = 6
+      plot file format = skeleton
+  \end{RUN_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [1.25,1.25,1.25]
+   \end{BACKGROUND_GRID}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossbarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+\begin{OUTER_BOUNDARY}
+  \begin{PARAMETRIC_EQUATION_CURVE}
+	 name = B1
+	 xEqn = f(t) =  2*t-1
+	 yEqn = f(t) =  0
+	 zEqn = f(t) =  0
+  \end{PARAMETRIC_EQUATION_CURVE}
+
+  \begin{PARAMETRIC_EQUATION_CURVE}
+	 name = B2
+	 xEqn = f(t) =  1 + 0.25*cos(0.5*(2*t-1)*pi)
+	 yEqn = f(t) =  0.25*(1+sin(0.5*(2*t-1)*pi))
+	 zEqn = f(t) =  0
+  \end{PARAMETRIC_EQUATION_CURVE}
+
+  \begin{PARAMETRIC_EQUATION_CURVE}
+	 name = B3
+	 xEqn = f(t) =  1 - 2*t
+	 yEqn = f(t) =  0.5
+	 zEqn = f(t) =  0
+  \end{PARAMETRIC_EQUATION_CURVE}
+
+  \begin{PARAMETRIC_EQUATION_CURVE}
+	 name = B4
+	 xEqn = f(t) =  0.25*cos((1+2*t)*0.5*pi) - 1
+	 yEqn = f(t) =  0.25*(1+sin((1+2*t)*0.5*pi))
+	 zEqn = f(t) =  0
+  \end{PARAMETRIC_EQUATION_CURVE}
+\end{OUTER_BOUNDARY}
+
+\begin{INNER_BOUNDARIES}
+	
+   \begin{CHAIN}
+      name = CircleLeft
+      \begin{PARAMETRIC_EQUATION_CURVE}
+         name = CircleLeft
+         xEqn = f(t) = -1 + 0.02*cos(2*pi*t)
+         yEqn = f(t) = 0.25 + 0.02*sin(2*pi*t)
+	 zEqn = f(t) =  0
+      \end{PARAMETRIC_EQUATION_CURVE}
+   \end{CHAIN}
+
+   \begin{CHAIN}
+      name = CircleRight
+      \begin{PARAMETRIC_EQUATION_CURVE}
+         name = CircleRight
+         xEqn = f(t) = 1 + 0.02*cos(2*pi*t)
+         yEqn = f(t) = 0.25 + 0.02*sin(2*pi*t)
+	 zEqn = f(t) =  0
+      \end{PARAMETRIC_EQUATION_CURVE}
+   \end{CHAIN}
+
+   \begin{CHAIN}
+      name = CircleCenter
+      \begin{PARAMETRIC_EQUATION_CURVE}
+         name = CircleCenter
+         xEqn = f(t) = 0.16*cos(2*pi*t)
+         yEqn = f(t) = 0.25 + 0.16*sin(2*pi*t)
+	 zEqn = f(t) =  0
+      \end{PARAMETRIC_EQUATION_CURVE}
+   \end{CHAIN}
+	   
+\end{INNER_BOUNDARIES}
+
+\end{MODEL}
+\end{FILE}

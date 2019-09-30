@@ -1,0 +1,70 @@
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/2D/CavityRamp/CavityRamp.mesh
+      plot file name   = Examples/2D/CavityRamp/CavityRamp.tec
+      stats file name  = Examples/2D/CavityRamp/CavityRamp.txt
+      mesh file format = ISM
+      polynomial order = 6
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.3,0.3,0.3]
+   \end{BACKGROUND_GRID}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+\begin{OUTER_BOUNDARY}
+
+   \begin{END_POINTS_LINE}
+	 name = B1
+	 xStart = [0.0,1.0,0.0]
+	 xEnd   = [2.0,1.0,0.0]
+   \end{END_POINTS_LINE}
+   \begin{END_POINTS_LINE}
+	 name = B2
+	 xStart = [2.0,1.0,0.0]
+	 xEnd   = [2.0,0.0,0.0]
+   \end{END_POINTS_LINE}
+   \begin{END_POINTS_LINE}
+	 name = B3
+	 xStart = [2.0,0.0,0.0]
+	 xEnd   = [3.0,0.0,0.0]
+      \end{END_POINTS_LINE}
+      \begin{END_POINTS_LINE}
+	 name = B4
+	 xStart = [3.0,0.0,0.0]
+	 xEnd   = [4.0,1.0,0.0]
+   \end{END_POINTS_LINE}
+   \begin{END_POINTS_LINE}
+	 name = B5
+	 xStart = [4.0,1.0,0.0]
+	 xEnd   = [7.0,1.0,0.0]
+   \end{END_POINTS_LINE}
+   \begin{END_POINTS_LINE}
+	 name = B6
+	 xStart = [7.0,1.0,0.0]
+	 xEnd   = [7.0,2.0,0.0]
+   \end{END_POINTS_LINE}
+   \begin{END_POINTS_LINE}
+	 name = B7
+	 xStart = [7.0,2.0,0.0]
+	 xEnd   = [0.0,2.0,0.0]
+   \end{END_POINTS_LINE}
+   \begin{END_POINTS_LINE}
+	 name = B8
+	 xStart = [0.0,2.0,0.0]
+	 xEnd   = [0.0,1.0,0.0]
+   \end{END_POINTS_LINE}
+
+\end{OUTER_BOUNDARY}
+\end{MODEL}
+\end{FILE}
