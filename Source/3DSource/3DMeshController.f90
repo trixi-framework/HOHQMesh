@@ -61,22 +61,10 @@
           
          shouldGenerate3DMesh = .FALSE.
          
-         IF ( controlDict % containsKey(key = MESH_PARAMETERS_KEY) )     THEN
+         IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY) .OR. &
+              controlDict % containsKey(key = SIMPLE_ROTATION_BLOCK_KEY) )     THEN
          
-            obj => controlDict % objectForKey(key = MESH_PARAMETERS_KEY) 
-            runParamsDict => valueDictionaryFromObject(obj)
-            
-            IF ( runParamsDict % containsKey( ELEMENT_TYPE_KEY) )     THEN
-               str = runParamsDict % stringValueForKey(key             = ELEMENT_TYPE_KEY, &
-                                                       requestedLength = DEFAULT_CHARACTER_LENGTH) 
-               IF(TRIM(ADJUSTL(str)) == "hex") shouldGenerate3DMesh = .TRUE.
-            END IF 
-            
-         ELSE
-            CALL ThrowErrorExceptionOfType(poster = "shouldGenerate3DMesh", &
-                                           msg = TRIM(MESH_PARAMETERS_KEY) // "not found in control file",&
-                                           typ = FT_ERROR_FATAL)
-            RETURN
+               shouldGenerate3DMesh = .TRUE.
          END IF 
 
       END FUNCTION shouldGenerate3DMesh
