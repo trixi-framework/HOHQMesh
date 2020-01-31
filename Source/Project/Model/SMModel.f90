@@ -121,7 +121,7 @@
 ! 
       SUBROUTINE releaseModel(self)  
          IMPLICIT NONE
-         CLASS(SMModel)  , POINTER :: self
+         TYPE (SMModel)  , POINTER :: self
          CLASS(FTObject), POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -847,7 +847,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTException)   , POINTER :: exception => NULL()
+         TYPE (FTException)   , POINTER :: exception => NULL()
          CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
          CLASS(FTValue)       , POINTER :: v => NULL()

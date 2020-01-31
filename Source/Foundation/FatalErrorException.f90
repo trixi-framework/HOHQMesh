@@ -42,10 +42,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTException)   , POINTER :: exception      => NULL()
+         TYPE (FTException)   , POINTER :: exception      => NULL()
          CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
          CLASS(FTObject)      , POINTER :: obj            => NULL()
-         CLASS(FTValue)       , POINTER :: v              => NULL()
+         TYPE (FTValue)       , POINTER :: v              => NULL()
 !
 !        -----------------------------------------------------
 !        The userDictionary for this exception contains the
@@ -85,7 +85,9 @@
                                     infoDictionary  = userDictionary)
          END SELECT 
          
-         CALL releaseFTDictionary(self = userDictionary)
+         obj => userDictionary
+         CALL releaseFTObject(self = obj)
+        
 !
 !        -------------------
 !        Throw the exception

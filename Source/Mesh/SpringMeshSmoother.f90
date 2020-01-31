@@ -130,8 +130,8 @@
 !        ---------
 !
          CLASS (SpringMeshSmoother)    :: self
-         CLASS (SMMesh)      , POINTER :: mesh
-         CLASS (SMModel)     , POINTER :: model
+         TYPE  (SMMesh)      , POINTER :: mesh
+         TYPE  (SMModel)     , POINTER :: model
          INTEGER                       :: errorCode
 !
 !        ---------------
@@ -361,8 +361,8 @@
 !        ---------
 !
          CLASS (SpringMeshSmoother)            :: self
-         CLASS (FTLinkedListIterator), POINTER :: nodeIterator
-         CLASS (SMModel)             , POINTER :: model
+         TYPE  (FTLinkedListIterator), POINTER :: nodeIterator
+         TYPE  (SMModel)             , POINTER :: model
 !
 !        ---------------
 !        Local variables

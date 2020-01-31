@@ -105,7 +105,7 @@
       IMPLICIT NONE 
       
       TYPE ControlFileReader
-         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE(FTValueDictionary), POINTER :: controlDict
 !
 !        --------
          CONTAINS
@@ -201,7 +201,7 @@
          CLASS(FTValueDictionary), POINTER :: dict
          CHARACTER(LEN=CFR_STRING_LENGTH)  :: line
          INTEGER                           :: iStat
-         CLASS(FTException)      , POINTER :: exception
+         TYPE (FTException)      , POINTER :: exception
 
          IF(catch()) RETURN  
          
@@ -264,7 +264,7 @@
 !
          CHARACTER(LEN=CFR_STRING_LENGTH)  :: objectName
          CLASS(FTObject)         , POINTER :: obj
-         CLASS(FTValueDictionary), POINTER :: newDict
+         TYPE (FTValueDictionary), POINTER :: newDict
          CLASS(FTLinkedList)     , POINTER :: newList
 !
 !        ---------------------------------------
@@ -326,7 +326,7 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(FTException)      , POINTER :: exception
+         TYPE (FTException)      , POINTER :: exception
          CHARACTER(LEN=CFR_STRING_LENGTH)  :: foundName
          CHARACTER(LEN=132)                :: msg
          
@@ -410,7 +410,7 @@
 !
          INTEGER                          :: s, e
          CHARACTER(LEN=CFR_STRING_LENGTH) :: line
-         CLASS(FTException)     , POINTER :: exception
+         TYPE (FTException)     , POINTER :: exception
          
          errMsg = ""
          CALL addKeyAndValueFromLineToDict(blockDict = blockDict, &
@@ -510,89 +510,89 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      RECURSIVE SUBROUTINE printInputDictionary(inputDict)
-!
-!        ----------------------
-!        For debugging purposes
-!        ----------------------
-!
-         IMPLICIT NONE  
-         CLASS(FTValueDictionary)               , POINTER :: inputDict
-         CLASS(FTObject)                        , POINTER :: obj
-         CHARACTER(LEN=FTDICT_KWD_STRING_LENGTH), POINTER :: keys(:)
-         INTEGER                                          :: i
-!
-!        ----------------------
-!        Check on Control input
-!        ----------------------
-!
-         keys => inputDict % allKeys()
-         PRINT *
-         PRINT *, "---------------------"
-         PRINT *, inputDict % stringValueForKey(key = "TYPE",requestedLength = 24)
-         PRINT *, "---------------------"
-         PRINT *
-         
-         DO i = 1, SIZE(keys)
-         
-            obj => inputDict % objectForKey(key = keys(i))
-            
-            SELECT TYPE (contentsForKey => obj) 
-            
-               CLASS IS (FTValueDictionary)
-                  CALL printInputDictionary(inputDict = contentsForKey)
-                  
-               CLASS IS (FTLinkedList)
-                  CALL printInputList(inputList = contentsForKey)
-               
-               TYPE IS (FTValue)
-                  PRINT *, keys(i), contentsForKey % stringValue(32)
-                  
-               CLASS DEFAULT 
-                  PRINT *, "Printing Unimplemented for type: ", contentsForKey % className() !TODO: Use exception
-            END SELECT 
-            
-         END DO
-         
-         DEALLOCATE(keys)
-      END SUBROUTINE printInputDictionary
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      RECURSIVE SUBROUTINE printInputList(inputList)
-!
-!        ----------------------
-!        For debugging purposes
-!        ----------------------
-!
-         IMPLICIT NONE
-         CLASS(FTLinkedList)        , POINTER :: inputList
-         TYPE(FTLinkedListIterator)          :: iterator
-         CLASS(FTObject)           , POINTER :: obj
-         
-         IF( inputList % count() == 0)     RETURN
-         
-         CALL iterator % initWithFTLinkedList(list = inputList)
-         CALL iterator % setToStart()
-         
-         DO WHILE (.NOT. iterator % isAtEnd())
-            obj => iterator % object()
-            
-            SELECT TYPE ( contents => obj)
-            
-               CLASS IS (FTValueDictionary)
-                  CALL printInputDictionary(inputDict = contents)
-               
-               CLASS IS (FTLinkedList)
-                  CALL printInputList(inputList = contents)
-                  
-               CLASS DEFAULT 
-                  PRINT *, "bad default" !TODO 
-            END SELECT 
-            
-            CALL iterator % moveToNext()
-         END DO 
-      END SUBROUTINE printInputList
+!      RECURSIVE SUBROUTINE printInputDictionary(inputDict)
+!!
+!!        ----------------------
+!!        For debugging purposes
+!!        ----------------------
+!!
+!         IMPLICIT NONE  
+!         TYPE (FTValueDictionary)               , POINTER :: inputDict
+!         CLASS(FTObject)                        , POINTER :: obj
+!         CHARACTER(LEN=FTDICT_KWD_STRING_LENGTH), POINTER :: keys(:)
+!         INTEGER                                          :: i
+!!
+!!        ----------------------
+!!        Check on Control input
+!!        ----------------------
+!!
+!         keys => inputDict % allKeys()
+!         PRINT *
+!         PRINT *, "---------------------"
+!         PRINT *, inputDict % stringValueForKey(key = "TYPE",requestedLength = 24)
+!         PRINT *, "---------------------"
+!         PRINT *
+!         
+!         DO i = 1, SIZE(keys)
+!         
+!            obj => inputDict % objectForKey(key = keys(i))
+!            
+!            SELECT TYPE (contentsForKey => obj) 
+!            
+!               CLASS IS (FTValueDictionary)
+!                  CALL printInputDictionary(inputDict = contentsForKey)
+!                  
+!               CLASS IS (FTLinkedList)
+!                  CALL printInputList(inputList = contentsForKey)
+!               
+!               TYPE IS (FTValue)
+!                  PRINT *, keys(i), contentsForKey % stringValue(32)
+!                  
+!               CLASS DEFAULT 
+!                  PRINT *, "Printing Unimplemented for type: ", contentsForKey % className() !TODO: Use exception
+!            END SELECT 
+!            
+!         END DO
+!         
+!         DEALLOCATE(keys)
+!      END SUBROUTINE printInputDictionary
+!!
+!!//////////////////////////////////////////////////////////////////////// 
+!! 
+!      RECURSIVE SUBROUTINE printInputList(inputList)
+!!
+!!        ----------------------
+!!        For debugging purposes
+!!        ----------------------
+!!
+!         IMPLICIT NONE
+!         CLASS(FTLinkedList)       , POINTER :: inputList
+!         TYPE(FTLinkedListIterator)          :: iterator
+!         CLASS(FTObject)           , POINTER :: obj
+!         
+!         IF( inputList % count() == 0)     RETURN
+!         
+!         CALL iterator % initWithFTLinkedList(list = inputList)
+!         CALL iterator % setToStart()
+!         
+!         DO WHILE (.NOT. iterator % isAtEnd())
+!            obj => iterator % object()
+!            
+!            SELECT TYPE ( contents => obj)
+!            
+!               CLASS IS (FTValueDictionary)
+!                  CALL printInputDictionary(inputDict = contents)
+!               
+!               CLASS IS (FTLinkedList)
+!                  CALL printInputList(inputList = contents)
+!                  
+!               CLASS DEFAULT 
+!                  PRINT *, "bad default" !TODO 
+!            END SELECT 
+!            
+!            CALL iterator % moveToNext()
+!         END DO 
+!      END SUBROUTINE printInputList
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -628,7 +628,7 @@
          CHARACTER(LEN=CFR_STRING_LENGTH) :: line
          REAL(KIND(1.0d0)), ALLOCATABLE   :: array(:,:)
          CHARACTER(LEN=1), ALLOCATABLE    :: enc(:)
-         CLASS(FTData)   , POINTER        :: dta
+         TYPE (FTData)   , POINTER        :: dta
          CLASS(FTObject) , POINTER        :: obj
 !
 !        ----------------

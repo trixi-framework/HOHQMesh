@@ -636,7 +636,7 @@
          CLASS(SMChainedCurve)          :: self
          CLASS(SMCurve)       , POINTER :: curve, nextCurve
          CHARACTER(LEN=*)               :: msg
-         CLASS(FTException)   , POINTER :: exception => NULL()
+         TYPE (FTException)   , POINTER :: exception => NULL()
          CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
          CLASS(FTValue)       , POINTER :: v => NULL()

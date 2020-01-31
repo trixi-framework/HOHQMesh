@@ -155,7 +155,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS( SMMesh )   , POINTER :: mesh
+         TYPE ( SMMesh )   , POINTER :: mesh
          CHARACTER(LEN=*)            :: fName
          INTEGER                     :: N       ! The polynomial order of the boundaries.
          INTEGER                     :: version !version number of the ISM format.
@@ -290,14 +290,14 @@
 !        Arguments
 !        ---------
 !
-         CLASS( SMMesh )  , POINTER :: mesh
+         TYPE ( SMMesh )  , POINTER :: mesh
          CHARACTER(LEN=*)           :: statsFileName
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         CLASS(FTMutableObjectArray) , POINTER :: badElements => NULL()
+         TYPE (FTMutableObjectArray) , POINTER :: badElements => NULL()
          INTEGER                               :: statsFileUnit, k
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(SMElement)            , POINTER :: e   => NULL()

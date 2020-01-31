@@ -57,7 +57,7 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
          
          CLASS(FTObject)         , POINTER :: obj
-         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE (FTValueDictionary), POINTER :: controlDict
 !
 !        ***********************************************
 !                             Start

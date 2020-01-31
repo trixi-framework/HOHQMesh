@@ -29,7 +29,7 @@
 !
       SUBROUTINE CheckMeshForDuplicateNodes( mesh ) 
       IMPLICIT NONE 
-      CLASS(SMMesh)  :: mesh
+      TYPE (SMMesh)  :: mesh
 !
 !     ------------------------------------------------------------
 !     This routine is intended for debugging purposes ONLY because

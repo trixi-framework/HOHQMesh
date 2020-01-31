@@ -40,7 +40,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTValueDictionary), POINTER :: userDictionary
+         TYPE (FTValueDictionary), POINTER :: userDictionary
          CLASS(FTDictionary)     , POINTER :: ptr
          
          ALLOCATE(userDictionary)

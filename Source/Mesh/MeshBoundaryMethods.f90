@@ -50,7 +50,7 @@
 !
          CLASS(FTObject) , POINTER             :: obj => NULL()
          INTEGER                               :: N, k
-         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         TYPE (FTLinkedListIterator) , POINTER :: iterator => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: chain => NULL()
 !
 !        --------------
@@ -365,7 +365,7 @@
          CLASS(FTLinkedList)        , POINTER     :: sortedEdges => NULL(), edgeList => NULL()
          TYPE (SMNodePtr)           , POINTER     :: sortedNodes(:) => NULL()
          CLASS(FTobject)            , POINTER     :: obj            => NULL()
-         CLASS(FTLinkedListIterator), POINTER     :: iterator       => NULL()
+         TYPE (FTLinkedListIterator), POINTER     :: iterator       => NULL()
          TYPE (SMEdgePtr)           , ALLOCATABLE :: edgeArray(:)
          INTEGER                    , ALLOCATABLE :: nodeArray(:,:)
          REAL(KIND=RP)              , ALLOCATABLE :: sortedNodeLocations(:,:)
@@ -615,7 +615,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedListIterator)  , POINTER :: iterator => NULL()
+         TYPE (FTLinkedListIterator)  , POINTER :: iterator => NULL()
          CLASS(FTLinkedListRecord)    , POINTER :: cr => NULL()
          CLASS(SMEdge)                , POINTER :: currentEdge => NULL(), prevEdge => NULL()
          INTEGER                                :: nNodes, id, idP1, idP2, j
@@ -729,8 +729,8 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh) , POINTER :: mesh
-         CLASS(SMModel), POINTER :: model
+         TYPE (SMMesh) , POINTER :: mesh
+         TYPE (SMModel), POINTER :: model
          INTEGER                 :: idOfOuterBoundary
          LOGICAL                 :: skipInterfaces
 !
@@ -742,7 +742,7 @@
          CLASS(SMEdge)              , POINTER     :: edge             => NULL()
          CLASS(FTObject)            , POINTER     :: obj              => NULL()
          CLASS(FTLinkedList)        , POINTER     :: edgeList         => NULL()
-         CLASS(FTLinkedListIterator), POINTER     :: edgeListIterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER     :: edgeListIterator => NULL()
    
          LOGICAL                                  :: isInnerBoundaryCurve
          INTEGER                                  :: j
@@ -994,7 +994,7 @@
 !        ---------
 !
          CLASS(FTLinkedList), POINTER :: list
-         CLASS(SMModel)     , POINTER :: model
+         TYPE (SMModel)     , POINTER :: model
 !
 !        ---------------
 !        Local variables
@@ -1081,7 +1081,7 @@
 !     --------------------------------------------------------------------
 !
       IMPLICIT NONE
-      CLASS(FTLinkedListIterator), POINTER :: nodeIterator
+      TYPE (FTLinkedListIterator), POINTER :: nodeIterator
       CLASS(FTObject)            , POINTER :: obj  => NULL()
       CLASS(SMNode)              , POINTER :: node => NULL()
       CALL nodeIterator % setToStart()
@@ -1119,8 +1119,8 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh) , POINTER :: mesh
-         CLASS(SMModel), POINTER :: model
+         TYPE (SMMesh) , POINTER :: mesh
+         TYPE (SMModel), POINTER :: model
          INTEGER                 :: errorCode
 !
 !        ---------------
@@ -1133,7 +1133,7 @@
          CLASS(SMEdge)      , POINTER :: currentEdge => NULL()
          CLASS(FTObject)    , POINTER :: obj => NULL()
          
-         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
 !
 !        ---------------------
 !        Gather boundary Edges
@@ -1229,7 +1229,7 @@
 !        ---------
 !
          CLASS(FTLinkedList), POINTER :: boundaryNodesList
-         CLASS(SMModel)     , POINTER :: model
+         TYPE (SMModel)     , POINTER :: model
 !
 !        ---------------
 !        Local variables
@@ -1237,7 +1237,7 @@
 !
          CLASS(SMNode)              , POINTER :: currentNode => NULL()
          CLASS(SMCurve)             , POINTER :: c => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          REAL(KIND=RP)                        :: tOld,tNew
          REAL(KIND=RP)                        :: pOld(3),pNew(3)

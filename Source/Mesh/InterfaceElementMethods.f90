@@ -40,7 +40,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh)      , POINTER :: mesh
+         TYPE (SMMesh)      , POINTER :: mesh
          CLASS(FTLinkedList), POINTER :: interfaceElements
 !
 !        ---------------
@@ -51,7 +51,7 @@
          CLASS(FTLinkedList)        , POINTER :: newElementsList => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
          CLASS(SMNode)              , POINTER :: node            => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: elementIterator => NULL()
          INTEGER                              :: interfaceNodeCount, k
          INTEGER                              :: boundaryNodeNumber, oppositeNodeNumber
          
@@ -178,7 +178,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh)      , POINTER :: mesh
+         TYPE (SMMesh)      , POINTER :: mesh
          CLASS(SMElement)   , POINTER :: e
          CLASS(FtLinkedList), POINTER :: newElementsList
 !
@@ -333,7 +333,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMmesh)      , POINTER :: mesh
+         TYPE (SMmesh)      , POINTER :: mesh
          CLASS(SMElement)   , POINTER :: e
          CLASS(FTLinkedList), POINTER :: newElementsList
          INTEGER                      :: localNodeNumber
@@ -554,7 +554,7 @@
 ! 
       SUBROUTINE constructNewElement(mesh,elementNodes,newElementsList,e)
          IMPLICIT NONE  
-         CLASS(SMMesh)      , POINTER :: mesh
+         TYPE (SMMesh)      , POINTER :: mesh
          CLASS(SMElement)   , POINTER :: e, eNew => NULL()
          CLASS(FtLinkedList), POINTER :: newElementsList
          TYPE(SMNodePtr)              :: elementNodes(4)
@@ -575,7 +575,7 @@
 ! 
       SUBROUTINE constructNewNode(mesh,x,edge,node)
          IMPLICIT NONE  
-         CLASS(SMMesh)  , POINTER :: mesh
+         TYPE (SMMesh)  , POINTER :: mesh
          CLASS(SMEdge)  , POINTER :: edge
          CLASS(SMNode)  , POINTER :: node
          CLASS(FTObject), POINTER :: obj => NULL()

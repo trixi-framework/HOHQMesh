@@ -107,7 +107,7 @@
          LOGICAL                                      :: isCircular
          CHARACTER(LEN=FRSEGMENTED_CURVE_NAME_LENGTH) :: curveName
          REAL(KIND=RP)                                :: h
-         CLASS(FTMutableObjectArray), POINTER         :: nodeArray => NULL()
+         TYPE (FTMutableObjectArray), POINTER         :: nodeArray => NULL()
 !
 !        ========
          CONTAINS

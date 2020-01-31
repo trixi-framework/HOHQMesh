@@ -44,7 +44,7 @@
          PROCEDURE :: addBoundaryCurve
          PROCEDURE :: sizeFunctionMinimumOnBox
          PROCEDURE :: setBaseSize
-         PROCEDURE :: clearBoundaryCurves
+!         PROCEDURE :: clearBoundaryCurves
          
       END TYPE MeshSizer
       
@@ -115,7 +115,7 @@
 ! 
       SUBROUTINE releaseSizer(self)  
          IMPLICIT NONE
-         CLASS(MeshSizer), POINTER :: self
+         TYPE (MeshSizer), POINTER :: self
          CLASS(FTObject) , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -131,7 +131,7 @@
 ! 
       SUBROUTINE clearBoundaryCurves( self )  
          IMPLICIT NONE  
-         CLASS(MeshSizer) :: self
+         TYPE (MeshSizer) :: self
          CLASS(FTObject), POINTER  :: obj
          
          IF ( ASSOCIATED(self % innerBoundariesList) )     THEN
@@ -512,7 +512,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(MeshSizer), POINTER :: self
+         TYPE (MeshSizer), POINTER :: self
 !
 !        ---------------
 !        Local variables
@@ -633,7 +633,7 @@
 !        Arguments
 !        ---------
 !
-      CLASS(MeshSizer)   , POINTER  :: self
+      TYPE (MeshSizer)   , POINTER  :: self
       INTEGER                       :: numberOfInsideBoundaries
       TYPE(SizerCurvePtr)           :: innerCurvesArray(numberOfInsideBoundaries)
 !
@@ -727,7 +727,7 @@
 !     Arguments
 !     ---------
 !
-      CLASS(MeshSizer)   , POINTER :: self
+      TYPE (MeshSizer)   , POINTER :: self
       INTEGER                      :: numberOfInsideBoundaries
       TYPE(SizerCurvePtr)          :: innerCurvesArray(numberOfInsideBoundaries)
 !

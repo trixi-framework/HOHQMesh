@@ -48,7 +48,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE (FTValueDictionary), POINTER :: controlDict
 !
 !        ---------------
 !        Local Variables
@@ -78,7 +78,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE (FTValueDictionary), POINTER :: controlDict
 !
 !        ---------------
 !        Local variables
@@ -132,7 +132,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE (FTValueDictionary), POINTER :: controlDict
          TYPE(MeshProject)                 :: project
 !
 !        ---------------

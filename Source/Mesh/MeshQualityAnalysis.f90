@@ -110,7 +110,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh), POINTER :: mesh
+         TYPE (SMMesh), POINTER :: mesh
          INTEGER               :: fUnit
 !
 !        ---------------
@@ -159,7 +159,7 @@
 !        ---------
 !
          TYPE(MeshStatistics)          :: stats
-         CLASS(SMMesh)       , POINTER :: mesh
+         TYPE (SMMesh)       , POINTER :: mesh
 !
 !        ---------------
 !        Local variables
@@ -456,7 +456,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh)              , POINTER :: mesh
+         TYPE (SMMesh)              , POINTER :: mesh
          CLASS(FTMutableObjectArray), POINTER :: array
 !
 !        ---------------

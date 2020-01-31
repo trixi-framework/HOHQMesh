@@ -36,7 +36,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh) :: mesh
+         TYPE (SMMesh) :: mesh
          INTEGER       :: errorCode
 !
 !        ---------------
@@ -450,15 +450,15 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh) , POINTER :: mesh
-         CLASS(SMModel), POINTER :: model
+         TYPE (SMMesh) , POINTER :: mesh
+         TYPE (SMModel), POINTER :: model
          INTEGER                 :: errorCode
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         CLASS(FTMutableObjectArray) , POINTER     :: badElements => NULL()
+         TYPE (FTMutableObjectArray) , POINTER     :: badElements => NULL()
          CLASS(SMElement)            , POINTER     :: e => NULL()
          CLASS(FTObject)             , POINTER     :: obj => NULL()
          REAL(KIND=RP)               , ALLOCATABLE :: shapeMeasures(:,:)
@@ -615,8 +615,8 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh) , POINTER :: mesh
-         CLASS(SMModel), POINTER :: model
+         TYPE (SMMesh) , POINTER :: mesh
+         TYPE (SMModel), POINTER :: model
          INTEGER                 :: errorCode
 !
 !        ---------------
@@ -631,7 +631,7 @@
          CLASS(SMElement)           , POINTER :: e => NULL()
          CLASS(SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: edgeListIterator
+         TYPE (FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
          
          numBoundaries = model % numberOfInnerCurves &
@@ -952,7 +952,7 @@
 !        ---------
 !
          CLASS(SMElement)          :: e
-         CLASS(SMModel)  , POINTER :: model
+         TYPE (SMModel)  , POINTER :: model
 !
 !        ---------------
 !        Local variables

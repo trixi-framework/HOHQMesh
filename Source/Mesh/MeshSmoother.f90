@@ -38,7 +38,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTLinkedListIterator), POINTER :: allNodesIterator
+         TYPE (FTLinkedListIterator), POINTER :: allNodesIterator
          CLASS(FTLinkedList)        , POINTER :: boundaryNodesList
 !
 !        ---------------
@@ -78,8 +78,8 @@
       SUBROUTINE smoothMesh( self, mesh, model, errorCode )
          IMPLICIT NONE
          CLASS (MeshSmoother)          :: self
-         CLASS (SMMesh)      , POINTER :: mesh
-         CLASS (SMModel)     , POINTER :: model
+         TYPE  (SMMesh)      , POINTER :: mesh
+         TYPE  (SMModel)     , POINTER :: model
          INTEGER                       :: errorCode
       END SUBROUTINE smoothMesh
       

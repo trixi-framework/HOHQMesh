@@ -44,9 +44,9 @@
 !        Iterators
 !        ---------
 !
-         CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: edgesIterator => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: elementsIterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: nodesIterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: edgesIterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: elementsIterator => NULL()
          
          INTEGER, PRIVATE :: elementID = 0, nodeID = 0, edgeID = 0
 !
@@ -145,7 +145,7 @@
 !  
       SUBROUTINE destructSMMesh(self)  
          IMPLICIT NONE  
-         TYPE(SMMesh) :: self
+         TYPE (SMMesh) :: self
          
          CALL releaseFTLinkedListIterator(self % nodesIterator)
          CALL releaseFTLinkedListIterator(self % edgesIterator)

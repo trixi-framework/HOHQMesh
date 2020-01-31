@@ -97,8 +97,8 @@
 !        ---------
 !
          CLASS (LaplaceMeshSmoother)   :: self
-         CLASS (SMMesh)      , POINTER :: mesh
-         CLASS (SMModel)     , POINTER :: model
+         TYPE  (SMMesh)      , POINTER :: mesh
+         TYPE  (SMModel)     , POINTER :: model
          INTEGER                       :: errorCode
 !
 !        ---------------
@@ -126,7 +126,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS (SMMesh)             , POINTER :: mesh
+         TYPE  (SMMesh)             , POINTER :: mesh
 !
 !        ---------------
 !        Local variables

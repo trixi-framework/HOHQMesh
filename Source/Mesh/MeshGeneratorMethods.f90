@@ -15,6 +15,7 @@
       USE MeshBoundaryMethodsModule
       USE ErrorTypesModule
       USE MeshOutputMethods !DEBUG
+      USE MeshSizerClass
       IMPLICIT NONE
    
 !
@@ -62,7 +63,7 @@
                project % backgroundParams % backgroundGridSize = 0.5_RP*project % backgroundParams % backgroundGridSize
                
                CALL ResetProject(project)
-               CALL clearBoundaryCurves(self = project % sizer)
+               CALL clearBoundaryCurves(project % sizer)
                CALL BuildSizerBoundaryCurves(self = project)
                
                CALL GenerateAQuadMesh(project,errorCode) 
@@ -161,12 +162,12 @@
 !     ---------------
 !
       CLASS(QuadTreeGrid), POINTER :: grid      => NULL()
-      CLASS(SMMesh)      , POINTER :: mesh      => NULL()
-      CLASS(SMModel)     , POINTER :: model     => NULL()
+      TYPE (SMMesh)      , POINTER :: mesh      => NULL()
+      TYPE (SMModel)     , POINTER :: model     => NULL()
       CLASS(MeshSizer)   , POINTER :: sizer     => NULL()
       CLASS(FTObject)    , POINTER :: obj       => NULL()
       CLASS(FTLinkedList), POINTER :: list      => NULL()
-      CLASS(FTException) , POINTER :: exception => NULL()
+      TYPE (FTException) , POINTER :: exception => NULL()
       
       INTEGER                      :: numberOfBoundaries,numBoundaryEdgeLists
       INTEGER                      :: j
@@ -373,7 +374,7 @@
 !     ---------
 !
       CLASS(QuadTreeGrid), POINTER :: grid
-      CLASS(SMMesh)      , POINTER :: mesh
+      TYPE (SMMesh)      , POINTER :: mesh
 !
 !     ---------------
 !     Local variables
@@ -474,8 +475,8 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh)      , POINTER :: mesh
-         CLASS(SMModel)     , POINTER :: model
+         TYPE (SMMesh)      , POINTER :: mesh
+         TYPE (SMModel)     , POINTER :: model
          CLASS(FTLinkedList), POINTER :: list
 !
 !        ---------------
@@ -854,7 +855,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh)                 , POINTER :: mesh
+         TYPE (SMMesh)                 , POINTER :: mesh
          TYPE(BackgroundGridParameters)          :: backgroundParams
 !
 !        ---------------
@@ -1176,7 +1177,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh), POINTER :: mesh
+         TYPE (SMMesh), POINTER :: mesh
 !
 !        ---------------
 !        Local variables
@@ -1217,7 +1218,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh)                 , POINTER :: mesh
+         TYPE (SMMesh)                 , POINTER :: mesh
 !
 !        ---------------
 !        Local variables
@@ -1532,7 +1533,7 @@
 !        ---------
 !
          CLASS(FTLinkedList), POINTER :: list
-         CLASS(SMModel)     , POINTER :: model
+         TYPE (SMModel)     , POINTER :: model
 !
 !        ---------------
 !        Local variables
@@ -1695,11 +1696,11 @@
 !        ---------------
 !
          INTEGER                              :: N
-         CLASS(SMMesh)              , POINTER :: mesh
+         TYPE (SMMesh)              , POINTER :: mesh
          CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          CLASS(SMElement)           , POINTER :: e
-         CLASS(SMModel)             , POINTER :: model
+         TYPE (SMModel)             , POINTER :: model
 
          N     =  project % runParams % polynomialOrder
          mesh  => project % mesh
@@ -1745,7 +1746,7 @@
 !        ---------
 !
          CLASS(SMElement)         , POINTER :: e
-         CLASS(SMModel)           , POINTER :: model
+         TYPE (SMModel)           , POINTER :: model
 !
 !        ---------------
 !        Local Variables
@@ -1898,7 +1899,7 @@
 !        ---------------
 !
          INTEGER                              :: N, j, k
-         CLASS(SMMesh)              , POINTER :: mesh
+         TYPE (SMMesh)              , POINTER :: mesh
          CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          CLASS(SMElement)           , POINTER :: e

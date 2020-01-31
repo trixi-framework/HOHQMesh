@@ -239,8 +239,8 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(SMMesh)              , POINTER :: quadMesh
-         CLASS(FTMutableObjectArray), POINTER :: quadElementsArray
+         TYPE (SMMesh)              , POINTER :: quadMesh
+         TYPE (FTMutableObjectArray), POINTER :: quadElementsArray
          
          INTEGER                :: numberOfLayers
          INTEGER                :: numberOf2DNodes, numberOfQuadElements
@@ -418,7 +418,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTMutableObjectArray), POINTER  :: quadElementsArray
+         TYPE (FTMutableObjectArray), POINTER  :: quadElementsArray
          TYPE ( StructuredHexMesh )            :: hex8Mesh
          REAL(KIND=RP)                         :: dz
          INTEGER                               :: pMutation

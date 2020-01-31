@@ -110,9 +110,9 @@
 !     ------------------------
 !
       TYPE, EXTENDS(FTObject) ::  MeshProject
-         CLASS(SMModel)           , POINTER :: model    => NULL()
-         CLASS(SMMesh)            , POINTER :: mesh     => NULL()
-         CLASS(MeshSizer)         , POINTER :: sizer    => NULL()
+         TYPE (SMModel)           , POINTER :: model    => NULL()
+         TYPE (SMMesh)            , POINTER :: mesh     => NULL()
+         TYPE (MeshSizer)         , POINTER :: sizer    => NULL()
          CLASS(QuadTreeGrid)      , POINTER :: grid     => NULL()
          CLASS(MeshSmoother)      , POINTER :: smoother => NULL()
          TYPE(StructuredHexMesh)  , POINTER :: hexMesh  => NULL()
@@ -501,14 +501,14 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTLinkedList)         , POINTER :: refinementsList
-         CLASS(MeshSizer)            , POINTER :: sizer
+         CLASS(FTLinkedList) , POINTER :: refinementsList
+         TYPE (MeshSizer)    , POINTER :: sizer
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
-         CLASS(FTLinkedListIterator) , POINTER   :: refinementIterator => NULL()
+         TYPE (FTLinkedListIterator) , POINTER   :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER   :: obj => NULL()
          CLASS(FTValueDictionary)    , POINTER   :: refinementObjectDict
          
