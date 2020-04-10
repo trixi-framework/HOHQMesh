@@ -101,6 +101,7 @@
       USE SharedExceptionManagerModule
       USE FTStackClass
       USE ErrorTypesModule
+      USE FTStringSetClass
       
       IMPLICIT NONE 
       
@@ -120,6 +121,13 @@
       
       CHARACTER(LEN=CFR_STRING_LENGTH) :: blockStack(5)
       INTEGER                          :: blockStackTop
+      TYPE(FTStringSet)                :: blocksWithListsSet
+      CHARACTER(LEN=20)                :: blocksWithLists(5) =      &
+                                          ["OUTER_BOUNDARY      ",  &
+                                           "REFINEMENT_REGIONS  ",  &
+                                           "INNER_BOUNDARIES    ",  &
+                                           "INTERFACE_BOUNDARIES",  &
+                                           "CHAIN               "]
 !
 !     ========      
       CONTAINS 
@@ -136,6 +144,7 @@
          CALL self % controlDict % initWithSize(sze = 32)
          CALL self % controlDict % addValueForKey(s = "root",key = "TYPE")
          CALL initializeFTExceptions
+         CALL blocksWithListsSet % initWithStrings(strings = blocksWithLists)
          blockStack    = ""
          blockStackTop = 0
          
@@ -148,6 +157,7 @@
          CLASS(ControlFileReader) :: self
          
          CALL releaseFTValueDictionary(self % controlDict)
+         CALL destructFTStringSet( blocksWithListsSet)
          blockStack    = ""
          blockStackTop = 0
          
@@ -285,12 +295,7 @@
 !        Certain blocks have lists of objects in them
 !        --------------------------------------------
 !
-         IF ( objectName == "OUTER_BOUNDARY"       .OR. &
-              objectName == "REFINEMENT_REGIONS"   .OR. &
-              objectName == "INNER_BOUNDARIES"     .OR. &
-              objectName == "INTERFACE_BOUNDARIES" .OR. &
-              objectName == "CHAIN")                       THEN
-              
+          IF( blocksWithListsSet % containsString(objectName))     THEN 
               ALLOCATE(newList)
               CALL newList % init()
               obj => newList

@@ -38,6 +38,7 @@ FTObjectClass.o \
 FTOLConstants.o \
 FTSparseMatrixClass.o \
 FTStackClass.o \
+FTStringSetClass.o \
 FTValueClass.o \
 FTValueDictionaryClass.o \
 Geometry.o \
@@ -133,6 +134,7 @@ ControlFileReader.o : ${HOQMeshPath}/Source/IO/ControlFileReader.f90 \
 FTExceptionClass.o \
 Encoder.o \
 FTExceptionClass.o \
+FTStringSetClass.o \
 FatalErrorException.o \
 FTValueDictionaryClass.o \
 FTStackClass.o \
@@ -235,6 +237,11 @@ FTLinkedListClass.o
 FTStackClass.o : ${FTOLPath}/Source/FTObjects/FTStackClass.f90 \
 FTLinkedListClass.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${FTOLPath}/Source/FTObjects/FTStackClass.f90
+
+FTStringSetClass.o : ${FTOLPath}/Source/FTObjects/FTStringSetClass.f90 \
+FTObjectClass.o \
+FTDictionaryClass.o
+	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${FTOLPath}/Source/FTObjects/FTStringSetClass.f90
 
 FTValueClass.o : ${FTOLPath}/Source/FTObjects/FTValueClass.f90 \
 FTOLConstants.o \
