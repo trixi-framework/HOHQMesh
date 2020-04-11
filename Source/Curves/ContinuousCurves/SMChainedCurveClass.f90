@@ -94,7 +94,7 @@
          PROCEDURE :: COUNT                   => chainedCurveCount
          PROCEDURE :: positionAt              => positionOnChainedCurveAt
          PROCEDURE :: tangentAt               => tangentOnChainedCurveAt
-         PROCEDURE :: complete                => finalizeChainedCurve
+         PROCEDURE :: complete                => completeChainedCurve
          PROCEDURE :: curveAtIndex
          PROCEDURE :: curveWithLocation
          PROCEDURE :: CurveNumberForLocation
@@ -186,7 +186,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE finalizeChainedCurve(self, inOutFlag)  
+      SUBROUTINE completeChainedCurve(self, innerOrOuterCurve, chainMustClose)  
          IMPLICIT NONE 
 !
 !        ---------
@@ -194,7 +194,8 @@
 !        ---------
 !
          CLASS(SMChainedCurve) :: self
-         INTEGER, INTENT(IN)   :: inOutFlag
+         INTEGER, INTENT(IN)   :: innerOrOuterCurve
+         LOGICAL               :: chainMustClose
 !
 !        ---------------
 !        Local variables
@@ -257,17 +258,18 @@
             
             IF( MaxVal(ABS(x0-xEnd)) <= 100*EPSILON(1.0_RP) )     THEN
                self % swapDirection(k) = .FALSE.
-            ELSE IF ( MaxVal(ABS(xN-xEnd)) <= 100*EPSILON(1.0_RP) )     THEN
+            ELSE IF ( MaxVal(ABS(xN-xEnd)) <= 100*EPSILON(1.0_RP) .AND. (kP1 .NE. k) )     THEN
                self % swapDirection(k) = .TRUE.
             ELSE
                IF ( kp1 < k )     THEN
-                  CALL ThrowCurvesDontJoinException(self,curve,nextCurve,"Chain does not close")
+                  IF(chainMustClose)   CALL ThrowCurvesDontJoinException(self,curve,nextCurve,"Chain does not close")
                ELSE 
                   CALL ThrowCurvesDontJoinException(self,curve,nextCurve,"Curves do not adjoin")
                END IF 
                RETURN
             END IF
          END DO  
+         IF( innerOrOuterCurve == NOT_APPLICABLE)   RETURN 
 !
 !        -------------------
 !        Classify the joints
@@ -282,10 +284,10 @@
             objectPtr => self % curvesArray % objectAtIndex(km1)
             CALL cast(objectPtr,previousCurve)
             
-            self % jointClassification(k-1) = JointClassification(previousCurve,curve,inOutFlag)
+            self % jointClassification(k-1) = JointClassification(previousCurve,curve,innerOrOuterCurve)
          END DO  
         
-      END SUBROUTINE finalizeChainedCurve
+      END SUBROUTINE completeChainedCurve
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
