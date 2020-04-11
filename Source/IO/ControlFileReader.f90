@@ -6,24 +6,31 @@
 !      By: David Kopriva 
 !      All Rights Reserved.
 !
+!      The control file reader parses the control file and returns
+!      a Control file dictionary.
 !
 !      A Control file dictionary contains the keys
 !         TYPE
 !         CONTROL_INPUT
 !         MODEL
-!      
+!
+!      TYPE is a string naming the type (class) of object stored
+!
 !      The CONTROL_INPUT dictionary contains the keys
 !         TYPE
 !         RUN_PARAMETERS
 !         MESH_PARAMETERS
 !         SPRING_SMOOTHER
 !         REFINEMENT_REGIONS
-!         3D_MESH_CONTROL
+!         SIMPLE_EXTRUSION
+!         SIMPLE_ROTATION
+!         SWEEP_ALONG_CURVE
 !
 !      The MODEL dictionary contains the keys
 !         TYPE
 !         OUTER_BOUNDARY
 !         INNER_BOUNDARIES
+!         SWEEP_CURVE
 !      
 !      The OUTER_BOUNDARY dictionary contains the keys
 !         TYPE
@@ -79,18 +86,22 @@
 !                REFINEMENT_LINE
 !
 !      A REFINEMENT_CENTER contains the keys
-!         type
+!         TYPE
 !         center
 !         h
 !         w
 !
 !      A REFINEMENT_LINE contains the keys
-!         type
+!         TYPE
 !         xStart
 !         xEnd
 !         h
 !         w
-!
+!      
+!      The SIMPLE_EXTRUSION  block is defined in SimpleSweep.f90
+!      The SIMPLE_ROTATION   block is defined in SimpleSweep.f90
+!      The SWEEP_ALONG_CURVE block is defined in SweeperClass.f90
+! 
 !////////////////////////////////////////////////////////////////////////
 !
       Module ControlFileReaderClass
@@ -122,11 +133,12 @@
       CHARACTER(LEN=CFR_STRING_LENGTH) :: blockStack(5)
       INTEGER                          :: blockStackTop
       TYPE(FTStringSet)                :: blocksWithListsSet
-      CHARACTER(LEN=20)                :: blocksWithLists(5) =      &
+      CHARACTER(LEN=20)                :: blocksWithLists(6) =      &
                                           ["OUTER_BOUNDARY      ",  &
                                            "REFINEMENT_REGIONS  ",  &
                                            "INNER_BOUNDARIES    ",  &
                                            "INTERFACE_BOUNDARIES",  &
+                                           "SWEEP_CURVE         ",  &
                                            "CHAIN               "]
 !
 !     ========      

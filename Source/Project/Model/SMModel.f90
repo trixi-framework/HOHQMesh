@@ -16,6 +16,7 @@
       USE SMParametricEquationCurveClass
       USE SMSplineCurveClass
       USE SMLineClass
+      USE CurveSweepClass
       USE FTValueDictionaryClass
       USE ErrorTypesModule
       IMPLICIT NONE
@@ -39,12 +40,13 @@
 !
       TYPE, EXTENDS(FTObject) ::  SMModel
          INTEGER                                  :: curveCount
-         INTEGER                                  :: numberOfOuterCurves
+         INTEGER                                  :: numberOfOuterCurves, numberOfSweepCurves
          INTEGER                                  :: numberOfInnerCurves
          INTEGER                                  :: numberOfInterfaceCurves
          CHARACTER(LEN=32)                        :: modelName
-         CLASS(SMChainedCurve)      , POINTER     :: outerBoundary => NULL()
-         CLASS(FTLinkedList)        , POINTER     :: innerBoundaries => NULL()
+         CLASS(SMChainedCurve)      , POINTER     :: outerBoundary       => NULL()
+         CLASS(SMChainedCurve)      , POINTER     :: sweepCurve          => NULL()
+         CLASS(FTLinkedList)        , POINTER     :: innerBoundaries     => NULL()
          CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: innerBoundariesIterator => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: interfaceBoundariesIterator => NULL()
@@ -81,6 +83,7 @@
          self % interfaceBoundariesIterator => NULL()
          self % curveCount                  =  0
          self % numberOfOuterCurves         =  0
+         self % numberOfSweepCurves         =  0
          self % numberOfInnerCurves         =  0
          self % numberOfInterfaceCurves     =  0
          
@@ -106,6 +109,12 @@
          CALL release(self = obj)
          obj => self % outerBoundary
          CALL release(obj)
+         
+         IF ( ASSOCIATED(self % sweepCurve) )     THEN
+            obj => self % sweepCurve
+            CALL release(obj)
+            self % numberOfSweepCurves = 0
+         END IF 
          
          IF ( ALLOCATED(self % boundaryCurveMap) )     THEN
             DEALLOCATE(self % boundaryCurveMap)
@@ -151,7 +160,7 @@
 !        ---------------
 !
          INTEGER, EXTERNAL                 :: UnusedUnit
-         CLASS(FTValueDictionary), POINTER :: outerBoundaryDict, innerBoundariesDict
+         CLASS(FTValueDictionary), POINTER :: outerBoundaryDict, innerBoundariesDict, sweepCurveDict
          CLASS(FTLinkedList)     , POINTER :: innerBoundariesList
          CLASS(FTObject)         , POINTER :: obj
 !
@@ -226,6 +235,27 @@
             CALL  self % interfaceBoundariesIterator % initWithFTLinkedList(self % interfaceBoundaries)
          END IF 
 !
+!        --------------------------------------
+!        Construct sweep curve boundary, if any
+!        --------------------------------------
+!
+         IF ( modelDict % containsKey(key = SWEEP_CURVE_BLOCK_KEY) )     THEN
+         
+            ALLOCATE( self % sweepCurve )
+            CALL self % sweepCurve % initChainWithNameAndID("Sweep curve",1)
+         
+            obj            => modelDict % objectForKey(key = SWEEP_CURVE_BLOCK_KEY)
+            sweepCurveDict => valueDictionaryFromObject(obj)
+            
+            CALL AssembleChainCurve(self           = self,             &
+                                    curveDict      = sweepCurveDict,   &
+                                    curveChain     = self % sweepCurve,&
+                                    innerOrOuter   = NOT_APPLICABLE,   &
+                                    chainMustClose = .FALSE.)
+            IF(ReturnOnFatalError())     RETURN 
+            
+         END IF 
+!
 !        ---------
 !        Finish up
 !        ---------
@@ -255,15 +285,47 @@
          CLASS(FTValueDictionary)  , POINTER :: blockDict
          TYPE(FTLinkedListIterator)          :: iterator
                   
-         obj               => outerBoundaryDict % objectForKey(key = "LIST")
-         outerBoundaryList => linkedListFromObject(obj)
-         CALL iterator % initWithFTLinkedList(list = outerBoundaryList)
+         CALL AssembleChainCurve(self           = self,                &
+                                 curveDict      = outerBoundaryDict,   &
+                                 curveChain     = self % outerBoundary,&
+                                 innerOrOuter   = OUTER,               &
+                                 chainMustClose = .TRUE.)
+         
+      END SUBROUTINE ConstructOuterBoundary
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE AssembleChainCurve( self, curveDict, curveChain, innerOrOuter, chainMustClose ) 
+         IMPLICIT NONE  
+!
+!        -----------
+!        Arguments  
+!        -----------
+!
+         CLASS(SMModel)                    :: self
+         CLASS(FTValueDictionary), POINTER :: curveDict
+         CLASS(SMChainedCurve)   , POINTER :: curveChain
+         INTEGER                           :: innerOrOuter
+         LOGICAL                           :: chainMustClose
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedList)       , POINTER :: curveList
+         CLASS(FTObject)           , POINTER :: obj
+         CLASS(FTValueDictionary)  , POINTER :: blockDict
+         TYPE(FTLinkedListIterator)          :: iterator
+                  
+         obj       => curveDict % objectForKey(key = "LIST")
+         curveList => linkedListFromObject(obj)
+         CALL iterator % initWithFTLinkedList(list = curveList)
          
          DO WHILE (.NOT. iterator % isAtEnd())
             obj       => iterator % object()
             blockDict => valueDictionaryFromObject(obj)
             
-            CALL ConstructCurve( self, self % outerBoundary, blockDict )
+            CALL ConstructCurve( self, curveChain, blockDict )
             
             CALL iterator % moveToNext()
          END DO 
@@ -272,9 +334,9 @@
 !        Finalize the chain
 !        ------------------
 !
-         CALL self % outerBoundary % complete(OUTER)
+         CALL curveChain % complete(innerOrOuterCurve = innerOrOuter,chainMustClose = chainMustClose)
          
-      END SUBROUTINE ConstructOuterBoundary
+      END SUBROUTINE AssembleChainCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -351,7 +413,7 @@
 !           Finalize the chain
 !           ------------------
 !
-            CALL chain % complete(INNER)
+            CALL chain % complete(innerOrOuterCurve = INNER,chainMustClose = .TRUE.)
             obj => chain
             CALL release(obj)
 !
