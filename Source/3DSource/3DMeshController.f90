@@ -10,6 +10,7 @@
       Module MeshController3D
       USE FTValuedictionaryClass
       USE SimpleSweepModule
+      USE CurveSweepClass
       USE MeshProjectClass
       USE SMMeshObjectsModule
       USE HexMeshObjectsModule
@@ -62,7 +63,8 @@
          shouldGenerate3DMesh = .FALSE.
          
          IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY) .OR. &
-              controlDict % containsKey(key = SIMPLE_ROTATION_BLOCK_KEY) )     THEN
+              controlDict % containsKey(key = SIMPLE_ROTATION_BLOCK_KEY)  .OR. &
+              controlDict % containsKey(key = SWEEP_CURVE_BLOCK_KEY))     THEN
          
                shouldGenerate3DMesh = .TRUE.
          END IF 
@@ -113,6 +115,14 @@
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SIMPLE_ROTATION_ALGORITHM
             CALL CheckSimpleRotationBlock(dict = generatorDict)
+            IF(ReturnOnFatalError())     RETURN 
+            
+         ELSE IF ( controlDict % containsKey(key = SWEEP_CURVE_BLOCK_KEY) )     THEN 
+         
+            obj             => controlDict % objectForKey(key = SWEEP_CURVE_BLOCK_KEY)
+            generatorDict   => valueDictionaryFromObject(obj) 
+            algorithmChoice = SWEEP_ALGORITHM
+            CALL CheckCurveSweepBlock(dict = generatorDict)
             IF(ReturnOnFatalError())     RETURN 
             
          ELSE
