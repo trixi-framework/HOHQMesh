@@ -355,7 +355,7 @@
             obj => self % chain % objectAtIndex(j)
             CALL castToSegmentedCurve(obj,curve)
             WRITE(iUnit,*) "Curve ",j, " = ",TRIM(curve % curveName) 
-            CALL curve % printDescription(6)
+            CALL curve % printDescription(iUnit)
          END DO  
       END SUBROUTINE printChainedCurveDescription
 !@mark -
