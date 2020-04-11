@@ -18,13 +18,13 @@
          INTEGER, PARAMETER :: NONE      = 0
          LOGICAL, PARAMETER :: FAIL      = .false.
          INTEGER, PARAMETER :: UNDEFINED = 0
-         INTEGER, PARAMETER :: ON        = 1, OFF = 0
+         INTEGER, PARAMETER :: ON        = 1, OFF = 0, NOT_APPLICABLE = -1
 !
 !        -----------------------------
 !        Constants indicating location
 !        -----------------------------
 !
-         INTEGER, PARAMETER :: INNER    =  2 , OUTER     =  1, INTERIOR_INTERFACE =  3
+         INTEGER, PARAMETER :: INNER    =  2 , OUTER     =  1, INTERIOR_INTERFACE =  3, SWEEP_CURVE = -1
          INTEGER, PARAMETER :: TOP      = -1,  BOTTOM    = -2, LEFT               = -3, RIGHT      = -4, OUTER_BOX = -5
          INTEGER, PARAMETER :: BBOX_TOP =  1 , BBOX_LEFT =  2, BBOX_BOTTOM        =  3, BBOX_RIGHT =  4
 !
@@ -41,7 +41,7 @@
          INTEGER, PARAMETER :: REFINEMENT_3 = 3, REFINEMENT_2 = 2
          INTEGER, PARAMETER :: REMOVE_HANGING_NODES_OPERATION = 0, FLATTEN_NODE_LEVELS_OPERATION = 1
          INTEGER, PARAMETER :: INACTIVE = 0, ACTIVE = 1, REMOVE = 2
-         INTEGER, PARAMETER :: SIMPLE_EXTRUSION_ALGORITHM = 0, SIMPLE_ROTATION_ALGORITHM = 1
+         INTEGER, PARAMETER :: SIMPLE_EXTRUSION_ALGORITHM = 0, SIMPLE_ROTATION_ALGORITHM = 1, SWEEP_ALGORITHM = 2
 !
 !        -------------------------
 !        Mesh formatting constants
