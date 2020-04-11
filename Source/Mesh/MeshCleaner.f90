@@ -958,7 +958,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER, PARAMETER               :: ON_BOUNDARY = 1, OFF_BOUNDARY = 0
+         INTEGER, PARAMETER               :: CBE_ON_BOUNDARY = 1, CBE_OFF_BOUNDARY = 0
          CLASS(SMNode)  , POINTER         :: sourceNode => NULL(), node => NULL()
          CLASS(FTObject), POINTER         :: obj => NULL()
          TYPE(SMNodePtr)                  :: elementNodes(4)  !Temp container for this procedure
@@ -983,14 +983,14 @@
 !        -------------------------------------------------------
 !
          boundaryNodeCount = 0
-         mark              = OFF_BOUNDARY
+         mark              = CBE_OFF_BOUNDARY
          DO k = 1, 4
             obj => e % nodes % objectAtIndex(k)
             CALL cast(obj, node)
             elementNodes(k) % node => node
             IF ( node % bCurveID > UNDEFINED .AND. node % distToBoundary == 0.0_RP )     THEN
                boundaryNodeCount = boundaryNodeCount + 1
-               mark(k) = ON_BOUNDARY 
+               mark(k) = CBE_ON_BOUNDARY 
             END IF
          END DO
 !
@@ -1008,7 +1008,7 @@
 !
          badArrayOriginal = .false.
          DO k = 1,4
-            IF( mark(k) == ON_BOUNDARY )     THEN
+            IF( mark(k) == CBE_ON_BOUNDARY )     THEN
 !
 !              -------------------------------------------
 !              Find the quality of the neigboring elements
@@ -1033,7 +1033,7 @@
 !        ---------------------
 !
          DO k = 1, 4
-            IF( mark(k) == OFF_BOUNDARY            )              CYCLE
+            IF( mark(k) == CBE_OFF_BOUNDARY            )              CYCLE
             IF(elementNodes(k) % node % activeStatus == INACTIVE) CYCLE
             IF(elementNodes(k) % node % nodeType /= ROW_SIDE)     CYCLE
 !
@@ -1041,9 +1041,9 @@
 !           Find which node is off the boundary
 !           -----------------------------------
 !
-            IF ( mark(sourceNodeLocalID(1,k)) == OFF_BOUNDARY )          THEN
+            IF ( mark(sourceNodeLocalID(1,k)) == CBE_OFF_BOUNDARY )          THEN
                m = sourceNodeLocalID(1,k)
-            ELSE IF ( mark(sourceNodeLocalID(2,k)) == OFF_BOUNDARY )     THEN
+            ELSE IF ( mark(sourceNodeLocalID(2,k)) == CBE_OFF_BOUNDARY )     THEN
                m = sourceNodeLocalID(2,k)
             ELSE
                node => elementNodes(k) % node
@@ -1084,7 +1084,7 @@
 !
 !         badArrayNew = .false.
 !         DO k = 1, 4
-!            IF( mark(k) == OFF_BOUNDARY )     CYCLE
+!            IF( mark(k) == CBE_OFF_BOUNDARY )     CYCLE
 !            IF(elementNodes(k) % node % activeStatus == INACTIVE) CYCLE
 !            IF(elementNodes(k) % node % nodeType /= ROW_SIDE)     CYCLE
 !!
