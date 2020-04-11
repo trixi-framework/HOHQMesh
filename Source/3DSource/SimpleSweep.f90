@@ -1,7 +1,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-!      SimpleExtrusion.f90
+!      SimpleSweep.f90
 !      Created: March 28, 2013 9:55 AM 
 !      By: David Kopriva  
 !
@@ -9,6 +9,21 @@
 !     extrude it vertically in the "z" direction to create a
 !     3D Hex mesh or rotate it about the x-axis to generate
 !     a volume of revolution.
+!
+!      SIMPLE_EXTRUSION contains the keys
+!         direction
+!         height
+!         subdivisions
+!         start surface name
+!         end surface name
+!
+!      SIMPLE_ROTATION contains the keys
+!
+!         direction
+!         rotation angle factor
+!         subdivisions 
+!         start surface name
+!         end surface name
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -60,13 +75,13 @@
 !
 !        Example block is:
 !
-!            \begin{SimpleExtrusion}
+!            \begin{SIMPLE_EXTRUSION}
 !               direction          = 1 = x, 2 = y, 3 = z
 !               height             = 10.0
 !               subdivisions       = 5
 !               start surface name = "bottom"
 !               end surface name   = "top"
-!            \end{SimpleExtrusion}
+!            \end{SIMPLE_EXTRUSION}
 !
          IMPLICIT NONE
 !
@@ -142,13 +157,13 @@
 !
 !        Example block is:
 !
-!            \begin{SimpleRotation}
+!            \begin{SIMPLE_ROTATION}
 !               direction               = 1 = x, 2 = y, 3 = z
 !               rotation angle factor   = 0.5
 !               subdivisions            = 5
 !               start surface name      = "bottom"
 !               end surface name        = "top"
-!            \end{SimpleExtrusion}
+!            \end{SIMPLE_ROTATION}
 !
          IMPLICIT NONE
 !
