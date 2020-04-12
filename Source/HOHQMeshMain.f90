@@ -57,7 +57,7 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
          
          CLASS(FTObject)         , POINTER :: obj
-         TYPE (FTValueDictionary), POINTER :: controlDict
+         TYPE (FTValueDictionary), POINTER :: controlDict, modelDict
 !
 !        ***********************************************
 !                             Start
@@ -107,7 +107,11 @@
          
          shouldGenerate3D = shouldGenerate3DMesh(controlDict = controlDict)
          IF ( shouldGenerate3D )     THEN
-            CALL Check3DMeshParametersIntegrity(controlDict) 
+            obj            => cfReader % controlDict % objectForKey(key = "MODEL")
+            modelDict      => valueDictionaryFromObject(obj)
+            CALL modelDict % retain()
+            CALL Check3DMeshParametersIntegrity(controlDict, modelDict) 
+            CALL releaseFTValueDictionary(modelDict)
          END IF 
          CALL trapExceptions !Abort on fatal exceptions
 !

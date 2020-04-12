@@ -64,7 +64,7 @@
          
          IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY) .OR. &
               controlDict % containsKey(key = SIMPLE_ROTATION_BLOCK_KEY)  .OR. &
-              controlDict % containsKey(key = SWEEP_CURVE_BLOCK_KEY))     THEN
+              controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY))     THEN
          
                shouldGenerate3DMesh = .TRUE.
          END IF 
@@ -73,14 +73,14 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE Check3DMeshParametersIntegrity( controlDict )  
+      SUBROUTINE Check3DMeshParametersIntegrity( controlDict, modelDict )  
          IMPLICIT NONE  
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         TYPE (FTValueDictionary), POINTER :: controlDict
+         TYPE (FTValueDictionary), POINTER :: controlDict, modelDict
 !
 !        ---------------
 !        Local variables
@@ -117,12 +117,13 @@
             CALL CheckSimpleRotationBlock(dict = generatorDict)
             IF(ReturnOnFatalError())     RETURN 
             
-         ELSE IF ( controlDict % containsKey(key = SWEEP_CURVE_BLOCK_KEY) )     THEN 
+         ELSE IF ( controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN 
          
-            obj             => controlDict % objectForKey(key = SWEEP_CURVE_BLOCK_KEY)
+            obj             => controlDict % objectForKey(key = SWEEP_CURVE_CONTROL_KEY)
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SWEEP_ALGORITHM
-            CALL CheckCurveSweepBlock(dict = generatorDict)
+            CALL CheckCurveSweepBlock(controlDict = generatorDict, &
+                                      modelDict   = modelDict)
             IF(ReturnOnFatalError())     RETURN 
             
          ELSE

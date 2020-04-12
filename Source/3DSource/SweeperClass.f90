@@ -32,6 +32,7 @@
             REAL(KIND=RP)                 :: x0(3)
          END TYPE CurveSweeper
 
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_CURVE_CONTROL_KEY        = "SWEEP"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_CURVE_BLOCK_KEY          = "SWEEP_CURVE"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_SUBDIVISIONS_KEY   = "subdivisions"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_STARTNAME_KEY      = "start surface name"
@@ -62,14 +63,14 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-         SUBROUTINE CheckCurveSweepBlock(dict)  
+         SUBROUTINE CheckCurveSweepBlock(controlDict, modelDict)  
             IMPLICIT NONE  
 !
 !              ---------
 !              Arguments
 !              ---------
 !
-               CLASS(FTValueDictionary) :: dict
+               CLASS(FTValueDictionary) :: controlDict, modelDict
 !
 !              ---------------
 !              Local variables
@@ -79,33 +80,44 @@
                REAL(KIND=RP), EXTERNAL                :: GetRealValue
                CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
 !
+!              ----------------------------------------
+!              Make sure the model has a curve to sweep
+!              ----------------------------------------
+!
+               IF ( .NOT. modelDict % containsKey(key = SWEEP_CURVE_BLOCK_KEY) )     THEN
+                  CALL ThrowErrorExceptionOfType(poster = "CheckCurveSweepBlock", &
+                                                 msg    = "key " // TRIM(SWEEP_CURVE_BLOCK_KEY) // &
+                                                          " not found in model for sweeping", &
+                                                 typ    = FT_ERROR_FATAL) 
+               END IF
+!
 !              ------------
 !              Subdivisions
 !              ------------
 !
-               IF ( .NOT. dict % containsKey(key = CURVE_SWEEP_SUBDIVISIONS_KEY) )     THEN
+               IF ( .NOT. controlDict % containsKey(key = CURVE_SWEEP_SUBDIVISIONS_KEY) )     THEN
                   CALL ThrowErrorExceptionOfType(poster = "CheckCurveSweepBlock", &
-                                                 msg = "key " // TRIM(CURVE_SWEEP_SUBDIVISIONS_KEY) // &
-                                                      " not found in sweep block", &
-                                                 typ = FT_ERROR_FATAL) 
+                                                 msg    = "key " // TRIM(CURVE_SWEEP_SUBDIVISIONS_KEY) // &
+                                                          " not found in sweep block", &
+                                                 typ    = FT_ERROR_FATAL) 
                END IF
 !
 !              -------------------
 !              Bottom surface name
 !              -------------------
 !
-               IF ( .NOT. dict % containsKey(key = CURVE_SWEEP_STARTNAME_KEY) )     THEN
+               IF ( .NOT. controlDict % containsKey(key = CURVE_SWEEP_STARTNAME_KEY) )     THEN
                   CALL ThrowErrorExceptionOfType(poster = "CheckCurveSweepBlock", &
-                                                 msg = "key " // TRIM(CURVE_SWEEP_STARTNAME_KEY) // &
-                                                 " not found in sweep block", &
-                                                 typ = FT_ERROR_FATAL) 
+                                                 msg    = "key " // TRIM(CURVE_SWEEP_STARTNAME_KEY) // &
+                                                           " not found in sweep block", &
+                                                 typ    = FT_ERROR_FATAL) 
                END IF
 !
 !              ----------------
 !              Top surface name
 !              ----------------
 !
-               IF ( .NOT. dict % containsKey(key = CURVE_SWEEP_ENDNAME_KEY) )     THEN
+               IF ( .NOT. controlDict % containsKey(key = CURVE_SWEEP_ENDNAME_KEY) )     THEN
                   CALL ThrowErrorExceptionOfType(poster = "CheckCurveSweepBlock", &
                                                  msg = "key " // TRIM(CURVE_SWEEP_ENDNAME_KEY) // &
                                                  " not found in sweep block", &
