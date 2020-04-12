@@ -150,11 +150,11 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)           , POINTER :: obj
-         CLASS(FTValueDictionary)  , POINTER :: generatorDict
-         INTEGER                             :: numberOfLayers
-         
-         INTEGER                             :: algorithmChoice = NONE
+         CLASS(FTObject)           , POINTER   :: obj
+         CLASS(FTValueDictionary)  , POINTER   :: generatorDict
+         INTEGER                               :: numberOfLayers
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: subdivisionsKey
+         INTEGER                               :: algorithmChoice = NONE
 !
 !        ----------
 !        Interfaces
@@ -171,13 +171,25 @@
             obj             => controlDict % objectForKey(key = SIMPLE_EXTRUSION_BLOCK_KEY)
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
+            subdivisionsKey = SIMPLE_SWEEP_SUBDIVISIONS_KEY
             
          ELSE IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN 
          
             obj             => controlDict % objectForKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SIMPLE_ROTATION_ALGORITHM
+            subdivisionsKey = SIMPLE_SWEEP_SUBDIVISIONS_KEY
             
+         ELSE IF ( controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN 
+         
+            obj             => controlDict % objectForKey(key = SWEEP_CURVE_CONTROL_KEY)
+            generatorDict   => valueDictionaryFromObject(obj) 
+            algorithmChoice = SWEEP_ALGORITHM
+            subdivisionsKey = CURVE_SWEEP_SUBDIVISIONS_KEY
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
+                                           msg    = "unknown generator for 3D mesh found in control file", &
+                                           typ    = FT_ERROR_FATAL)
          END IF
 !
 !        ---------------------------------------------------------------------
@@ -188,7 +200,7 @@
 !        ---------------------------------------------------------------------
 !
          ALLOCATE(project % hexMesh)
-         numberOfLayers = generatorDict % integerValueForKey( SIMPLE_SWEEP_SUBDIVISIONS_KEY )
+         numberOfLayers = generatorDict % integerValueForKey( subdivisionsKey )
          CALL InitializeStructuredHexMesh(hexMesh              = project % hexMesh,                   &
                                           numberOf2DNodes      = project % mesh % nodes % count(),    &
                                           numberOfQuadElements = project % mesh % elements % count(), &
