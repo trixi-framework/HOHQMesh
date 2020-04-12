@@ -19,6 +19,7 @@
       USE ErrorTypesModule
       USE ValueSettingModule
       USE HexMeshObjectsModule
+      USE Geometry3DModule
       IMPLICIT NONE
 !
 !     ---------
@@ -58,6 +59,14 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ELEMENT_TYPE_KEY            = "element type"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_BLOCK_KEY  = "SIMPLE_EXTRUSION"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SIMPLE_ROTATION_BLOCK_KEY   = "SIMPLE_ROTATION"
+      
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_BLOCK_KEY   = "SCALE_TRANSFORM"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_SCALE_KEY   = "scale factor"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_ORIGIN_KEY  = "origin"
+      
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_BLOCK_KEY   = "AFFINE_TRANSFORM"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_SCALE_KEY   = "translation"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_ORIGIN_KEY  = "direction"
       
 !
 !     ------------------
@@ -119,6 +128,8 @@
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
+         TYPE(AffineTransform)              :: affineTransformer
+         TYPE(ScaleTransform)               :: scaleTransformer
          CHARACTER(LEN=32)                  :: backgroundMaterialName
 !         
 !        ========         
@@ -335,7 +346,7 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(FTValueDictionary)    , POINTER :: smootherDict, refinementsDict
+         CLASS(FTValueDictionary)    , POINTER :: smootherDict, refinementsDict, scaleTransformDict
          CLASS(FTLinkedList)         , POINTER :: refinementsList
          CLASS(FTLinkedListIterator) , POINTER :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
@@ -345,6 +356,8 @@
                            
          NULLIFY( self % grid )
          NULLIFY( self % sizer )
+         CALL ConstructNullScaleTransform(self = self % scaleTransformer)
+         CALL ConstructNullTransform(self = self % affineTransformer)
 !
          CALL BuildBackgroundGrid(self, controlDict )
          CALL BuildQuadtreeGrid(self)
@@ -398,6 +411,23 @@
             END IF
          ELSE
             ! For other possibilities added later
+         END IF 
+!
+!        --------------------------
+!        Construct Affine transform
+!        --------------------------
+!
+         
+!
+!        ---------------------------
+!        Construct Scaling transform
+!        ---------------------------
+!
+         IF ( controlDict % containsKey(key = SCALE_TRANSFORM_BLOCK_KEY) )     THEN
+            obj                => controlDict % objectForKey(key = SCALE_TRANSFORM_BLOCK_KEY)
+            scaleTransformDict => valueDictionaryFromObject(obj)
+            CALL SetScaleTransformBlock(scaleBlockDict   = scaleTransformDict, &
+                                        scaleTransformer = self % scaleTransformer)
          END IF 
          
       END SUBROUTINE BuildProject
@@ -919,24 +949,6 @@
             params % meshType = 0! CONFORMING
             RETURN 
          END IF 
-!
-!        ---------
-!        Mesh type
-!        ---------
-!
-!         typeName = "conforming"
-!!         msg      = "Control file is missing the mesh type. Using default 'conforming'."
-!!         CALL SetStringValueFromDictionary(valueToSet = typeName,               &
-!!                                           sourceDict = paramsDict,             &
-!!                                           key        = MESH_TYPE_KEY,          &
-!!                                           errorLevel = FT_ERROR_WARNING,       &
-!!                                           message    = msg,                    &
-!!                                           poster     = "SetMeshParametersBlock")         
-!         IF( typeName == "conforming" )     THEN
-!            params % meshType = 0! CONFORMING
-!         ELSE
-!            params % meshType = 1 !NON_CONFORMING
-!         END IF
    
       END SUBROUTINE SetMeshParametersBlock
 !
@@ -1186,7 +1198,6 @@
                                               errorLevel = FT_ERROR_FATAL,            &
                                               message    = msg,                       &
                                               poster     = "SetLineMeshSizerBlock")
-         IF(ReturnOnFatalError()) RETURN
 !
 !        ------------
 !        End location
@@ -1199,7 +1210,6 @@
                                               errorLevel = FT_ERROR_FATAL,            &
                                               message    = msg,                       &
                                               poster     = "SetLineMeshSizerBlock")
-         IF(ReturnOnFatalError()) RETURN
          
 !
 !        ---------
@@ -1213,7 +1223,6 @@
                                          errorLevel = FT_ERROR_FATAL,                &
                                          message    = msg,                           &
                                          poster     = "SetLineMeshSizerBlock")
-         IF(ReturnOnFatalError()) RETURN
 !
 !        ------
 !        Extent
@@ -1226,10 +1235,63 @@
                                          errorLevel = FT_ERROR_FATAL,                &
                                          message    = msg,                           &
                                          poster     = "SetLineMeshSizerBlock")
-         IF(ReturnOnFatalError()) RETURN
          
       END SUBROUTINE SetLineMeshSizerBlock
-      
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE SetScaleTransformBlock(scaleBlockDict, scaleTransformer)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTValueDictionary), POINTER :: scaleBlockDict
+         TYPE(ScaleTransform)              :: scaleTransformer
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
+         REAL(KIND=RP)                           :: s, c(3)
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         logical, EXTERNAL :: ReturnOnFatalError
+!
+!        ------
+!        Origin
+!        ------
+!
+         msg = "Scale transform block missing parameter " // TRIM(SCALE_TRANSFORM_ORIGIN_KEY)
+        
+         CALL SetRealArrayValueFromDictionary(arrayToSet = c, &
+                                              sourceDict = scaleBlockDict,                  &
+                                              key        = SCALE_TRANSFORM_ORIGIN_KEY,      &
+                                              errorLevel = FT_ERROR_FATAL,                  &
+                                              message    = msg,                             &
+                                              poster     = "SetScaleTransformBlock")
+!
+!        ------------
+!        Scale factor
+!        ------------
+!
+         msg = "Scale transform block missing parameter " // TRIM(SCALE_TRANSFORM_SCALE_KEY)
+         CALL SetRealValueFromDictionary(valueToSet = s,                             &
+                                         sourceDict = scaleBlockDict,                &
+                                         key        = SCALE_TRANSFORM_SCALE_KEY,     &
+                                         errorLevel = FT_ERROR_FATAL,                &
+                                         message    = msg,                           &
+                                         poster     = "SetScaleTransformBlock")
+         IF(ReturnOnFatalError()) RETURN
+         
+         CALL ConstructScaleTransform(self = scaleTransformer,origin = c, factor = s)
+         
+      END SUBROUTINE SetScaleTransformBlock
 
    END MODULE MeshProjectClass
 

@@ -19,6 +19,8 @@
 !         SPRING_SMOOTHER
 !         REFINEMENT_REGIONS
 !         3D_MESH_CONTROL
+!         SCALE_TRANSFORM
+!         AFFINE_TRANSFORM
 !
 !      The MODEL dictionary contains the keys
 !         TYPE

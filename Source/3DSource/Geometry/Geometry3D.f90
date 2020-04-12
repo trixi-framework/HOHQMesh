@@ -10,8 +10,121 @@
       Module Geometry3DModule 
       USE SMConstants
       IMPLICIT NONE 
-! 
+      
+      TYPE AffineTransform
+         REAL(KIND=RP)    :: translation(3)
+         REAL(KIND=RP)    :: rotMatrix(3,3)
+         LOGICAL, PRIVATE :: isIdentityTransform
+      END TYPE AffineTransform
+      
+      TYPE ScaleTransform
+         REAL(KIND=RP)    :: origin(3)
+         REAL(KIND=RP)    :: scaleFactor
+         LOGICAL, PRIVATE :: isIdentityScale
+      END TYPE ScaleTransform
+!
+!     ========
       CONTAINS
+!     ========
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ConstructNullTransform(self)  
+         IMPLICIT NONE  
+         TYPE(AffineTransform) :: self
+         
+         self % translation    = 0.0_RP
+         self % rotMatrix      = 0.0
+         self % rotMatrix(1,1) = 1.0_RP
+         self % rotMatrix(2,2) = 1.0_RP
+         self % rotMatrix(3,3) = 1.0_RP
+         self % isIdentityTransform = .TRUE.
+      END SUBROUTINE ConstructNullTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ConstructAffineTransform(self, translation, startDirection, newDirection)  
+         IMPLICIT NONE  
+         TYPE(AffineTransform)  :: self
+         REAL(KIND=RP)          :: translation(3)
+         REAL(KIND=RP)          :: startDirection(3)
+         REAL(KIND=RP)          :: newDirection(3)
+         
+         self % translation = translation
+         CALL RotationMatrix(old = startDirection, &
+                             new = newDirection,   &
+                             R = self % rotMatrix)
+         self % isIdentityTransform = .FALSE.
+      END SUBROUTINE ConstructAffineTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      FUNCTION PerformAffineTransform(x,transformation)  RESULT(y)
+         IMPLICIT NONE
+         REAL(KIND=RP)         :: x(3)
+         REAL(KIND=RP)         :: y(3)
+         TYPE(AffineTransform) :: transformation
+         
+         IF ( transformation % isIdentityTransform )     THEN
+            y = x 
+         ELSE 
+            CALL AffineTransformWithRAndShift(xOld        = x,                            &
+                                              xNew        = y,                            &
+                                              rotMatrix   = transformation % rotMatrix,   &
+                                              shiftVector = transformation % translation)
+         END IF 
+
+      END FUNCTION PerformAffineTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION isIdentityTransform(self)  
+         IMPLICIT NONE  
+         TYPE(AffineTransform)  :: self
+         isIdentityTransform = self % isIdentityTransform
+      END FUNCTION isIdentityTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ConstructNullScaleTransform(self)
+         IMPLICIT NONE  
+         TYPE(ScaleTransform) :: self
+         self % origin      = 0.0_RP
+         self % scaleFactor = 1.0_RP
+         self % isIdentityScale = .TRUE.
+      END SUBROUTINE ConstructNullScaleTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ConstructScaleTransform(self, origin, factor)
+         IMPLICIT NONE
+         TYPE(ScaleTransform) :: self
+         REAL(KIND=RP)        :: origin(3)
+         REAL(KIND=RP)        :: factor
+         self % origin      = origin
+         self % scaleFactor = factor
+         self % isIdentityScale = .FALSE.
+      END SUBROUTINE ConstructScaleTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      FUNCTION PerformScaleTransformation(x, transformation)  RESULT(y)
+         IMPLICIT NONE  
+         TYPE(ScaleTransform) :: transformation
+         REAL(KIND=RP)        :: x(3)
+         REAL(KIND=RP)        :: y(3)
+         
+         y = transformation % scaleFactor*(x- transformation % origin) + transformation % origin
+         
+      END FUNCTION PerformScaleTransformation
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION isIdentityScale(self)  
+         IMPLICIT NONE  
+         TYPE(ScaleTransform) :: self
+         isIdentityScale = self % isIdentityScale
+      END FUNCTION isIdentityScale
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -104,7 +217,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE AffineTransform(xOld,xNew,rotMatrix,shiftVector) 
+      SUBROUTINE AffineTransformWithRAndShift(xOld,xNew,rotMatrix,shiftVector) 
 !
 !        --------------------------------
 !        Perform the transformation
@@ -121,6 +234,6 @@
          
          xNew = xNew + shiftVector
          
-      END SUBROUTINE AffineTransform
+      END SUBROUTINE AffineTransformWithRAndShift
       
       END Module Geometry3DModule
