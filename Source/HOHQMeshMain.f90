@@ -164,6 +164,12 @@
 
          CALL CheckMeshForDuplicateNodes(project % mesh)
 !
+!        -----------------------------------------------
+!        Perform transformations on 2D mesh if requested
+!        -----------------------------------------------
+!
+         CALL Perform2DMeshTransformations(project)
+!
 !        -----------------------------------------
 !        Generate a 3D Extrusion mesh if requested
 !        -----------------------------------------

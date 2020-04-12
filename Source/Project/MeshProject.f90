@@ -64,9 +64,9 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_SCALE_KEY   = "scale factor"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_ORIGIN_KEY  = "origin"
       
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_BLOCK_KEY   = "AFFINE_TRANSFORM"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_SCALE_KEY   = "translation"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_ORIGIN_KEY  = "direction"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_BLOCK_KEY       = "AFFINE_TRANSFORM"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_TRANSLATION_KEY = "translation"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_DIRECTION_KEY   = "direction"
       
 !
 !     ------------------
@@ -346,7 +346,8 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(FTValueDictionary)    , POINTER :: smootherDict, refinementsDict, scaleTransformDict
+         CLASS(FTValueDictionary)    , POINTER :: smootherDict, refinementsDict
+         CLASS(FTValueDictionary)    , POINTER :: scaleTransformDict, affineTransformDict
          CLASS(FTLinkedList)         , POINTER :: refinementsList
          CLASS(FTLinkedListIterator) , POINTER :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
@@ -356,8 +357,8 @@
                            
          NULLIFY( self % grid )
          NULLIFY( self % sizer )
-         CALL ConstructNullScaleTransform(self = self % scaleTransformer)
-         CALL ConstructNullTransform(self = self % affineTransformer)
+         CALL ConstructIdentityScaleTransform(self = self % scaleTransformer)
+         CALL ConstructIdentityAffineTransform(self = self % affineTransformer)
 !
          CALL BuildBackgroundGrid(self, controlDict )
          CALL BuildQuadtreeGrid(self)
@@ -417,7 +418,12 @@
 !        Construct Affine transform
 !        --------------------------
 !
-         
+         IF ( controlDict % containsKey(key = AFFINE_TRANSFORM_BLOCK_KEY) )     THEN
+            obj                => controlDict % objectForKey(key = AFFINE_TRANSFORM_BLOCK_KEY)
+            affineTransformDict => valueDictionaryFromObject(obj)
+            CALL SetAffineTransformBlock(affineBlockDict   = affineTransformDict,     &
+                                         affineTransformer = self % affineTransformer)
+         END IF 
 !
 !        ---------------------------
 !        Construct Scaling transform
@@ -1292,6 +1298,64 @@
          CALL ConstructScaleTransform(self = scaleTransformer,origin = c, factor = s)
          
       END SUBROUTINE SetScaleTransformBlock
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE SetAffineTransformBlock(affineBlockDict, affineTransformer)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTValueDictionary), POINTER :: affineBlockDict
+         TYPE(AffineTransform)             :: affineTransformer
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
+         REAL(KIND=RP)                           :: t(3), d(3)
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         logical, EXTERNAL :: ReturnOnFatalError
+!
+!        ------
+!        Origin
+!        ------
+!
+         msg = "Affine transform block missing parameter " // TRIM(AFFINE_TRANSFORM_TRANSLATION_KEY)
+        
+         CALL SetRealArrayValueFromDictionary(arrayToSet = t, &
+                                              sourceDict = affineBlockDict,                 &
+                                              key        = AFFINE_TRANSFORM_TRANSLATION_KEY,&
+                                              errorLevel = FT_ERROR_FATAL,                  &
+                                              message    = msg,                             &
+                                              poster     = "SetAffineTransformBlock")
+!
+!        ------------
+!        Direction
+!        ------------
+!
+         msg = "Affine transform block missing parameter " // TRIM(AFFINE_TRANSFORM_DIRECTION_KEY)
+         CALL SetRealArrayValueFromDictionary(arrayToSet = d, &
+                                              sourceDict = affineBlockDict,                 &
+                                              key        = AFFINE_TRANSFORM_DIRECTION_KEY,  &
+                                              errorLevel = FT_ERROR_FATAL,                  &
+                                              message    = msg,                             &
+                                              poster     = "SetAffineTransformBlock")
+         IF(ReturnOnFatalError()) RETURN
+         
+         CALL ConstructAffineTransform(self           = affineTransformer,          &
+                                       translation    = t,                          &
+                                       startDirection = [0.0_RP,0.0_RP,1.0_RP],     &
+                                       newDirection   = d)
+
+      END SUBROUTINE SetAffineTransformBlock
 
    END MODULE MeshProjectClass
 

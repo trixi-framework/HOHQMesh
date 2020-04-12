@@ -22,6 +22,8 @@
          REAL(KIND=RP)    :: scaleFactor
          LOGICAL, PRIVATE :: isIdentityScale
       END TYPE ScaleTransform
+      
+      REAL(KIND=RP), PRIVATE :: vectorDifferenceTolerance = 1.0d-2
 !
 !     ========
       CONTAINS
@@ -29,7 +31,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ConstructNullTransform(self)  
+      SUBROUTINE ConstructIdentityAffineTransform(self)  
          IMPLICIT NONE  
          TYPE(AffineTransform) :: self
          
@@ -39,7 +41,7 @@
          self % rotMatrix(2,2) = 1.0_RP
          self % rotMatrix(3,3) = 1.0_RP
          self % isIdentityTransform = .TRUE.
-      END SUBROUTINE ConstructNullTransform
+      END SUBROUTINE ConstructIdentityAffineTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -86,13 +88,13 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ConstructNullScaleTransform(self)
+      SUBROUTINE ConstructIdentityScaleTransform(self)
          IMPLICIT NONE  
          TYPE(ScaleTransform) :: self
          self % origin      = 0.0_RP
          self % scaleFactor = 1.0_RP
          self % isIdentityScale = .TRUE.
-      END SUBROUTINE ConstructNullScaleTransform
+      END SUBROUTINE ConstructIdentityScaleTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -180,6 +182,16 @@
          REAL(KIND=RP) :: u(3) , v(3)
          REAL(KIND=RP) :: norm, cosTheta, sinTheta
          REAL(KIND=RP) :: rotVec(3), cross(3)
+!
+!        -----------------------
+!        Do nothing if old = new
+!        -----------------------
+!
+         IF(MAXVAL(ABS(old-new)) < vectorDifferenceTolerance)     THEN 
+            R = 0.0_RP
+            R(1,1) = 1; R(2,2) = 1; R(3,3) = 1
+            RETURN 
+         END IF 
 !
 !        -------------------------------------
 !        Compute the rotation vector and angle
