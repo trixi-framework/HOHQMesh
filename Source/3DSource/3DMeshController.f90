@@ -242,7 +242,7 @@
 !        ---------------------------------------------------
 !
          IF ( pMutation < 3 )     THEN
-            CALL project % mesh % permuteMeshDirection(pMutation)
+            CALL permuteMeshDirection(project % mesh, pMutation)
          END IF 
 !
 !        ---------------------
@@ -269,5 +269,38 @@
          END IF 
         
       END SUBROUTINE generate3DMesh
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE permuteMeshDirection(mesh,pmutation)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMMesh) :: mesh
+         INTEGER       :: pmutation
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTObject), POINTER  :: obj
+         CLASS(SMNode)  , POINTER  :: node
+         REAL(KIND=RP)             :: x(3)
+         
+         CALL mesh % nodesIterator % setToStart()
+         DO WHILE( .NOT. mesh % nodesIterator % isAtEnd() )
+         
+            obj => mesh % nodesIterator % object()
+            CALL castToSMNode(obj,node)
+            
+            x = permutePosition(x = node % x,pmutation = pmutation)
+            node % x = x
+            
+            CALL mesh % nodesIterator % moveToNext()
+         END DO 
+      END SUBROUTINE permuteMeshDirection
 
    END Module MeshController3D 

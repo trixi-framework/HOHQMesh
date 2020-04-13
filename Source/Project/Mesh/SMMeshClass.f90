@@ -65,7 +65,6 @@
          PROCEDURE :: renumberObjects
          PROCEDURE :: destroyEdgeArrays
          PROCEDURE :: syncEdges
-         PROCEDURE :: permuteMeshDirection
       END TYPE SMMesh
 !
 !      ---------------------------------------------------------------------
@@ -330,39 +329,6 @@
          END DO
          
       END SUBROUTINE buildEdgeList
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE permuteMeshDirection(self,pmutation)  
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS(SMMesh) :: self
-         INTEGER       :: pmutation
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         CLASS(FTObject), POINTER  :: obj
-         CLASS(SMNode)  , POINTER  :: node
-         REAL(KIND=RP)             :: x(3)
-         
-         CALL self % nodesIterator % setToStart()
-         DO WHILE( .NOT. self % nodesIterator % isAtEnd() )
-         
-            obj => self % nodesIterator % object()
-            CALL castToSMNode(obj,node)
-            
-            x  = CSHIFT(node % x, SHIFT = -pmutation) ! ALSO found in permutePosition in Geometry3D
-            node % x = x
-            
-            CALL self % nodesIterator % moveToNext()
-         END DO 
-      END SUBROUTINE permuteMeshDirection
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
