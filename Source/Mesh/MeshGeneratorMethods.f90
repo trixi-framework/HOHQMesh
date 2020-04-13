@@ -1203,7 +1203,7 @@
                CALL cast(obj,node)
                
             END DO
-            
+            CALL elementIterator % moveToNext()
          END DO 
 
       END SUBROUTINE MarkFloaters
@@ -1734,7 +1734,7 @@
 !                     curve is defined or NOT
 !     bCurveName(4) = Name of the 4 boundary curves. Equals "---" IF
 !                     the element side is interior,
-!     x(2,0:N,4)    = location (x,y) of the j=0:N Chebyshev-Lobatto points
+!     x(3,0:N,4)    = location (x,y) of the j=0:N Chebyshev-Lobatto points
 !                     along boundary k = 1,2,3,4. The kth entry will be zero if
 !                     bCurveFlag(k) = OFF.
 !     -------------------------------------------------------------------------
@@ -1892,7 +1892,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE(MeshProject) :: project
+         TYPE(MeshProject)     :: project
 !
 !        ---------------
 !        Local variables
@@ -1907,6 +1907,8 @@
          TYPE(CurveInterpolant)     , POINTER :: boundaryCurves(:)
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: values
+         TYPE(AffineTransform) :: affineTransformer
+         TYPE(ScaleTransform)  :: scaleTransformer
 !
 !        --------------------
 !        Boundary information
@@ -1951,6 +1953,35 @@
          DEALLOCATE( boundaryCurves)
          
       END SUBROUTINE CompleteElementConstruction
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE Perform2DMeshTransformations(project)  
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshProject)     :: project
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE (SMMesh)              , POINTER :: mesh
+         
+         mesh => project % mesh
+         
+         IF ( .NOT. isIdentityTransform(self = project % affineTransformer) )     THEN
+            CALL AffineTransformMesh(mesh = mesh, affineTransformer = project % affineTransformer) 
+         END IF 
+         
+         IF ( .NOT. isIdentityScale(self = project % scaleTransformer) )     THEN
+            CALL scaleMesh(mesh = mesh, scalingTransformer = project % scaleTransformer) 
+         END IF 
+      
+      END SUBROUTINE Perform2DMeshTransformations
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -2002,5 +2033,167 @@
          END DO 
           
       END SUBROUTINE ComputeElementFacePatch
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE scaleMesh(mesh, scalingTransformer)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMMesh)        :: mesh
+         TYPE(ScaleTransform) :: scalingTransformer
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE (FTLinkedListIterator), POINTER :: nodeIterator, elementIterator
+         CLASS(FTObject)            , POINTER :: obj  => NULL()
+         CLASS(SMNode)              , POINTER :: node => NULL()
+         CLASS(SMElement)           , POINTER :: e
+         REAL(KIND=RP)                        :: xFormed(3)
+         INTEGER                              :: i, j, k, N
+!
+!        ---------------
+!        Scale the nodes
+!        ---------------
+!
+         nodeIterator => mesh % nodesIterator
+         CALL nodeIterator % setToStart()
+         DO WHILE( .NOT.nodeIterator % isAtEnd() )
+            obj => nodeIterator % object()
+            CALL cast(obj,node)
+            
+            xFormed = PerformScaleTransformation(x              = node % x, &
+                                                 transformation = scalingTransformer)
+            node % x = xFormed
+            CALL nodeIterator % moveToNext()
+         END DO 
+!
+!        ---------------------------
+!        Scale element-stored values
+!        ---------------------------
+!
+         elementIterator => mesh % elementsIterator
+         CALL elementIterator % setToStart()
+         
+         DO WHILE(.NOT.elementIterator % isAtEnd())
+         
+            obj => elementIterator % object()
+            CALL cast(obj,e)
+            N = e % N
+!
+!           -------------
+!           Patch scaling
+!           -------------
+!
+            DO j = 0, N 
+               DO i = 0, N 
+                  xFormed = PerformScaleTransformation(x              = e % xPatch(:,i,j), &
+                                                       transformation = scalingTransformer)
+                  e % xPatch(:,i,j) = xFormed
+               END DO 
+            END DO 
+!
+!           ----------------------
+!           Boundary point scaling
+!           ----------------------
+!
+            DO k = 1,4 
+               DO j = 0, N 
+                  xFormed = PerformScaleTransformation(x              = e % boundaryInfo % x(:,j,k), &
+                                                       transformation = scalingTransformer)
+                  e % boundaryInfo % x(:,j,k) = xFormed  
+               END DO 
+            END DO 
+            
+            CALL elementIterator % moveToNext()
+         END DO 
+
+      END SUBROUTINE scaleMesh
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE AffineTransformMesh(mesh, affineTransformer)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMMesh)         :: mesh
+         TYPE(AffineTransform) :: affineTransformer
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE (FTLinkedListIterator), POINTER :: nodeIterator, elementIterator
+         CLASS(FTObject)            , POINTER :: obj  => NULL()
+         CLASS(SMNode)              , POINTER :: node => NULL()
+         CLASS(SMElement)           , POINTER :: e
+         REAL(KIND=RP)                        :: xFormed(3)
+         INTEGER                              :: i, j, k, N
+!
+!        ---------------
+!        Scale the nodes
+!        ---------------
+!
+         nodeIterator => mesh % nodesIterator
+         CALL nodeIterator % setToStart()
+         DO WHILE( .NOT.nodeIterator % isAtEnd() )
+            obj => nodeIterator % object()
+            CALL cast(obj,node)
+            
+            xFormed = PerformAffineTransform(x              = node % x, &
+                                             transformation = affineTransformer)
+            node % x = xFormed
+            CALL nodeIterator % moveToNext()
+         END DO 
+!
+!        ---------------------------
+!        Scale element-stored values
+!        ---------------------------
+!
+         elementIterator => mesh % elementsIterator
+         CALL elementIterator % setToStart()
+         
+         DO WHILE(.NOT.elementIterator % isAtEnd())
+         
+            obj => elementIterator % object()
+            CALL cast(obj,e)
+            N = e % N
+!
+!           -------------
+!           Patch scaling
+!           -------------
+!
+            DO j = 0, N 
+               DO i = 0, N 
+                  xFormed = PerformAffineTransform(x              = e % xPatch(:,i,j), &
+                                                   transformation = affineTransformer)
+                  e % xPatch(:,i,j) = xFormed
+               END DO 
+            END DO 
+!
+!           ----------------------
+!           Boundary point scaling
+!           ----------------------
+!
+            DO k = 1,4 
+               DO j = 0, N 
+                  xFormed = PerformAffineTransform(x              = e % boundaryInfo % x(:,j,k), &
+                                                   transformation = affineTransformer)
+                  e % boundaryInfo % x(:,j,k) = xFormed  
+               END DO 
+            END DO 
+            
+            CALL elementIterator % moveToNext()
+         END DO 
+
+      END SUBROUTINE AffineTransformMesh
    END MODULE MeshGenerationMethods
 !
