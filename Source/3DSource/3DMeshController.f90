@@ -251,7 +251,7 @@
 !
          SELECT CASE ( algorithmChoice )
             CASE( SIMPLE_EXTRUSION_ALGORITHM, SIMPLE_ROTATION_ALGORITHM )
-               CALL PerformSimpleMeshSweep( project, pMutation, dz, generatorDict, algorithmChoice)
+               CALL PerformSimpleMeshSweep( project, pMutation, dz, generatorDict)
             CASE DEFAULT
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg = "unknown generator for 3D mesh found in control file", &

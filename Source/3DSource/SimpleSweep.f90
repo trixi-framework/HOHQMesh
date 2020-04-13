@@ -239,7 +239,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE PerformSimpleMeshSweep( project, pMutation, dz, parametersDictionary, algorithmChoice )
+      SUBROUTINE PerformSimpleMeshSweep( project, pMutation, dz, parametersDictionary )
          USE MeshProjectClass
          IMPLICIT NONE
 !
@@ -264,7 +264,6 @@
          INTEGER                :: numberOfNodes
          INTEGER                :: node2DID
          INTEGER                :: N
-         INTEGER                :: algorithmChoice
          
          
          TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
