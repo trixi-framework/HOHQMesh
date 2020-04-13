@@ -89,12 +89,28 @@
          CLASS(FTObject)           , POINTER :: obj
          CLASS(FTValueDictionary)  , POINTER :: generatorDict
          INTEGER                             :: algorithmChoice
+         INTEGER                             :: numberOf3DGenerators
 !
 !        ----------
 !        Interfaces
 !        ----------
 !
          LOGICAL, EXTERNAL :: ReturnOnFatalError
+!
+!        --------------------------------
+!        Only allow one 3D mesh generator
+!        --------------------------------
+!
+         numberOf3DGenerators = 0
+         IF(controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY))    numberOf3DGenerators = numberOf3DGenerators + 1
+         IF(controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)) numberOf3DGenerators = numberOf3DGenerators + 1
+         IF(controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY))       numberOf3DGenerators = numberOf3DGenerators + 1
+         IF ( numberOf3DGenerators > 1  )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
+                                           msg    = "Too many 3D mesh generators specified in control file", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
 !
 !        ----------------------------------------
 !        Get the included 3D generator dictionary
@@ -107,7 +123,6 @@
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
             CALL CheckSimpleExtrusionBlock(dict = generatorDict)
-            IF(ReturnOnFatalError())     RETURN 
             
          ELSE IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN 
          
@@ -115,7 +130,6 @@
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SIMPLE_ROTATION_ALGORITHM
             CALL CheckSimpleRotationBlock(dict = generatorDict)
-            IF(ReturnOnFatalError())     RETURN 
             
          ELSE IF ( controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN 
          
@@ -123,15 +137,13 @@
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SWEEP_ALGORITHM
             CALL CheckCurveSweepBlock(controlDict = generatorDict, &
-                                      modelDict   = modelDict)
-            IF(ReturnOnFatalError())     RETURN 
-            
+                                      modelDict   = modelDict)            
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg = "No generator for 3D mesh found in control file", &
                                            typ = FT_ERROR_FATAL)
-            RETURN 
          END IF
+         
       END SUBROUTINE Check3DMeshParametersIntegrity
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -155,16 +167,21 @@
          INTEGER                               :: numberOfLayers
          CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: subdivisionsKey
          INTEGER                               :: algorithmChoice = NONE
+         INTEGER                               :: pMutation, rotAxis
+         INTEGER                               :: rotMap(3) = [3, 3, 1]
+         REAL(KIND=RP)                         :: dz, h
 !
 !        ----------
 !        Interfaces
 !        ----------
 !
          LOGICAL, EXTERNAL :: ReturnOnFatalError
+
 !
-!        ----------------------------------------
-!        Get the included 3D generator dictionary
-!        ----------------------------------------
+!        --------------------------------------------
+!        Get the 3D generator dictionary and set up 
+!        algorithm dependent quantities for extrusion
+!        --------------------------------------------
 !
          IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY) )     THEN
          
@@ -173,6 +190,10 @@
             algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
             subdivisionsKey = SIMPLE_SWEEP_SUBDIVISIONS_KEY
             
+            pMutation = generatorDict % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
+            h         = generatorDict % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
+            dz        = h/generatorDict % integerValueForKey( subdivisionsKey )
+            
          ELSE IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN 
          
             obj             => controlDict % objectForKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)
@@ -180,12 +201,21 @@
             algorithmChoice = SIMPLE_ROTATION_ALGORITHM
             subdivisionsKey = SIMPLE_SWEEP_SUBDIVISIONS_KEY
             
+            pMutation = generatorDict % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
+            rotAxis   = pMutation
+            pMutation = rotMap(pMutation)
+ 
+            h  = PI * generatorDict % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
+            dz = h/generatorDict % integerValueForKey( subdivisionsKey )
+           
          ELSE IF ( controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN 
          
             obj             => controlDict % objectForKey(key = SWEEP_CURVE_CONTROL_KEY)
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SWEEP_ALGORITHM
             subdivisionsKey = CURVE_SWEEP_SUBDIVISIONS_KEY
+            pMutation       = 3
+            dz              = 1.0_RP/generatorDict % integerValueForKey( subdivisionsKey )
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg    = "unknown generator for 3D mesh found in control file", &
@@ -207,19 +237,35 @@
                                           numberOfLayers       = numberOfLayers,                      &
                                           N                    = project % mesh % polynomialOrder)
 !
+!        ---------------------------------------------------
+!        Permute the mesh for the simple sweeps if necessary
+!        ---------------------------------------------------
+!
+         IF ( pMutation < 3 )     THEN
+            CALL project % mesh % permuteMeshDirection(pMutation)
+         END IF 
+!
 !        ---------------------
 !        Generate the Hex mesh
 !        ---------------------
 !
          SELECT CASE ( algorithmChoice )
             CASE( SIMPLE_EXTRUSION_ALGORITHM, SIMPLE_ROTATION_ALGORITHM )
-               CALL PerformSimpleMeshSweep( project, generatorDict, algorithmChoice)
+               CALL PerformSimpleMeshSweep( project, pMutation, dz, generatorDict, algorithmChoice)
             CASE DEFAULT
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg = "unknown generator for 3D mesh found in control file", &
                                            typ = FT_ERROR_FATAL)
          END SELECT 
-         
+ !
+!        ------------------------------
+!        Rotate the mesh when requested
+!        ------------------------------
+!
+         IF ( algorithmChoice == SIMPLE_ROTATION_ALGORITHM )     THEN
+            CALL RotateAll(mesh = project % hexMesh, N = project % runParams % polynomialOrder, rotAxis = rotAxis)
+         END IF 
+        
       END SUBROUTINE generate3DMesh
 
    END Module MeshController3D 

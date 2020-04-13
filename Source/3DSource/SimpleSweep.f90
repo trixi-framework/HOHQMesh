@@ -239,7 +239,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE PerformSimpleMeshSweep( project, parametersDictionary, algorithmChoice )
+      SUBROUTINE PerformSimpleMeshSweep( project, pMutation, dz, parametersDictionary, algorithmChoice )
          USE MeshProjectClass
          IMPLICIT NONE
 !
@@ -249,6 +249,8 @@
 !
          TYPE ( MeshProject )        :: project
          CLASS( FTValueDictionary )  :: parametersDictionary
+         INTEGER                     :: pMutation
+         REAL(KIND=RP)               :: dz
 !
 !        ---------------
 !        Local Variables
@@ -261,17 +263,13 @@
          INTEGER                :: numberOf2DNodes, numberOfQuadElements
          INTEGER                :: numberOfNodes
          INTEGER                :: node2DID
-         INTEGER                :: N, pMutation
+         INTEGER                :: N
          INTEGER                :: algorithmChoice
-         REAL(KIND=RP)          :: dz, h
          
          
          TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
          CLASS(SMNode)                   , POINTER     :: currentNode
          CLASS(FTObject)                 , POINTER     :: obj
-         
-         INTEGER                     :: rotMap(3) = [3, 3, 1]
-         INTEGER                     :: rotAxis
 !                  
 !
          quadMesh              => project % mesh
@@ -279,20 +277,6 @@
          numberOfQuadElements  =  project % hexMesh % numberOfQuadElements
          numberOfLayers        =  project % hexMesh % numberOfLayers
          numberOf2DNodes       =  quadMesh % nodes % count()
-!
-!        -----------------------------------------------------------------
-!        Rotate the mesh for extrusion/rotation in the requested direction
-!        -----------------------------------------------------------------
-!
-         pMutation = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
-         IF(algorithmChoice == SIMPLE_ROTATION_ALGORITHM)   THEN
-            rotAxis = pMutation
-            pMutation = rotMap(pMutation)
-         END IF 
-         
-         IF ( pMutation < 3 )     THEN
-            CALL quadMesh % permuteMeshDirection(pmutation)
-         END IF 
 !
 !        ---------------------------------------------------------------
 !        Make sure that the nodes and elements are consecutively ordered
@@ -329,26 +313,13 @@
 !
          ALLOCATE( locAndLevelForNodeID(2, numberOfNodes) )
 !
-!        ------------------------------------------------
-!        Ratation is done by sweeping then applying the 
-!        rotation to the result.
-!        ------------------------------------------------
-!
-         IF ( algorithmChoice == SIMPLE_EXTRUSION_ALGORITHM )     THEN
-            h   = parametersDictionary % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
-            dz = h/project % hexMesh % numberofLayers
-         ELSE
-            h   = PI * parametersDictionary % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
-            dz = h/project % hexMesh % numberofLayers
-         END IF 
-!
 !        ------------------------------
 !        Sweep the skeleton of the mesh
 !        ------------------------------
 !
          CALL sweepNodes( quadMeshNodes, project % hexMesh, dz, pMutation )
          CALL sweepElements( quadMesh, project % hexMesh, &
-                             numberofLayers, parametersDictionary )
+                             numberofLayers, pMutation, parametersDictionary )
 !
 !        -------------------------------------
 !        Sweep the internal degrees of freedom
@@ -360,14 +331,6 @@
                                 N                 = N,                 &
                                 dz                = dz,                &
                                 pmutation         = pMutation)
-!
-!        ------------------------------
-!        Rotate the mesh when requested
-!        ------------------------------
-!
-         IF ( algorithmChoice == SIMPLE_ROTATION_ALGORITHM )     THEN
-            CALL RotateAll(mesh = project % hexMesh, N = N, rotAxis = rotAxis)
-         END IF 
           
          CALL releaseFTMutableObjectArray(quadElementsArray)
          DEALLOCATE(quadMeshNodes)
@@ -474,7 +437,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE sweepElements( quadMesh, hex8Mesh, numberofLayers, parametersDictionary )
+      SUBROUTINE sweepElements( quadMesh, hex8Mesh, numberofLayers, pMutation, parametersDictionary )
 !
 !        -------------------------------
 !        Call after generating the nodes
@@ -490,6 +453,7 @@
          TYPE ( SMMesh )             :: quadMesh
          TYPE ( StructuredHexMesh )  :: hex8Mesh
          INTEGER                     :: numberOfLayers
+         INTEGER                     :: pMutation
          TYPE( FTValueDictionary)    :: parametersDictionary
 !
 !        ---------------
@@ -499,7 +463,6 @@
          INTEGER   :: numberOfQuadElements
          INTEGER   :: elementID, nodeID, node2DID, quadElementID
          INTEGER   :: j, k
-         INTEGER   :: pMutation
          INTEGER   :: flagMap(4) = [1,4,2,6]
          
          
@@ -508,7 +471,6 @@
          CLASS(FTObject)                 , POINTER     :: obj
          
          numberOfQuadElements = hex8Mesh % numberOfQuadElements
-         pMutation            = parametersDictionary % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
 !
 !        ---------------------------------
 !        Build the elements layer by layer

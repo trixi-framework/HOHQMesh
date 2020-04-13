@@ -946,14 +946,13 @@
          obj        => controlDict % objectForKey(key = MESH_PARAMETERS_KEY)
          paramsDict => valueDictionaryFromObject(obj)
 !
-!        ----------------------------
-!        mnesh parameters is optional
-!        ----------------------------
+!        ---------------------------
+!        Mesh parameters is optional
+!        ---------------------------
 !
          params % meshType = 0! CONFORMING
          IF(.NOT.ASSOCIATED(paramsDict)) THEN 
             params % meshType = 0! CONFORMING
-            RETURN 
          END IF 
    
       END SUBROUTINE SetMeshParametersBlock

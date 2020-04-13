@@ -22,6 +22,8 @@
 !         MESH_PARAMETERS
 !         SPRING_SMOOTHER
 !         REFINEMENT_REGIONS
+!         SCALE_TRANSFORMATION
+!         AFFINE_TRANSFORMATION
 !         SIMPLE_EXTRUSION
 !         SIMPLE_ROTATION
 !         SWEEP_ALONG_CURVE
@@ -98,6 +100,16 @@
 !         h
 !         w
 !      
+!      An AFFINE_TRANSFORMATION contains the keys
+!         TYPE
+!         direction
+!         translation
+!
+!      A SCALE_TRANSFORMATION contains the keys
+!         TYPE
+!         origin
+!         scaleFactor
+!
 !      The SIMPLE_EXTRUSION  block is defined in SimpleSweep.f90
 !      The SIMPLE_ROTATION   block is defined in SimpleSweep.f90
 !      The SWEEP_ALONG_CURVE block is defined in SweeperClass.f90
