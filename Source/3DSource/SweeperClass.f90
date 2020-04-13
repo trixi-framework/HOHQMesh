@@ -28,11 +28,13 @@
          IMPLICIT NONE
          
          TYPE CurveSweeper
-            REAL(KIND=RP)                 :: rotationMatrix(3,3)
-            REAL(KIND=RP)                 :: x0(3)
+            CLASS(SMChainedCurve), POINTER :: sweepCurve
+            CLASS(SMChainedCurve), POINTER :: scaleCurve
+            TYPE(AffineTransform)          :: affineTransformer
+            TYPE(ScaleTransform)           :: scaleTransformer
          END TYPE CurveSweeper
 
-         CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_CURVE_CONTROL_KEY        = "SWEEP"
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_CURVE_CONTROL_KEY        = "SWEEP_ALONG_CURVE"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_CURVE_BLOCK_KEY          = "SWEEP_CURVE"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SCALE_CURVE_BLOCK_KEY          = "SCALE_CURVE"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_SUBDIVISIONS_KEY   = "subdivisions"
@@ -47,18 +49,30 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-         SUBROUTINE initCurveSweeper(self, parametersDictionary)  
+         SUBROUTINE ConstructCurveSweeper(self, sweepCurve, scaleCurve)  
             IMPLICIT NONE  
-            TYPE( CurveSweeper)         :: self
-            CLASS( FTValueDictionary )  :: parametersDictionary
+            TYPE( CurveSweeper)            :: self
+            CLASS(SMChainedCurve), POINTER :: sweepCurve
+            CLASS(SMChainedCurve), POINTER :: scaleCurve
+            
+            self % sweepCurve => sweepCurve
+            CALL self % sweepCurve % retain()
+            self % scaleCurve => scaleCurve
+            CALL self % scaleCurve % retain()
+            
+            CALL ConstructIdentityScaleTransform( self = self % scaleTransformer)
+            CALL ConstructIdentityAffineTransform(self = self % affineTransformer)
               
-         END SUBROUTINE initCurveSweeper
+         END SUBROUTINE ConstructCurveSweeper
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
          SUBROUTINE destructCurveSweeper(self)
             IMPLICIT NONE  
             TYPE( CurveSweeper)         :: self
+            
+            CALL releaseChainedCurve(self = self % sweepCurve)
+            CALL releaseChainedCurve(self = self % scaleCurve)
             
          END SUBROUTINE destructCurveSweeper
 !
@@ -83,6 +97,7 @@
 !
 !              ----------------------------------------
 !              Make sure the model has a curve to sweep
+!              scaleCurve is optional.
 !              ----------------------------------------
 !
                IF ( .NOT. modelDict % containsKey(key = SWEEP_CURVE_BLOCK_KEY) )     THEN
@@ -125,4 +140,15 @@
                                                  typ = FT_ERROR_FATAL) 
                END IF
             END SUBROUTINE CheckCurveSweepBlock
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+            SUBROUTINE applySweepTransform(self, hexMesh, N)  
+               IMPLICIT NONE
+               TYPE(CurveSweeper)      :: self
+               TYPE(StructuredHexMesh) :: hexMesh
+               INTEGER                 :: N
+              
+               
+            END SUBROUTINE applySweepTransform
        END Module CurveSweepClass

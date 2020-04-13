@@ -170,6 +170,7 @@
          INTEGER                               :: pMutation, rotAxis
          INTEGER                               :: rotMap(3) = [3, 3, 1]
          REAL(KIND=RP)                         :: dz, h
+         TYPE(CurveSweeper)                    :: sweeper
 !
 !        ----------
 !        Interfaces
@@ -266,6 +267,14 @@
             CALL RotateAll(mesh    = project % hexMesh, &
                            N       = project % runParams % polynomialOrder, &
                            rotAxis = rotAxis)
+         ELSE IF(algorithmChoice == SWEEP_ALGORITHM)     THEN 
+            CALL ConstructCurveSweeper(self       = sweeper,                      &
+                                  sweepCurve = project % model % sweepCurve, &
+                                  scaleCurve = project % model % scaleCurve)
+            CALL applySweepTransform(self    = sweeper, &
+                                     hexMesh = project % hexMesh, &
+                                     N       = project % runParams % polynomialOrder)
+            CALL destructCurveSweeper(self = sweeper)
          END IF 
         
       END SUBROUTINE generate3DMesh
