@@ -263,7 +263,9 @@
 !        ------------------------------
 !
          IF ( algorithmChoice == SIMPLE_ROTATION_ALGORITHM )     THEN
-            CALL RotateAll(mesh = project % hexMesh, N = project % runParams % polynomialOrder, rotAxis = rotAxis)
+            CALL RotateAll(mesh    = project % hexMesh, &
+                           N       = project % runParams % polynomialOrder, &
+                           rotAxis = rotAxis)
          END IF 
         
       END SUBROUTINE generate3DMesh

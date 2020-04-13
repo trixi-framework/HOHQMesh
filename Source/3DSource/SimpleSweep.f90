@@ -318,7 +318,7 @@
 !
          CALL sweepNodes( quadMeshNodes, project % hexMesh, dz, pMutation )
          CALL sweepElements( quadMesh, project % hexMesh, &
-                             numberofLayers, pMutation, parametersDictionary )
+                             numberofLayers, parametersDictionary )
 !
 !        -------------------------------------
 !        Sweep the internal degrees of freedom
@@ -436,7 +436,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE sweepElements( quadMesh, hex8Mesh, numberofLayers, pMutation, parametersDictionary )
+      SUBROUTINE sweepElements( quadMesh, hex8Mesh, numberofLayers, parametersDictionary )
 !
 !        -------------------------------
 !        Call after generating the nodes
@@ -452,7 +452,6 @@
          TYPE ( SMMesh )             :: quadMesh
          TYPE ( StructuredHexMesh )  :: hex8Mesh
          INTEGER                     :: numberOfLayers
-         INTEGER                     :: pMutation
          TYPE( FTValueDictionary)    :: parametersDictionary
 !
 !        ---------------
