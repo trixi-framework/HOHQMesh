@@ -40,12 +40,13 @@
 !
       TYPE, EXTENDS(FTObject) ::  SMModel
          INTEGER                                  :: curveCount
-         INTEGER                                  :: numberOfOuterCurves, numberOfSweepCurves
+         INTEGER                                  :: numberOfOuterCurves
          INTEGER                                  :: numberOfInnerCurves
          INTEGER                                  :: numberOfInterfaceCurves
          CHARACTER(LEN=32)                        :: modelName
          CLASS(SMChainedCurve)      , POINTER     :: outerBoundary       => NULL()
          CLASS(SMChainedCurve)      , POINTER     :: sweepCurve          => NULL()
+         CLASS(SMChainedCurve)      , POINTER     :: scaleCurve          => NULL()
          CLASS(FTLinkedList)        , POINTER     :: innerBoundaries     => NULL()
          CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: innerBoundariesIterator => NULL()
@@ -83,7 +84,6 @@
          self % interfaceBoundariesIterator => NULL()
          self % curveCount                  =  0
          self % numberOfOuterCurves         =  0
-         self % numberOfSweepCurves         =  0
          self % numberOfInnerCurves         =  0
          self % numberOfInterfaceCurves     =  0
          
@@ -113,9 +113,13 @@
          IF ( ASSOCIATED(self % sweepCurve) )     THEN
             obj => self % sweepCurve
             CALL release(obj)
-            self % numberOfSweepCurves = 0
          END IF 
-         
+          
+         IF ( ASSOCIATED(self % scaleCurve) )     THEN
+            obj => self % scaleCurve
+            CALL release(obj)
+         END IF 
+        
          IF ( ALLOCATED(self % boundaryCurveMap) )     THEN
             DEALLOCATE(self % boundaryCurveMap)
          END IF
@@ -161,6 +165,7 @@
 !
          INTEGER, EXTERNAL                 :: UnusedUnit
          CLASS(FTValueDictionary), POINTER :: outerBoundaryDict, innerBoundariesDict, sweepCurveDict
+         CLASS(FTValueDictionary), POINTER :: scaleCurveDict
          CLASS(FTLinkedList)     , POINTER :: innerBoundariesList
          CLASS(FTObject)         , POINTER :: obj
 !
@@ -235,9 +240,9 @@
             CALL  self % interfaceBoundariesIterator % initWithFTLinkedList(self % interfaceBoundaries)
          END IF 
 !
-!        --------------------------------------
-!        Construct sweep curve boundary, if any
-!        --------------------------------------
+!        -----------------------------
+!        Construct sweep curve, if any
+!        -----------------------------
 !
          IF ( modelDict % containsKey(key = SWEEP_CURVE_BLOCK_KEY) )     THEN
          
@@ -250,6 +255,27 @@
             CALL AssembleChainCurve(self           = self,             &
                                     curveDict      = sweepCurveDict,   &
                                     curveChain     = self % sweepCurve,&
+                                    innerOrOuter   = NOT_APPLICABLE,   &
+                                    chainMustClose = .FALSE.)
+            IF(ReturnOnFatalError())     RETURN 
+            
+         END IF 
+!
+!        -----------------------------
+!        Construct scale curve, if any
+!        -----------------------------
+!
+         IF ( modelDict % containsKey(key = SCALE_CURVE_BLOCK_KEY) )     THEN
+         
+            ALLOCATE( self % scaleCurve )
+            CALL self % scaleCurve % initChainWithNameAndID("Scale curve",1)
+         
+            obj            => modelDict % objectForKey(key = SCALE_CURVE_BLOCK_KEY)
+            scaleCurveDict => valueDictionaryFromObject(obj)
+            
+            CALL AssembleChainCurve(self           = self,             &
+                                    curveDict      = scaleCurveDict,   &
+                                    curveChain     = self % scaleCurve,&
                                     innerOrOuter   = NOT_APPLICABLE,   &
                                     chainMustClose = .FALSE.)
             IF(ReturnOnFatalError())     RETURN 

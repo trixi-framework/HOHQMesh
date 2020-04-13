@@ -648,7 +648,7 @@
                      DO i = 0, N 
                         rotated = rotatedNodeLocation(baseLocation = mesh % elements(m,l) % x(:,i,j,k), &
                                                       theta        = mesh % elements(m,l) % x((rotMap(rotAxis)),i,j,k),  &
-                                                      rotAxis    = rotAxis)
+                                                      rotAxis      = rotAxis)
                         mesh % elements(m,l) % x(:,i,j,k) = rotated
                      END DO 
                   END DO 
