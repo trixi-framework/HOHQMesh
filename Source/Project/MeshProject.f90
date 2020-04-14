@@ -1294,7 +1294,10 @@
                                          poster     = "SetScaleTransformBlock")
          IF(ReturnOnFatalError()) RETURN
          
-         CALL ConstructScaleTransform(self = scaleTransformer,origin = c, factor = s)
+         CALL ConstructScaleTransform(self = scaleTransformer,         &
+                                      origin = c,                      &
+                                      factor = s,                      &
+                                      normal = [0.0_RP,0.0_RP,1.0_RP])
          
       END SUBROUTINE SetScaleTransformBlock
 !

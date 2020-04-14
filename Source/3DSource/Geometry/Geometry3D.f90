@@ -19,11 +19,12 @@
       
       TYPE ScaleTransform
          REAL(KIND=RP)    :: origin(3)
+         REAL(KIND=RP)    :: normal(3)
          REAL(KIND=RP)    :: scaleFactor
          LOGICAL, PRIVATE :: isIdentityScale
       END TYPE ScaleTransform
       
-      REAL(KIND=RP), PRIVATE :: vectorDifferenceTolerance = 1.0d-2
+      REAL(KIND=RP), PRIVATE :: vectorDifferenceTolerance = 1.0d-3
 !
 !     ========
       CONTAINS
@@ -92,18 +93,20 @@
          IMPLICIT NONE  
          TYPE(ScaleTransform) :: self
          self % origin      = 0.0_RP
+         self % normal      = [0.0_RP,0.0_RP,1.0_RP]
          self % scaleFactor = 1.0_RP
          self % isIdentityScale = .TRUE.
       END SUBROUTINE ConstructIdentityScaleTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ConstructScaleTransform(self, origin, factor)
+      SUBROUTINE ConstructScaleTransform(self, origin, normal, factor)
          IMPLICIT NONE
          TYPE(ScaleTransform) :: self
-         REAL(KIND=RP)        :: origin(3)
+         REAL(KIND=RP)        :: origin(3), normal(3)
          REAL(KIND=RP)        :: factor
          self % origin      = origin
+         self % normal      = normal
          self % scaleFactor = factor
          self % isIdentityScale = .FALSE.
       END SUBROUTINE ConstructScaleTransform
@@ -114,9 +117,13 @@
          IMPLICIT NONE  
          TYPE(ScaleTransform) :: transformation
          REAL(KIND=RP)        :: x(3)
-         REAL(KIND=RP)        :: y(3)
+         REAL(KIND=RP)        :: y(3), xPerp(3), xDotN
          
-         y = transformation % scaleFactor*(x- transformation % origin) + transformation % origin
+         CALL Dot3D(u = transformation % normal,v = x,dot = xDotN)
+         xPerp = x - xDotN*transformation % normal
+         
+         y = transformation % scaleFactor*(xPerp- transformation % origin) + transformation % origin
+         y = y + xDotN*transformation % normal
          
       END FUNCTION PerformScaleTransformation
 !

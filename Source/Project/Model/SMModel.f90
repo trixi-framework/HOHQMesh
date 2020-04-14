@@ -265,12 +265,12 @@
 !        Construct scale curve, if any
 !        -----------------------------
 !
-         IF ( modelDict % containsKey(key = SCALE_CURVE_BLOCK_KEY) )     THEN
+         IF ( modelDict % containsKey(key = SWEEP_SCALE_FACTOR_EQN_BLOCK_KEY) )     THEN
          
             ALLOCATE( self % scaleCurve )
             CALL self % scaleCurve % initChainWithNameAndID("Scale curve",1)
          
-            obj            => modelDict % objectForKey(key = SCALE_CURVE_BLOCK_KEY)
+            obj            => modelDict % objectForKey(key = SWEEP_SCALE_FACTOR_EQN_BLOCK_KEY)
             scaleCurveDict => valueDictionaryFromObject(obj)
             
             CALL AssembleChainCurve(self           = self,             &
