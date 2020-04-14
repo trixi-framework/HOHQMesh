@@ -56,9 +56,10 @@
             CLASS(SMChainedCurve), POINTER :: scaleCurve
             
             self % sweepCurve => sweepCurve
-            CALL self % sweepCurve % retain()
+            IF(ASSOCIATED(sweepCurve)) CALL self % sweepCurve % retain()
+            
             self % scaleCurve => scaleCurve
-            CALL self % scaleCurve % retain()
+            IF(ASSOCIATED(scaleCurve))   CALL self % scaleCurve % retain()
             
             CALL ConstructIdentityScaleTransform( self = self % scaleTransformer)
             CALL ConstructIdentityAffineTransform(self = self % affineTransformer)
@@ -71,8 +72,8 @@
             IMPLICIT NONE  
             TYPE( CurveSweeper)         :: self
             
-            CALL releaseChainedCurve(self = self % sweepCurve)
-            CALL releaseChainedCurve(self = self % scaleCurve)
+            IF(ASSOCIATED(self % sweepCurve)) CALL releaseChainedCurve(self = self % sweepCurve)
+            IF(ASSOCIATED(self % scaleCurve)) CALL releaseChainedCurve(self = self % scaleCurve)
             
          END SUBROUTINE destructCurveSweeper
 !
@@ -143,12 +144,78 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-            SUBROUTINE applySweepTransform(self, hexMesh, N)  
+            SUBROUTINE applySweepTransform(self, mesh, dt, N)  
+            !TODO needs implementation of scaling
                IMPLICIT NONE
+!
+!              ---------
+!              Arguments
+!              ---------
+!
                TYPE(CurveSweeper)      :: self
-               TYPE(StructuredHexMesh) :: hexMesh
+               TYPE(StructuredHexMesh) :: mesh
                INTEGER                 :: N
-              
+               REAL(KIND=RP)           :: dt, t, t0
+!
+!              ---------------
+!              Local variables
+!              ---------------
+!
+               REAL(KIND=RP) :: direction(3), r(3), newX(3)
+               INTEGER       :: l, m, k, j, i
+               REAL(KIND=RP) :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
+!
+!              -----------------------------------------------------
+!              Transform the nodes. Each level is dt higher than the 
+!              previous.
+!              -----------------------------------------------------
+!
+               DO l = 0, SIZE(mesh % nodes,2)-1
+                  t = l*dt
+                  r         = self % sweepCurve % positionAt(t)
+                  direction = self % sweepCurve % tangentAt(t)
+                  CALL ConstructAffineTransform(self = self % affineTransformer, &
+                                                translation = r, &
+                                                startDirection = zHat, &
+                                                newDirection = direction)
+                                                
+                  DO m = 1, SIZE(mesh % nodes,1)
+                     newX = PerformAffineTransform(x = mesh % nodes(m,l) % x,transformation = self % affineTransformer)
+                     mesh % nodes(m,l) % x = newX
+                  END DO   
+                  
+               END DO  
+!
+!              ------------------------------------------------------
+!              Transform the internal DOFs
+!              We will assume that the curve is curved, otherwise the
+!              simple extrusion would be used. So then all faces
+!              will be curved, too
+!              ------------------------------------------------------
+!
+               DO l = 1, mesh % numberOfLayers             ! level
+                  t0 = l*dt
                
+                  DO m = 1, mesh % numberOfQuadElements    ! element on original quad mesh
+                     mesh % elements(m,l) % bFaceFlag = ON
+                     DO k = 0, N 
+                        t = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
+                        r         = self % sweepCurve % positionAt(t)
+                        direction = self % sweepCurve % tangentAt(t)
+                        CALL ConstructAffineTransform(self           = self % affineTransformer, &
+                                                      translation    = r, &
+                                                      startDirection = zHat, &
+                                                      newDirection   = direction)
+                        DO j = 0, N 
+                           DO i = 0, N 
+                              newX = PerformAffineTransform(x              = mesh % elements(m,l) % x(:,i,j,k), &
+                                                            transformation = self % affineTransformer)
+                              mesh % elements(m,l) % x(:,i,j,k) = newX
+                           END DO 
+                        END DO 
+                     END DO 
+                  END DO 
+               END DO
+              
             END SUBROUTINE applySweepTransform
        END Module CurveSweepClass

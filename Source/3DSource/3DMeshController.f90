@@ -250,31 +250,35 @@
 !        Generate the Hex mesh
 !        ---------------------
 !
-         SELECT CASE ( algorithmChoice )
-            CASE( SIMPLE_EXTRUSION_ALGORITHM, SIMPLE_ROTATION_ALGORITHM )
-               CALL PerformSimpleMeshSweep( project, pMutation, dz, generatorDict)
-            CASE DEFAULT
-            CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
-                                           msg = "unknown generator for 3D mesh found in control file", &
-                                           typ = FT_ERROR_FATAL)
-         END SELECT 
- !
+         CALL PerformSimpleMeshSweep( project, pMutation, dz, generatorDict)
+!
 !        ------------------------------
 !        Rotate the mesh when requested
 !        ------------------------------
 !
          IF ( algorithmChoice == SIMPLE_ROTATION_ALGORITHM )     THEN
+         
             CALL RotateAll(mesh    = project % hexMesh, &
                            N       = project % runParams % polynomialOrder, &
                            rotAxis = rotAxis)
+                           
          ELSE IF(algorithmChoice == SWEEP_ALGORITHM)     THEN 
-            CALL ConstructCurveSweeper(self       = sweeper,                      &
+         
+            CALL ConstructCurveSweeper(self  = sweeper,                      &
                                   sweepCurve = project % model % sweepCurve, &
                                   scaleCurve = project % model % scaleCurve)
-            CALL applySweepTransform(self    = sweeper, &
-                                     hexMesh = project % hexMesh, &
+                                  
+            CALL applySweepTransform(self    = sweeper,                               &
+                                     mesh    = project % hexMesh,                     &
+                                     dt      = dz,                                    &
                                      N       = project % runParams % polynomialOrder)
+                                     
             CALL destructCurveSweeper(self = sweeper)
+            
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
+                                  msg = "unknown generator for 3D mesh found in control file", &
+                                  typ = FT_ERROR_FATAL)
          END IF 
         
       END SUBROUTINE generate3DMesh

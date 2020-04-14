@@ -264,7 +264,7 @@
                IF ( kp1 < k )     THEN
                   IF(chainMustClose)   CALL ThrowCurvesDontJoinException(self,curve,nextCurve,"Chain does not close")
                ELSE 
-                  CALL ThrowCurvesDontJoinException(self,curve,nextCurve,"Curves do not adjoin")
+                  IF(chainMustClose)   CALL ThrowCurvesDontJoinException(self,curve,nextCurve,"Curves do not adjoin")
                END IF 
                RETURN
             END IF
