@@ -189,7 +189,7 @@
                   END IF 
 
                   DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
-                     newX = PerformRotationTransform(x = mesh % nodes(m,l) % x,transformation = self % affineTransformer)
+                     newX = PerformAffineTransform(x = mesh % nodes(m,l) % x,transformation = self % affineTransformer)
                      mesh % nodes(m,l) % x = newX
                   END DO
                   
@@ -253,8 +253,8 @@
 !
                        DO j = 0, N 
                            DO i = 0, N 
-                              newX = PerformRotationTransform(x              = mesh % elements(m,l) % x(:,i,j,k), &
-                                                              transformation = self % affineTransformer)
+                              newX = PerformAffineTransform(x              = mesh % elements(m,l) % x(:,i,j,k), &
+                                                            transformation = self % affineTransformer)
                               mesh % elements(m,l) % x(:,i,j,k) = newX
                            END DO 
                         END DO 
