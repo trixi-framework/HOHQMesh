@@ -57,7 +57,11 @@
          CALL RotationMatrix(old = startDirection, &
                              new = newDirection,   &
                              R = self % rotMatrix)
-         self % isIdentityTransform = .FALSE.
+         IF(MAXVAL(ABS(startDirection-newDirection)) < vectorDifferenceTolerance)     THEN 
+            self % isIdentityTransform = .TRUE.
+         ELSE 
+            self % isIdentityTransform = .FALSE.
+         END IF 
       END SUBROUTINE ConstructAffineTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -196,7 +200,7 @@
 !
          IF(MAXVAL(ABS(old-new)) < vectorDifferenceTolerance)     THEN 
             R = 0.0_RP
-            R(1,1) = 1; R(2,2) = 1; R(3,3) = 1
+            R(1,1) = 1.0_RP; R(2,2) = 1.0_RP; R(3,3) = 1.0_RP
             RETURN 
          END IF 
 !

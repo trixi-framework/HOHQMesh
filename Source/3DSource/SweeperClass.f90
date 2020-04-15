@@ -36,7 +36,7 @@
 
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_CURVE_CONTROL_KEY          = "SWEEP_ALONG_CURVE"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_CURVE_BLOCK_KEY            = "SWEEP_CURVE"
-         CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_SCALE_FACTOR_EQN_BLOCK_KEY = "SWEEP_SCALE_FACTOR_EQN"
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_SCALE_FACTOR_EQN_BLOCK_KEY = "SWEEP_SCALE_FACTOR"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_SUBDIVISIONS_KEY     = "subdivisions"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_STARTNAME_KEY        = "start surface name"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_ENDNAME_KEY          = "end surface name"
@@ -145,7 +145,6 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
             SUBROUTINE applySweepTransform(self, mesh, dt, N)  
-            !TODO needs implementation of scaling
                IMPLICIT NONE
 !
 !              ---------
@@ -155,7 +154,7 @@
                TYPE(CurveSweeper)      :: self
                TYPE(StructuredHexMesh) :: mesh
                INTEGER                 :: N
-               REAL(KIND=RP)           :: dt, t, t0
+               REAL(KIND=RP)           :: dt, t, t0, f(3)
 !
 !              ---------------
 !              Local variables
@@ -170,21 +169,39 @@
 !              previous.
 !              -----------------------------------------------------
 !
-               DO l = 0, SIZE(mesh % nodes,2)-1
+               DO l = 0, mesh % numberofLayers ! level in the hex mesh
+               
                   t = l*dt
                   r         = self % sweepCurve % positionAt(t)
                   direction = self % sweepCurve % tangentAt(t)
-                  CALL ConstructAffineTransform(self = self % affineTransformer, &
-                                                translation = r, &
-                                                startDirection = zHat, &
-                                                newDirection = direction)
-                                                
-                  DO m = 1, SIZE(mesh % nodes,1)
-                     newX = PerformAffineTransform(x = mesh % nodes(m,l) % x,transformation = self % affineTransformer)
-                     mesh % nodes(m,l) % x = newX
-                  END DO   
                   
-               END DO  
+                  CALL ConstructAffineTransform(self           = self % affineTransformer, &
+                                                translation    = r,                        &
+                                                startDirection = zHat,                     &
+                                                newDirection   = direction)
+                                                
+                  IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                     f = self % scaleCurve % positionAt(t)
+                     CALL ConstructScaleTransform(self   = self % scaleTransformer, &
+                                                  origin = r,                       &
+                                                  normal = direction,               &
+                                                  factor = f(1))
+                  END IF 
+
+                  DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
+                     newX = PerformRotationTransform(x = mesh % nodes(m,l) % x,transformation = self % affineTransformer)
+                     mesh % nodes(m,l) % x = newX
+                  END DO
+                  
+                  IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                      DO m = 1, SIZE(mesh % nodes,1) ! Points in the quad mesh
+                        newX = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
+                                                          transformation = self % scaleTransformer)
+                        mesh % nodes(m,l) % x = newX
+                      END DO
+                 END IF 
+                 
+               END DO
 !
 !              ------------------------------------------------------
 !              Transform the internal DOFs
@@ -193,26 +210,65 @@
 !              will be curved, too
 !              ------------------------------------------------------
 !
-               DO l = 1, mesh % numberOfLayers             ! level
-                  t0 = l*dt
-               
+!              ----------------------
+!              For each element level
+!              ----------------------
+!
+               DO l = 1, mesh % numberOfLayers 
+                  t0 = (l-1)*dt
+!
+!                 ---------------------------
+!                 For each element at level l
+!                 ---------------------------
+!
                   DO m = 1, mesh % numberOfQuadElements    ! element on original quad mesh
                      mesh % elements(m,l) % bFaceFlag = ON
-                     DO k = 0, N 
+!
+!                    -------------------------------------------------------------------------
+!                    For each Chebyshev node in the vertical direction in element m at level l
+!                    -------------------------------------------------------------------------
+!
+                     DO k = 0, N
+                     
                         t = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
                         r         = self % sweepCurve % positionAt(t)
                         direction = self % sweepCurve % tangentAt(t)
+                        
                         CALL ConstructAffineTransform(self           = self % affineTransformer, &
                                                       translation    = r, &
                                                       startDirection = zHat, &
                                                       newDirection   = direction)
-                        DO j = 0, N 
+                                                      
+                        IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                          f = self % scaleCurve % positionAt(t)
+                          CALL ConstructScaleTransform(self   = self % scaleTransformer, &
+                                                       origin = r,                       &
+                                                       normal = direction,               &
+                                                       factor = f(1))
+                       END IF 
+!
+!                      ---------------------------------------------------------------------
+!                      For each point i,j at level k within element m at level l in hex mesh
+!                      ---------------------------------------------------------------------
+!
+                       DO j = 0, N 
                            DO i = 0, N 
-                              newX = PerformAffineTransform(x              = mesh % elements(m,l) % x(:,i,j,k), &
-                                                            transformation = self % affineTransformer)
+                              newX = PerformRotationTransform(x              = mesh % elements(m,l) % x(:,i,j,k), &
+                                                              transformation = self % affineTransformer)
                               mesh % elements(m,l) % x(:,i,j,k) = newX
                            END DO 
                         END DO 
+                        
+                        IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                           DO j = 0, N 
+                              DO i = 0, N 
+                                 newX = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
+                                                                   transformation = self % scaleTransformer)
+                                 mesh % elements(m,l) % x(:,i,j,k) = newX
+                              END DO 
+                           END DO 
+                        END IF 
+
                      END DO 
                   END DO 
                END DO

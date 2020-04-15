@@ -33,6 +33,7 @@
 !         OUTER_BOUNDARY
 !         INNER_BOUNDARIES
 !         SWEEP_CURVE
+!         SWEEP_SCALE_FACTOR
 !      
 !      The OUTER_BOUNDARY dictionary contains the keys
 !         TYPE
@@ -109,6 +110,22 @@
 !         TYPE
 !         origin
 !         scaleFactor
+!      
+!      The SWEEP_CURVE dictionary contains the keys
+!         TYPE
+!         LIST
+!           The list contains dictionaries describing
+!               PARAMETRIC_EQUATION_CURVE
+!               SPLINE_CURVE
+!               END_POINTS_LINE
+!      
+!      The SWEEP_SCALE_FACTOR dictionary contains the keys
+!         TYPE
+!         LIST
+!           The list contains dictionaries describing
+!               PARAMETRIC_EQUATION
+!
+!       But the equation definitions contain only one equation r(t) = ...
 !
 !      The SIMPLE_EXTRUSION  block is defined in SimpleSweep.f90
 !      The SIMPLE_ROTATION   block is defined in SimpleSweep.f90
@@ -145,12 +162,13 @@
       CHARACTER(LEN=CFR_STRING_LENGTH) :: blockStack(5)
       INTEGER                          :: blockStackTop
       TYPE(FTStringSet)                :: blocksWithListsSet
-      CHARACTER(LEN=20)                :: blocksWithLists(6) =      &
+      CHARACTER(LEN=20)                :: blocksWithLists(7) =      &
                                           ["OUTER_BOUNDARY      ",  &
                                            "REFINEMENT_REGIONS  ",  &
                                            "INNER_BOUNDARIES    ",  &
                                            "INTERFACE_BOUNDARIES",  &
                                            "SWEEP_CURVE         ",  &
+                                           "SWEEP_SCALE_FACTOR  ",  &
                                            "CHAIN               "]
 !
 !     ========      

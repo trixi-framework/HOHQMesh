@@ -487,9 +487,14 @@
          
             CASE("PARAMETRIC_EQUATION_CURVE")
             
+               CALL ConstructParametricEquationCurveFromDict( self, chain, curveDict )
+               IF(ReturnOnFatalError())     RETURN 
+          
+            CASE("PARAMETRIC_EQUATION")
+            
                CALL ConstructParametricEquationFromDict( self, chain, curveDict )
                IF(ReturnOnFatalError())     RETURN 
-               
+              
             CASE ("SPLINE_CURVE" )
             
                CALL ImportSplineBlock( self, chain, curveDict )
@@ -509,7 +514,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ConstructParametricEquationFromDict( self, chain, curveDict ) 
+      SUBROUTINE ConstructParametricEquationCurveFromDict( self, chain, curveDict ) 
          IMPLICIT NONE 
 !
 !        ---------
@@ -545,7 +550,7 @@
                                                       requestedLength = SM_CURVE_NAME_LENGTH) 
          ELSE
             curveName = "curve"
-            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+            CALL ThrowErrorExceptionOfType(poster = "ConstructParametricEquationCurveFromDict",&
                                            msg = "PARAMETRIC_EQUATION_CURVE has no name. Use default 'curve'", &
                                            typ = FT_ERROR_WARNING)
          END IF 
@@ -554,7 +559,7 @@
             eqnX = curveDict % stringValueForKey(key = "xEqn", &
                                                       requestedLength = DEFAULT_CHARACTER_LENGTH) 
          ELSE
-            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+            CALL ThrowErrorExceptionOfType(poster = "ConstructParametricEquationCurveFromDict",&
                                            msg = "PARAMETRIC_EQUATION_CURVE has no xEqn.", &
                                            typ = FT_ERROR_FATAL)
             RETURN 
@@ -564,7 +569,7 @@
             eqnY = curveDict % stringValueForKey(key = "yEqn", &
                                                       requestedLength = DEFAULT_CHARACTER_LENGTH) 
          ELSE
-            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+            CALL ThrowErrorExceptionOfType(poster = "ConstructParametricEquationCurveFromDict",&
                                            msg = "PARAMETRIC_EQUATION_CURVE has no yEqn.", &
                                            typ = FT_ERROR_FATAL)
             RETURN 
@@ -574,11 +579,76 @@
             eqnZ = curveDict % stringValueForKey(key = "zEqn", &
                                                       requestedLength = DEFAULT_CHARACTER_LENGTH) 
          ELSE
-            CALL ThrowErrorExceptionOfType(poster = "ImportParametricEquationBlock",&
+            CALL ThrowErrorExceptionOfType(poster = "ConstructParametricEquationCurveFromDict",&
                                            msg = "PARAMETRIC_EQUATION_CURVE has no zEqn. Default is z = 0", &
                                            typ = FT_ERROR_WARNING)
             eqnZ = "z(t) = 0.0"
          END IF 
+!
+!        ----------------
+!        Create the curve
+!        ----------------
+!
+         ALLOCATE(cCurve)
+         CALL cCurve % initWithEquationsNameAndID(eqnX, eqnY, eqnZ, curveName, self % curveCount + 1)
+         IF(ReturnOnFatalError())     RETURN 
+         
+         curvePtr => cCurve
+         CALL chain  % addCurve(curvePtr)
+         obj => cCurve
+         CALL release(obj)
+         
+      END SUBROUTINE ConstructParametricEquationCurveFromDict
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ConstructParametricEquationFromDict( self, chain, curveDict ) 
+         IMPLICIT NONE 
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMModel)                    :: self
+         CLASS(SMChainedCurve)   , POINTER :: chain
+         CLASS(FTValueDictionary), POINTER :: curveDict
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CHARACTER(LEN=SM_CURVE_NAME_LENGTH)       :: curveName
+         CHARACTER(LEN=EQUATION_STRING_LENGTH)     :: eqnX, eqnY, eqnZ
+         CLASS(SMParametricEquationCurve), POINTER :: cCurve => NULL()
+         CLASS(SMCurve)                  , POINTER :: curvePtr => NULL()
+         CLASS(FTObject)                 , POINTER :: obj
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL :: returnOnFatalError
+!
+!        ------------
+!        Get the data
+!        ------------
+!         
+         IF ( curveDict % containsKey(key = "eqn") )     THEN
+            eqnX = curveDict % stringValueForKey(key = "eqn", &
+                                                      requestedLength = DEFAULT_CHARACTER_LENGTH) 
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ConstructParametricEquationFromDict",&
+                                           msg = "PARAMETRIC_EQUATION has no eqn key.", &
+                                           typ = FT_ERROR_FATAL)
+            RETURN 
+         END IF
+!
+!        ------------------------------------------------------------------
+!        For just a parametric equation, the other equations are irrelevant
+!        ------------------------------------------------------------------
+!
+         eqnY = "y(t) = 0.0"
+         eqnZ = "z(t) = 0.0"
 !
 !        ----------------
 !        Create the curve
