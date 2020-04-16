@@ -64,9 +64,9 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_SCALE_KEY   = "scale factor"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_ORIGIN_KEY  = "origin"
       
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_BLOCK_KEY       = "AFFINE_TRANSFORM"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_TRANSLATION_KEY = "translation"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: AFFINE_TRANSFORM_DIRECTION_KEY   = "direction"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ROTATION_TRANSFORM_BLOCK_KEY       = "ROTATION_TRANSFORM"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ROTATION_TRANSFORM_TRANSLATION_KEY = "translation"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ROTATION_TRANSFORM_DIRECTION_KEY   = "direction"
       
 !
 !     ------------------
@@ -128,7 +128,7 @@
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
-         TYPE(AffineTransform)              :: affineTransformer
+         TYPE(RotationTransform)             :: rotationTransformer
          TYPE(ScaleTransform)               :: scaleTransformer
          CHARACTER(LEN=32)                  :: backgroundMaterialName
 !         
@@ -347,7 +347,7 @@
 !        ---------------
 !
          CLASS(FTValueDictionary)    , POINTER :: smootherDict, refinementsDict
-         CLASS(FTValueDictionary)    , POINTER :: scaleTransformDict, affineTransformDict
+         CLASS(FTValueDictionary)    , POINTER :: scaleTransformDict, rotationTransformDict
          CLASS(FTLinkedList)         , POINTER :: refinementsList
          CLASS(FTLinkedListIterator) , POINTER :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
@@ -358,7 +358,7 @@
          NULLIFY( self % grid )
          NULLIFY( self % sizer )
          CALL ConstructIdentityScaleTransform(self = self % scaleTransformer)
-         CALL ConstructIdentityAffineTransform(self = self % affineTransformer)
+         CALL ConstructIdentityRotationTransform(self = self % rotationTransformer)
 !
          CALL BuildBackgroundGrid(self, controlDict )
          CALL BuildQuadtreeGrid(self)
@@ -415,14 +415,14 @@
          END IF 
 !
 !        --------------------------
-!        Construct Affine transform
+!        Construct Rotation transform
 !        --------------------------
 !
-         IF ( controlDict % containsKey(key = AFFINE_TRANSFORM_BLOCK_KEY) )     THEN
-            obj                => controlDict % objectForKey(key = AFFINE_TRANSFORM_BLOCK_KEY)
-            affineTransformDict => valueDictionaryFromObject(obj)
-            CALL SetAffineTransformBlock(affineBlockDict   = affineTransformDict,     &
-                                         affineTransformer = self % affineTransformer)
+         IF ( controlDict % containsKey(key = ROTATION_TRANSFORM_BLOCK_KEY) )     THEN
+            obj                => controlDict % objectForKey(key = ROTATION_TRANSFORM_BLOCK_KEY)
+            rotationTransformDict => valueDictionaryFromObject(obj)
+            CALL SetRotationTransformBlock(rotationBlockDict   = rotationTransformDict,     &
+                                         rotationTransformer = self % rotationTransformer)
          END IF 
 !
 !        ---------------------------
@@ -1303,15 +1303,15 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE SetAffineTransformBlock(affineBlockDict, affineTransformer)  
+      SUBROUTINE SetRotationTransformBlock(rotationBlockDict, rotationTransformer)  
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary), POINTER :: affineBlockDict
-         TYPE(AffineTransform)             :: affineTransformer
+         CLASS(FTValueDictionary), POINTER :: rotationBlockDict
+         TYPE(RotationTransform)             :: rotationTransformer
 !
 !        ---------------
 !        Local Variables
@@ -1330,34 +1330,34 @@
 !        Origin
 !        ------
 !
-         msg = "Affine transform block missing parameter " // TRIM(AFFINE_TRANSFORM_TRANSLATION_KEY)
+         msg = "Rotation transform block missing parameter " // TRIM(ROTATION_TRANSFORM_TRANSLATION_KEY)
         
          CALL SetRealArrayValueFromDictionary(arrayToSet = t, &
-                                              sourceDict = affineBlockDict,                 &
-                                              key        = AFFINE_TRANSFORM_TRANSLATION_KEY,&
+                                              sourceDict = rotationBlockDict,                 &
+                                              key        = ROTATION_TRANSFORM_TRANSLATION_KEY,&
                                               errorLevel = FT_ERROR_FATAL,                  &
                                               message    = msg,                             &
-                                              poster     = "SetAffineTransformBlock")
+                                              poster     = "SetRotationTransformBlock")
 !
 !        ------------
 !        Direction
 !        ------------
 !
-         msg = "Affine transform block missing parameter " // TRIM(AFFINE_TRANSFORM_DIRECTION_KEY)
+         msg = "Rotation transform block missing parameter " // TRIM(ROTATION_TRANSFORM_DIRECTION_KEY)
          CALL SetRealArrayValueFromDictionary(arrayToSet = d, &
-                                              sourceDict = affineBlockDict,                 &
-                                              key        = AFFINE_TRANSFORM_DIRECTION_KEY,  &
+                                              sourceDict = rotationBlockDict,                 &
+                                              key        = ROTATION_TRANSFORM_DIRECTION_KEY,  &
                                               errorLevel = FT_ERROR_FATAL,                  &
                                               message    = msg,                             &
-                                              poster     = "SetAffineTransformBlock")
+                                              poster     = "SetRotationTransformBlock")
          IF(ReturnOnFatalError()) RETURN
          
-         CALL ConstructAffineTransform(self           = affineTransformer,          &
-                                       translation    = t,                          &
+         CALL ConstructRotationTransform(self           = rotationTransformer,          &
+                                       rotationPoint    = t,                          &
                                        startDirection = [0.0_RP,0.0_RP,1.0_RP],     &
                                        newDirection   = d)
 
-      END SUBROUTINE SetAffineTransformBlock
+      END SUBROUTINE SetRotationTransformBlock
 
    END MODULE MeshProjectClass
 

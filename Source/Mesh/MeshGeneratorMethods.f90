@@ -1907,7 +1907,7 @@
          TYPE(CurveInterpolant)     , POINTER :: boundaryCurves(:)
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: values
-         TYPE(AffineTransform) :: affineTransformer
+         TYPE(RotationTransform) :: rotationTransformer
          TYPE(ScaleTransform)  :: scaleTransformer
 !
 !        --------------------
@@ -1973,8 +1973,8 @@
          
          mesh => project % mesh
          
-         IF ( .NOT. isIdentityTransform(self = project % affineTransformer) )     THEN
-            CALL AffineTransformMesh(mesh = mesh, affineTransformer = project % affineTransformer) 
+         IF ( .NOT. isIdentityRotation(self = project % rotationTransformer) )     THEN
+            CALL RotationTransformMesh(mesh = mesh, rotationTransformer = project % rotationTransformer) 
          END IF 
          
          IF ( .NOT. isIdentityScale(self = project % scaleTransformer) )     THEN
@@ -2117,7 +2117,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE AffineTransformMesh(mesh, affineTransformer)  
+      SUBROUTINE RotationTransformMesh(mesh, rotationTransformer)  
          IMPLICIT NONE
 !
 !        ---------
@@ -2125,7 +2125,7 @@
 !        ---------
 !
          TYPE (SMMesh)         :: mesh
-         TYPE(AffineTransform) :: affineTransformer
+         TYPE(RotationTransform) :: rotationTransformer
 !
 !        ---------------
 !        Local Variables
@@ -2148,8 +2148,8 @@
             obj => nodeIterator % object()
             CALL cast(obj,node)
             
-            xFormed = PerformAffineTransform(x              = node % x, &
-                                             transformation = affineTransformer)
+            xFormed = PerformRotationTransform(x              = node % x, &
+                                             transformation = rotationTransformer)
             node % x = xFormed
             CALL nodeIterator % moveToNext()
          END DO 
@@ -2173,8 +2173,8 @@
 !
             DO j = 0, N 
                DO i = 0, N 
-                  xFormed = PerformAffineTransform(x              = e % xPatch(:,i,j), &
-                                                   transformation = affineTransformer)
+                  xFormed = PerformRotationTransform(x              = e % xPatch(:,i,j), &
+                                                   transformation = rotationTransformer)
                   e % xPatch(:,i,j) = xFormed
                END DO 
             END DO 
@@ -2185,8 +2185,8 @@
 !
             DO k = 1,4 
                DO j = 0, N 
-                  xFormed = PerformAffineTransform(x              = e % boundaryInfo % x(:,j,k), &
-                                                   transformation = affineTransformer)
+                  xFormed = PerformRotationTransform(x              = e % boundaryInfo % x(:,j,k), &
+                                                   transformation = rotationTransformer)
                   e % boundaryInfo % x(:,j,k) = xFormed  
                END DO 
             END DO 
@@ -2194,6 +2194,6 @@
             CALL elementIterator % moveToNext()
          END DO 
 
-      END SUBROUTINE AffineTransformMesh
+      END SUBROUTINE RotationTransformMesh
    END MODULE MeshGenerationMethods
 !

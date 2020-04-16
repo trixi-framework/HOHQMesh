@@ -11,11 +11,15 @@
       USE SMConstants
       IMPLICIT NONE 
       
-      TYPE AffineTransform
-         REAL(KIND=RP)    :: translation(3)
+      TYPE RotationTransform
+         REAL(KIND=RP)    :: rotationPoint(3)
          REAL(KIND=RP)    :: rotMatrix(3,3)
-         LOGICAL, PRIVATE :: isIdentityTransform
-      END TYPE AffineTransform
+         LOGICAL, PRIVATE :: isIdentityRotation
+      END TYPE RotationTransform
+      
+      TYPE TranslationTransform
+         REAL(KIND=RP)    :: translation(3)
+      END TYPE TranslationTransform
       
       TYPE ScaleTransform
          REAL(KIND=RP)    :: origin(3)
@@ -31,75 +35,177 @@
 !     ========
 !
 !//////////////////////////////////////////////////////////////////////// 
+!
+!                 ROTATIONS
+!
+!//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ConstructIdentityAffineTransform(self)  
+      SUBROUTINE ConstructIdentityRotationTransform(self)  
          IMPLICIT NONE  
-         TYPE(AffineTransform) :: self
+         TYPE(RotationTransform) :: self
          
-         self % translation    = 0.0_RP
          self % rotMatrix      = 0.0
          self % rotMatrix(1,1) = 1.0_RP
          self % rotMatrix(2,2) = 1.0_RP
          self % rotMatrix(3,3) = 1.0_RP
-         self % isIdentityTransform = .TRUE.
-      END SUBROUTINE ConstructIdentityAffineTransform
+         self % isIdentityRotation = .TRUE.
+      END SUBROUTINE ConstructIdentityRotationTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ConstructAffineTransform(self, translation, startDirection, newDirection)  
+      SUBROUTINE ConstructRotationTransform(self, rotationPoint, startDirection, newDirection)  
          IMPLICIT NONE  
-         TYPE(AffineTransform)  :: self
-         REAL(KIND=RP)          :: translation(3)
-         REAL(KIND=RP)          :: startDirection(3)
-         REAL(KIND=RP)          :: newDirection(3)
+         TYPE(RotationTransform)  :: self
+         REAL(KIND=RP)            :: rotationPoint(3)
+         REAL(KIND=RP)            :: startDirection(3)
+         REAL(KIND=RP)            :: newDirection(3)
          
-         self % translation = translation
+         self % rotationPoint = rotationPoint
+         
          CALL RotationMatrix(old = startDirection, &
                              new = newDirection,   &
-                             R = self % rotMatrix)
+                             R   = self % rotMatrix)
+                             
          IF(MAXVAL(ABS(startDirection-newDirection)) < vectorDifferenceTolerance)     THEN 
-            self % isIdentityTransform = .TRUE.
+            self % isIdentityRotation = .TRUE.
          ELSE 
-            self % isIdentityTransform = .FALSE.
+            self % isIdentityRotation = .FALSE.
          END IF 
-      END SUBROUTINE ConstructAffineTransform
+         
+      END SUBROUTINE ConstructRotationTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      FUNCTION PerformAffineTransform(x,transformation)  RESULT(y)
+      FUNCTION PerformRotationTransform(x,transformation)  RESULT(y)
          IMPLICIT NONE
-         REAL(KIND=RP)         :: x(3)
-         REAL(KIND=RP)         :: y(3)
-         TYPE(AffineTransform) :: transformation
+         REAL(KIND=RP)           :: x(3)
+         REAL(KIND=RP)           :: y(3)
+         TYPE(RotationTransform) :: transformation
          
-         IF ( transformation % isIdentityTransform )     THEN
+         IF ( transformation % isIdentityRotation )     THEN
             y = x 
          ELSE 
-            CALL AffineTransformWithRAndShift(xOld        = x,                            &
-                                              xNew        = y,                            &
-                                              rotMatrix   = transformation % rotMatrix,   &
-                                              shiftVector = transformation % translation)
+            CALL RotationTransformWithRAndShift(xOld        = x,                              &
+                                                xNew        = y,                              &
+                                                rotMatrix   = transformation % rotMatrix,     &
+                                                rotationPoint = transformation % rotationPoint)
          END IF 
 
-      END FUNCTION PerformAffineTransform
+      END FUNCTION PerformRotationTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      LOGICAL FUNCTION isIdentityTransform(self)  
+      LOGICAL FUNCTION isIdentityRotation(self)  
          IMPLICIT NONE  
-         TYPE(AffineTransform)  :: self
-         isIdentityTransform = self % isIdentityTransform
-      END FUNCTION isIdentityTransform
+         TYPE(RotationTransform)  :: self
+         isIdentityRotation = self % isIdentityRotation
+      END FUNCTION isIdentityRotation
+!
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE RotationTransformWithRAndShift(xOld,xNew,rotMatrix,rotationPoint) 
+!
+!        --------------------------------
+!        Perform the transformation
+!        \vec x'prime = R\vec x  + \vec b
+!        --------------------------------
+! 
+         IMPLICIT NONE
+         REAL(KIND=RP), DIMENSION(3)   :: xOld, xNew, rotationPoint, xS
+         REAL(KIND=RP), DIMENSION(3,3) :: rotMatrix
+         
+         xS = xOld - rotationPoint
+         
+         xNew(1) = rotMatrix(1,1)*xS(1) + rotMatrix(1,2)*xS(2) + rotMatrix(1,3)*xS(3)
+         xNew(2) = rotMatrix(2,1)*xS(1) + rotMatrix(2,2)*xS(2) + rotMatrix(2,3)*xS(3)
+         xNew(3) = rotMatrix(3,1)*xS(1) + rotMatrix(3,2)*xS(2) + rotMatrix(3,3)*xS(3)
+         
+         xNew = xNew + rotationPoint
+         
+      END SUBROUTINE RotationTransformWithRAndShift
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE RotationMatrix(old,new,R)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         REAL(KIND=RP), INTENT(IN)  :: old(3), new(3)
+         REAL(KIND=RP), INTENT(OUT) :: R(3,3)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP) :: u(3) , v(3)
+         REAL(KIND=RP) :: norm, cosTheta, sinTheta
+         REAL(KIND=RP) :: rotVec(3), cross(3)
+!
+!        -----------------------
+!        Do nothing if old = new
+!        -----------------------
+!
+         IF(MAXVAL(ABS(old-new)) < vectorDifferenceTolerance)     THEN 
+            R = 0.0_RP
+            R(1,1) = 1.0_RP; R(2,2) = 1.0_RP; R(3,3) = 1.0_RP
+            RETURN 
+         END IF 
+         R = 0.0_RP
+!
+!        -------------------------------------
+!        Compute the rotation vector and angle
+!        -------------------------------------
+!
+         CALL Cross3D(old,new,rotVec)
+         CALL Norm3D(rotVec,norm)
+         rotVec = rotVec/norm
+         
+         CALL Norm3D(old,norm)
+         u = old/norm
+         CALL Norm3D(new,norm)
+         v = new/norm
+         CALL Dot3D(u,v,cosTheta)
+         
+         CALL Cross3D(u,v,cross)
+         CALL Norm3D(cross,sinTheta)
+!
+!        ---------------------------
+!        Compute the rotation matrix
+!        ---------------------------
+!
+         R(1,1) = cosTheta + rotVec(1)**2*(1.0_RP - costheta)
+         R(1,2) = rotVec(1)*rotVec(2)*(1.0_RP - costheta) - rotVec(3)*sinTheta
+         R(1,3) = rotVec(1)*rotVec(3)*(1.0_RP - costheta) + rotVec(2)*sinTheta
+         
+         R(2,1) = rotVec(2)*rotVec(1)*(1.0_RP - costheta) + rotVec(3)*sinTheta
+         R(2,2) = cosTheta + rotVec(2)**2*(1.0_RP - costheta)
+         R(2,3) = rotVec(2)*rotVec(3)*(1.0_RP - costheta) - rotVec(1)*sinTheta
+         
+         R(3,1) = rotVec(3)*rotVec(1)*(1.0_RP - costheta) - rotVec(2)*sinTheta
+         R(3,2) = rotVec(3)*rotVec(2)*(1.0_RP - costheta) + rotVec(1)*sinTheta
+         R(3,3) = cosTheta + rotVec(3)**2*(1.0_RP - costheta)
+
+      END SUBROUTINE RotationMatrix
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!                 SCALING
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE ConstructIdentityScaleTransform(self)
          IMPLICIT NONE  
          TYPE(ScaleTransform) :: self
+         
          self % origin      = 0.0_RP
          self % normal      = [0.0_RP,0.0_RP,1.0_RP]
          self % scaleFactor = 1.0_RP
          self % isIdentityScale = .TRUE.
+         
       END SUBROUTINE ConstructIdentityScaleTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -109,6 +215,7 @@
          TYPE(ScaleTransform) :: self
          REAL(KIND=RP)        :: origin(3), normal(3)
          REAL(KIND=RP)        :: factor
+         
          self % origin      = origin
          self % normal      = normal
          self % scaleFactor = factor
@@ -138,6 +245,39 @@
          TYPE(ScaleTransform) :: self
          isIdentityScale = self % isIdentityScale
       END FUNCTION isIdentityScale
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!                 TRANSLATIONS
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ContructTranslationTransform(self, translation)  
+         IMPLICIT NONE
+         TYPE(TranslationTransform) :: self
+         REAL(KIND=RP)              :: translation(3)
+         
+         self % translation = translation
+       
+      END SUBROUTINE ContructTranslationTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      FUNCTION PerformTranslationTransform(self, x)    RESULT(y)  
+         IMPLICIT NONE  
+         TYPE(TranslationTransform) :: self
+         REAL(KIND=RP)              :: x(3), y(3)
+         
+         y = x + self % translation 
+         
+      END FUNCTION PerformTranslationTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!                 VECTOR OPS
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -173,90 +313,5 @@
          norm = SQRT(norm)
          
       END SUBROUTINE Norm3D
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE RotationMatrix(old,new,R)  
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         REAL(KIND=RP), INTENT(IN)  :: old(3), new(3)
-         REAL(KIND=RP), INTENT(OUT) :: R(3,3)
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         REAL(KIND=RP) :: u(3) , v(3)
-         REAL(KIND=RP) :: norm, cosTheta, sinTheta
-         REAL(KIND=RP) :: rotVec(3), cross(3)
-!
-!        -----------------------
-!        Do nothing if old = new
-!        -----------------------
-!
-         IF(MAXVAL(ABS(old-new)) < vectorDifferenceTolerance)     THEN 
-            R = 0.0_RP
-            R(1,1) = 1.0_RP; R(2,2) = 1.0_RP; R(3,3) = 1.0_RP
-            RETURN 
-         END IF 
-!
-!        -------------------------------------
-!        Compute the rotation vector and angle
-!        -------------------------------------
-!
-         CALL Cross3D(old,new,rotVec)
-         CALL Norm3D(rotVec,norm)
-         rotVec = rotVec/norm
-         
-         CALL Norm3D(old,norm)
-         u = old/norm
-         CALL Norm3D(new,norm)
-         v = new/norm
-         CALL Dot3D(u,v,cosTheta)
-         
-         CALL Cross3D(u,v,cross)
-         CALL Norm3D(cross,sinTheta)
-!
-!        ---------------------------
-!        Compute the rotation matrix
-!        ---------------------------
-!
-         R(1,1) = cosTheta + rotVec(1)**2*(1.0_RP - costheta)
-         R(1,2) = rotVec(1)*rotVec(2)*(1.0_RP - costheta) - rotVec(3)*sinTheta
-         R(1,3) = rotVec(1)*rotVec(3)*(1.0_RP - costheta) + rotVec(2)*sinTheta
-         
-         R(2,1) = rotVec(2)*rotVec(1)*(1.0_RP - costheta) + rotVec(3)*sinTheta
-         R(2,2) = cosTheta + rotVec(2)**2*(1.0_RP - costheta)
-         R(2,3) = rotVec(2)*rotVec(3)*(1.0_RP - costheta) - rotVec(1)*sinTheta
-         
-         R(3,1) = rotVec(3)*rotVec(1)*(1.0_RP - costheta) - rotVec(2)*sinTheta
-         R(3,2) = rotVec(3)*rotVec(2)*(1.0_RP - costheta) + rotVec(1)*sinTheta
-         R(3,3) = cosTheta + rotVec(3)**2*(1.0_RP - costheta)
-      END SUBROUTINE RotationMatrix
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE AffineTransformWithRAndShift(xOld,xNew,rotMatrix,shiftVector) 
-!
-!        --------------------------------
-!        Perform the transformation
-!        \vec x'prime = R\vec x  + \vec b
-!        --------------------------------
-! 
-         IMPLICIT NONE
-         REAL(KIND=RP), DIMENSION(3)   :: xOld, xNew, shiftVector
-         REAL(KIND=RP), DIMENSION(3,3) :: rotMatrix
-         
-         xNew(1) = rotMatrix(1,1)*xOld(1) + rotMatrix(1,2)*xOld(2) + rotMatrix(1,3)*xOld(3)
-         xNew(2) = rotMatrix(2,1)*xOld(1) + rotMatrix(2,2)*xOld(2) + rotMatrix(2,3)*xOld(3)
-         xNew(3) = rotMatrix(3,1)*xOld(1) + rotMatrix(3,2)*xOld(2) + rotMatrix(3,3)*xOld(3)
-         
-         xNew = xNew + shiftVector
-         
-      END SUBROUTINE AffineTransformWithRAndShift
       
       END Module Geometry3DModule

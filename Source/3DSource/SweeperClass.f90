@@ -30,7 +30,7 @@
          TYPE CurveSweeper
             CLASS(SMChainedCurve), POINTER :: sweepCurve
             CLASS(SMChainedCurve), POINTER :: scaleCurve
-            TYPE(AffineTransform)          :: affineTransformer
+            TYPE(RotationTransform)        :: RotationTransformer
             TYPE(ScaleTransform)           :: scaleTransformer
          END TYPE CurveSweeper
 
@@ -62,7 +62,7 @@
             IF(ASSOCIATED(scaleCurve))   CALL self % scaleCurve % retain()
             
             CALL ConstructIdentityScaleTransform( self = self % scaleTransformer)
-            CALL ConstructIdentityAffineTransform(self = self % affineTransformer)
+            CALL ConstructIdentityRotationTransform(self = self % RotationTransformer)
               
          END SUBROUTINE ConstructCurveSweeper
 !
@@ -154,15 +154,17 @@
                TYPE(CurveSweeper)      :: self
                TYPE(StructuredHexMesh) :: mesh
                INTEGER                 :: N
-               REAL(KIND=RP)           :: dt, t, t0, f(3)
+               REAL(KIND=RP)           :: dt
 !
 !              ---------------
 !              Local variables
 !              ---------------
 !
-               REAL(KIND=RP) :: direction(3), r(3), newX(3)
+               REAL(KIND=RP) :: t, t0, f(3)
+               REAL(KIND=RP) :: direction(3), r(3), p0(3), p1(3)
                INTEGER       :: l, m, k, j, i
                REAL(KIND=RP) :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
+               REAL(KIND=RP) :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
 !
 !              -----------------------------------------------------
 !              Transform the nodes. Each level is dt higher than the 
@@ -171,14 +173,14 @@
 !
                DO l = 0, mesh % numberofLayers ! level in the hex mesh
                
-                  t = l*dt
+                  t         = l*dt
                   r         = self % sweepCurve % positionAt(t)
                   direction = self % sweepCurve % tangentAt(t)
                   
-                  CALL ConstructAffineTransform(self           = self % affineTransformer, &
-                                                translation    = r,                        &
-                                                startDirection = zHat,                     &
-                                                newDirection   = direction)
+                  CALL ConstructRotationTransform(self           = self % RotationTransformer, &
+                                                  rotationPoint  = zero,                          &
+                                                  startDirection = zHat,                       &
+                                                  newDirection   = direction)
                                                 
                   IF ( ASSOCIATED( self % scaleCurve) )     THEN
                      f = self % scaleCurve % positionAt(t)
@@ -187,17 +189,28 @@
                                                   normal = direction,               &
                                                   factor = f(1))
                   END IF 
-
+!
+!                 ------------------------------
+!                 Apply rotation and translation
+!                 ------------------------------
+!
                   DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
-                     newX = PerformAffineTransform(x = mesh % nodes(m,l) % x,transformation = self % affineTransformer)
-                     mesh % nodes(m,l) % x = newX
+                     p0    = mesh % nodes(m,l) % x
+                     p0(3) = 0.0_RP ! Move back to original z plane
+                     p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
+                     
+                     mesh % nodes(m,l) % x = p1 + r
                   END DO
-                  
+!
+!                 -----------------------
+!                 Apply scaling transform
+!                 -----------------------
+!
                   IF ( ASSOCIATED( self % scaleCurve) )     THEN
                       DO m = 1, SIZE(mesh % nodes,1) ! Points in the quad mesh
-                        newX = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
-                                                          transformation = self % scaleTransformer)
-                        mesh % nodes(m,l) % x = newX
+                        p0 = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
+                                                        transformation = self % scaleTransformer)
+                        mesh % nodes(m,l) % x = p0
                       END DO
                  END IF 
                  
@@ -234,8 +247,8 @@
                         r         = self % sweepCurve % positionAt(t)
                         direction = self % sweepCurve % tangentAt(t)
                         
-                        CALL ConstructAffineTransform(self           = self % affineTransformer, &
-                                                      translation    = r, &
+                        CALL ConstructRotationTransform(self         = self % RotationTransformer, &
+                                                      rotationPoint  = zero, &
                                                       startDirection = zHat, &
                                                       newDirection   = direction)
                                                       
@@ -251,20 +264,32 @@
 !                      For each point i,j at level k within element m at level l in hex mesh
 !                      ---------------------------------------------------------------------
 !
+                       
+!
+!                      ------------------------------
+!                      Apply rotation and translation
+!                      ------------------------------
+!
                        DO j = 0, N 
                            DO i = 0, N 
-                              newX = PerformAffineTransform(x              = mesh % elements(m,l) % x(:,i,j,k), &
-                                                            transformation = self % affineTransformer)
-                              mesh % elements(m,l) % x(:,i,j,k) = newX
+                              p0    = mesh % elements(m,l) % x(:,i,j,k)
+                              p0(3) = 0.0_RP ! Move point back to original z-plane
+                              p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
+                              
+                              mesh % elements(m,l) % x(:,i,j,k) = p1 + r
                            END DO 
                         END DO 
-                        
+!
+!                       -------------
+!                       Apply scaling
+!                       -------------
+!
                         IF ( ASSOCIATED( self % scaleCurve) )     THEN
                            DO j = 0, N 
                               DO i = 0, N 
-                                 newX = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
+                                 p0 = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
                                                                    transformation = self % scaleTransformer)
-                                 mesh % elements(m,l) % x(:,i,j,k) = newX
+                                 mesh % elements(m,l) % x(:,i,j,k) = p0
                               END DO 
                            END DO 
                         END IF 

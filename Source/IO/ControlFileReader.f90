@@ -23,7 +23,7 @@
 !         SPRING_SMOOTHER
 !         REFINEMENT_REGIONS
 !         SCALE_TRANSFORMATION
-!         AFFINE_TRANSFORMATION
+!         ROTATION_TRANSFORMATION
 !         SIMPLE_EXTRUSION
 !         SIMPLE_ROTATION
 !         SWEEP_ALONG_CURVE
@@ -101,10 +101,10 @@
 !         h
 !         w
 !      
-!      An AFFINE_TRANSFORMATION contains the keys
+!      An ROTATION_TRANSFORMATION contains the keys
 !         TYPE
 !         direction
-!         translation
+!         rotationPoint
 !
 !      A SCALE_TRANSFORMATION contains the keys
 !         TYPE
