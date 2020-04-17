@@ -191,9 +191,10 @@
             algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
             subdivisionsKey = SIMPLE_SWEEP_SUBDIVISIONS_KEY
             
-            pMutation = generatorDict % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
-            h         = generatorDict % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
-            dz        = h/generatorDict % integerValueForKey( subdivisionsKey )
+            numberOfLayers = generatorDict % integerValueForKey( subdivisionsKey )
+            pMutation      = generatorDict % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
+            h              = generatorDict % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
+            dz             = h/generatorDict % integerValueForKey( subdivisionsKey )
             
          ELSE IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN 
          
@@ -202,9 +203,10 @@
             algorithmChoice = SIMPLE_ROTATION_ALGORITHM
             subdivisionsKey = SIMPLE_SWEEP_SUBDIVISIONS_KEY
             
-            pMutation = generatorDict % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
-            rotAxis   = pMutation
-            pMutation = rotMap(pMutation)
+            numberOfLayers = generatorDict % integerValueForKey( subdivisionsKey )
+            pMutation      = generatorDict % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
+            rotAxis        = pMutation
+            pMutation      = rotMap(pMutation)
  
             h  = PI * generatorDict % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
             dz = h/generatorDict % integerValueForKey( subdivisionsKey )
@@ -215,8 +217,11 @@
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SWEEP_ALGORITHM
             subdivisionsKey = CURVE_SWEEP_SUBDIVISIONS_KEY
-            pMutation       = 3
-            dz              = 1.0_RP/generatorDict % integerValueForKey( subdivisionsKey )
+             
+            numberOfLayers = generatorDict % integerValueForKey( subdivisionsKey )* &
+                             project % model % sweepCurve % numberOfCurvesInChain
+            pMutation      = 3
+            dz             = 1.0_RP/numberOfLayers
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg    = "unknown generator for 3D mesh found in control file", &
@@ -231,7 +236,6 @@
 !        ---------------------------------------------------------------------
 !
          ALLOCATE(project % hexMesh)
-         numberOfLayers = generatorDict % integerValueForKey( subdivisionsKey )
          CALL InitializeStructuredHexMesh(hexMesh              = project % hexMesh,                   &
                                           numberOf2DNodes      = project % mesh % nodes % count(),    &
                                           numberOfQuadElements = project % mesh % elements % count(), &
