@@ -62,9 +62,9 @@
          
          self % rotationPoint = rotationPoint
          
-         CALL RotationMatrix(old = startDirection, &
-                             new = newDirection,   &
-                             R   = self % rotMatrix)
+         CALL RotationMatrixWithTwoVectors(old = startDirection, &
+                                           new = newDirection,   &
+                                           R   = self % rotMatrix)
                              
          IF(MAXVAL(ABS(startDirection-newDirection)) < vectorDifferenceTolerance)     THEN 
             self % isIdentityRotation = .TRUE.
@@ -127,7 +127,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE RotationMatrix(old,new,R)  
+      SUBROUTINE RotationMatrixWithTwoVectors(old,new,R)  
          IMPLICIT NONE
 !
 !        ---------
@@ -177,19 +177,45 @@
 !        Compute the rotation matrix
 !        ---------------------------
 !
-         R(1,1) = cosTheta + rotVec(1)**2*(1.0_RP - costheta)
-         R(1,2) = rotVec(1)*rotVec(2)*(1.0_RP - costheta) - rotVec(3)*sinTheta
-         R(1,3) = rotVec(1)*rotVec(3)*(1.0_RP - costheta) + rotVec(2)*sinTheta
-         
-         R(2,1) = rotVec(2)*rotVec(1)*(1.0_RP - costheta) + rotVec(3)*sinTheta
-         R(2,2) = cosTheta + rotVec(2)**2*(1.0_RP - costheta)
-         R(2,3) = rotVec(2)*rotVec(3)*(1.0_RP - costheta) - rotVec(1)*sinTheta
-         
-         R(3,1) = rotVec(3)*rotVec(1)*(1.0_RP - costheta) - rotVec(2)*sinTheta
-         R(3,2) = rotVec(3)*rotVec(2)*(1.0_RP - costheta) + rotVec(1)*sinTheta
-         R(3,3) = cosTheta + rotVec(3)**2*(1.0_RP - costheta)
+         CALL RotationMatrixWithNormalAndAngle(nHat     = rotVec,    &
+                                               cosTheta = cosTheta,  &
+                                               SinTheta = sinTheta,  &
+                                               R        = R)
+!         R(1,1) = cosTheta + rotVec(1)**2*(1.0_RP - costheta)
+!         R(1,2) = rotVec(1)*rotVec(2)*(1.0_RP - costheta) - rotVec(3)*sinTheta
+!         R(1,3) = rotVec(1)*rotVec(3)*(1.0_RP - costheta) + rotVec(2)*sinTheta
+!         
+!         R(2,1) = rotVec(2)*rotVec(1)*(1.0_RP - costheta) + rotVec(3)*sinTheta
+!         R(2,2) = cosTheta + rotVec(2)**2*(1.0_RP - costheta)
+!         R(2,3) = rotVec(2)*rotVec(3)*(1.0_RP - costheta) - rotVec(1)*sinTheta
+!         
+!         R(3,1) = rotVec(3)*rotVec(1)*(1.0_RP - costheta) - rotVec(2)*sinTheta
+!         R(3,2) = rotVec(3)*rotVec(2)*(1.0_RP - costheta) + rotVec(1)*sinTheta
+!         R(3,3) = cosTheta + rotVec(3)**2*(1.0_RP - costheta)
 
-      END SUBROUTINE RotationMatrix
+      END SUBROUTINE RotationMatrixWithTwoVectors
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE RotationMatrixWithNormalAndAngle(nHat,cosTheta, SinTheta, R)
+         IMPLICIT NONE  
+         REAL(KIND=RP) :: nHat(3)
+         REAL(KIND=RP) :: cosTheta, sinTheta
+         REAL(KIND=RP) :: R(3,3)
+ 
+         R(1,1) = cosTheta + nHat(1)**2*(1.0_RP - cosTheta)
+         R(1,2) = nHat(1)*nHat(2)*(1.0_RP - cosTheta) - nHat(3)*sinTheta
+         R(1,3) = nHat(1)*nHat(3)*(1.0_RP - cosTheta) + nHat(2)*sinTheta
+         
+         R(2,1) = nHat(2)*nHat(1)*(1.0_RP - cosTheta) + nHat(3)*sinTheta
+         R(2,2) = cosTheta + nHat(2)**2*(1.0_RP - cosTheta)
+         R(2,3) = nHat(2)*nHat(3)*(1.0_RP - cosTheta) - nHat(1)*sinTheta
+         
+         R(3,1) = nHat(3)*nHat(1)*(1.0_RP - cosTheta) - nHat(2)*sinTheta
+         R(3,2) = nHat(3)*nHat(2)*(1.0_RP - cosTheta) + nHat(1)*sinTheta
+         R(3,3) = cosTheta + nHat(3)**2*(1.0_RP - cosTheta)
+         
+      END SUBROUTINE RotationMatrixWithNormalAndAngle
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
