@@ -35,6 +35,7 @@
          PROCEDURE                  :: printDescription   => printCurveDescription
          PROCEDURE                  :: positionAt
          PROCEDURE                  :: tangentAt
+         PROCEDURE                  :: secondDerivativeAt
          PROCEDURE                  :: setID
          PROCEDURE                  :: id
          PROCEDURE                  :: setCurveName
@@ -57,6 +58,8 @@
       PRIVATE       :: xTarget
 
       PRIVATE :: fmin
+      
+      REAL(KIND=RP), PARAMETER, PRIVATE :: dt = 1.0d-5
 !
 !     ========
       CONTAINS
@@ -156,7 +159,7 @@
          REAL(KIND=RP)  :: x(3)
 
          REAL(KIND=RP), DIMENSION(3) :: xp, xm, dx
-         REAL(KIND=RP)               :: tp, tm, dt = 1.0d-9
+         REAL(KIND=RP)               :: tp, tm
          
          tp = MIN(1.0_RP,t + dt)
          tm = MAX(0.0_RP,t - dt)
@@ -169,6 +172,35 @@
          x  = x/SQRT(x(1)**2 + x(2)**2 + x(3)**2)
 
       END FUNCTION tangentAt
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      FUNCTION secondDerivativeAt(self,t)  RESULT(x)
+         IMPLICIT NONE  
+         CLASS(SMCurve) :: self
+         REAL(KIND=RP)  :: t
+         REAL(KIND=RP)  :: x(3)
+
+         REAL(KIND=RP), DIMENSION(3) :: xp, xm, x0
+         REAL(KIND=RP)               :: tp, tm
+                  
+         IF ( t < dt )     THEN
+            xp = self % positionAt(t + 2.0_RP*dt)
+            x0 = self % positionAt(t + dt)
+            xm = self % positionAt(t)
+         ELSE IF( t > 1.0_RP - dt)      THEN 
+            xp = self % positionAt(t)
+            x0 = self % positionAt(t - dt)
+            xm = self % positionAt(t - 2.0_RP*dt)
+         ELSE
+            xp = self % positionAt(t + dt)
+            x0 = self % positionAt(t)
+            xm = self % positionAt(t - dt)
+         END IF 
+         
+         x = (xp - 2.0_RP*x0 + xm)/dt**2
+
+      END FUNCTION secondDerivativeAt
 !@mark -
 !
 !//////////////////////////////////////////////////////////////////////// 
