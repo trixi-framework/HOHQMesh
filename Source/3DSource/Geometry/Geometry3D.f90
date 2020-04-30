@@ -339,5 +339,17 @@
          norm = SQRT(norm)
          
       END SUBROUTINE Norm3D
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE Normalize(u)  
+         IMPLICIT NONE  
+         REAL(KIND=RP), INTENT(INOUT)  :: u(3)
+         
+         REAL(KIND=RP)                 :: norm
+         
+         CALL Norm3D(u,norm)
+         u = u/norm 
+      END SUBROUTINE Normalize
       
       END Module Geometry3DModule
