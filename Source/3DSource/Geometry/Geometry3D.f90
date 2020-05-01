@@ -65,7 +65,7 @@
          CALL RotationMatrixWithTwoVectors(old = startDirection, &
                                            new = newDirection,   &
                                            R   = self % rotMatrix)
-                             
+         !TODO The following doesn't work when the vectors are in the opposite direction
          IF(MAXVAL(ABS(startDirection-newDirection)) < vectorDifferenceTolerance)     THEN 
             self % isIdentityRotation = .TRUE.
          ELSE 
@@ -181,17 +181,6 @@
                                                cosTheta = cosTheta,  &
                                                SinTheta = sinTheta,  &
                                                R        = R)
-!         R(1,1) = cosTheta + rotVec(1)**2*(1.0_RP - costheta)
-!         R(1,2) = rotVec(1)*rotVec(2)*(1.0_RP - costheta) - rotVec(3)*sinTheta
-!         R(1,3) = rotVec(1)*rotVec(3)*(1.0_RP - costheta) + rotVec(2)*sinTheta
-!         
-!         R(2,1) = rotVec(2)*rotVec(1)*(1.0_RP - costheta) + rotVec(3)*sinTheta
-!         R(2,2) = cosTheta + rotVec(2)**2*(1.0_RP - costheta)
-!         R(2,3) = rotVec(2)*rotVec(3)*(1.0_RP - costheta) - rotVec(1)*sinTheta
-!         
-!         R(3,1) = rotVec(3)*rotVec(1)*(1.0_RP - costheta) - rotVec(2)*sinTheta
-!         R(3,2) = rotVec(3)*rotVec(2)*(1.0_RP - costheta) + rotVec(1)*sinTheta
-!         R(3,3) = cosTheta + rotVec(3)**2*(1.0_RP - costheta)
 
       END SUBROUTINE RotationMatrixWithTwoVectors
 !
