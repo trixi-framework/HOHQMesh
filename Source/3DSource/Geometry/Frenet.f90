@@ -27,7 +27,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ComputeFrenetFrame(frame, t, curve)  
+      SUBROUTINE ComputeFrenetFrame(frame, t, curve, isDegenerate)  
          IMPLICIT NONE
 !
 !        ---------
@@ -37,6 +37,7 @@
          CLASS(SMCurve)     :: curve
          TYPE(FrenetFrame)  :: frame
          REAL(KIND=RP)      :: t
+         LOGICAL            :: isDegenerate
 !
 !        ---------------
 !        Local variables
@@ -63,8 +64,10 @@
 !
          CALL Cross3D(u = tangent,v = xpp,cross = B)
          CALL Norm3D(u = B,norm = d1)
+         isDegenerate = .TRUE.
          IF ( d1 .ge. 1.d-7 )     THEN
             CALL Normalize(B)
+            isDegenerate = .FALSE.
          END IF 
 !
 !        -------------
@@ -99,13 +102,18 @@
 !
          REAL(KIND=RP) :: B1(3), B2(3)
          REAL(KIND=RP) :: d1
+         LOGICAL       :: isDegenerate
          
-         CALL ComputeFrenetFrame(frame = frame,t = t,curve = curve)
+         CALL ComputeFrenetFrame(frame        = frame, &
+                                 t            = t,     &
+                                 curve        = curve, &
+                                 isDegenerate = isDegenerate)
 
          CALL Norm3D(u = frame % coNormal, norm = d1)
          
-         IF ( d1 .le. zeroNormSize )     THEN
+         IF ( isDegenerate )     THEN
             frame % coNormal = refFrame % coNormal
+            frame % normal   = refFrame % normal
          END IF 
          
          CALL Dot3D(u = refFrame % coNormal,v = frame % coNormal, dot = d1)

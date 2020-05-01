@@ -326,15 +326,21 @@
                REAL(KIND=RP)     :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
                REAL(KIND=RP)     :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
                TYPE(FrenetFrame) :: refFrame, frame
+               LOGICAL           :: isDegenerate
 !
-!              ------------------------------------------------------
-!              The reference frame will eith be the first one, or the
+!              --------------------------------------------------------
+!              The reference frame will either be the first one, or the
 !              first non-default frame.
-!              ------------------------------------------------------
+!              --------------------------------------------------------
 !
-               CALL ComputeFrenetFrame(frame = refFrame, &
-                                       t     = 0.0_RP,   &
-                                       curve = self % sweepCurve)
+               DO l = 0, mesh % numberofLayers
+                 t = l*dt
+                 CALL ComputeFrenetFrame(frame        = refFrame,          &
+                                         t            = t,                 &
+                                         curve        = self % sweepCurve, &
+                                         isDegenerate = isDegenerate)
+                   IF(.NOT.isDegenerate)   EXIT 
+               END DO
 !
 !              -----------------------------------------------------
 !              Transform the nodes. Each level is dt higher than the 
@@ -350,13 +356,14 @@
                                             curve    = self % sweepCurve,&
                                             frame    = frame,            &
                                             refFrame = refFrame)
-                  
+                
                   CALL ConstructParallelTransportRotation(rotationTransformer = self % RotationTransformer, &
                                                           refDirection        = zHat,                       &
                                                           rotationPoint       = zero,                       &
                                                           frame               = frame,                      &
-                                                          refFrame            = refFrame)
-                                                          
+                                                          refFrame            = refFrame,                  &
+                                                          isDegenerate        = isDegenerate)
+                  
                   IF ( ASSOCIATED( self % scaleCurve) )     THEN
                      f = self % scaleCurve % positionAt(t)
                      CALL ConstructScaleTransform(self   = self % scaleTransformer, &
@@ -430,7 +437,8 @@
                                                                 refDirection        = zHat,                       &
                                                                 rotationPoint       = zero,                       &
                                                                 frame               = frame,                      &
-                                                                refFrame            = refFrame)
+                                                                refFrame            = refFrame,                  &
+                                                                isDegenerate        = isDegenerate)
                         
                         IF ( ASSOCIATED( self % scaleCurve) )     THEN
                           f = self % scaleCurve % positionAt(t)
@@ -481,7 +489,8 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
  
-         SUBROUTINE ConstructParallelTransportRotation( rotationTransformer, refDirection, rotationPoint, frame, refFrame )
+         SUBROUTINE ConstructParallelTransportRotation( rotationTransformer, refDirection,  &
+                                                        rotationPoint, frame, refFrame, isDegenerate )
             IMPLICIT NONE
 !
 !           ---------
@@ -491,6 +500,7 @@
             TYPE(RotationTransform) :: rotationTransformer
             REAL(KIND=RP)           :: refDirection(3), rotationPoint(3)
             TYPE(FrenetFrame)       :: frame, refFrame
+            LOGICAL                 :: isDegenerate
 !
 !           ---------------
 !           Local variables
@@ -509,6 +519,7 @@
                                             rotationPoint  = rotationPoint, &
                                             startDirection = refDirection, &
                                             newDirection   = frame % tangent)
+            IF(isDegenerate) RETURN 
 !
 !           ------------------------------------------------------------
 !           Find the angle by which the transportVector would be rotated
