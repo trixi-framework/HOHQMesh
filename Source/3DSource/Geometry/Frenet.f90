@@ -18,7 +18,7 @@
          REAL(KIND=RP) :: coNormal(3)
       END TYPE FrenetFrame
       
-      REAL(KIND=RP), PARAMETER, PRIVATE :: zeroNormSize = 1.d-7
+      REAL(KIND=RP), PARAMETER :: zeroNormSize = 1.d-7
 ! 
 !     ========
       CONTAINS
