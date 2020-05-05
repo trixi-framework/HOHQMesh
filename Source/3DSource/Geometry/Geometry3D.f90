@@ -49,6 +49,7 @@
          self % rotMatrix(2,2) = 1.0_RP
          self % rotMatrix(3,3) = 1.0_RP
          self % isIdentityRotation = .TRUE.
+         self % rotationPoint = 0.0_RP
       END SUBROUTINE ConstructIdentityRotationTransform
 !
 !//////////////////////////////////////////////////////////////////////// 

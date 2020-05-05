@@ -145,161 +145,119 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-!            SUBROUTINE applySweepTransform(self, mesh, dt, N)  
-!               IMPLICIT NONE
-!!
-!!              ---------
-!!              Arguments
-!!              ---------
-!!
-!               TYPE(CurveSweeper)      :: self
-!               TYPE(StructuredHexMesh) :: mesh
-!               INTEGER                 :: N
-!               REAL(KIND=RP)           :: dt
-!!
-!!              ---------------
-!!              Local variables
-!!              ---------------
-!!
-!               REAL(KIND=RP) :: t, t0, f(3)
-!               REAL(KIND=RP) :: direction(3), r(3), p0(3), p1(3)
-!               INTEGER       :: l, m, k, j, i
-!               REAL(KIND=RP) :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
-!               REAL(KIND=RP) :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
-!!
-!!              -----------------------------------------------------
-!!              Transform the nodes. Each level is dt higher than the 
-!!              previous.
-!!              -----------------------------------------------------
-!!
-!               DO l = 0, mesh % numberofLayers ! level in the hex mesh
-!               
-!                  t         = l*dt
-!                  r         = self % sweepCurve % positionAt(t)
-!                  direction = self % sweepCurve % tangentAt(t)
-!                  
-!                  CALL ConstructRotationTransform(self           = self % RotationTransformer, &
-!                                                  rotationPoint  = zero,                          &
-!                                                  startDirection = zHat,                       &
-!                                                  newDirection   = direction)
-!                                                
-!                  IF ( ASSOCIATED( self % scaleCurve) )     THEN
-!                     f = self % scaleCurve % positionAt(t)
-!                     CALL ConstructScaleTransform(self   = self % scaleTransformer, &
-!                                                  origin = r,                       &
-!                                                  normal = direction,               &
-!                                                  factor = f(1))
-!                  END IF 
-!!
-!!                 ------------------------------
-!!                 Apply rotation and translation
-!!                 ------------------------------
-!!
-!                  DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
-!                     p0    = mesh % nodes(m,l) % x
-!                     p0(3) = 0.0_RP ! Move back to original z plane
-!                     p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
-!                     
-!                     mesh % nodes(m,l) % x = p1 + r
-!                  END DO
-!!
-!!                 -----------------------
-!!                 Apply scaling transform
-!!                 -----------------------
-!!
-!                  IF ( ASSOCIATED( self % scaleCurve) )     THEN
-!                      DO m = 1, SIZE(mesh % nodes,1) ! Points in the quad mesh
-!                        p0 = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
-!                                                        transformation = self % scaleTransformer)
-!                        mesh % nodes(m,l) % x = p0
-!                      END DO
-!                 END IF 
-!                 
-!               END DO
-!!
-!!              ------------------------------------------------------
-!!              Transform the internal DOFs
-!!              We will assume that the curve is curved, otherwise the
-!!              simple extrusion would be used. So then all faces
-!!              will be curved, too
-!!              ------------------------------------------------------
-!!
-!!              ----------------------
-!!              For each element level
-!!              ----------------------
-!!
-!               DO l = 1, mesh % numberOfLayers 
-!                  t0 = (l-1)*dt
-!!
-!!                 ---------------------------
-!!                 For each element at level l
-!!                 ---------------------------
-!!
-!                  DO m = 1, mesh % numberOfQuadElements    ! element on original quad mesh
-!                     mesh % elements(m,l) % bFaceFlag = ON
-!!
-!!                    -------------------------------------------------------------------------
-!!                    For each Chebyshev node in the vertical direction in element m at level l
-!!                    -------------------------------------------------------------------------
-!!
-!                     DO k = 0, N
-!                     
-!                        t = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
-!                        r         = self % sweepCurve % positionAt(t)
-!                        direction = self % sweepCurve % tangentAt(t)
-!                        
-!                        CALL ConstructRotationTransform(self         = self % RotationTransformer, &
-!                                                      rotationPoint  = zero, &
-!                                                      startDirection = zHat, &
-!                                                      newDirection   = direction)
-!                                                      
-!                        IF ( ASSOCIATED( self % scaleCurve) )     THEN
-!                          f = self % scaleCurve % positionAt(t)
-!                          CALL ConstructScaleTransform(self   = self % scaleTransformer, &
-!                                                       origin = r,                       &
-!                                                       normal = direction,               &
-!                                                       factor = f(1))
-!                       END IF 
-!!
-!!                      ---------------------------------------------------------------------
-!!                      For each point i,j at level k within element m at level l in hex mesh
-!!                      ---------------------------------------------------------------------
-!!
-!                       
-!!
-!!                      ------------------------------
-!!                      Apply rotation and translation
-!!                      ------------------------------
-!!
-!                       DO j = 0, N 
-!                           DO i = 0, N 
-!                              p0    = mesh % elements(m,l) % x(:,i,j,k)
-!                              p0(3) = 0.0_RP ! Move point back to original z-plane
-!                              p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
-!                              
-!                              mesh % elements(m,l) % x(:,i,j,k) = p1 + r
-!                           END DO 
-!                        END DO 
-!!
-!!                       -------------
-!!                       Apply scaling
-!!                       -------------
-!!
-!                        IF ( ASSOCIATED( self % scaleCurve) )     THEN
-!                           DO j = 0, N 
-!                              DO i = 0, N 
-!                                 p0 = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
-!                                                                   transformation = self % scaleTransformer)
-!                                 mesh % elements(m,l) % x(:,i,j,k) = p0
-!                              END DO 
-!                           END DO 
-!                        END IF 
+            SUBROUTINE rotateCylinder(self, mesh, dt, N)
 !
-!                     END DO 
-!                  END DO 
-!               END DO
-!              
-!            END SUBROUTINE applySweepTransform
+!           -----------------------------------------------------------------
+!           Take the swept skeleton (always in the \hat z direction) and
+!           rotate it to be along the initial direction of the sweeping curve
+!           This could be used to replace the simple sweep method for alternate
+!           normal directions.
+!           -----------------------------------------------------------------
+!
+               IMPLICIT NONE
+!
+!              ---------
+!              Arguments
+!              ---------
+!
+               TYPE(CurveSweeper)      :: self
+               TYPE(StructuredHexMesh) :: mesh
+               INTEGER                 :: N
+               REAL(KIND=RP)           :: dt
+!
+!              ---------------
+!              Local variables
+!              ---------------
+!
+               REAL(KIND=RP) :: t, t0, f(3)
+               REAL(KIND=RP) :: direction(3), r(3), p0(3), p1(3)
+               INTEGER       :: l, m, k, j, i
+               REAL(KIND=RP) :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
+               REAL(KIND=RP) :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
+!
+!              -----------------------------------------------------
+!              Transform the nodes. Each level is dt higher than the 
+!              previous.
+!              -----------------------------------------------------
+!
+               t         = 0.0_RP
+               direction = self % sweepCurve % tangentAt(t)
+               
+               CALL ConstructRotationTransform(self           = self % RotationTransformer, &
+                                               rotationPoint  = zero,                       &
+                                               startDirection = zHat,                       &
+                                               newDirection   = direction)
+
+               DO l = 0, mesh % numberofLayers ! level in the hex mesh
+                  t = l*dt
+                  r = t*direction
+!
+!                 ------------------------------
+!                 Apply rotation and translation
+!                 ------------------------------
+!
+                  DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
+                     p0    = mesh % nodes(m,l) % x
+                     p0(3) = 0.0_RP ! Move back to original z plane
+                     p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
+                     
+                     mesh % nodes(m,l) % x = p1 + r
+                  END DO
+                 
+               END DO
+!
+!              ------------------------------------------------------
+!              Transform the internal DOFs
+!              We will assume that the curve is curved, otherwise the
+!              simple extrusion would be used. So then all faces
+!              will be curved, too
+!              ------------------------------------------------------
+!
+!              ----------------------
+!              For each element level
+!              ----------------------
+!
+               DO l = 1, mesh % numberOfLayers 
+                  t0 = (l-1)*dt
+!
+!                 ---------------------------
+!                 For each element at level l
+!                 ---------------------------
+!
+                  DO m = 1, mesh % numberOfQuadElements    ! element on original quad mesh
+!
+!                    -------------------------------------------------------------------------
+!                    For each Chebyshev node in the vertical direction in element m at level l
+!                    -------------------------------------------------------------------------
+!
+                     DO k = 0, N
+                     
+                        t = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
+                        r = t*direction
+!
+!                      ---------------------------------------------------------------------
+!                      For each point i,j at level k within element m at level l in hex mesh
+!                      ---------------------------------------------------------------------
+!
+!                      ------------------------------
+!                      Apply rotation and translation
+!                      ------------------------------
+!
+                       DO j = 0, N 
+                           DO i = 0, N 
+                              p0    = mesh % elements(m,l) % x(:,i,j,k)
+                              p0(3) = 0.0_RP ! Move point back to original z-plane
+                              p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
+                              
+                              mesh % elements(m,l) % x(:,i,j,k) = p1 + r
+                           END DO 
+                        END DO 
+
+                     END DO 
+                  END DO 
+               END DO
+              
+            END SUBROUTINE rotateCylinder
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -321,7 +279,7 @@
 !              ---------------
 !
                REAL(KIND=RP)     :: t, t0, f(3)
-               REAL(KIND=RP)     :: direction(3), r(3), p0(3), p1(3)
+               REAL(KIND=RP)     :: direction(3), r(3), p0(3), p1(3), refDirection(3)
                INTEGER           :: l, m, k, j, i
                REAL(KIND=RP)     :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
                REAL(KIND=RP)     :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
@@ -344,12 +302,20 @@
                    IF(.NOT.isDegenerate)   EXIT 
                END DO
 !
+!              -------------------------------------------------------
+!              Rotate the swept cylinder make the first face normal to
+!              the sweep curve
+!              -------------------------------------------------------
+!
+               CALL rotateCylinder(self = self,mesh = mesh,dt = dt,N = N)
+!
 !              -----------------------------------------------------
 !              Transform the nodes. Each level is dt higher than the 
 !              previous.
 !              -----------------------------------------------------
 !
                prevFrame = refFrame
+               refDirection = self % sweepCurve % tangentAt(0.0_RP)
                
                DO l = 0, mesh % numberofLayers ! level in the hex mesh
                
@@ -362,7 +328,7 @@
                                             refFrame = prevFrame)
               
                   CALL ConstructParallelTransportRotation(rotationTransformer = self % RotationTransformer, &
-                                                          refDirection        = zHat,                       &
+                                                          refDirection        = refDirection,                       &
                                                           rotationPoint       = zero,                       &
                                                           frame               = frame,                      &
                                                           refFrame            = refFrame,                   &
@@ -382,8 +348,7 @@
 !                 ------------------------------
 !
                   DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
-                     p0    = mesh % nodes(m,l) % x
-                     p0(3) = 0.0_RP ! Move back to original z plane
+                     p0    = mesh % nodes(m,l) % x - t*refDirection
                      p1    = PerformRotationTransform(x              = p0 , &
                                                       transformation = self % RotationTransformer)
                      
@@ -441,7 +406,7 @@
                                                   frame    = frame,            &
                                                   refFrame = prevFrame)
                         CALL ConstructParallelTransportRotation(rotationTransformer = self % RotationTransformer, &
-                                                                refDirection        = zHat,                       &
+                                                                refDirection        = refDirection,                       &
                                                                 rotationPoint       = zero,                       &
                                                                 frame               = frame,                      &
                                                                 refFrame            = refFrame,                   &
@@ -466,8 +431,7 @@
 !
                        DO j = 0, N 
                            DO i = 0, N 
-                              p0    = mesh % elements(m,l) % x(:,i,j,k)
-                              p0(3) = 0.0_RP ! Move point back to original z-plane
+                              p0    = mesh % elements(m,l) % x(:,i,j,k) - t*refDirection
                               p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
                               
                               mesh % elements(m,l) % x(:,i,j,k) = p1 + r
@@ -534,23 +498,23 @@
 !           Find the angle by which the transportVector would be rotated
 !           ------------------------------------------------------------
 !
-             theta    = FrameAngle(frame1 = refFrame, frame2 = frame)
-             cosTheta = COS(theta)
-             sinTheta = SIN(theta)
-             CALL Cross3D(u = refFrame % tangent,v = frame % tangent,cross = B)
-             CALL Norm3D(u = B,norm = d1)
-             
-             IF(d1 < zeroNormSize)     RETURN
-             B = B/d1
+!             theta    = FrameAngle(frame1 = refFrame, frame2 = frame)
+!             cosTheta = COS(theta)
+!             sinTheta = SIN(theta)
+!             CALL Cross3D(u = refFrame % tangent,v = frame % tangent,cross = B)
+!             CALL Norm3D(u = B,norm = d1)
+!             
+!             IF(d1 < zeroNormSize)     RETURN
+!             B = B/d1
 !
 !           -----------------------------------------------
 !            Compute rotation matrix to counteract the twist
 !            -----------------------------------------------
 !
-             CALL RotationMatrixWithNormalAndAngle(nHat     = frame % tangent, &
-                                                   cosTheta = cosTheta,     &
-                                                   SinTheta = sinTheta,     &
-                                                   R        = R)
+!             CALL RotationMatrixWithNormalAndAngle(nHat     = B, &
+!                                                   cosTheta = cosTheta,     &
+!                                                   SinTheta = sinTheta,     &
+!                                                   R        = R)
 !             rotMat = MATMUL(MATRIX_A = R, MATRIX_B = parallelRotation % rotMatrix)
 !             R      = rotMat
 !             parallelRotation % rotMatrix = R
@@ -559,8 +523,8 @@
 !            Combine the two
 !           ---------------
 !
-             rotMat = MATMUL(MATRIX_A = R, MATRIX_B = rotationTransformer % rotMatrix)
-             rotationTransformer % rotMatrix = rotMat
+!             rotMat = MATMUL(MATRIX_A = R, MATRIX_B = rotationTransformer % rotMatrix)
+!             rotationTransformer % rotMatrix = rotMat
              
          END SUBROUTINE ConstructParallelTransportRotation
          
