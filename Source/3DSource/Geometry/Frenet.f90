@@ -65,7 +65,7 @@
          CALL Cross3D(u = tangent,v = xpp,cross = B)
          CALL Norm3D(u = B,norm = d1)
          isDegenerate = .TRUE.
-         IF ( d1 .ge. 1.d-7 )     THEN
+         IF ( d1 .gt. zeroNormSize )     THEN
             CALL Normalize(B)
             isDegenerate = .FALSE.
          END IF 
@@ -108,8 +108,6 @@
                                  t            = t,     &
                                  curve        = curve, &
                                  isDegenerate = isDegenerate)
-
-         CALL Norm3D(u = frame % coNormal, norm = d1)
          
          IF ( isDegenerate )     THEN
             frame % coNormal = refFrame % coNormal
@@ -117,7 +115,7 @@
          END IF 
          
          CALL Dot3D(u = refFrame % coNormal,v = frame % coNormal, dot = d1)
-         IF(d1 < 0.0_RP)     THEN
+         IF(d1 < -zeroNormSize)     THEN
             frame % coNormal = -frame % coNormal
             CALL Cross3D(u = frame % coNormal, v = frame % tangent, cross = frame % normal)
          ENDIF 
