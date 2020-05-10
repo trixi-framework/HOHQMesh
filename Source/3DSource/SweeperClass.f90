@@ -42,7 +42,7 @@
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_STARTNAME_KEY        = "start surface name"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_ENDNAME_KEY          = "end surface name"
          
-         REAL(KIND=RP), PRIVATE :: derivativeDT = 1.0D-6 !TODO: Put in preferences
+         REAL(KIND=RP), PARAMETER, PRIVATE :: ZERO_ROTATION_TOLERANCE = 1.0d-4
 ! 
 !        ========
          CONTAINS  
@@ -283,6 +283,7 @@
                INTEGER           :: l, m, k, j, i
                REAL(KIND=RP)     :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
                REAL(KIND=RP)     :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
+               REAL(KIND=RP)     :: transportV(3), v(3)
                TYPE(FrenetFrame) :: refFrame, frame, prevFrame
                LOGICAL           :: isDegenerate
 !
@@ -307,15 +308,19 @@
 !              the sweep curve
 !              -------------------------------------------------------
 !
-               CALL rotateCylinder(self = self,mesh = mesh,dt = dt,N = N)
+               CALL rotateCylinder(self = self, &
+                                   mesh = mesh, &
+                                   dt   = dt,   &
+                                   N    = N)
 !
 !              -----------------------------------------------------
 !              Transform the nodes. Each level is dt higher than the 
 !              previous.
 !              -----------------------------------------------------
 !
-               prevFrame = refFrame
+               prevFrame    = refFrame
                refDirection = self % sweepCurve % tangentAt(0.0_RP)
+               transportV   = refFrame % coNormal
                
                DO l = 0, mesh % numberofLayers ! level in the hex mesh
                
@@ -328,12 +333,12 @@
                                             refFrame = prevFrame)
               
                   CALL ConstructParallelTransportRotation(rotationTransformer = self % RotationTransformer, &
-                                                          refDirection        = refDirection,                       &
+                                                          refDirection        = refDirection,               &
+                                                          transportVector     = transportV,                 &
                                                           rotationPoint       = zero,                       &
                                                           frame               = frame,                      &
-                                                          refFrame            = refFrame,                   &
                                                           isDegenerate        = isDegenerate)
-                  prevFrame = frame
+                 prevFrame = frame
                   
                   IF ( ASSOCIATED( self % scaleCurve) )     THEN
                      f = self % scaleCurve % positionAt(t)
@@ -405,11 +410,12 @@
                                                   curve    = self % sweepCurve,&
                                                   frame    = frame,            &
                                                   refFrame = prevFrame)
+                                                  
                         CALL ConstructParallelTransportRotation(rotationTransformer = self % RotationTransformer, &
-                                                                refDirection        = refDirection,                       &
+                                                                refDirection        = refDirection,               &
+                                                                transportVector     = transportV,                 &
                                                                 rotationPoint       = zero,                       &
                                                                 frame               = frame,                      &
-                                                                refFrame            = refFrame,                   &
                                                                 isDegenerate        = isDegenerate)
                         prevFrame = frame
                         
@@ -460,9 +466,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
- 
-         SUBROUTINE ConstructParallelTransportRotation( rotationTransformer, refDirection,  &
-                                                        rotationPoint, frame, refFrame, isDegenerate )
+         SUBROUTINE ConstructParallelTransportRotation( rotationTransformer, refDirection,  transportVector, &
+                                                        rotationPoint, frame, isDegenerate )
             IMPLICIT NONE
 !
 !           ---------
@@ -470,9 +475,11 @@
 !           ---------
 !
             TYPE(RotationTransform) :: rotationTransformer
-            REAL(KIND=RP)           :: refDirection(3), rotationPoint(3)
-            TYPE(FrenetFrame)       :: frame, refFrame
-            LOGICAL                 :: isDegenerate
+            REAL(KIND=RP)           :: refDirection(3)    ! Start direction of sweep curve
+            REAL(KIND=RP)           :: rotationPoint(3)   ! Start point of the sweep curve
+            REAL(KIND=RP)           :: transportVector(3) ! Vector whose orientation is to be maintained
+            TYPE(FrenetFrame)       :: frame              ! Frenet frame for current point along sweep curve
+            LOGICAL                 :: isDegenerate       ! If the Frenet frame is degenerate or not
 !
 !           ---------------
 !           Local variables
@@ -481,8 +488,7 @@
             REAL(KIND=RP) :: rotMat(3,3)
             REAL(KIND=RP) :: R(3,3)
             REAL(KIND=RP) :: cosTheta, theta, sinTheta
-            REAL(KIND=RP) :: d1, d2
-            REAL(KIND=RP) :: B(3)
+            REAL(KIND=RP) :: v(3)
 !
 !           ------------------------------
 !           Compute the rotation transform
@@ -498,33 +504,32 @@
 !           Find the angle by which the transportVector would be rotated
 !           ------------------------------------------------------------
 !
-!             theta    = FrameAngle(frame1 = refFrame, frame2 = frame)
-!             cosTheta = COS(theta)
-!             sinTheta = SIN(theta)
-!             CALL Cross3D(u = refFrame % tangent,v = frame % tangent,cross = B)
-!             CALL Norm3D(u = B,norm = d1)
-!             
-!             IF(d1 < zeroNormSize)     RETURN
-!             B = B/d1
+            v =  PerformRotationTransform(x              = transportVector,      &
+                                          transformation = rotationTransformer)
+            CALL Normalize(v)
+            CALL Dot3D(u = transportVector,v = v, dot = cosTheta)
+            
+            cosTheta = cosTheta
+            theta    =  -ACOS(cosTheta) ! Rotate entities in the oposite direction to counteract
+            sinTheta =  SIN(theta)
+
+            IF(ABS(theta) <= ZERO_ROTATION_TOLERANCE)   RETURN
 !
 !           -----------------------------------------------
-!            Compute rotation matrix to counteract the twist
-!            -----------------------------------------------
+!           Compute rotation matrix to counteract the twist
+!           -----------------------------------------------
 !
-!             CALL RotationMatrixWithNormalAndAngle(nHat     = B, &
-!                                                   cosTheta = cosTheta,     &
-!                                                   SinTheta = sinTheta,     &
-!                                                   R        = R)
-!             rotMat = MATMUL(MATRIX_A = R, MATRIX_B = parallelRotation % rotMatrix)
-!             R      = rotMat
-!             parallelRotation % rotMatrix = R
+            CALL RotationMatrixWithNormalAndAngle(nHat     = frame % tangent, &
+                                                  cosTheta = cosTheta,        &
+                                                  SinTheta = sinTheta,        &
+                                                  R        = R)
 !
-!            ---------------
-!            Combine the two
+!           ---------------
+!           Combine the two
 !           ---------------
 !
-!             rotMat = MATMUL(MATRIX_A = R, MATRIX_B = rotationTransformer % rotMatrix)
-!             rotationTransformer % rotMatrix = rotMat
+            rotMat = MATMUL(MATRIX_A = R, MATRIX_B = rotationTransformer % rotMatrix)
+            rotationTransformer % rotMatrix = rotMat
              
          END SUBROUTINE ConstructParallelTransportRotation
          
