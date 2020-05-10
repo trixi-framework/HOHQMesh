@@ -932,9 +932,8 @@
 !
          units = "radians"
          IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_UNITS_KEY) )     THEN
-            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_UNITS_KEY, &
+            units = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_UNITS_KEY, &
                                                           requestedLength = LINE_LENGTH)
-            units = GetStringValue(inputLine)
          END IF 
 !
 !        ------
@@ -971,7 +970,7 @@
 !        Create the curve
 !        ----------------
 !
-         IF ( UNITs == "degrees" )     THEN
+         IF ( units == "degrees" )     THEN
             startAngle = startAngle*DEGREES_TO_RADIANS
             endAngle   = endAngle  *DEGREES_TO_RADIANS 
          END IF 
