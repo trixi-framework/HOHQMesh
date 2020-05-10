@@ -34,4 +34,7 @@
          
          INTEGER, PARAMETER               :: DEFAULT_CHARACTER_LENGTH = 128
          
+         REAL(KIND=RP)   :: RADIANS_TO_DEGREES = 180.0_RP/PI
+         REAL(KIND=RP)   :: DEGREES_TO_RADIANS = PI/180.0_RP
+         
       END MODULE SMConstants

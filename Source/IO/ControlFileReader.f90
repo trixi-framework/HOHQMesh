@@ -55,6 +55,7 @@
 !                PARAMETRIC_EQUATION_CURVE
 !                SPLINE_CURVE
 !                END_POINTS_LINE
+!                CIRCULAR_ARC
 !
 !      A PARAMETRIC_EQUATION_CURVE dictionary contains the keys
 !         TYPE
@@ -80,6 +81,16 @@
 !         name
 !         xStart
 !         xEnd
+!
+!      A CIRCULAR_ARC block contains
+!
+!         TYPE
+!         name
+!         units
+!         center
+!         radius
+!         start angle
+!         end angle
 !
 !      REFINEMENT_REGIONS dictionary contains the keys
 !         TYPE

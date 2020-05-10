@@ -16,6 +16,7 @@
       USE SMParametricEquationCurveClass
       USE SMSplineCurveClass
       USE SMLineClass
+      USE SMCircularArcClass
       USE CurveSweepClass
       USE FTValueDictionaryClass
       USE ErrorTypesModule
@@ -497,6 +498,10 @@
             CASE ("END_POINTS_LINE" )
             
                CALL ImportLineEquationBlock( self, chain, curveDict )
+            
+            CASE (CIRCULAR_ARC_CONTROL_KEY)
+            
+               CALL ImportCircularArcEquationBlock(self = self, chain = chain, arcBlockDict = curveDict)
                
             CASE DEFAULT
 
@@ -836,6 +841,157 @@
          CALL release(obj)
          
       END SUBROUTINE ImportLineEquationBlock
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ImportCircularArcEquationBlock( self, chain, arcBlockDict ) 
+         IMPLICIT NONE 
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMModel)                    :: self
+         CLASS(SMChainedCurve)   , POINTER :: chain
+         CLASS(FTValueDictionary), POINTER :: arcBlockDict
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CHARACTER(LEN=LINE_LENGTH)            :: inputLine = " "
+         CHARACTER(LEN=SM_CURVE_NAME_LENGTH)   :: curveName
+         CHARACTER(LEN=LINE_LENGTH)            :: units
+         REAL(KIND=RP), DIMENSION(3)           :: center
+         REAL(KIND=RP)                         :: radius, startAngle, endAngle
+         CLASS(SMCircularArc)   , POINTER      :: cCurve => NULL()
+         CLASS(SMCurve)         , POINTER      :: curvePtr => NULL()
+         CLASS(FTObject)        , POINTER      :: obj
+!
+!        ------------------------------------------------         
+         INTERFACE
+            FUNCTION GetRealArray( inputLine ) RESULT(x)
+               USE SMConstants
+               IMPLICIT NONE
+               REAL(KIND=RP), DIMENSION(3) :: x
+               CHARACTER ( LEN = * ) :: inputLine
+            END FUNCTION GetRealArray
+         END INTERFACE
+!        ________________________________________________
+!
+         REAL(KIND=RP), EXTERNAL :: getRealValue
+!
+!        ------------
+!        Get the data
+!        ------------
+!
+         IF( arcBlockDict % containsKey(key = 'name') )     THEN
+            curveName = arcBlockDict % stringValueForKey(key             = "name", &
+                                                          requestedLength = SM_CURVE_NAME_LENGTH)
+         ELSE
+            curveName = "circularArc"
+            CALL ThrowErrorExceptionOfType(poster = "ImportCircularArcEquationBlock",&
+                                           msg = "No name found in circular arc curve definition. Using 'circularArc' as default", &
+                                           typ = FT_ERROR_WARNING)
+            
+         END IF 
+!
+!        -----------
+!        Start Angle
+!        -----------
+!
+         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_START_ANGLE_KEY) )     THEN
+            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_START_ANGLE_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            startAngle = getRealValue(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportCircularArcEquationBlock",&
+                                           msg    = "No start angle in circular arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
+!
+!        ---------
+!        End Angle
+!        ---------
+!
+         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_END_ANGLE_KEY) )     THEN
+            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_END_ANGLE_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            endAngle = getRealValue(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportCircularArcEquationBlock",&
+                                           msg    = "No end angle in circular arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
+!
+!        -----------
+!        Angle Units
+!        -----------
+!
+         units = "radians"
+         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_UNITS_KEY) )     THEN
+            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_UNITS_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            units = GetStringValue(inputLine)
+         END IF 
+!
+!        ------
+!        Radius
+!        ------
+!
+         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_RADIUS_KEY) )     THEN
+            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_RADIUS_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            radius = getRealValue(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportCircularArcEquationBlock",&
+                                           msg    = "No radius in circular arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
+!
+!        ------
+!        Center
+!        ------
+!
+         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_CENTER_KEY) )     THEN
+            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_CENTER_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            center = GetRealArray(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportCircularArcEquationBlock",&
+                                           msg    = "No center in circular arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN 
+         END IF 
+!
+!        ----------------
+!        Create the curve
+!        ----------------
+!
+         IF ( UNITs == "degrees" )     THEN
+            startAngle = startAngle*DEGREES_TO_RADIANS
+            endAngle   = endAngle  *DEGREES_TO_RADIANS 
+         END IF 
+         
+         ALLOCATE(cCurve)
+         CALL cCurve % initWithParametersNameAndID(center     = center,        &
+                                                   radius     = radius,        &
+                                                   startAngle = startAngle,    &
+                                                   endAngle   = endAngle,      &
+                                                   cName      = curveName,     &
+                                                   id = self % curveCount + 1)
+         
+         !SMCircularArc does not throw exceptions on init
+         
+         curvePtr => cCurve
+         CALL chain  % addCurve(curvePtr)
+         obj => cCurve
+         CALL release(obj)
+         
+      END SUBROUTINE ImportCircularArcEquationBlock
 !
 !///////////////////////////////////////////////////////////////////////
 !
