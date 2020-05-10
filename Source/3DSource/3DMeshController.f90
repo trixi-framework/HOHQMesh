@@ -54,12 +54,7 @@
 !        ---------------
 !        Local Variables
 !        ---------------
-!
-         CLASS(FTObject)           , POINTER :: obj
-         CLASS(FTValueDictionary)  , POINTER :: runParamsDict
-         CHARACTER(DEFAULT_CHARACTER_LENGTH) :: str
-         
-          
+!         
          shouldGenerate3DMesh = .FALSE.
          
          IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_BLOCK_KEY) .OR. &
@@ -226,6 +221,7 @@
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg    = "unknown generator for 3D mesh found in control file", &
                                            typ    = FT_ERROR_FATAL)
+            RETURN 
          END IF
 !
 !        ---------------------------------------------------------------------
@@ -278,11 +274,6 @@
                                      N       = project % runParams % polynomialOrder)
                                      
             CALL destructCurveSweeper(self = sweeper)
-            
-         ELSE
-            CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
-                                  msg = "unknown generator for 3D mesh found in control file", &
-                                  typ = FT_ERROR_FATAL)
          END IF 
         
       END SUBROUTINE generate3DMesh
