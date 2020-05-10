@@ -243,7 +243,6 @@
       RECURSIVE SUBROUTINE DestructSMSegment(self)  
          IMPLICIT NONE
          CLASS(SMSegment)           :: self
-         CLASS(FTObject), POINTER   :: obj
                   
          CALL releaseSMSegmentedCurveNode(self % leftNode)
          CALL releaseSMSegmentedCurveNode(self % rightNode)
@@ -663,7 +662,6 @@
 !
       SUBROUTINE DestructFRSegmentedCurve( self )
          TYPE( FRSegmentedCurve )      :: self
-         CLASS(FTObject), POINTER      :: obj
          
          CALL releaseFTMutableObjectArray(self % nodeArray)
                

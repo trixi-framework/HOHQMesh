@@ -44,7 +44,6 @@
 !
          CLASS(SMCurve)         , POINTER :: cCurve   => NULL()
          CLASS(FRSegmentedCurve), POINTER :: frsCurve => NULL()
-         CLASS(FTObject)        , POINTER :: obj
          INTEGER                          :: k
          
          ALLOCATE(segmentedChain)

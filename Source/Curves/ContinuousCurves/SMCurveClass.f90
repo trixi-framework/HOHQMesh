@@ -182,7 +182,6 @@
          REAL(KIND=RP)  :: x(3)
 
          REAL(KIND=RP), DIMENSION(3) :: xp, xm, x0
-         REAL(KIND=RP)               :: tp, tm
                   
          IF ( t < dt )     THEN
             xp = self % positionAt(t + 2.0_RP*dt)

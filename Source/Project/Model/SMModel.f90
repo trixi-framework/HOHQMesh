@@ -305,12 +305,7 @@
 !        ---------------
 !        Local variables
 !        ---------------
-!
-         CLASS(FTLinkedList)       , POINTER :: outerBoundaryList
-         CLASS(FTObject)           , POINTER :: obj
-         CLASS(FTValueDictionary)  , POINTER :: blockDict
-         TYPE(FTLinkedListIterator)          :: iterator
-                  
+!                  
          CALL AssembleChainCurve(self           = self,                &
                                  curveDict      = outerBoundaryDict,   &
                                  curveChain     = self % outerBoundary,&

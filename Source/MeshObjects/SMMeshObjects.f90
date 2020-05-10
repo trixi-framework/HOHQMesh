@@ -561,8 +561,6 @@
       SUBROUTINE destructEdge(self)  
          IMPLICIT NONE  
          TYPE(SMEdge)             :: self
-         CLASS(SMNode)   , POINTER :: np => NULL()
-         CLASS(SMElement), POINTER :: ep => NULL()
          INTEGER                   :: k
          CLASS(FTObject), POINTER  :: obj
          

@@ -169,7 +169,7 @@
 !              Local variables
 !              ---------------
 !
-               REAL(KIND=RP) :: t, t0, f(3)
+               REAL(KIND=RP) :: t, t0
                REAL(KIND=RP) :: direction(3), r(3), p0(3), p1(3)
                INTEGER       :: l, m, k, j, i
                REAL(KIND=RP) :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
@@ -283,7 +283,7 @@
                INTEGER           :: l, m, k, j, i
                REAL(KIND=RP)     :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
                REAL(KIND=RP)     :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
-               REAL(KIND=RP)     :: transportV(3), v(3)
+               REAL(KIND=RP)     :: transportV(3)
                TYPE(FrenetFrame) :: refFrame, frame, prevFrame
                LOGICAL           :: isDegenerate
 !
