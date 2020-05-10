@@ -940,9 +940,6 @@
          CLASS(FTValueDictionary), POINTER       :: paramsDict
          CLASS(FTObject)         , POINTER       :: obj
          
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: typeName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
-         
          obj        => controlDict % objectForKey(key = MESH_PARAMETERS_KEY)
          paramsDict => valueDictionaryFromObject(obj)
 !

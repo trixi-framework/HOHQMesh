@@ -510,7 +510,7 @@
             CALL Dot3D(u = transportVector,v = v, dot = cosTheta)
             
             cosTheta = cosTheta
-            theta    =  -ACOS(cosTheta) ! Rotate entities in the oposite direction to counteract
+            theta    =  ACOS(cosTheta) ! Rotate entities in the oposite direction to counteract
             sinTheta =  SIN(theta)
 
             IF(ABS(theta) <= ZERO_ROTATION_TOLERANCE)   RETURN

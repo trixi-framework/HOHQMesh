@@ -44,7 +44,7 @@
 !        ---------------
 !
          REAL(KIND=RP) :: x(3), xp(3), xpp(3)
-         REAL(KIND=RP) :: d1, d2, d3, theta, cosTheta
+         REAL(KIND=RP) :: d1
          REAL(KIND=RP) :: tangent(3), B(3), Nhat(3)
 
          x   = curve % positionAt(t)
@@ -100,7 +100,6 @@
 !        Local Variables
 !        ---------------
 !
-         REAL(KIND=RP) :: B1(3), B2(3)
          REAL(KIND=RP) :: d1
          LOGICAL       :: isDegenerate
          

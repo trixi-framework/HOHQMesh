@@ -1907,8 +1907,6 @@
          TYPE(CurveInterpolant)     , POINTER :: boundaryCurves(:)
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: values
-         TYPE(RotationTransform) :: rotationTransformer
-         TYPE(ScaleTransform)  :: scaleTransformer
 !
 !        --------------------
 !        Boundary information
