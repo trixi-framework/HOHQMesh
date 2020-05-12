@@ -14,7 +14,7 @@
       TYPE RotationTransform
          REAL(KIND=RP)    :: rotationPoint(3)
          REAL(KIND=RP)    :: rotMatrix(3,3)
-         LOGICAL, PRIVATE :: isIdentityRotation
+         LOGICAL          :: isIdentityRotation
       END TYPE RotationTransform
       
       TYPE TranslationTransform

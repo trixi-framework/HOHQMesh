@@ -268,7 +268,7 @@
                                   sweepCurve = project % model % sweepCurve, &
                                   scaleCurve = project % model % scaleCurve)
                                   
-            CALL applyParallelSweepTransform(self    = sweeper,                       &
+            CALL applyPTSweepTransform(self    = sweeper,                       &
                                      mesh    = project % hexMesh,                     &
                                      dt      = dz,                                    &
                                      N       = project % runParams % polynomialOrder)

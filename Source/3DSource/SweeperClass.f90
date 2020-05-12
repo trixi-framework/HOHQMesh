@@ -261,7 +261,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-            SUBROUTINE applyParallelSweepTransform(self, mesh, dt, N)
+            SUBROUTINE applySweepTransform(self, mesh, dt, N)
                USE Frenet
                IMPLICIT NONE
 !
@@ -281,9 +281,7 @@
                REAL(KIND=RP)     :: t, t0, f(3)
                REAL(KIND=RP)     :: direction(3), r(3), p0(3), p1(3), refDirection(3)
                INTEGER           :: l, m, k, j, i
-               REAL(KIND=RP)     :: zHat(3) = [0.0_RP, 0.0_RP, 1.0_RP]
                REAL(KIND=RP)     :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
-               REAL(KIND=RP)     :: transportV(3)
                TYPE(FrenetFrame) :: refFrame, frame, prevFrame
                LOGICAL           :: isDegenerate
 !
@@ -312,6 +310,7 @@
                                    mesh = mesh, &
                                    dt   = dt,   &
                                    N    = N)
+               refDirection = self % sweepCurve % tangentAt(0.0_RP)
 !
 !              -----------------------------------------------------
 !              Transform the nodes. Each level is dt higher than the 
@@ -319,39 +318,27 @@
 !              -----------------------------------------------------
 !
                prevFrame    = refFrame
-               refDirection = self % sweepCurve % tangentAt(0.0_RP)
-               transportV   = refFrame % coNormal
                
                DO l = 0, mesh % numberofLayers ! level in the hex mesh
                
                   t = l*dt
                   r = self % sweepCurve % positionAt(t)
-                  
-                  CALL ComputeParallelFrame(t        = t,                &
-                                            curve    = self % sweepCurve,&
-                                            frame    = frame,            &
-                                            refFrame = prevFrame)
-              
-                  CALL ConstructParallelTransportRotation(rotationTransformer = self % RotationTransformer, &
-                                                          refDirection        = refDirection,               &
-                                                          transportVector     = transportV,                 &
-                                                          rotationPoint       = zero,                       &
-                                                          frame               = frame,                      &
-                                                          isDegenerate        = isDegenerate)
-                 prevFrame = frame
-                  
-                  IF ( ASSOCIATED( self % scaleCurve) )     THEN
-                     f = self % scaleCurve % positionAt(t)
-                     CALL ConstructScaleTransform(self   = self % scaleTransformer, &
-                                                  origin = r,                       &
-                                                  normal = direction,               &
-                                                  factor = f(1))
-                  END IF 
 !
 !                 ------------------------------
 !                 Apply rotation and translation
 !                 ------------------------------
 !
+                  CALL ComputeParallelFrame(t        = t,                &
+                                            curve    = self % sweepCurve,&
+                                            frame    = frame,            &
+                                            refFrame = prevFrame)
+              
+                  CALL ConstructRotationTransform(self           = self % rotationTransformer, &
+                                                  rotationPoint  = zero, &
+                                                  startDirection = refDirection, &
+                                                  newDirection   = frame % tangent)
+                  prevFrame = frame
+                  
                   DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
                      p0    = mesh % nodes(m,l) % x - t*refDirection
                      p1    = PerformRotationTransform(x              = p0 , &
@@ -365,12 +352,19 @@
 !                 -----------------------
 !
                   IF ( ASSOCIATED( self % scaleCurve) )     THEN
-                      DO m = 1, SIZE(mesh % nodes,1) ! Points in the quad mesh
+                     f = self % scaleCurve % positionAt(t)
+                     CALL ConstructScaleTransform(self   = self % scaleTransformer, &
+                                                  origin = r,                       &
+                                                  normal = direction,               &
+                                                  factor = f(1))
+                                                  
+                     DO m = 1, SIZE(mesh % nodes,1)
                         p0 = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
                                                         transformation = self % scaleTransformer)
                         mesh % nodes(m,l) % x = p0
                       END DO
-                 END IF 
+                      
+                  END IF 
                  
                END DO
 !
@@ -410,22 +404,11 @@
                                                   curve    = self % sweepCurve,&
                                                   frame    = frame,            &
                                                   refFrame = prevFrame)
-                                                  
-                        CALL ConstructParallelTransportRotation(rotationTransformer = self % RotationTransformer, &
-                                                                refDirection        = refDirection,               &
-                                                                transportVector     = transportV,                 &
-                                                                rotationPoint       = zero,                       &
-                                                                frame               = frame,                      &
-                                                                isDegenerate        = isDegenerate)
+                         CALL ConstructRotationTransform(self           = self % rotationTransformer, &
+                                                        rotationPoint  = zero, &
+                                                        startDirection = refDirection, &
+                                                        newDirection   = frame % tangent)
                         prevFrame = frame
-                        
-                        IF ( ASSOCIATED( self % scaleCurve) )     THEN
-                          f = self % scaleCurve % positionAt(t)
-                          CALL ConstructScaleTransform(self   = self % scaleTransformer, &
-                                                       origin = r,                       &
-                                                       normal = direction,               &
-                                                       factor = f(1))
-                       END IF 
 !
 !                      ---------------------------------------------------------------------
 !                      For each point i,j at level k within element m at level l in hex mesh
@@ -449,6 +432,12 @@
 !                       -------------
 !
                         IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                        
+                          f = self % scaleCurve % positionAt(t)
+                          CALL ConstructScaleTransform(self   = self % scaleTransformer, &
+                                                       origin = r,                       &
+                                                       normal = direction,               &
+                                                       factor = f(1))
                            DO j = 0, N 
                               DO i = 0, N 
                                  p0 = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
@@ -462,12 +451,253 @@
                   END DO 
                END DO
               
-            END SUBROUTINE applyParallelSweepTransform
+            END SUBROUTINE applySweepTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-         SUBROUTINE ConstructParallelTransportRotation( rotationTransformer, refDirection,  transportVector, &
-                                                        rotationPoint, frame, isDegenerate )
+            SUBROUTINE applyPTSweepTransform(self, mesh, dt, N)
+               USE Frenet
+               IMPLICIT NONE
+!
+!              ---------
+!              Arguments
+!              ---------
+!
+               TYPE(CurveSweeper)      :: self
+               TYPE(StructuredHexMesh) :: mesh
+               INTEGER                 :: N
+               REAL(KIND=RP)           :: dt
+!
+!              ---------------
+!              Local variables
+!              ---------------
+!
+               REAL(KIND=RP)     :: t, t0, tm, f(3), rm(3)
+               REAL(KIND=RP)     :: direction(3), r(3), p0(3), p1(3)
+               INTEGER           :: l, m, k, j, i
+               TYPE(FrenetFrame) :: refFrame, frame, prevFrame
+               LOGICAL           :: isDegenerate
+!
+!              -------------------------------------------------------
+!              Rotate the swept cylinder make the first face normal to
+!              the sweep curve
+!              -------------------------------------------------------
+!
+               CALL rotateCylinder(self = self, &
+                                   mesh = mesh, &
+                                   dt   = dt,   &
+                                   N    = N)
+!
+!              ----------------------------------
+!              Move the first plane into position
+!              ----------------------------------
+!
+               r   = self % sweepCurve % positionAt(0.0_RP)
+               DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
+                  mesh % nodes(m,l) % x = mesh % nodes(m,l) % x + r
+               END DO
+               !TODO Must scale first plane here
+!
+!              ---------------------------------------------------------
+!              The reference frame is the first frame of the sweep curve 
+!              ---------------------------------------------------------
+!
+               CALL ComputeFrenetFrame(frame        = refFrame,         &
+                                       t            = 0.0_RP,            &
+                                       curve        = self % sweepCurve, &
+                                       isDegenerate = isDegenerate)
+               prevFrame = refFrame
+!
+!              -------------------------------------------------
+!              Transform the node locations. The first plane has
+!              already been transformed
+!              -------------------------------------------------
+!
+               DO l = 1, mesh % numberofLayers ! level in the hex mesh
+               
+                  t   = l*dt
+                  tm  = (l-1)*dt
+                  r   = self % sweepCurve % positionAt(t)
+                  rm  = self % sweepCurve % positionAt(tm)
+!
+!                 ----------------------------------------------------
+!                 Compute the frame at the next level and the rotation
+!                 transformation to rotate level (l-1) to l
+!                 ----------------------------------------------------
+!
+                  CALL ComputeParallelFrame(t        = t,                 &
+                                            curve    = self % sweepCurve, &
+                                            frame    = frame,             &
+                                            refFrame = prevFrame)
+                                            
+                  CALL ConstructPTransportRotation(rotationTransformer = self % rotationTransformer, &
+                                                   T0                  = prevFrame % tangent,        &
+                                                   T1                  = frame % tangent)
+                  prevFrame = frame
+!
+!                 -------------------------------------------------------
+!                 Transform each node at level l from the location at l-1
+!                 -------------------------------------------------------
+!
+                  DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
+                     p0    = mesh % nodes(m,l-1) % x - rm
+                     p1    = PerformRotationTransform(x              = p0 , &
+                                                      transformation = self % RotationTransformer)
+                     
+                     mesh % nodes(m,l) % x = p1 + r
+                  END DO
+!
+!                 -----------------------
+!                 Apply scaling transform
+!                 -----------------------
+!
+                  IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                     f = self % scaleCurve % positionAt(t)
+                     CALL ConstructScaleTransform(self   = self % scaleTransformer, &
+                                                  origin = r,                       &
+                                                  normal = direction,               &
+                                                  factor = f(1))
+                                                  
+                     DO m = 1, SIZE(mesh % nodes,1)
+                        p0 = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
+                                                        transformation = self % scaleTransformer)
+                        mesh % nodes(m,l) % x = p0
+                      END DO
+                      
+                  END IF 
+                 
+               END DO
+!
+!              ------------------------------------------------------
+!                             Transform the internal DOFs
+!
+!              We will assume that the curve is curved, otherwise the
+!              simple extrusion would be used. So then all faces
+!              will be curved, too
+!              ------------------------------------------------------
+!
+               prevFrame = refFrame !Reset to beginning
+!
+!              ----------------------
+!              For each element level
+!              ----------------------
+!
+               DO l = 1, mesh % numberOfLayers 
+                  t0 = (l-1)*dt
+!
+!                 -------------------------
+!                 For each plane at level l
+!                 -------------------------
+!
+                  IF ( l == 1 )     THEN
+!
+!                    -----------------------------------------------------------
+!                    On the first plane, just move into position since roatation
+!                    was done on the whole cylinder
+!                    -----------------------------------------------------------
+!
+                      r = self % sweepCurve % positionAt(t0)
+                      
+                      DO m = 1, mesh % numberOfQuadElements
+                         DO j = 0, N 
+                             DO i = 0, N 
+                                mesh % elements(m,l) % x(:,i,j,0) = mesh % elements(m,l) % x(:,i,j,0) + r
+                             END DO 
+                         END DO 
+                         !TODO must scale
+                      END DO 
+                  ELSE 
+!
+!                    -----------------------------------------------------------
+!                    On succeeding planes, copy top of previous one to bottom of
+!                    this one
+!                    -----------------------------------------------------------
+!
+                      DO m = 1, mesh % numberOfQuadElements
+                         DO j = 0, N 
+                             DO i = 0, N 
+                                mesh % elements(m,l) % x(:,i,j,0) = mesh % elements(m,l-1) % x(:,i,j,N)
+                             END DO 
+                         END DO 
+                      END DO 
+                  END IF 
+                  
+                  DO k = 1, N
+                     t  = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
+                     tm = t0 + dt*0.5_RP*(1.0_RP - COS((k-1)*PI/N))
+                     r  = self % sweepCurve % positionAt(t)
+                     rm = self % sweepCurve % positionAt(tm)
+!
+!                    --------------------------------------------------
+!                    Compute the rotation transformation for this plane
+!                    --------------------------------------------------
+!
+                     CALL ComputeParallelFrame(t        = t,                 &
+                                               curve    = self % sweepCurve, &
+                                               frame    = frame,             &
+                                               refFrame = prevFrame)
+                                               
+                     CALL ConstructPTransportRotation(rotationTransformer = self % rotationTransformer, &
+                                                      T0                  = prevFrame % tangent,        &
+                                                      T1                  = frame % tangent)
+                     prevFrame = frame
+!
+!                    --------------------------------------------
+!                    Compute the scaling transform for this plane
+!                    --------------------------------------------
+!
+                     IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                     
+                       f = self % scaleCurve % positionAt(t)
+                       CALL ConstructScaleTransform(self   = self % scaleTransformer, &
+                                                    origin = r,                       &
+                                                    normal = direction,               &
+                                                    factor = f(1))
+                     END IF 
+!
+!                    ---------------------------------------------------------------------
+!                    For each point i,j at level k within element m at level l in hex mesh
+!                    ---------------------------------------------------------------------
+!
+                     DO m = 1, mesh % numberOfQuadElements    ! element on original quad mesh
+                        mesh % elements(m,l) % bFaceFlag = ON                     
+!                       ------------------------------
+!                       Apply rotation and translation
+!                       ------------------------------
+!
+                        DO j = 0, N 
+                           DO i = 0, N 
+                              p0    = mesh % elements(m,l) % x(:,i,j,k-1) - rm
+                              p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
+                              
+                              mesh % elements(m,l) % x(:,i,j,k) = p1 + r
+                           END DO 
+                        END DO 
+!
+!                       -------------
+!                       Apply scaling
+!                       -------------
+!
+                        IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                     
+                           DO j = 0, N 
+                              DO i = 0, N 
+                                 p0 = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
+                                                                 transformation = self % scaleTransformer)
+                                 mesh % elements(m,l) % x(:,i,j,k) = p0
+                              END DO 
+                           END DO 
+                        END IF 
+                        
+                     END DO
+                  END DO 
+               END DO 
+              
+            END SUBROUTINE applyPTSweepTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+         SUBROUTINE ConstructPTransportRotation( rotationTransformer, T0, T1 )
             IMPLICIT NONE
 !
 !           ---------
@@ -475,42 +705,36 @@
 !           ---------
 !
             TYPE(RotationTransform) :: rotationTransformer
-            REAL(KIND=RP)           :: refDirection(3)    ! Start direction of sweep curve
-            REAL(KIND=RP)           :: rotationPoint(3)   ! Start point of the sweep curve
-            REAL(KIND=RP)           :: transportVector(3) ! Vector whose orientation is to be maintained
-            TYPE(FrenetFrame)       :: frame              ! Frenet frame for current point along sweep curve
-            LOGICAL                 :: isDegenerate       ! If the Frenet frame is degenerate or not
+            REAL(KIND=RP)           :: T0(3), T1(3)
 !
 !           ---------------
 !           Local variables
 !           ---------------
 !
-            REAL(KIND=RP) :: rotMat(3,3)
             REAL(KIND=RP) :: R(3,3)
             REAL(KIND=RP) :: cosTheta, theta, sinTheta
-            REAL(KIND=RP) :: v(3)
+            REAL(KIND=RP) :: B(3), Bnorm
 !
 !           ------------------------------
 !           Compute the rotation transform
 !           ------------------------------
 !
-            CALL ConstructRotationTransform(self           = rotationTransformer, &
-                                            rotationPoint  = rotationPoint, &
-                                            startDirection = refDirection, &
-                                            newDirection   = frame % tangent)
-            IF(isDegenerate) RETURN 
+            CALL ConstructIdentityRotationTransform(self = rotationTransformer)
 !
 !           ------------------------------------------------------------
 !           Find the angle by which the transportVector would be rotated
 !           ------------------------------------------------------------
 !
-            v =  PerformRotationTransform(x              = transportVector,      &
-                                          transformation = rotationTransformer)
-            CALL Normalize(v)
-            CALL Dot3D(u = transportVector,v = v, dot = cosTheta)
+            CALL Cross3D(u = T0,v = T1,cross = B)
+            CALL Norm3D(u = B,norm = Bnorm)
             
-            cosTheta = cosTheta
-            theta    =  ACOS(cosTheta) ! Rotate entities in the oposite direction to counteract
+            IF(Bnorm < ZERO_ROTATION_TOLERANCE) RETURN 
+            
+            B = B/Bnorm
+            
+            CALL Dot3D(u = T0,v = T1,dot = cosTheta)
+            
+            theta    =  ACOS(cosTheta)
             sinTheta =  SIN(theta)
 
             IF(ABS(theta) <= ZERO_ROTATION_TOLERANCE)   RETURN
@@ -519,18 +743,13 @@
 !           Compute rotation matrix to counteract the twist
 !           -----------------------------------------------
 !
-            CALL RotationMatrixWithNormalAndAngle(nHat     = frame % tangent, &
+            CALL RotationMatrixWithNormalAndAngle(nHat     = B,               &
                                                   cosTheta = cosTheta,        &
                                                   SinTheta = sinTheta,        &
                                                   R        = R)
-!
-!           ---------------
-!           Combine the two
-!           ---------------
-!
-            rotMat = MATMUL(MATRIX_A = R, MATRIX_B = rotationTransformer % rotMatrix)
-            rotationTransformer % rotMatrix = rotMat
-             
-         END SUBROUTINE ConstructParallelTransportRotation
-         
+            rotationTransformer % rotMatrix          = R
+            rotationTransformer % isIdentityRotation = .FALSE.
+                                                        
+         END SUBROUTINE ConstructPTransportRotation
+        
        END Module CurveSweepClass
