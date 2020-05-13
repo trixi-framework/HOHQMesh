@@ -157,15 +157,16 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject)           , POINTER   :: obj
-         CLASS(FTValueDictionary)  , POINTER   :: generatorDict
-         INTEGER                               :: numberOfLayers
-         CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: subdivisionsKey
-         INTEGER                               :: algorithmChoice = NONE
-         INTEGER                               :: pMutation, rotAxis
-         INTEGER                               :: rotMap(3) = [3, 3, 1]
-         REAL(KIND=RP)                         :: dz, h
-         TYPE(CurveSweeper)                    :: sweeper
+         CLASS(FTObject)           , POINTER     :: obj
+         CLASS(FTValueDictionary)  , POINTER     :: generatorDict
+         INTEGER                                 :: numberOfLayers
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH)   :: subdivisionsKey
+         INTEGER                                 :: algorithmChoice = NONE
+         INTEGER                                 :: pMutation, rotAxis
+         INTEGER                                 :: rotMap(3) = [3, 3, 1]
+         REAL(KIND=RP)                           :: dz, h
+         TYPE(CurveSweeper)                      :: sweeper
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: sweepAlgorithm
 !
 !        ----------
 !        Interfaces
@@ -217,6 +218,13 @@
                              project % model % sweepCurve % numberOfCurvesInChain
             pMutation      = 3
             dz             = 1.0_RP/numberOfLayers
+            IF ( generatorDict % containsKey(key = CURVE_SWEEP_ALGORITHM_KEY) )     THEN
+               sweepAlgorithm = generatorDict % stringValueForKey(key             = CURVE_SWEEP_ALGORITHM_KEY, &
+                                                                  requestedLength = DEFAULT_CHARACTER_LENGTH) 
+            ELSE 
+               sweepAlgorithm = "default" 
+            END IF 
+            !^ 
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg    = "unknown generator for 3D mesh found in control file", &
@@ -266,9 +274,10 @@
          
             CALL ConstructCurveSweeper(self  = sweeper,                      &
                                   sweepCurve = project % model % sweepCurve, &
-                                  scaleCurve = project % model % scaleCurve)
+                                  scaleCurve = project % model % scaleCurve, &
+                                  sweepAlgorithm = sweepAlgorithm)
                                   
-            CALL applyPTSweepTransform(self    = sweeper,                       &
+            CALL applySweepTransform(self    = sweeper,                               &
                                      mesh    = project % hexMesh,                     &
                                      dt      = dz,                                    &
                                      N       = project % runParams % polynomialOrder)

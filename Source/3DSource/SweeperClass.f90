@@ -33,6 +33,7 @@
             CLASS(SMChainedCurve), POINTER :: scaleCurve
             TYPE(RotationTransform)        :: RotationTransformer
             TYPE(ScaleTransform)           :: scaleTransformer
+            INTEGER                        :: sweepAlgorithm
          END TYPE CurveSweeper
 
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SWEEP_CURVE_CONTROL_KEY          = "SWEEP_ALONG_CURVE"
@@ -41,8 +42,10 @@
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_SUBDIVISIONS_KEY     = "subdivisions per segment"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_STARTNAME_KEY        = "start surface name"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_ENDNAME_KEY          = "end surface name"
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_ALGORITHM_KEY        = "algorithm"
          
          REAL(KIND=RP), PARAMETER, PRIVATE :: ZERO_ROTATION_TOLERANCE = 1.0d-4
+         INTEGER      , PARAMETER, PRIVATE :: CS_DEFAULT = 0, CS_HANSON = 1
 ! 
 !        ========
          CONTAINS  
@@ -50,11 +53,12 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-         SUBROUTINE ConstructCurveSweeper(self, sweepCurve, scaleCurve)  
+         SUBROUTINE ConstructCurveSweeper(self, sweepCurve, scaleCurve, sweepAlgorithm)  
             IMPLICIT NONE  
             TYPE( CurveSweeper)            :: self
             CLASS(SMChainedCurve), POINTER :: sweepCurve
             CLASS(SMChainedCurve), POINTER :: scaleCurve
+            CHARACTER(LEN=*)               :: sweepAlgorithm
             
             self % sweepCurve => sweepCurve
             IF(ASSOCIATED(sweepCurve)) CALL self % sweepCurve % retain()
@@ -64,6 +68,13 @@
             
             CALL ConstructIdentityScaleTransform   (self = self % scaleTransformer)
             CALL ConstructIdentityRotationTransform(self = self % RotationTransformer)
+            
+            SELECT CASE ( sweepAlgorithm )
+               CASE( "Hanson", "hanson" ) 
+                  self % sweepAlgorithm = CS_HANSON 
+               CASE DEFAULT 
+                  self % sweepAlgorithm = CS_DEFAULT
+            END SELECT 
               
          END SUBROUTINE ConstructCurveSweeper
 !
@@ -262,6 +273,42 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
             SUBROUTINE applySweepTransform(self, mesh, dt, N)
+!
+!           --------------------------------------------------------------------
+!           Basic sweeping along a curve. Does not correct for rotation, so best
+!           for curves that reamin in a plane. 
+!           --------------------------------------------------------------------
+!
+               USE Frenet
+               IMPLICIT NONE
+!
+!              ---------
+!              Arguments
+!              ---------
+!
+               TYPE(CurveSweeper)      :: self
+               TYPE(StructuredHexMesh) :: mesh
+               INTEGER                 :: N
+               REAL(KIND=RP)           :: dt
+               
+               SELECT CASE ( self % sweepAlgorithm )
+                  CASE( CS_HANSON ) 
+                     CALL applyHansonSweepTransform(self = self,mesh = mesh,dt = dt,N = N)
+                  CASE DEFAULT 
+                     CALL applyDefaultSweepTransform(self = self,mesh = mesh,dt = dt,N = N)
+               END SELECT 
+              
+               END SUBROUTINE applySweepTransform
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+            SUBROUTINE applyDefaultSweepTransform(self, mesh, dt, N)
+!
+!           --------------------------------------------------------------------
+!           Basic sweeping along a curve. Does not correct for rotation, so best
+!           for curves that reamin in a plane. 
+!           --------------------------------------------------------------------
+!
                USE Frenet
                IMPLICIT NONE
 !
@@ -451,11 +498,17 @@
                   END DO 
                END DO
               
-            END SUBROUTINE applySweepTransform
+            END SUBROUTINE applyDefaultSweepTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-            SUBROUTINE applyPTSweepTransform(self, mesh, dt, N)
+            SUBROUTINE applyHansonSweepTransform(self, mesh, dt, N)
+!
+!           -------------------------------------------------------------------------------
+!           Applies Hanson and Ma's algorthm to use parallel transport
+!           to sweep a curve. This algorithm is general, but is only second order accurate.
+!           -------------------------------------------------------------------------------
+!
                USE Frenet
                IMPLICIT NONE
 !
@@ -693,7 +746,7 @@
                   END DO 
                END DO 
               
-            END SUBROUTINE applyPTSweepTransform
+            END SUBROUTINE applyHansonSweepTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
