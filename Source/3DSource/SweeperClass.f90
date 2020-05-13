@@ -8,7 +8,8 @@
 !      Class for sweeping a 2D mesh into hexahedra by following a curve.
 !
 !      SWEEP_ALONG_CURVE contains the keys
-!         subdivisions
+!         algorithm   (optional)
+!         subdivisions per segment
 !         start surface name
 !         end surface name
 !

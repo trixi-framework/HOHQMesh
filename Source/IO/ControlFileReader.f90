@@ -112,7 +112,7 @@
 !         h
 !         w
 !      
-!      An ROTATION_TRANSFORMATION contains the keys
+!      A ROTATION_TRANSFORMATION contains the keys
 !         TYPE
 !         direction
 !         rotationPoint
