@@ -275,12 +275,10 @@
 ! 
             SUBROUTINE applySweepTransform(self, mesh, dt, N)
 !
-!           --------------------------------------------------------------------
-!           Basic sweeping along a curve. Does not correct for rotation, so best
-!           for curves that reamin in a plane. 
-!           --------------------------------------------------------------------
+!           --------------------------------------------------
+!           Sweep according to the chosen algorithm and scale.
+!           --------------------------------------------------
 !
-               USE Frenet
                IMPLICIT NONE
 !
 !              ---------
@@ -291,14 +289,26 @@
                TYPE(StructuredHexMesh) :: mesh
                INTEGER                 :: N
                REAL(KIND=RP)           :: dt
-               
+!
+!              ---------------------
+!              Sweep along the curve
+!              ---------------------
+!
                SELECT CASE ( self % sweepAlgorithm )
                   CASE( CS_HANSON ) 
                      CALL applyHansonSweepTransform(self = self,mesh = mesh,dt = dt,N = N)
                   CASE DEFAULT 
                      CALL applyDefaultSweepTransform(self = self,mesh = mesh,dt = dt,N = N)
                END SELECT 
-              
+!
+!              ----------------
+!              Scale the result
+!              ----------------
+!
+               IF ( ASSOCIATED( self % scaleCurve) )     THEN
+                  CALL applyScaling(self = self, mesh = mesh, dt = dt, N = N)
+               END IF 
+
                END SUBROUTINE applySweepTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -526,8 +536,8 @@
 !              Local variables
 !              ---------------
 !
-               REAL(KIND=RP)     :: t, t0, tm, f(3), rm(3)
-               REAL(KIND=RP)     :: direction(3), r(3), p0(3), p1(3)
+               REAL(KIND=RP)     :: t, t0, tm, rm(3)
+               REAL(KIND=RP)     :: r(3), p0(3), p1(3)
                INTEGER           :: l, m, k, j, i
                TYPE(FrenetFrame) :: refFrame, frame, prevFrame
                LOGICAL           :: isDegenerate
@@ -548,15 +558,14 @@
 !
                r   = self % sweepCurve % positionAt(0.0_RP)
                DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
-                  mesh % nodes(m,l) % x = mesh % nodes(m,l) % x + r
+                  mesh % nodes(m,0) % x = mesh % nodes(m,0) % x + r
                END DO
-               !TODO Must scale first plane here
 !
 !              ---------------------------------------------------------
 !              The reference frame is the first frame of the sweep curve 
 !              ---------------------------------------------------------
 !
-               CALL ComputeFrenetFrame(frame        = refFrame,         &
+               CALL ComputeFrenetFrame(frame        = refFrame,          &
                                        t            = 0.0_RP,            &
                                        curve        = self % sweepCurve, &
                                        isDegenerate = isDegenerate)
@@ -584,7 +593,7 @@
                                             frame    = frame,             &
                                             refFrame = prevFrame)
                                             
-                  CALL ConstructPTransportRotation(rotationTransformer = self % rotationTransformer, &
+                  CALL ConstructHansonRotation(rotationTransformer = self % rotationTransformer, &
                                                    T0                  = prevFrame % tangent,        &
                                                    T1                  = frame % tangent)
                   prevFrame = frame
@@ -600,26 +609,7 @@
                      
                      mesh % nodes(m,l) % x = p1 + r
                   END DO
-!
-!                 -----------------------
-!                 Apply scaling transform
-!                 -----------------------
-!
-                  IF ( ASSOCIATED( self % scaleCurve) )     THEN
-                     f = self % scaleCurve % positionAt(t)
-                     CALL ConstructScaleTransform(self   = self % scaleTransformer, &
-                                                  origin = r,                       &
-                                                  normal = direction,               &
-                                                  factor = f(1))
-                                                  
-                     DO m = 1, SIZE(mesh % nodes,1)
-                        p0 = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
-                                                        transformation = self % scaleTransformer)
-                        mesh % nodes(m,l) % x = p0
-                      END DO
-                      
-                  END IF 
-                 
+                  
                END DO
 !
 !              ------------------------------------------------------
@@ -658,7 +648,6 @@
                                 mesh % elements(m,l) % x(:,i,j,0) = mesh % elements(m,l) % x(:,i,j,0) + r
                              END DO 
                          END DO 
-                         !TODO must scale
                       END DO 
                   ELSE 
 !
@@ -691,23 +680,10 @@
                                                frame    = frame,             &
                                                refFrame = prevFrame)
                                                
-                     CALL ConstructPTransportRotation(rotationTransformer = self % rotationTransformer, &
+                     CALL ConstructHansonRotation(rotationTransformer = self % rotationTransformer, &
                                                       T0                  = prevFrame % tangent,        &
                                                       T1                  = frame % tangent)
                      prevFrame = frame
-!
-!                    --------------------------------------------
-!                    Compute the scaling transform for this plane
-!                    --------------------------------------------
-!
-                     IF ( ASSOCIATED( self % scaleCurve) )     THEN
-                     
-                       f = self % scaleCurve % positionAt(t)
-                       CALL ConstructScaleTransform(self   = self % scaleTransformer, &
-                                                    origin = r,                       &
-                                                    normal = direction,               &
-                                                    factor = f(1))
-                     END IF 
 !
 !                    ---------------------------------------------------------------------
 !                    For each point i,j at level k within element m at level l in hex mesh
@@ -715,6 +691,7 @@
 !
                      DO m = 1, mesh % numberOfQuadElements    ! element on original quad mesh
                         mesh % elements(m,l) % bFaceFlag = ON                     
+!
 !                       ------------------------------
 !                       Apply rotation and translation
 !                       ------------------------------
@@ -727,21 +704,6 @@
                               mesh % elements(m,l) % x(:,i,j,k) = p1 + r
                            END DO 
                         END DO 
-!
-!                       -------------
-!                       Apply scaling
-!                       -------------
-!
-                        IF ( ASSOCIATED( self % scaleCurve) )     THEN
-                     
-                           DO j = 0, N 
-                              DO i = 0, N 
-                                 p0 = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
-                                                                 transformation = self % scaleTransformer)
-                                 mesh % elements(m,l) % x(:,i,j,k) = p0
-                              END DO 
-                           END DO 
-                        END IF 
                         
                      END DO
                   END DO 
@@ -751,7 +713,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-         SUBROUTINE ConstructPTransportRotation( rotationTransformer, T0, T1 )
+         SUBROUTINE ConstructHansonRotation( rotationTransformer, T0, T1 )
             IMPLICIT NONE
 !
 !           ---------
@@ -804,6 +766,150 @@
             rotationTransformer % rotMatrix          = R
             rotationTransformer % isIdentityRotation = .FALSE.
                                                         
-         END SUBROUTINE ConstructPTransportRotation
-        
+         END SUBROUTINE ConstructHansonRotation
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+         SUBROUTINE applyScaling(self, mesh, dt, N)  
+            IMPLICIT NONE  
+!
+!           ---------
+!           Arguments
+!           ---------
+!
+            TYPE(CurveSweeper)      :: self
+            TYPE(StructuredHexMesh) :: mesh
+            REAL(KIND=RP)           :: dt
+            INTEGER                 :: N
+!
+!           ---------------
+!           Local Variables
+!           ---------------
+!
+            REAL(KIND=RP)     :: t
+            REAL(KIND=RP)     :: direction(3), r(3), t0
+            INTEGER           :: l, k
+!
+!           ---------------
+!           Scale the nodes
+!           ---------------
+!
+            DO l = 0, mesh % numberofLayers
+            
+               t   = l*dt
+               r         = self % sweepCurve % positionAt(t)
+               direction = self % sweepCurve % tangentAt(t)
+               
+               CALL scaleNodes(self      = self,       &
+                               mesh      = mesh,       &
+                               t         = t,          &
+                               level     = l,          &
+                               r         = r,          &
+                               direction = direction)
+            END DO
+!
+!           -----------------------
+!           Scale the internal DOFs
+!           -----------------------
+!
+            DO l = 1, mesh % numberofLayers
+            
+               t0   = (l-1)*dt
+               DO k = 0, N
+                  t         = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
+                  r         = self % sweepCurve % positionAt(t)
+                  direction = self % sweepCurve % tangentAt(t)
+                 
+                  CALL scaleInternalDOFs(self      = self,       &
+                                         mesh      = mesh,       &
+                                         t         = t,          &
+                                         level     = l,          &
+                                         glLevel   = k,          &
+                                         r         = r,          &
+                                         direction = direction,  &
+                                         N         = N)
+               END DO 
+            END DO 
+            
+         END SUBROUTINE applyScaling
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+         SUBROUTINE scaleNodes(self, mesh, t, level, r, direction)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(CurveSweeper)      :: self
+         TYPE(StructuredHexMesh) :: mesh
+         REAL(KIND=RP)           :: t
+         INTEGER                 :: level
+         REAL(KIND=RP)           :: direction(3)
+         REAL(KIND=RP)           :: r(3)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP) :: f(3), p0(3)
+         INTEGER       :: m
+         
+         f = self % scaleCurve % positionAt(t)
+         CALL ConstructScaleTransform(self   = self % scaleTransformer, &
+                                      origin = r,                       &
+                                      normal = direction,               &
+                                      factor = f(1))
+                                      
+         DO m = 1, SIZE(mesh % nodes,1)
+            p0 = PerformScaleTransformation(x              = mesh % nodes(m,level) % x, &
+                                            transformation = self % scaleTransformer)
+            mesh % nodes(m,level) % x = p0
+          END DO
+                      
+         END SUBROUTINE scaleNodes
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+         SUBROUTINE scaleInternalDOFs(self, mesh, t, level, glLevel, r, direction, N)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(CurveSweeper)      :: self
+         TYPE(StructuredHexMesh) :: mesh
+         REAL(KIND=RP)           :: t
+         INTEGER                 :: level, glLevel, N
+         REAL(KIND=RP)           :: direction(3)
+         REAL(KIND=RP)           :: r(3)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP) :: f(3), p0(3)
+         INTEGER       :: m, i, j
+         
+         f = self % scaleCurve % positionAt(t)
+         CALL ConstructScaleTransform(self   = self % scaleTransformer, &
+                                      origin = r,                       &
+                                      normal = direction,               &
+                                      factor = f(1))
+                                      
+         DO m = 1, mesh % numberOfQuadElements
+            DO j = 0, N 
+               DO i = 0, N 
+                  p0 = PerformScaleTransformation(x              =  mesh % elements(m,level) % x(:,i,j,glLevel), &
+                                                  transformation = self % scaleTransformer)
+                   mesh % elements(m,level) % x(:,i,j,glLevel) = p0
+               END DO 
+            END DO 
+            
+         END DO
+                      
+         END SUBROUTINE scaleInternalDOFs
+         
        END Module CurveSweepClass

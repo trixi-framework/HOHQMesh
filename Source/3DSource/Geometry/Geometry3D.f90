@@ -236,6 +236,7 @@
          self % normal      = normal
          self % scaleFactor = factor
          self % isIdentityScale = .FALSE.
+
       END SUBROUTINE ConstructScaleTransform
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -245,12 +246,27 @@
          TYPE(ScaleTransform) :: transformation
          REAL(KIND=RP)        :: x(3)
          REAL(KIND=RP)        :: y(3), xPerp(3), xDotN
-         
-         CALL Dot3D(u = transformation % normal,v = x,dot = xDotN)
-         xPerp = x - xDotN*transformation % normal
-         
-         y = transformation % scaleFactor*(xPerp- transformation % origin) + transformation % origin
-         y = y + xDotN*transformation % normal
+!
+!        ---------------
+!        Move the origin
+!        ---------------
+!
+         y = x - transformation % origin
+!
+!        -------------------------
+!        Get trangential component
+!        -------------------------
+!
+         CALL Dot3D(u = transformation % normal,v = y,dot = xDotN)
+         xPerp = y - xDotN*transformation % normal
+!
+!        ------------------------------------------------------------------------
+!        Scale the tangential component, add back normal component and shift back
+!        to current location
+!        ------------------------------------------------------------------------
+!
+         y = transformation % scaleFactor*xPerp + xDotN*transformation % normal
+         y = y + transformation % origin
          
       END FUNCTION PerformScaleTransformation
 !

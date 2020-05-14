@@ -422,7 +422,7 @@
             obj                => controlDict % objectForKey(key = ROTATION_TRANSFORM_BLOCK_KEY)
             rotationTransformDict => valueDictionaryFromObject(obj)
             CALL SetRotationTransformBlock(rotationBlockDict   = rotationTransformDict,     &
-                                         rotationTransformer = self % rotationTransformer)
+                                           rotationTransformer = self % rotationTransformer)
          END IF 
 !
 !        ---------------------------
@@ -1349,10 +1349,10 @@
                                               poster     = "SetRotationTransformBlock")
          IF(ReturnOnFatalError()) RETURN
          
-         CALL ConstructRotationTransform(self           = rotationTransformer,          &
-                                       rotationPoint    = t,                          &
-                                       startDirection = [0.0_RP,0.0_RP,1.0_RP],     &
-                                       newDirection   = d)
+         CALL ConstructRotationTransform(self           = rotationTransformer,        &
+                                         rotationPoint  = t,                          &
+                                         startDirection = [0.0_RP,0.0_RP,1.0_RP],     &
+                                         newDirection   = d)
 
       END SUBROUTINE SetRotationTransformBlock
 
