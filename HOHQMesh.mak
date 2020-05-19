@@ -27,6 +27,7 @@ EquationEvaluatorClass.o \
 FatalErrorException.o \
 FileAndStringProcessing.o \
 fmin.o \
+Frenet.o \
 FRSegmentedCurveClass.o \
 FTDataClass.o \
 FTDictionaryClass.o \
@@ -73,6 +74,7 @@ SimpleSweep.o \
 Sizer.o \
 SizerControls.o \
 SMChainedCurveClass.o \
+SMCircularArc.o \
 SMConstants.o \
 SMCurveClass.o \
 SMLine.o \
@@ -81,6 +83,7 @@ SMMeshObjects.o \
 SMModel.o \
 SMSplineCurveClass.o \
 SpringMeshSmoother.o \
+SweeperClass.o \
 Templates.o \
 TimerClass.o \
 TransfiniteMapClass.o \
@@ -95,6 +98,7 @@ HOHQMesh : $(OBJS)
 3DMeshController.o : ${HOQMeshPath}/Source/3DSource/3DMeshController.f90 \
 FTValueDictionaryClass.o \
 SimpleSweep.o \
+SweeperClass.o \
 HexMeshObjects.o \
 SMMeshObjects.o \
 FatalErrorException.o \
@@ -132,10 +136,10 @@ SMMeshClass.o
 
 ControlFileReader.o : ${HOQMeshPath}/Source/IO/ControlFileReader.f90 \
 FTExceptionClass.o \
-Encoder.o \
+FatalErrorException.o \
 FTExceptionClass.o \
 FTStringSetClass.o \
-FatalErrorException.o \
+Encoder.o \
 FTValueDictionaryClass.o \
 FTStackClass.o \
 FTLinkedListClass.o \
@@ -177,6 +181,11 @@ fmin.o : ${HOQMeshPath}/Source/Curves/fmin.f90 \
 SMCurveClass.o \
 ProgramGlobals.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Curves/fmin.f90
+
+Frenet.o : ${HOQMeshPath}/Source/3DSource/Geometry/Frenet.f90 \
+SMCurveClass.o \
+Geometry3D.o
+	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/3DSource/Geometry/Frenet.f90
 
 FRSegmentedCurveClass.o : ${HOQMeshPath}/Source/Curves/DiscreteCurves/FRSegmentedCurveClass.f90 \
 SMConstants.o \
@@ -335,8 +344,9 @@ MeshBoundaryMethods.o
 MeshGeneratorMethods.o : ${HOQMeshPath}/Source/Mesh/MeshGeneratorMethods.f90 \
 FatalErrorException.o \
 MeshCleaner.o \
-TransfiniteMapClass.o \
 ProgramGlobals.o \
+TransfiniteMapClass.o \
+Sizer.o \
 BoundaryEdgeCleaning.o \
 Geometry.o \
 QuadTreeGridGenerator.o \
@@ -379,12 +389,13 @@ CurveConversions.o \
 Sizer.o \
 LaplaceMeshSmoother.o \
 QuadTreeGridClass.o \
+Geometry3D.o \
 SMMeshClass.o \
 SpringMeshSmoother.o \
 FTExceptionClass.o \
 ChainedSegmentedCurveClass.o \
-SizerControls.o \
-SMConstants.o
+SMConstants.o \
+SizerControls.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Project/MeshProject.f90
 
 MeshQualityAnalysis.o : ${HOQMeshPath}/Source/Mesh/MeshQualityAnalysis.f90 \
@@ -505,6 +516,12 @@ FTLinkedListClass.o \
 FTLinkedListClass.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Curves/ContinuousCurves/SMChainedCurveClass.f90
 
+SMCircularArc.o : ${HOQMeshPath}/Source/Curves/ContinuousCurves/SMCircularArc.f90 \
+SMCurveClass.o \
+SMConstants.o \
+ProgramGlobals.o
+	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Curves/ContinuousCurves/SMCircularArc.f90
+
 SMConstants.o : ${HOQMeshPath}/Source/Foundation/SMConstants.f90
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Foundation/SMConstants.f90
 
@@ -539,15 +556,17 @@ FTObjectClass.o
 
 SMModel.o : ${HOQMeshPath}/Source/Project/Model/SMModel.f90 \
 SMLine.o \
-FatalErrorException.o \
 FTValueDictionaryClass.o \
+FatalErrorException.o \
 FTValueClass.o \
 Shortcuts.o \
 FTExceptionClass.o \
+SweeperClass.o \
 ProgramGlobals.o \
 SMSplineCurveClass.o \
 FTLinkedListClass.o \
 Encoder.o \
+SMCircularArc.o \
 FTExceptionClass.o \
 FTDataClass.o \
 SMChainedCurveClass.o \
@@ -569,6 +588,19 @@ SMModel.o \
 FTValueDictionaryClass.o \
 SMMeshClass.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Mesh/SpringMeshSmoother.f90
+
+SweeperClass.o : ${HOQMeshPath}/Source/3DSource/SweeperClass.f90 \
+FTExceptionClass.o \
+HexMeshObjects.o \
+FTExceptionClass.o \
+FatalErrorException.o \
+SMChainedCurveClass.o \
+FTValueDictionaryClass.o \
+Geometry3D.o \
+Frenet.o \
+SMConstants.o \
+ProgramGlobals.o
+	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/3DSource/SweeperClass.f90
 
 Templates.o : ${HOQMeshPath}/Source/QuadTreeGrid/Templates.f90 \
 QuadTreeGridClass.o \
