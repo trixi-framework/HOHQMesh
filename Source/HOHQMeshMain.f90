@@ -9,7 +9,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      PROGRAM HOMeshMain 
+      PROGRAM HOQMeshMain 
          USE MeshProjectClass
          USE FTTimerClass
          USE MeshGenerationMethods
@@ -43,11 +43,11 @@
 !        Other
 !        -----
 !         
-         CHARACTER(LEN=8) :: version           = "3.5.19"
+         CHARACTER(LEN=8) :: version           = "5.17.20"
          LOGICAL          :: debug             = .FALSE.
          LOGICAL          :: didGenerate3DMesh = .FALSE.
          LOGICAL          :: shouldGenerate3D  = .FALSE.
-         INTEGER          :: errorCode = NONE 
+         INTEGER          :: errorCode         =  NONE 
          INTEGER          :: k
          TYPE(FTTimer)    :: stopWatch
          
@@ -219,7 +219,8 @@
                IF ( didGenerate3DMesh )     THEN
                
                   IF ( project % runParams % plotFileFormat == SKELETON_FORMAT )     THEN
-                     CALL WriteHex8SkeletonToTecplot( project % hexMesh, fName = project % runParams % plotFileName)
+                     CALL WriteHex8SkeletonToTecplot( project % hexMesh, &
+                                                      fName = project % runParams % plotFileName)
                   ELSE
                      CALL WriteHex8MeshToTecplot(hex8Mesh = project % hexMesh, &
                                                  fName    = project % runParams % plotFileName, &
@@ -276,7 +277,7 @@
          CALL destructFTExceptions
          IF( PrintMessage ) PRINT *, "Execution complete. Exit."
          
-      END PROGRAM HOMeshMain
+      END PROGRAM HOQMeshMain
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
