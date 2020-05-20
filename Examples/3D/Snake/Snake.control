@@ -1,0 +1,93 @@
+%
+% Example of sweeping a circlular 2D mesh along a complex curve.
+% The parallel transport algorithm is applied to the sweep to 
+% minimize twisting of the mesh. Change "Hanson" to "none"
+% to see what happens without rotation minimization.
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = MeshFiles/Snake.mesh
+      plot file name   = PlotFiles/Snake.tec
+      stats file name  = None
+      mesh file format = ISM
+      polynomial order = 4
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+   
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.25,0.25,0.25]
+   \end{BACKGROUND_GRID}
+
+    \begin{SWEEP_ALONG_CURVE}
+      algorithm                = Hanson
+      subdivisions per segment = 8
+      start surface name       = bottom
+      end surface name         = top
+   \end{SWEEP_ALONG_CURVE}
+
+    \begin{SPRING_SMOOTHER}
+       smoothing            = ON
+       smoothing type       = LinearAndCrossBarSpring
+       number of iterations = 15
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+%
+% Geometry to be swept
+%
+     \begin{OUTER_BOUNDARY}
+        \begin{PARAMETRIC_EQUATION_CURVE}
+           name = circle
+           xEqn = x(t) = cos(2*pi*t)
+           yEqn = y(t) = sin(2*pi*t)
+           zEqn = z(t) = 0.0
+        \end{PARAMETRIC_EQUATION_CURVE}
+     \end{OUTER_BOUNDARY}
+%
+% Sweeping
+%
+	\begin{SWEEP_CURVE}
+         \begin{PARAMETRIC_EQUATION_CURVE}
+           name = straight
+           xEqn = x(t) = 0.0
+           yEqn = y(t) = 0.0
+           zEqn = z(t) = 3*t
+        \end{PARAMETRIC_EQUATION_CURVE}
+       \begin{PARAMETRIC_EQUATION_CURVE}
+           name = bend1
+           xEqn = x(t) = 3.0*(1.0 - cos(0.5*PI*t))
+           yEqn = y(t) = 0.0
+           zEqn = z(t) = 3.0*sin(0.5*PI*t) + 3
+        \end{PARAMETRIC_EQUATION_CURVE}
+         \begin{PARAMETRIC_EQUATION_CURVE}
+           name = straight2
+           xEqn = x(t) = 3.0*(t + 1)
+           yEqn = y(t) = 0.0
+           zEqn = z(t) = 6
+        \end{PARAMETRIC_EQUATION_CURVE}
+         \begin{PARAMETRIC_EQUATION_CURVE}
+           name = bend2
+           xEqn = x(t) = 6.0+3.0*sin(0.5*PI*t)
+           yEqn = y(t) = 3.0*(1.0 - cos(0.5*PI*t))
+           zEqn = z(t) = 6
+        \end{PARAMETRIC_EQUATION_CURVE}
+         \begin{PARAMETRIC_EQUATION_CURVE}
+           name = straight3
+           xEqn = x(t) = 9
+           yEqn = y(t) = 3.0*(t+1)
+           zEqn = z(t) = 6
+        \end{PARAMETRIC_EQUATION_CURVE}
+         \begin{PARAMETRIC_EQUATION_CURVE}
+           name = bend3
+           xEqn = x(t) = 9.0
+           yEqn = y(t) = 6+3.0*sin(0.9*PI*t)
+           zEqn = z(t) = 6-3.0*(1.0 - cos(0.9*PI*t))
+        \end{PARAMETRIC_EQUATION_CURVE}
+
+	\end{SWEEP_CURVE}
+
+\end{MODEL}
+\end{FILE}
