@@ -1048,7 +1048,9 @@
                   END IF
                  
                CASE DEFAULT ! Type Variable
-                  stackTop = stackTop + 1
+                  IF ( tok % tokenType >= TYPE_VARIABLE )     THEN
+                     stackTop = stackTop + 1
+                  END IF 
                   
             END SELECT
          END DO
