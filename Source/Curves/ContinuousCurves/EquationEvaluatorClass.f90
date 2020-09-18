@@ -1071,10 +1071,15 @@
 !      -------------------------------------------------------------------------------------
 !
           IMPLICIT NONE  
-          CHARACTER(LEN=*)          :: stringToScan
-          INTEGER                 :: startPos
-          CHARACTER(LEN=*)           :: stopChars
+          CHARACTER(LEN=*)                        :: stringToScan
+          INTEGER                                 :: startPos
+          CHARACTER(LEN=*)                        :: stopChars
           CHARACTER(LEN = EQUATION_STRING_LENGTH) :: s
+!
+!         ---------------
+!         Local variables
+!         ---------------
+!
           INTEGER                                 :: i, j
           LOGICAL                                 :: charFound
           
@@ -1130,6 +1135,7 @@
 
                nArguments      = indx
                arguments(indx) = r
+               IF(stringToScan(n:n) == ')') EXIT 
                
                n          = n + 1
                indx       = indx + 1
