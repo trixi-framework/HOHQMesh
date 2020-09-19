@@ -79,6 +79,7 @@
 !
       INTEGER, PARAMETER :: EEC_NONE                    = -1
       INTEGER, PARAMETER :: EEC_MAX_NUMBER_OF_VARIABLES =  4
+      INTEGER, PARAMETER :: EEC_TOO_MANY_ARGUMENTS      =  HUGE(1)
 !
 !     -------------
 !     Derived types
@@ -161,7 +162,7 @@
 !
          CHARACTER(LEN=EQUATION_STRING_LENGTH) :: formulaInInfix
          CHARACTER(LEN=VARIABLE_NAME_LENGTH)   :: variableNames(EEC_MAX_NUMBER_OF_VARIABLES)
-         INTEGER                               :: tCount, tPFCount
+         INTEGER                               :: tCount, tPFCount, indx
          INTEGER                               :: t, nVars
          
          CHARACTER(LEN=TOKEN_LENGTH), DIMENSION(EQUATION_STRING_LENGTH/2) :: components
@@ -174,7 +175,18 @@
          self % equation = eqn
          
          IF( FindExpression( eqn, formulaInInfix, variableNames, nVars ) )     THEN
-         
+            
+            IF ( nVars == EEC_TOO_MANY_ARGUMENTS )     THEN
+               indx = INDEX(STRING = eqn, SUBSTRING = '=')
+               IF ( indx > 0 )     THEN
+                  EQNErrorMessage = "Syntax Error: Too many independent variables: "// eqn(1:indx-1)
+               ELSE 
+                  EQNErrorMessage = "Syntax Error: Too many independent variables: "
+               END IF 
+               success = .FALSE. 
+               RETURN 
+            END IF 
+             
             self % variableNames     = variableNames
             self % numberOfVariables = nVars 
             
@@ -1139,6 +1151,10 @@
                
                n          = n + 1
                indx       = indx + 1
+               IF(indx > EEC_MAX_NUMBER_OF_VARIABLES)     THEN
+                  nArguments = EEC_TOO_MANY_ARGUMENTS
+                  RETURN  
+               END IF 
             END DO 
            
        END SUBROUTINE getArguments
