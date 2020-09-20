@@ -20,6 +20,8 @@
       USE CurveSweepClass
       USE FTValueDictionaryClass
       USE ErrorTypesModule
+      USE SMTopographyClass
+      USE SMEquationTopographyClass
       IMPLICIT NONE
 !
 !     ---------
@@ -33,7 +35,9 @@
       
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: OUTER_BOUNDARY_BLOCK_KEY       = "OUTER_BOUNDARY"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INNER_BOUNDARIES_BLOCK_KEY     = "INNER_BOUNDARIES"      
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INTERFACE_BOUNDARIES_BLOCK_KEY = "INTERFACE_BOUNDARIES"      
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INTERFACE_BOUNDARIES_BLOCK_KEY = "INTERFACE_BOUNDARIES"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
+
 !
 !     ---------------------
 !     Class type definition
@@ -52,6 +56,7 @@
          CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: innerBoundariesIterator => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: interfaceBoundariesIterator => NULL()
+         CLASS(SMTopography)        , POINTER     :: topography
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
 !
@@ -83,6 +88,7 @@
          self % interfaceBoundaries         => NULL()
          self % innerBoundariesIterator     => NULL()
          self % interfaceBoundariesIterator => NULL()
+         self % topography                  => NULL()
          self % curveCount                  =  0
          self % numberOfOuterCurves         =  0
          self % numberOfInnerCurves         =  0
@@ -129,6 +135,11 @@
             DEALLOCATE(self % curveType)
          END IF
          
+         IF ( ASSOCIATED(self % topography) )     THEN
+            obj => self % topography
+            CALL release(obj)
+         END IF 
+         
       END SUBROUTINE destructModel
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -166,6 +177,7 @@
 !
          INTEGER, EXTERNAL                 :: UnusedUnit
          CLASS(FTValueDictionary), POINTER :: outerBoundaryDict, innerBoundariesDict, sweepCurveDict
+         CLASS(FTValueDictionary), POINTER :: topographyDict
          CLASS(FTValueDictionary), POINTER :: scaleCurveDict
          CLASS(FTLinkedList)     , POINTER :: innerBoundariesList
          CLASS(FTObject)         , POINTER :: obj
@@ -281,6 +293,16 @@
                                     chainMustClose = .FALSE.)
             IF(ReturnOnFatalError())     RETURN 
             
+         END IF 
+!
+!        ------------------
+!        Topography, if any
+!        ------------------
+!
+         IF ( modelDict % containsKey(key = TOPOGRAPHY_BLOCK_KEY) )     THEN
+            obj            => modelDict % objectForKey(key = TOPOGRAPHY_BLOCK_KEY)
+            topographyDict => valueDictionaryFromObject(obj)
+            CALL ConstructTopographyFromDict(self, topographyDict)
          END IF 
 !
 !        ---------
@@ -664,6 +686,49 @@
          CALL release(obj)
          
       END SUBROUTINE ConstructParametricEquationFromDict
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ConstructTopographyFromDict(self, dict)  
+         IMPLICIT NONE  
+!
+!        -----------
+!        Arguments  
+!        -----------
+!
+         CLASS(SMModel)                            :: self
+         CLASS(FTValueDictionary), POINTER         :: dict
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CHARACTER(LEN = EQUATION_STRING_LENGTH)   :: eqn
+         CLASS(SMEquationTopography), POINTER      :: topog
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL :: returnOnFatalError
+!
+!        --------------------------------------
+!        Detect the type of topology definition
+!        --------------------------------------
+!
+         IF ( dict % containsKey(TOPOGRAPHY_EQUATION_KEY) )     THEN
+            eqn = dict % stringValueForKey(key             = TOPOGRAPHY_EQUATION_KEY, &
+                                           requestedLength = EQUATION_STRING_LENGTH)
+            ALLOCATE(topog)
+            CALL topog % initWithEquation(zEqn = eqn)
+            IF(ReturnOnFatalError())     RETURN 
+            self % topography => topog
+            
+         ELSE !TODO TOPOGRAPHY: ADD TEST AND CONSTRUCTION OF ALTERNATE TOPOGRAPHIES HERE
+            PRINT *, "Unknown topography definition. Ignoring."
+         END IF 
+
+      END SUBROUTINE ConstructTopographyFromDict
 !
 !////////////////////////////////////////////////////////////////////////
 !

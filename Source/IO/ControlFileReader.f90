@@ -34,6 +34,7 @@
 !         INNER_BOUNDARIES
 !         SWEEP_CURVE
 !         SWEEP_SCALE_FACTOR
+!         TOPOGRAPHY
 !      
 !      The OUTER_BOUNDARY dictionary contains the keys
 !         TYPE
@@ -136,8 +137,12 @@
 !           The list contains dictionaries describing
 !               PARAMETRIC_EQUATION
 !
-!       But the equation definitions contain only one equation r(t) = ...
+!        But the equation definitions contain only one equation r(t) = ...
 !
+!      the TOPOGRAPHY dictionary contains the keys
+!         TYPE
+!         eqn (for equation defined topography)
+!         
 !      The SIMPLE_EXTRUSION  block is defined in SimpleSweep.f90
 !      The SIMPLE_ROTATION   block is defined in SimpleSweep.f90
 !      The SWEEP_ALONG_CURVE block is defined in SweeperClass.f90

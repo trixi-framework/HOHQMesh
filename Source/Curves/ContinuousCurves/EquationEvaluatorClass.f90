@@ -366,8 +366,7 @@
       INTEGER                                            :: nVars
       
       
-      CHARACTER(LEN=32) ::  temp 
-      INTEGER           ::  eqPos, ltemp, nf, nl, nr, n
+      INTEGER           ::  eqPos, nf, nl, nr, n
 !
       FindExpression = .false.
       variableNames   = "%none" 

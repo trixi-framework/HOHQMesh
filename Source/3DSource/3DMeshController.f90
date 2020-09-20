@@ -164,7 +164,7 @@
          INTEGER                                 :: algorithmChoice = NONE
          INTEGER                                 :: pMutation, rotAxis
          INTEGER                                 :: rotMap(3) = [3, 3, 1]
-         REAL(KIND=RP)                           :: dz, h
+         REAL(KIND=RP)                           :: h, dz
          TYPE(CurveSweeper)                      :: sweeper
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: sweepAlgorithm
 !
@@ -173,7 +173,14 @@
 !        ----------
 !
          LOGICAL, EXTERNAL :: ReturnOnFatalError
-
+!
+!        -------------------------------------------
+!        Apply topography to the bottom if requested
+!        -------------------------------------------
+!
+         IF ( ASSOCIATED(project % model % topography) )     THEN
+            CALL applyTopography(project % mesh, project % model % topography) 
+         END IF 
 !
 !        --------------------------------------------
 !        Get the 3D generator dictionary and set up 
@@ -190,7 +197,6 @@
             numberOfLayers = generatorDict % integerValueForKey( subdivisionsKey )
             pMutation      = generatorDict % integerValueForKey(SIMPLE_SWEEP_DIRECTION_KEY)
             h              = generatorDict % doublePrecisionValueForKey( SIMPLE_EXTRUSION_HEIGHT_KEY )
-            dz             = h/generatorDict % integerValueForKey( subdivisionsKey )
             
          ELSE IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN 
          
@@ -205,7 +211,6 @@
             pMutation      = rotMap(pMutation)
  
             h  = PI * generatorDict % doublePrecisionValueForKey( SIMPLE_ROTATION_ANGLE_KEY )
-            dz = h/generatorDict % integerValueForKey( subdivisionsKey )
            
          ELSE IF ( controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN 
          
@@ -217,14 +222,15 @@
             numberOfLayers = generatorDict % integerValueForKey( subdivisionsKey )* &
                              project % model % sweepCurve % numberOfCurvesInChain
             pMutation      = 3
-            dz             = 1.0_RP/numberOfLayers
+            h              = 1.0_RP
+            dz             = h/numberOfLayers
             IF ( generatorDict % containsKey(key = CURVE_SWEEP_ALGORITHM_KEY) )     THEN
                sweepAlgorithm = generatorDict % stringValueForKey(key             = CURVE_SWEEP_ALGORITHM_KEY, &
                                                                   requestedLength = DEFAULT_CHARACTER_LENGTH) 
             ELSE 
                sweepAlgorithm = "default" 
             END IF 
-            !^ 
+             
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg    = "unknown generator for 3D mesh found in control file", &
@@ -258,7 +264,7 @@
 !        Generate the Hex mesh
 !        ---------------------
 !
-         CALL PerformSimpleMeshSweep( project, pMutation, dz, generatorDict)
+         CALL PerformSimpleMeshSweep( project, pMutation, h, generatorDict)
 !
 !        ------------------------------
 !        Rotate the mesh when requested
@@ -319,5 +325,61 @@
             CALL mesh % nodesIterator % moveToNext()
          END DO 
       END SUBROUTINE permuteMeshDirection
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE applyTopography(mesh, topography)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(SMMesh)                 :: mesh 
+         CLASS(SMTopography), POINTER :: topography
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTObject) , POINTER  :: obj
+         CLASS(SMNode)   , POINTER  :: node
+         CLASS(SMElement), POINTER  :: e
+         INTEGER                    :: i,j 
+!
+!        -----------------------------
+!        Apply topography to the nodes
+!        -----------------------------
+!
+         CALL mesh % nodesIterator % setToStart()
+         DO WHILE( .NOT. mesh % nodesIterator % isAtEnd() )
+         
+            obj => mesh % nodesIterator % object()
+            CALL castToSMNode(obj,node)
+ 
+            node % x = topography % heightAt(t = node % x(1:2))
+            
+            CALL mesh % nodesIterator % moveToNext()
+         END DO 
+!
+!        ----------------------------------
+!        Apply topology to the face patches
+!        ----------------------------------
+!
+         CALL mesh % elementsIterator % setToStart()
+         DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
+         
+            obj => mesh % elementsIterator % object()
+            CALL cast(obj,e)
+            
+            DO j = 0, e % N 
+               DO i = 0, e % N
+                  e % xPatch(:,i,j) = topography % heightAt(t = e % xPatch(1:2,i,j))
+               END DO 
+            END DO 
+            
+            CALL mesh % elementsIterator % moveToNext()
+         END DO
 
+      END SUBROUTINE applyTopography
    END Module MeshController3D 

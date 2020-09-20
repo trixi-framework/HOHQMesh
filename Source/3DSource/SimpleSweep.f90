@@ -239,7 +239,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE PerformSimpleMeshSweep( project, pMutation, dz, parametersDictionary )
+      SUBROUTINE PerformSimpleMeshSweep( project, pMutation, h, parametersDictionary )
          USE MeshProjectClass
          IMPLICIT NONE
 !
@@ -250,7 +250,7 @@
          TYPE ( MeshProject )        :: project
          CLASS( FTValueDictionary )  :: parametersDictionary
          INTEGER                     :: pMutation
-         REAL(KIND=RP)               :: dz
+         REAL(KIND=RP)               :: h
 !
 !        ---------------
 !        Local Variables
@@ -316,7 +316,7 @@
 !        Sweep the skeleton of the mesh
 !        ------------------------------
 !
-         CALL sweepNodes( quadMeshNodes, project % hexMesh, dz, pMutation )
+         CALL sweepNodes( quadMeshNodes, project % hexMesh, h, pMutation )
          CALL sweepElements( quadMesh, project % hexMesh, &
                              numberofLayers, parametersDictionary )
 !
@@ -328,7 +328,7 @@
          CALL SweepInternalDOFs(hex8Mesh          = project % hexMesh, &
                                 quadElementsArray = quadElementsArray, &
                                 N                 = N,                 &
-                                dz                = dz,                &
+                                h                 = h,                &
                                 pmutation         = pMutation)
           
          CALL releaseFTMutableObjectArray(quadElementsArray)
@@ -339,7 +339,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE sweepNodes( quadMeshNodes, hex8Mesh, dz, pMutation )
+      SUBROUTINE sweepNodes( quadMeshNodes, hex8Mesh, h, pMutation )
          IMPLICIT NONE
 !
 !        ---------
@@ -347,7 +347,7 @@
 !        ---------
 !
          TYPE ( StructuredHexMesh )    :: hex8Mesh
-         REAL(KIND=RP)                 :: dz
+         REAL(KIND=RP)                 :: h
          TYPE(SMNodePtr), DIMENSION(:) :: quadMeshNodes
          INTEGER                       :: pMutation
 !
@@ -355,10 +355,11 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER                           :: numberOf2DNodes
-         INTEGER                           :: nodeID
-         INTEGER                           :: j, k
-         INTEGER                           :: numberOfLayers
+         INTEGER         :: numberOf2DNodes
+         INTEGER         :: nodeID
+         INTEGER         :: j, k
+         INTEGER         :: numberOfLayers
+         REAL(KIND=RP)   :: z, xi
 !
 !        ---------------------------------------
 !        Generate the new nodes for the hex mesh
@@ -371,22 +372,31 @@
                       
          nodeID = 1
          DO j = 0, numberofLayers
+
             DO k = 1, numberOf2DNodes
                hex8Mesh % nodes(k,j) % globalID = nodeID
+!
+!              ----------------------------------
+!              Interpolate between top and bottom
+!              ----------------------------------
+!
+               xi = DBLE(j)/DBLE(numberOfLayers)
+               z  = quadMeshNodes(k) % node % x(pMutation)*(1.0_RP - xi) + h*xi
                hex8Mesh % nodes(k,j) % x  = extrudedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
-                                                                 delta        = j*dz, &
+                                                                 delta        = z, &
                                                                  pmutation    = pMutation)
                locAndLevelForNodeID(1,nodeID) = k
                locAndLevelForNodeID(2,nodeID) = j
                nodeID = nodeID + 1
             END DO   
+            
          END DO
 !
       END SUBROUTINE sweepNodes
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE SweepInternalDOFs( hex8Mesh, quadElementsArray, N, dz, pmutation)
+      SUBROUTINE SweepInternalDOFs( hex8Mesh, quadElementsArray, N, h, pmutation)
          USE SMMeshClass
          USE FTMutableObjectArrayClass
          IMPLICIT NONE  
@@ -397,7 +407,7 @@
 !
          TYPE (FTMutableObjectArray), POINTER  :: quadElementsArray
          TYPE ( StructuredHexMesh )            :: hex8Mesh
-         REAL(KIND=RP)                         :: dz
+         REAL(KIND=RP)                         :: h
          INTEGER                               :: pMutation
          INTEGER                               :: N
 !
@@ -405,8 +415,9 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER                   :: l, m, i, j, k
-         REAL(KIND=RP)             :: x(3), zz, y(3)
+         INTEGER                   :: l, m, i, j, k, nLev
+         REAL(KIND=RP)             :: x(3), z, y(3)
+         REAL(KIND=RP)             :: delta, eta, xi
          CLASS(FTObject) , POINTER :: obj
          CLASS(SMElement), POINTER :: e
 !
@@ -415,16 +426,22 @@
 !        up through the hex element.
 !        ------------------------------------------
 !
+         nLev = hex8Mesh % numberofLayers
+         
          DO l = 1, hex8Mesh % numberOfQuadElements
             obj => quadElementsArray % objectAtIndex(l)
             CALL castToSMelement(obj,e)
             DO m = 1, hex8Mesh % numberofLayers
+               xi = DBLE(m-1)/DBLE(nLev)
                DO k = 0, N
-                  zz = (m-1)*dz + 0.5_RP*dz*(1.0 - COS(k*PI/N))
+                  eta = 0.5_RP*(1.0 - COS(k*PI/N))
                   DO j = 0, N 
                      DO i = 0, N
-                        x = permutePosition(x = e % xPatch(:,i,j),pmutation = pMutation)
-                        y = extrudedNodeLocation(baseLocation = x, delta = zz, pmutation = pMutation)
+                        delta = (h - e % xPatch(pMutation,i,j))/nLev
+                        z     = xi*h + (1.0_RP - xi)*e % xPatch(pMutation,i,j) + delta*eta
+                        x     = permutePosition(x = e % xPatch(:,i,j),pmutation = pMutation)
+                        y     = extrudedNodeLocation(baseLocation = x, delta = z, pmutation = pMutation)
+                        
                         hex8Mesh % elements(l,m) % x(:,i,j,k) = y
                      END DO 
                   END DO 
