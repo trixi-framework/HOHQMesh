@@ -43,7 +43,7 @@
 !        Other
 !        -----
 !         
-         CHARACTER(LEN=8) :: version           = "5.17.20"
+         CHARACTER(LEN=8) :: version           = "8.21.20"
          LOGICAL          :: debug             = .FALSE.
          LOGICAL          :: didGenerate3DMesh = .FALSE.
          LOGICAL          :: shouldGenerate3D  = .FALSE.
