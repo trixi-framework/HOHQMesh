@@ -638,14 +638,15 @@
 !     Classify monadic operators
 !     --------------------------
 !
-      IF( classification(1) == TYPE_OPERATOR )     THEN
+      IF( classification(1) == TYPE_OPERATOR .OR. components(1) == '(' )     THEN
          IF( components(1) == "+" .OR. components(1) == "-" )     THEN
             classification(1) = TYPE_MONO_OPERATOR
          END IF
       END IF
       
       DO l = 2, tCount 
-         IF( classification(l) == TYPE_OPERATOR .AND. classification(l-1) == TYPE_OPERATOR)     THEN
+         IF( classification(l) == TYPE_OPERATOR .AND. &
+           (classification(l-1) == TYPE_OPERATOR .OR. components(l-1) == '('))     THEN
             classification(l) = TYPE_MONO_OPERATOR
          END IF
       END DO
