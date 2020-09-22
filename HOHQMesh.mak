@@ -63,6 +63,7 @@ Misc.o \
 NodesTemplates.o \
 ObjectArrayAdditions.o \
 ParametricEquationCurveClass.o \
+ParametricEquationTopographyClass.o \
 ProgramGlobals.o \
 QuadTreeGridClass.o \
 QuadTreeGridGenerator.o \
@@ -82,6 +83,7 @@ SMMeshClass.o \
 SMMeshObjects.o \
 SMModel.o \
 SMSplineCurveClass.o \
+SMTopographyClass.o \
 SpringMeshSmoother.o \
 SweeperClass.o \
 Templates.o \
@@ -430,6 +432,15 @@ EquationEvaluatorClass.o \
 SMCurveClass.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Curves/ContinuousCurves/ParametricEquationCurveClass.f90
 
+ParametricEquationTopographyClass.o : ${HOQMeshPath}/Source/Surfaces/ParametricEquationTopographyClass.f90 \
+FTExceptionClass.o \
+FTValueClass.o \
+ProgramGlobals.o \
+SMConstants.o \
+EquationEvaluatorClass.o \
+SMTopographyClass.o
+	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Surfaces/ParametricEquationTopographyClass.f90
+
 ProgramGlobals.o : ${HOQMeshPath}/Source/Foundation/ProgramGlobals.f90 \
 SMConstants.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Foundation/ProgramGlobals.f90
@@ -558,11 +569,13 @@ SMModel.o : ${HOQMeshPath}/Source/Project/Model/SMModel.f90 \
 SMLine.o \
 FTValueDictionaryClass.o \
 FatalErrorException.o \
-FTValueClass.o \
-Shortcuts.o \
+ParametricEquationTopographyClass.o \
+ProgramGlobals.o \
 FTExceptionClass.o \
 SweeperClass.o \
-ProgramGlobals.o \
+Shortcuts.o \
+FTValueClass.o \
+SMTopographyClass.o \
 SMSplineCurveClass.o \
 FTLinkedListClass.o \
 Encoder.o \
@@ -579,6 +592,11 @@ SMCurveClass.o \
 SMConstants.o \
 Geometry.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Curves/ContinuousCurves/SMSplineCurveClass.f90
+
+SMTopographyClass.o : ${HOQMeshPath}/Source/Surfaces/SMTopographyClass.f90 \
+SMConstants.o \
+FTObjectClass.o
+	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOQMeshPath}/Source/Surfaces/SMTopographyClass.f90
 
 SpringMeshSmoother.o : ${HOQMeshPath}/Source/Mesh/SpringMeshSmoother.f90 \
 FatalErrorException.o \
