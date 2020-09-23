@@ -137,7 +137,7 @@
         x(1) = -self % radius*SIN(s)*dsdt
         x(2) =  self % radius*COS(s)*dsdt
         x(3) = 0.0_RP
-        t = t
+        x    = x/SQRT(x(1)**2 + x(2)**2 + x(3)**2)
         
      END FUNCTION tangentOnCircularArcAt
 !
