@@ -301,7 +301,9 @@
          INTEGER                               :: statsFileUnit, k
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(SMElement)            , POINTER :: e   => NULL()
+         INTEGER, EXTERNAL                     :: UnusedUnit
          
+         statsFileUnit = UnusedUnit()
          OPEN(FILE = statsFileName, UNIT = statsFileUnit)
          badElements => BadElementsInMesh( mesh )
          

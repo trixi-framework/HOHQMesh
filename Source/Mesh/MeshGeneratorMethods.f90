@@ -164,7 +164,7 @@
       CLASS(QuadTreeGrid), POINTER :: grid      => NULL()
       TYPE (SMMesh)      , POINTER :: mesh      => NULL()
       TYPE (SMModel)     , POINTER :: model     => NULL()
-      CLASS(MeshSizer)   , POINTER :: sizer     => NULL()
+      TYPE (MeshSizer)   , POINTER :: sizer     => NULL()
       CLASS(FTObject)    , POINTER :: obj       => NULL()
       CLASS(FTLinkedList), POINTER :: list      => NULL()
       TYPE (FTException) , POINTER :: exception => NULL()
@@ -220,7 +220,7 @@
 !     in the baseMethods module.
 !     --------------------------------------------------------------
 !
-     CALL generateTemporaryBoundaryArrays( sizer )
+      CALL generateTemporaryBoundaryArrays( sizer )
 !
 !     --------------------------------------------
 !     Mark the elements outside or near boundaries
