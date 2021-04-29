@@ -42,7 +42,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(MeshSizer), POINTER :: sizer
+         TYPE(MeshSizer) :: sizer
 !
 !        ---------------
 !        Local Variables
@@ -1282,5 +1282,56 @@
          CALL releaseFTLinkedListIterator(self = iterator)
          
       END SUBROUTINE FindCurveLocationsforNodes
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION BBoxIntersects(boxA, boxB)  
+         IMPLICIT NONE  
+         REAL(KIND=RP) :: boxA(6), boxB(6) 
+         
+         BBoxIntersects = .TRUE.
+         
+         IF( boxB(BBOX_LEFT)   > boxA(BBOX_RIGHT)   .OR. &
+             boxB(BBOX_RIGHT)  < boxA(BBOX_LEFT)    .OR. &
+             boxB(BBOX_TOP)    < boxA(BBOX_BOTTOM)  .OR. &
+             boxB(BBOX_BOTTOM) > boxA(BBOX_TOP)          &
+           ) BBoxIntersects = .FALSE.
+           
+      END FUNCTION BBoxIntersects
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION BBoxIsNested(boxA, boxB)  
+!
+!     ------------------------------
+!     Test if boxB is nested in boxA
+!     ------------------------------
+!
+         IMPLICIT NONE  
+         REAL(KIND=RP) :: boxA(6), boxB(6) 
+         
+         BBoxIsNested = .FALSE.
+         
+         IF( boxB(BBOX_LEFT)   > boxA(BBOX_LEFT)     .AND. &
+             boxB(BBOX_RIGHT)  < boxA(BBOX_RIGHT)    .AND. &
+             boxB(BBOX_TOP)    < boxA(BBOX_TOP)      .AND. &
+             boxB(BBOX_BOTTOM) > boxA(BBOX_BOTTOM)         &
+           ) BBoxIsNested = .TRUE.
+           
+      END FUNCTION BBoxIsNested
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      FUNCTION IntersectBBoxes(boxA, boxB) RESULT(newBox)
+      IMPLICIT NONE  
+          REAL(KIND=RP) :: boxA(6), boxB(6), newBox(6)
+          newBox = 0.0_RP
+          
+          newBox(BBOX_LEFT)   = MIN(boxA(BBOX_LEFT)  , boxB(BBOX_LEFT))
+          newBox(BBOX_BOTTOM) = MIN(boxA(BBOX_BOTTOM), boxB(BBOX_BOTTOM))
+          newBox(BBOX_TOP)    = MAX(boxA(BBOX_TOP)   , boxB(BBOX_TOP))
+          newBox(BBOX_RIGHT)  = MAX(boxA(BBOX_RIGHT) , boxB(BBOX_RIGHT))
+
+      END FUNCTION IntersectBBoxes
 
    END MODULE MeshBoundaryMethodsModule
