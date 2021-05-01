@@ -385,6 +385,13 @@
          END IF 
          CALL BuildSizerBoundaryCurves(self)
 !
+!        -------------------------------------------------------
+!        Check integrity of boundary curves: stop if any overlap
+!        -------------------------------------------------------
+!
+!         CALL CheckForBoundaryIntersections(self % sizer) !Development in progress
+         IF(catch())     RETURN 
+!
 !        ------------------
 !        Construct smoother
 !        ------------------
@@ -630,6 +637,7 @@
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary => NULL()
          CLASS(SMChainedCurve)       , POINTER :: chain => NULL()
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
 !
 !        ------------------------------------------------
 !        Discretize boundary curves and add to sizer.
@@ -1354,6 +1362,95 @@
                                          newDirection   = d)
 
       END SUBROUTINE SetRotationTransformBlock
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE CheckForBoundaryIntersections(sizer)
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshSizer), POINTER  :: sizer
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER                               :: k, j
+         CLASS(SegmentedCurveArray) , POINTER  :: curveArrayA, curveArrayB
+         LOGICAL                               :: intersectionFound, isNested
+         CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: msg
+         REAL(KIND=RP)                         :: bbox(6)
+         
+         CALL generateTemporaryBoundaryArrays( sizer )
+!
+!        -------------------------------------------------
+!        See if exterior and any interior curves intersect
+!        -------------------------------------------------
+!
+         IF ( ASSOCIATED( outerBoundaryCurve ) )     THEN
+            bbox = outerBoundaryCurve % boundingBox
+            
+            IF( ASSOCIATED( interiorCurves ) )    THEN         
+               DO k = 1, SIZE(interiorCurves)
+               
+                  curveArrayB => interiorCurves(k) % curveArray
+                  isNested = BBoxIsNested(BoxA = bbox, &
+                                                   BoxB = curveArrayB % boundingBox)   ! Easy Full curve BBox check
+                  IF ( .NOT.isNested )     THEN ! Check further
+!
+!                    -----------------------
+!                    Failure, post exception
+!                    -----------------------
+!
+                     WRITE(msg,*) "Interior curve ", k," overlaps with exterior curve"
+                     CALL ThrowErrorExceptionOfType(poster = "CheckForBoundaryIntersections", &
+                                                    msg    = msg,                       &
+                                                    typ    = FT_ERROR_FATAL) 
+                     CALL destroyTemporaryBoundaryArrays
+                     RETURN 
+                  END IF 
+                  
+               END DO 
+             END IF 
+         END IF 
+!
+!        --------------------------------
+!        See if interior curves intersect
+!        --------------------------------
+!
+         IF( ASSOCIATED( interiorCurves ) )    THEN         
+            DO k = 1, SIZE(interiorCurves)
+               curveArrayA => interiorCurves(k) % curveArray
+               
+               DO j = k+1, SIZE(interiorCurves) 
+               
+                  curveArrayB => interiorCurves(j) % curveArray
+                  intersectionFound = BBoxIntersects(BoxA = curveArrayA % boundingBox, &
+                                                     BoxB = curveArrayB % boundingBox)   ! Easy Full curve BBox check
+                  IF ( intersectionFound )     THEN ! Check further
+
+!
+!                    -----------------------
+!                    Failure, post exception
+!                    -----------------------
+!
+                     WRITE(msg,*) "Interior curves ", k," and ", j, "overlap"
+                     CALL ThrowErrorExceptionOfType(poster = "CheckForBoundaryIntersections", &
+                                                    msg    = msg,                       &
+                                                    typ    = FT_ERROR_FATAL) 
+                     CALL destroyTemporaryBoundaryArrays
+                     RETURN 
+                  END IF 
+               END DO 
+            END DO 
+         END IF 
+         
+         CALL destroyTemporaryBoundaryArrays
+         
+      END SUBROUTINE CheckForBoundaryIntersections
 
    END MODULE MeshProjectClass
 
