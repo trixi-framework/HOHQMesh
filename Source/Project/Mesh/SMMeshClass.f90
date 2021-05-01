@@ -500,17 +500,17 @@
                END IF 
                CALL iterator % moveToNext()
             END DO  
-         END IF
          
-         SELECT CASE ( whichIterator )
-            CASE( NODES ) 
-               self % nodeID = j-1
-            CASE( EDGES )
-               self % edgeID = j-1
-            CASE( ELEMENTS )
-               self % elementID = j-1
-            CASE DEFAULT 
-         END SELECT 
+            SELECT CASE ( whichIterator )
+               CASE( NODES ) 
+                  self % nodeID = j-1
+               CASE( EDGES )
+                  self % edgeID = j-1
+               CASE( ELEMENTS )
+                  self % elementID = j-1
+               CASE DEFAULT 
+            END SELECT 
+         END IF
          
       END SUBROUTINE renumberObjects
 !

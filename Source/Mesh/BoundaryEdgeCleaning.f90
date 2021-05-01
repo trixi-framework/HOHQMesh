@@ -266,12 +266,13 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges => NULL()
-         CLASS(SMElement)           , POINTER :: e => NULL()
-         CLASS(SMEdge)              , POINTER :: currentEdge => NULL(), newBoundaryEdge => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
-         CLASS(FTObject)            , POINTER :: obj => NULL()
-         INTEGER                              :: k, nB, interiorEdgeNumber
+         CLASS(FTLinkedList)        , POINTER      :: newlyExposedBoundaryEdges => NULL()
+         CLASS(SMElement)           , POINTER      :: e => NULL()
+         CLASS(SMEdge)              , POINTER      :: currentEdge => NULL(), newBoundaryEdge => NULL()
+         TYPE (FTLinkedListIterator), POINTER      :: iterator => NULL()
+         CLASS(FTObject)            , POINTER      :: obj => NULL()
+         INTEGER                                   :: k, nB, interiorEdgeNumber
+         CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
 !
 !        ---------------------------------------------
 !        Keep a preliminary list of new boundary edges
@@ -294,6 +295,7 @@
                
                IF( .NOT.e % remove )     THEN
                   nB = 0
+                  interiorEdgeNumber = -1
                   DO k = 1, 4 
                      IF( edgesForElements(k,e % id) % edge % edgeType == ON_BOUNDARY )     THEN
                         nB = nB + 1                     
@@ -301,6 +303,11 @@
                         interiorEdgeNumber = k
                      END IF
                   END DO
+                  IF ( interiorEdgeNumber < 0 )     THEN
+                     WRITE(msg,*) "InteriorEdgeNumber not found. All edges appear to be boundaries"
+                     CALL ThrowErrorExceptionOfType("RemoveBumpOuts", msg, FT_ERROR_FATAL)
+                     RETURN 
+                  END IF 
 !
 !                 -----------------------------------------------------
 !                 A bumpout has three exterior edges. Best to remove,

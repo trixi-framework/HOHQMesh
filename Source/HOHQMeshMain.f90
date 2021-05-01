@@ -122,6 +122,7 @@
          CALL stopWatch % start()
             CALL GenerateQuadMesh(project, errorCode)
          CALL stopwatch % stop()
+         CALL trapExceptions !Abort on fatal exceptions
          
          IF(PrintMessage) PRINT *, "Mesh generated"
 !

@@ -55,6 +55,8 @@
       USE FTLinkedListIteratorClass
       USE ObjectArrayAdditionsModule
       USE FTMutableObjectArrayClass
+      USE FTExceptionClass
+      USE ErrorTypesModule
       IMPLICIT NONE
 !
 !     ---------
@@ -447,6 +449,7 @@
          CLASS(SMSegment)   , POINTER           :: rootSegment
          CLASS(FTLinkedList), POINTER           :: nodes
          CLASS(FTObject)    , POINTER           :: objPtr, obj
+         CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
 !
 !        ----
 !        Self
@@ -525,6 +528,7 @@
             self % isCircular = .TRUE. 
          END IF
          
+         jointType = -1
          IF ( self % isCircular )     THEN
             jointType = JointClassification(theCurve,theCurve,INNER)
          END IF 
