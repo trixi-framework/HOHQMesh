@@ -851,12 +851,15 @@
 !
             IF( shapeMeasures(MAX_ANGLE_INDEX,k) > 175.0_RP ) THEN !TODO make 175 a variable
                CALL ElementAngles( e, angles, .true. ) !Lefties have been reversed
+               badNodeLocalID = -1
                DO j = 1, 4 
                   IF( angles(j) > 175.0_RP )     THEN
                      badNodeLocalID = j
                      EXIT
                   END IF
                END DO
+               IF(badNodeLocalID < 0) CYCLE !Bail on this one
+               
                obj => e % nodes % objectAtIndex(badNodeLocalID)
                CALL cast(obj,node)
                badNodeID = node % id
@@ -875,25 +878,17 @@
                      CYCLE 
                   END IF
 !
-!                 -------------------------------------------------------
-!                 Replace the bad node in this element by the unique node
+!                 ---------------------------------------------------------
+!                 Replace the bad node in this element by the opposite node
 !                 in the neigboring element.
-!                 -------------------------------------------------------
-!
-                  lastSharedNodeLocalID = Loop(badNodeLocalID+3,4)
-                  obj => e % nodes % objectAtIndex(lastSharedNodeLocalID)
-                  CALL cast(obj,node)
-                  lastSharedNodeID = node % id
-!
-!                 ----------------------------------------
 !                 Find where in the neighbor this node is.
 !                 ----------------------------------------
 !
                   j = -1
                   DO j = 1,4
-                     obj => e % nodes % objectAtIndex(j)
+                     obj => eNbr % nodes % objectAtIndex(j)
                      CALL cast(obj,node)
-                     IF( node % id == lastSharedNodeID )     THEN
+                     IF( node % id == badNodeID )     THEN
                         nbrNodeLocalID = j
                         EXIT
                      END IF
@@ -903,23 +898,23 @@
                      PRINT *, "Bad shared element connection, ignoring elements ", e % id, eNbr % id
                      CYCLE
                   END IF
+!
+!                 ----------------------------------------------------
+!                 Get the opposite facing node in the neighbor element
+!                 ----------------------------------------------------
+!
 
-                  nbrNodeLocalID = Loop(nbrNodeLocalID+1,4)
+                  nbrNodeLocalID = Loop(nbrNodeLocalID+2,4)
 !
 !                 -------------
 !                 Make the swap
 !                 -------------
 !
-!                  obj => e % nodes % objectAtIndex(badNodeLocalID)
-!                  CALL release(obj)
-!                  IF ( obj % isUnreferenced() )     THEN ! What's going on here?
-!                     CALL cast(obj,node)
-!                     DEALLOCATE(node)
-!                  END IF 
                   obj => eNbr % nodes % objectAtIndex(nbrNodeLocalID)
                   CALL e % nodes % replaceObjectAtIndexWithObject(badNodeLocalID, obj)
                   eNbr % remove = .true.
                   numberOfChevrons = numberOfChevrons + 1
+                  
                ELSE !TODO Do something here at some point.
 !
 !                 ------------------------------------

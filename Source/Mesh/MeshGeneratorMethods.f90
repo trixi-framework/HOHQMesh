@@ -88,6 +88,7 @@
 !
          IF(PrintMessage) PRINT *, "Generate 2D mesh..."
          
+         errorCode = A_OK_ERROR_CODE
          CALL GenerateQuadMeshFromGrid( project, errorCode )
          CALL trapExceptions !Abort on fatal exceptions
          IF(errorCode > A_OK_ERROR_CODE)     RETURN 
