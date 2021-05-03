@@ -70,22 +70,22 @@
          INTEGER, PARAMETER :: MAX_VALENCE    = 8
          INTEGER, PARAMETER :: numCurvePoints = 500
          
-         INTEGER       :: minNumberOfElementsInsideArea = 6
+         INTEGER       :: minNumberOfElementsInsideArea = 4
          REAL(KIND=RP) :: curvatureFactor         = 2.0_RP
          REAL(KIND=RP) :: curveSubdivisionFactor  = 15.0_RP
-         REAL(KIND=RP) :: minimizationTolerance   = 1.0d-5
-         REAL(KIND=RP) :: edgeLengthFactor        = 0.3_RP
+         REAL(KIND=RP) :: minimizationTolerance   = 1.0d-7
+         REAL(KIND=RP) :: edgeLengthFactor        = 0.15_RP
          REAL(KIND=RP) :: maxParameterChange      = 0.5_RP 
          REAL(KIND=RP) :: parameterDelta          = 0.2_RP
          REAL(KIND=RP) :: subdivisionRelTol       = 0.05_RP
          REAL(KIND=RP) :: directionPenalty        = 1.d-4
-         LOGICAL       :: boundarySlipping        = .TRUE.
+         LOGICAL       :: boundarySlipping        = .FALSE.
 !
 !        --------------------
 !        For printing history
 !        --------------------
 !
-         LOGICAL :: printMessage = .false.
+         LOGICAL :: printMessage = .TRUE.
 !
 !        ----------------------
 !        For close curve sizing
