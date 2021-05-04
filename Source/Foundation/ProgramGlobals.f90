@@ -85,7 +85,7 @@
 !        For printing history
 !        --------------------
 !
-         LOGICAL :: printMessage = .TRUE.
+         LOGICAL :: printMessage = .FALSE.
 !
 !        ----------------------
 !        For close curve sizing
@@ -108,66 +108,66 @@
          INTEGER, PARAMETER :: UNASSOCIATED_POINTER_ERROR_CODE  = 3
          
 !        ========
-         CONTAINS
+!         CONTAINS
 !        ========
 !         
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE SetUpPreferences
-         IMPLICIT NONE
-         INTEGER           :: preferencesFileUnit
-         INTEGER, EXTERNAL :: UnusedUnit
-         INTEGER           :: ios
-!
-!        ----------------------------------------------------
-!        Read in the preferences file if it exists, write out
-!        default values if it doesn't
-!        ----------------------------------------------------
-!
-         preferencesFileUnit = UnusedUnit()
-         OPEN( UNIT   = preferencesFileUnit, &
-               FILE   = "HOMesh2DPreferences.txt", &
-               STATUS = "OLD", IOSTAT = ios )
-         IF( ios == 0 )     THEN
-            CALL LoadPreferences(preferencesFileUnit)
-            CLOSE(preferencesFileUnit)
-         ELSE
-            OPEN( UNIT = preferencesFileUnit, FILE = "HOMesh2DPreferences.txt", &
-                  STATUS = "NEW", IOSTAT = ios )
-            CALL WriteDefaultPreferences(preferencesFileUnit)
-            CLOSE(preferencesFileUnit)
-         END IF
-         
-      END SUBROUTINE SetUpPreferences
-!
-!////////////////////////////////////////////////////////////////////////
-!
-         SUBROUTINE LoadPreferences( fUnit ) 
-            IMPLICIT NONE
-            INTEGER :: fUnit
-            READ(fUnit,*) curvatureFactor      , curveSubdivisionFactor
-            READ(fUnit,*) minimizationTolerance, edgeLengthFactor
-            READ(fUnit,*) maxParameterChange   , parameterDelta, directionPenalty
-            READ(fUnit,*) closeCurveFactor     , closeCurveNormalAlignment
-            READ(fUnit,*) refinementType       , boundarySmoothingPasses
-            READ(fUnit,*) printMessage         , minNumberOfElementsInsideArea
-            READ(fUnit,*) boundarySlipping
-         END SUBROUTINE LoadPreferences
-!
-!////////////////////////////////////////////////////////////////////////
-!
-         SUBROUTINE WriteDefaultPreferences( fUnit ) 
-            IMPLICIT NONE
-            INTEGER :: fUnit
-            WRITE(fUnit,*) curvatureFactor      , curveSubdivisionFactor
-            WRITE(fUnit,*) minimizationTolerance, edgeLengthFactor
-            WRITE(fUnit,*) maxParameterChange   , parameterDelta, directionPenalty
-            WRITE(fUnit,*) closeCurveFactor     , closeCurveNormalAlignment
-            WRITE(fUnit,*) refinementType       , boundarySmoothingPasses
-            WRITE(fUnit,*) printMessage         , minNumberOfElementsInsideArea
-            WRITE(fUnit,*) boundarySlipping
-         END SUBROUTINE WriteDefaultPreferences
+!      SUBROUTINE SetUpPreferences
+!         IMPLICIT NONE
+!         INTEGER           :: preferencesFileUnit
+!         INTEGER, EXTERNAL :: UnusedUnit
+!         INTEGER           :: ios
+!!
+!!        ----------------------------------------------------
+!!        Read in the preferences file if it exists, write out
+!!        default values if it doesn't
+!!        ----------------------------------------------------
+!!
+!         preferencesFileUnit = UnusedUnit()
+!         OPEN( UNIT   = preferencesFileUnit, &
+!               FILE   = "HOMesh2DPreferences.txt", &
+!               STATUS = "OLD", IOSTAT = ios )
+!         IF( ios == 0 )     THEN
+!            CALL LoadPreferences(preferencesFileUnit)
+!            CLOSE(preferencesFileUnit)
+!         ELSE
+!            OPEN( UNIT = preferencesFileUnit, FILE = "HOMesh2DPreferences.txt", &
+!                  STATUS = "NEW", IOSTAT = ios )
+!            CALL WriteDefaultPreferences(preferencesFileUnit)
+!            CLOSE(preferencesFileUnit)
+!         END IF
+!         
+!      END SUBROUTINE SetUpPreferences
+!!
+!!////////////////////////////////////////////////////////////////////////
+!!
+!         SUBROUTINE LoadPreferences( fUnit ) 
+!            IMPLICIT NONE
+!            INTEGER :: fUnit
+!            READ(fUnit,*) curvatureFactor      , curveSubdivisionFactor
+!            READ(fUnit,*) minimizationTolerance, edgeLengthFactor
+!            READ(fUnit,*) maxParameterChange   , parameterDelta, directionPenalty
+!            READ(fUnit,*) closeCurveFactor     , closeCurveNormalAlignment
+!            READ(fUnit,*) refinementType       , boundarySmoothingPasses
+!            READ(fUnit,*) printMessage         , minNumberOfElementsInsideArea
+!            READ(fUnit,*) boundarySlipping
+!         END SUBROUTINE LoadPreferences
+!!
+!!////////////////////////////////////////////////////////////////////////
+!!
+!         SUBROUTINE WriteDefaultPreferences( fUnit ) 
+!            IMPLICIT NONE
+!            INTEGER :: fUnit
+!            WRITE(fUnit,*) curvatureFactor      , curveSubdivisionFactor
+!            WRITE(fUnit,*) minimizationTolerance, edgeLengthFactor
+!            WRITE(fUnit,*) maxParameterChange   , parameterDelta, directionPenalty
+!            WRITE(fUnit,*) closeCurveFactor     , closeCurveNormalAlignment
+!            WRITE(fUnit,*) refinementType       , boundarySmoothingPasses
+!            WRITE(fUnit,*) printMessage         , minNumberOfElementsInsideArea
+!            WRITE(fUnit,*) boundarySlipping
+!         END SUBROUTINE WriteDefaultPreferences
          
       END Module ProgramGlobals
       

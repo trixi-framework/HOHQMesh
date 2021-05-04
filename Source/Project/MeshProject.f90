@@ -192,7 +192,12 @@
          
          modelDict => NULL()
          obj       => masterControlDictionary % objectForKey(key = "MODEL")
-         IF ( ASSOCIATED(obj) )     THEN
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
+                                           msg = "MODEL block is missing from control file", &
+                                           typ = FT_ERROR_FATAL) 
+            RETURN 
+         ELSE
             modelDict   => valueDictionaryFromObject(obj)
          END IF 
 !

@@ -64,7 +64,7 @@
 !        ***********************************************
 !
          CALL initializeFTExceptions
-         CALL SetUpPreferences
+!         CALL SetUpPreferences
          CALL ReadCommandLineArguments(version, debug, controlFileName)
          CALL cfReader % init()
 !
