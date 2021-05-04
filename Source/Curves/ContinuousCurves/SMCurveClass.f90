@@ -286,7 +286,7 @@
 !
          REAL(KIND=RP)            :: a(3), b(3), p1(3), p2(3)
          REAL(KIND=RP)            :: nrmA, nrmB, alpha, gamma, aCrossB, aDotB
-         REAL(KIND=RP), PARAMETER :: h = 0.01_RP
+         REAL(KIND=RP), PARAMETER :: h = 0.001_RP
          
          p2    = thisCurve % positionAt(1.0_RP)
          p1    = thisCurve % positionAt(1.0_RP - h)
