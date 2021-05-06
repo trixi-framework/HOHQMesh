@@ -67,7 +67,6 @@
 !        Preferences
 !        -----------
 !
-         INTEGER, PARAMETER :: MAX_VALENCE    = 8
          INTEGER, PARAMETER :: numCurvePoints = 500
          
          INTEGER       :: minNumberOfElementsInsideArea = 4
