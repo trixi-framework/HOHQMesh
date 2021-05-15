@@ -308,7 +308,7 @@
          badElements => BadElementsInMesh( mesh )
          
          IF ( ASSOCIATED(POINTER = badElements) )     THEN
-            PRINT *, badElements % COUNT()," Bad element(s) Found"
+            IF (PrintMessage) PRINT *, badElements % COUNT()," Bad element(s) Found"
             WRITE(statsFileUnit,*) " "
             WRITE(statsFileUnit,*) "----------------"
             WRITE(statsFileUnit,*) "Bad Element Info"

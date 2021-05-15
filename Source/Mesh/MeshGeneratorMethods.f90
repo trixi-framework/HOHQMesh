@@ -361,6 +361,9 @@
       CALL mesh % syncEdges()
       CALL mesh % renumberAllLists()
       
+      IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
+      IF(ALLOCATED(curveTypeForID))       DEALLOCATE(curveTypeForID)
+      
       IF(PrintMessage) PRINT *, "   Nodes and elements generated"
 
       END SUBROUTINE GenerateQuadMeshFromGrid
