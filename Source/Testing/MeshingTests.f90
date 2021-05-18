@@ -76,11 +76,8 @@
          IF ( TRIM(pathToTestFiles) == "" )     THEN
             fullPath =  controlFiles(k)
          ELSE
-            IF(fullPath(LEN_TRIM(fullPath):LEN_TRIM(fullPath)) == "/")     THEN
-               fullPath = TRIM(pathToTestFiles) // controlFiles(k)
-            ELSE
-               fullPath = TRIM(pathToTestFiles) // "/" // controlFiles(k)
-            END IF 
+            CALL ConvertToPath(pathToTestFiles)
+            fullPath = TRIM(pathToTestFiles) // controlFiles(k)
          END IF 
           
          optData => NULL()

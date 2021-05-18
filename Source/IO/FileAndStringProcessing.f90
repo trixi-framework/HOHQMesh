@@ -240,10 +240,10 @@
          INTEGER          :: lc
          
          lc = LEN_TRIM(str)
-         IF ( str(lc-1:lc-1) == "/" )     THEN
-            str = str(1:lc-1)
+         IF ( str(lc:lc) == "/" )     THEN
+            str = str(1:lc)
          ELSE
-            str = str(1:lc-1) // "/"  
+            str = str(1:lc) // "/"  
          END IF 
           
       END SUBROUTINE ConvertToPath
