@@ -127,7 +127,7 @@
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
-         TYPE(RotationTransform)             :: rotationTransformer
+         TYPE(RotationTransform)            :: rotationTransformer
          TYPE(ScaleTransform)               :: scaleTransformer
          CHARACTER(LEN=32)                  :: backgroundMaterialName
 !         
@@ -1456,7 +1456,28 @@
          CALL destroyTemporaryBoundaryArrays
          
       END SUBROUTINE CheckForBoundaryIntersections
-
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE AddPathToProjectFiles(self, path)  
+         IMPLICIT NONE 
+         CLASS(MeshProject) :: self
+         CHARACTER(LEN=*)   :: path
+         
+         IF ( path /= "" )     THEN
+            IF(self % runParams % MeshFileName /= "none")      THEN 
+               self % runParams % MeshFileName = TRIM(path) // self % runParams % MeshFileName
+            END IF 
+            IF(self % runParams % plotFileName /= "none")      THEN 
+               self % runParams % plotFileName = TRIM(path) // self % runParams % plotFileName
+            END IF 
+            IF(self % runParams % statsFileName /= "none")      THEN 
+               self % runParams % statsFileName = TRIM(path) // self % runParams % statsFileName
+            END IF 
+         END IF
+         
+      END SUBROUTINE AddPathToProjectFiles
+      
    END MODULE MeshProjectClass
 
 

@@ -8,7 +8,18 @@
 !////////////////////////////////////////////////////////////////////////
 !
    Module HOHQMeshModule 
-   IMPLICIT NONE  
+      USE MeshProjectClass
+      USE FTTimerClass
+      USE MeshGenerationMethods
+      USE MeshOutputMethods
+      USE FTTimerClass
+      USE MeshCleaner
+      USE MeshQualityAnalysisClass
+      USE MeshController3D
+      USE MeshOutputMethods3D
+      USE ControlFileReaderClass
+      USE FTValueDictionaryClass
+      IMPLICIT NONE  
 ! 
 !------------------------------------------------------------------- 
 !                Main entry for running HOHQMesh 
@@ -20,29 +31,18 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE HOHQMesh(controlFileName, controlDict, project, stats, test)
-         USE MeshProjectClass
-         USE FTTimerClass
-         USE MeshGenerationMethods
-         USE MeshOutputMethods
-         USE FTTimerClass
-         USE MeshCleaner
-         USE MeshQualityAnalysisClass
-         USE MeshController3D
-         USE MeshOutputMethods3D
-         USE ControlFileReaderClass
-         USE FTValueDictionaryClass
+      SUBROUTINE HOHQMesh(projectDict, project, stats, didGenerate3DMesh, test)
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), INTENT(IN)  :: controlFileName ! Input
-         CLASS( MeshProject )  , POINTER                      :: project         ! Input and output
-         TYPE( MeshStatistics )                 , INTENT(OUT) :: stats           ! Output
-         LOGICAL                                , INTENT(IN)  :: test            ! Input
-         TYPE (FTValueDictionary), POINTER      , INTENT(OUT) :: controlDict     ! Output
+         CLASS( MeshProject )  , POINTER                      :: project           ! Input and output. Release when done
+         TYPE( MeshStatistics )                 , INTENT(OUT) :: stats             ! Output
+         LOGICAL                                , INTENT(IN)  :: test              ! Input
+         LOGICAL                                , INTENT(out) :: didGenerate3DMesh ! Output
+         TYPE (FTValueDictionary), POINTER                    :: projectDict       ! Input
 !
 !        ----
 !        File
@@ -57,7 +57,6 @@
 !        -----
 !         
          CHARACTER(LEN=8) :: version           = "05.03.21"
-         LOGICAL          :: didGenerate3DMesh = .FALSE.
          LOGICAL          :: shouldGenerate3D  = .FALSE.
          INTEGER          :: errorCode         =  NONE 
          INTEGER          :: k
@@ -69,52 +68,22 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
          
          CLASS(FTObject)         , POINTER :: obj
-         TYPE (FTValueDictionary), POINTER :: modelDict
-!
-!        ***********************************************
-!                             Start
-!        ***********************************************
-!
-         CALL cfReader % init()
-!
-!        ------------------------
-!        Read in the control file
-!        ------------------------
-!
-         ios = 0
-         str = controlFileName
-         CALL toLower(str)
-         IF ( str == "none" )     THEN
-            fUnit   = StdInFileUnitCopy( )
-         ELSE
-            fUnit = UnusedUnit()
-            OPEN(UNIT = fUnit, FILE = controlFileName, STATUS = "OLD",  IOSTAT = ios)
-            IF(ios /= 0)  fUnit = NONE 
-         END IF
-         
-         IF ( ios == 0 )     THEN
-            CALL cfReader % importFromControlFile(fileUnit = fUnit)
-         ELSE
-            PRINT *, "Unable to open input file: ", TRIM(controlFileName)
-            STOP
-         END IF 
-         CLOSE(fUnit)
+         TYPE (FTValueDictionary), POINTER :: modelDict, controlDict
 !
 !        -----------------------------------------------------
 !        Initialize the project and check the integrity of the
 !        control file
 !        -----------------------------------------------------
 !
-         CALL project % initWithDictionary( cfReader % controlDict )
+         CALL project % initWithDictionary( projectDict )
          CALL trapExceptions !Abort on fatal exceptions
          
-         obj              => cfReader % controlDict % objectForKey(key = "CONTROL_INPUT")
+         obj              => projectDict % objectForKey(key = "CONTROL_INPUT")
          controlDict      => valueDictionaryFromObject(obj)
-         CALL controlDict % retain()
          
          shouldGenerate3D = shouldGenerate3DMesh(controlDict = controlDict)
          IF ( shouldGenerate3D )     THEN
-            obj            => cfReader % controlDict % objectForKey(key = "MODEL")
+            obj            => projectDict % objectForKey(key = "MODEL")
             modelDict      => valueDictionaryFromObject(obj)
             CALL modelDict % retain()
             CALL Check3DMeshParametersIntegrity(controlDict, modelDict) 
@@ -145,17 +114,6 @@
             PRINT *, "   Number of Edges    = ", project % mesh % edges    % COUNT()
             PRINT *, "   Number of Elements = ", project % mesh % elements % COUNT()
          END IF 
-!
-!        ---------------------------------------
-!        Write mesh quality statistics to a file
-!        ---------------------------------------
-!
-         str = project % runParams % statsFileName
-         CALL toLower(str)
-         IF ( str /= "none" )     THEN
-            CALL Write2DMeshStatistics(mesh          = project % mesh, &
-                                       statsFileName = project % runParams % statsFileName)
-         END IF
 !
 !        ---------------------------------
 !        Write averages to standard output
@@ -190,6 +148,7 @@
 !        Generate a 3D Extrusion mesh if requested
 !        -----------------------------------------
 !         
+         didGenerate3DMesh = .FALSE.
          IF ( shouldGenerate3D )     THEN
             IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
             
@@ -219,13 +178,79 @@
                IF(printMessage) PRINT *, "Hex mesh generation failed"
             END IF 
          END IF 
+         
+      END SUBROUTINE HOHQMesh
 !
-!        -------------------
-!        Write the Plot file
-!        -------------------
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ReadControlFile(controlFileName, projectDict)
+         IMPLICIT NONE
 !
+!        ---------
+!        Arguments
+!        ---------
+!
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), INTENT(IN)  :: controlFileName ! Input
+         TYPE(FTValueDictionary), POINTER                     :: projectDict     ! Output, retained
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                                 :: fUnit, ios
+         INTEGER, EXTERNAL                       :: StdInFileUnitCopy, UnusedUnit
+         TYPE(ControlFileReader)                 :: cfReader
+         
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         
+         CALL cfReader % init()
+!
+         ios = 0
+         str = controlFileName
+         CALL toLower(str)
+         IF ( str == "none" )     THEN
+            fUnit   = StdInFileUnitCopy( )
+         ELSE
+            fUnit = UnusedUnit()
+            OPEN(UNIT = fUnit, FILE = controlFileName, STATUS = "OLD",  IOSTAT = ios)
+            IF(ios /= 0)  fUnit = NONE 
+         END IF
+         
+         IF ( ios == 0 )     THEN
+            CALL cfReader % importFromControlFile(fileUnit = fUnit)
+         ELSE
+            PRINT *, "Unable to open input file: ", TRIM(controlFileName)
+            STOP
+         END IF 
+         CLOSE(fUnit)
+         
+         projectDict => cfReader % controlDict
+         CALL projectDict % retain()
+         CALL destructControlFileReader(cfReader)
+         
+      END SUBROUTINE ReadControlFile
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE WritePlotFile(project, didGenerate3DMesh)
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS( MeshProject ), POINTER :: project ! Input
+         LOGICAL                       :: didGenerate3DMesh
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         
          str = project % runParams % plotFileName
          CALL toLower(str)
+         
          IF( str /= "none" )     THEN
             IF( PrintMessage ) PRINT *, "Writing tecplot file..."
             
@@ -253,13 +278,30 @@
                END IF 
             IF( PrintMessage ) PRINT *, "Tecplot file written"
          END IF
+         
+      END SUBROUTINE WritePlotFile
 !
-!        -------------------
-!        Write the mesh file
-!        -------------------
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE WriteMeshFile(project, didGenerate3DMesh)
+         IMPLICIT NONE  
 !
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS( MeshProject ), POINTER :: project ! Input
+         LOGICAL                       :: didGenerate3DMesh
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         
          str = project % runParams % MeshFileName
          CALL toLower(str)
+         
          IF( str /= "none" )     THEN
             IF( PrintMessage ) PRINT *, "Writing mesh file..."
          
@@ -280,62 +322,7 @@
             IF( PrintMessage ) PRINT *, "Mesh file written."
             
          END IF
-!
-!        --------
-!        Clean up
-!        --------
-!
-!         CALL releaseFTValueDictionary(controlDict)
          
-      END SUBROUTINE HOHQMesh
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE GatherTestFileData(tData, project, stats)  
-         USE MeshProjectClass
-         USE MeshQualityAnalysisClass
-         USE FTMutableObjectArrayClass
-         USE TestDataClass
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS( MeshProject )  , POINTER :: project
-         TYPE( MeshStatistics )          :: stats
-         TYPE(testData)                  :: tData
-!
-!        ---------------
-!        Local Variables
-!        ---------------
-!
-         TYPE (FTMutableObjectArray) , POINTER :: badElements => NULL()
-         INTEGER                               :: numBadElements = 0
-        
-         numBadElements = 0
-         badElements => BadElementsInMesh( project % mesh )
-         IF(ASSOCIATED(badElements))     THEN
-             numBadElements = badElements % COUNT()
-             CALL releaseFTMutableObjectArray(badElements)
-         END IF 
-         
-         CALL tData % addIntValue(whichValue = TR_NUM_ELEMENTS, &
-                                 intValue    = project % mesh % elements % COUNT())
-         CALL tData % addIntValue(whichValue = TR_NUM_NODES, &
-                                 intValue    = project % mesh % nodes % COUNT())
-         CALL tData % addIntValue(whichValue = TR_NUM_EDGES, &
-                                 intValue    = project % mesh % edges % COUNT())
-         CALL tData % addIntValue(whichValue = TR_NUM_BAD_ELEMENTS, &
-                                 intValue    = numBadElements)
-
-         CALL tData % addRealValue(whichValue = TR_SIGNED_AREA  ,realValue = STATs % avgValues(SIGNED_AREA_INDEX))
-         CALL tData % addRealValue(whichValue = TR_ASPECT_RATIO ,realValue = STATs % avgValues(ASPECT_RATIO_INDEX))
-         CALL tData % addRealValue(whichValue = TR_CONDITION    ,realValue = STATs % avgValues(CONDITION_INDEX))
-         CALL tData % addRealValue(whichValue = TR_EDGE_RATIO   ,realValue = STATs % avgValues(EDGE_RATIO_INDEX))
-         CALL tData % addRealValue(whichValue = JACOBIAN        ,realValue = STATs % avgValues(JACOBIAN_INDEX))
-         CALL tData % addRealValue(whichValue = MIN_ANGLE       ,realValue = STATs % avgValues(MIN_ANGLE_INDEX))
-         CALL tData % addRealValue(whichValue = MAX_ANGLE       ,realValue = STATs % avgValues(MAX_ANGLE_INDEX))
-
-      END SUBROUTINE GatherTestFileData
+      END SUBROUTINE WriteMeshFile
+      
    END Module HOHQMeshModule

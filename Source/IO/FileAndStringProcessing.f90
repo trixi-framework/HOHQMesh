@@ -231,4 +231,20 @@
  1000 CONTINUE 
       rewind(fUnit)
       END FUNCTION StdInFileUnitCopy
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ConvertToPath(str)  
+         IMPLICIT NONE  
+         CHARACTER(LEN=*) :: str
+         INTEGER          :: lc
+         
+         lc = LEN_TRIM(str)
+         IF ( str(lc-1:lc-1) == "/" )     THEN
+            str = str(1:lc-1)
+         ELSE
+            str = str(1:lc-1) // "/"  
+         END IF 
+          
+      END SUBROUTINE ConvertToPath
       
