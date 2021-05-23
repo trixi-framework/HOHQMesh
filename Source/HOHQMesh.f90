@@ -48,15 +48,12 @@
 !        File
 !        ----
 !
-         INTEGER                                 :: fUnit, ios
          INTEGER, EXTERNAL                       :: StdInFileUnitCopy, UnusedUnit
-         TYPE(ControlFileReader)                 :: cfReader
 !
 !        -----
 !        Other
 !        -----
 !         
-         CHARACTER(LEN=8) :: version           = "05.03.21"
          LOGICAL          :: shouldGenerate3D  = .FALSE.
          INTEGER          :: errorCode         =  NONE 
          INTEGER          :: k
@@ -65,7 +62,6 @@
          CHARACTER(LEN=16)                       :: namesFmt = "(   7A16 )"
          CHARACTER(LEN=16)                       :: valuesFmt = '(  7F16.3)'
          CHARACTER(LEN=16)                       :: numb = "9"
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
          
          CLASS(FTObject)         , POINTER :: obj
          TYPE (FTValueDictionary), POINTER :: modelDict, controlDict

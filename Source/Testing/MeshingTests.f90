@@ -51,13 +51,10 @@
 !     ---------------
 !
       TYPE(TestSuiteManager)                  :: testSuite
-      INTEGER                                 :: numberOfFailedTests
       CHARACTER(LEN=1), POINTER               :: optData(:) 
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:) 
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath
       INTEGER                                 :: k
-      INTEGER                                 :: fUnit
-      INTEGER, EXTERNAL                       :: UnusedUnit
 !
 !     ------------------------------------------------------------------------------------
 !     The control files are located in a Benchmarks directory at the end of (if not empty)

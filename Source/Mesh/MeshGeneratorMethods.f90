@@ -14,7 +14,7 @@
       USE ProgramGlobals
       USE MeshBoundaryMethodsModule
       USE ErrorTypesModule
-      USE MeshOutputMethods !DEBUG
+      USE MeshOutputMethods
       USE MeshSizerClass
       IMPLICIT NONE
    
