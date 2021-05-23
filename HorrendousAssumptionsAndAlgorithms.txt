@@ -1,0 +1,9 @@
+This is a collection of comments on some of the approximations and assumptions made in developing HOHQMesh. It is not exhaustive. It is also not in any particular order.
+
+1. When checking to see whether or not two curves cross (when reading in the model), actual intersection is not tested. Rather, it looks to see if one or two points end up within the same bounding box. The assumption is that if the curves are that close together then the resolution is not good enough to generate a mesh anyway. [CheckForBoundaryIntersections]
+
+2. The algorithm for parallel transport along a curve to sweep three dimensional meshes is only second order accurate. A 4th order scheme is published, but not implemented yet.
+
+3. In giving the background mesh size, the code assumes that the user knows this size is sufficiently small to be able to reasonably resolve the boundary curves. Choosing the background mesh h = 1 and the curves of size 0.1 cannot resolve a curve.
+
+4. 
