@@ -171,6 +171,15 @@
          
       END FUNCTION Point_IsInsideBox 
 !
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      REAL(KIND=RP) FUNCTION BoundingBoxArea(bBox)  
+         IMPLICIT NONE  
+         REAL(KIND=RP) :: bBox(6)
+         BoundingBoxArea = (bBox(BBOX_RIGHT) - bBox(BBOX_LEFT))*   &
+                           (bBox(BBOX_TOP)   - bBox(BBOX_BOTTOM))
+      END FUNCTION BoundingBoxArea
+!
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION ACWindingFunction( p, curvePoints, N ) RESULT(w)
