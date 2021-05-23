@@ -693,6 +693,7 @@
          CHARACTER(LEN=1), ALLOCATABLE    :: enc(:)
          TYPE (FTData)   , POINTER        :: dta
          CLASS(FTObject) , POINTER        :: obj
+         TYPE (FTException)     , POINTER :: exception
 !
 !        ----------------
 !        Number of points
@@ -723,11 +724,17 @@
             READ(fileUnit,"(A)", END = 1000) line
             j = INDEX(STRING = line, SUBSTRING = "\end{SPLINE_DATA}")
             IF ( j <= 0 )     THEN
-               PRINT *,"No \end{SPLINE_DATA} marker for spline data"!DEBUG
+               ALLOCATE(exception)
+               CALL exception % initFatalException( "No \end{SPLINE_DATA} marker for spline data" )
+               CALL throw(exceptionToThrow = exception)
+               CALL releaseFTException(exception)
             END IF 
             
          ELSE 
-            PRINT *, "Malformed spline block. No nKnots field"!DEBUG 
+            ALLOCATE(exception)
+            CALL exception % initFatalException( "Malformed Spline data. No nKnots" )
+            CALL throw(exceptionToThrow = exception)
+            CALL releaseFTException(exception)
          END IF 
           
 1000  CONTINUE 
