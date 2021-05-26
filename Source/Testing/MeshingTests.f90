@@ -55,6 +55,7 @@
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:) 
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath
       INTEGER                                 :: k
+      EXTERNAL                                :: TestCurves
 !
 !     ------------------------------------------------------------------------------------
 !     The control files are located in a Benchmarks directory at the end of (if not empty)
@@ -64,9 +65,15 @@
 !
       CALL testSuite % init()
 !
-!     -------------------------------
-!     Add test runs to the test suite
-!     -------------------------------
+!     -------------------------------------------
+!     Add tests of basic components to test suite
+!     -------------------------------------------
+!
+      CALL testSuite % addTestSubroutineWithName(TestCurves,"Curve evaluation tests")
+!
+!     ---------------------------------
+!     Add tests of meshes to test suite
+!     ---------------------------------
 !
       DO k = 1, SIZE(controlFiles)
 
@@ -85,8 +92,13 @@
          CALL testSuite % addTestSubroutineWithName(testWithControlfile,"ControlFile: " // TRIM(controlFiles(k)), optData)
          DEALLOCATE(optDataA)
       END DO 
-
+!
+!     -------------
+!     Run the tests
+!     -------------
+!
       CALL testSuite % performTests()
+      CALL finalizeSharedAssertionsManager
       
    END SUBROUTINE RunTests
 !

@@ -251,7 +251,7 @@
 !     ----------------------------------------------------------------
 !     A bumpout has three exterior edges
 !     !BUG: This will crash if the exterior boundaries are different
-!     Need to check that all three edges face the same boundary curve.
+!     TODO: Need to check that all three edges face the same boundary curve.
 !     ----------------------------------------------------------------
 !
          IMPLICIT NONE
