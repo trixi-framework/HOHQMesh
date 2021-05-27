@@ -301,14 +301,14 @@
          INTEGER                               :: statsFileUnit, k
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(SMElement)            , POINTER :: e   => NULL()
-         INTEGER, EXTERNAL        :: UnusedUnit
+         INTEGER, EXTERNAL                     :: UnusedUnit
          
          statsFileUnit = UnusedUnit()
          OPEN(FILE = statsFileName, UNIT = statsFileUnit)
          badElements => BadElementsInMesh( mesh )
          
          IF ( ASSOCIATED(POINTER = badElements) )     THEN
-            PRINT *, badElements % COUNT()," Bad element(s) Found"
+            IF (PrintMessage) PRINT *, badElements % COUNT()," Bad element(s) Found"
             WRITE(statsFileUnit,*) " "
             WRITE(statsFileUnit,*) "----------------"
             WRITE(statsFileUnit,*) "Bad Element Info"

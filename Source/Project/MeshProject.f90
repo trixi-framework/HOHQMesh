@@ -127,7 +127,7 @@
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
-         TYPE(RotationTransform)             :: rotationTransformer
+         TYPE(RotationTransform)            :: rotationTransformer
          TYPE(ScaleTransform)               :: scaleTransformer
          CHARACTER(LEN=32)                  :: backgroundMaterialName
 !         
@@ -192,7 +192,12 @@
          
          modelDict => NULL()
          obj       => masterControlDictionary % objectForKey(key = "MODEL")
-         IF ( ASSOCIATED(obj) )     THEN
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
+                                           msg = "MODEL block is missing from control file", &
+                                           typ = FT_ERROR_FATAL) 
+            RETURN 
+         ELSE
             modelDict   => valueDictionaryFromObject(obj)
          END IF 
 !
@@ -384,6 +389,13 @@
             
          END IF 
          CALL BuildSizerBoundaryCurves(self)
+!
+!        -------------------------------------------------------
+!        Check integrity of boundary curves: stop if any overlap
+!        -------------------------------------------------------
+!
+         CALL CheckForBoundaryIntersections(self % sizer) !Development in progress
+         IF(catch())     RETURN 
 !
 !        ------------------
 !        Construct smoother
@@ -630,6 +642,7 @@
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary => NULL()
          CLASS(SMChainedCurve)       , POINTER :: chain => NULL()
+         LOGICAL, EXTERNAL :: ReturnOnFatalError
 !
 !        ------------------------------------------------
 !        Discretize boundary curves and add to sizer.
@@ -1354,7 +1367,28 @@
                                          newDirection   = d)
 
       END SUBROUTINE SetRotationTransformBlock
-
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE AddPathToProjectFiles(self, path)  
+         IMPLICIT NONE 
+         CLASS(MeshProject) :: self
+         CHARACTER(LEN=*)   :: path
+         
+         IF ( path /= "" )     THEN
+            IF(self % runParams % MeshFileName /= "none")      THEN 
+               self % runParams % MeshFileName = TRIM(path) // self % runParams % MeshFileName
+            END IF 
+            IF(self % runParams % plotFileName /= "none")      THEN 
+               self % runParams % plotFileName = TRIM(path) // self % runParams % plotFileName
+            END IF 
+            IF(self % runParams % statsFileName /= "none")      THEN 
+               self % runParams % statsFileName = TRIM(path) // self % runParams % statsFileName
+            END IF 
+         END IF
+         
+      END SUBROUTINE AddPathToProjectFiles
+      
    END MODULE MeshProjectClass
 
 

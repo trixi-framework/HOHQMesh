@@ -14,7 +14,7 @@
       USE ProgramGlobals
       USE MeshBoundaryMethodsModule
       USE ErrorTypesModule
-      USE MeshOutputMethods !DEBUG
+      USE MeshOutputMethods
       USE MeshSizerClass
       IMPLICIT NONE
    
@@ -88,6 +88,7 @@
 !
          IF(PrintMessage) PRINT *, "Generate 2D mesh..."
          
+         errorCode = A_OK_ERROR_CODE
          CALL GenerateQuadMeshFromGrid( project, errorCode )
          CALL trapExceptions !Abort on fatal exceptions
          IF(errorCode > A_OK_ERROR_CODE)     RETURN 
@@ -164,7 +165,7 @@
       CLASS(QuadTreeGrid), POINTER :: grid      => NULL()
       TYPE (SMMesh)      , POINTER :: mesh      => NULL()
       TYPE (SMModel)     , POINTER :: model     => NULL()
-      CLASS(MeshSizer)   , POINTER :: sizer     => NULL()
+      TYPE (MeshSizer)   , POINTER :: sizer     => NULL()
       CLASS(FTObject)    , POINTER :: obj       => NULL()
       CLASS(FTLinkedList), POINTER :: list      => NULL()
       TYPE (FTException) , POINTER :: exception => NULL()
@@ -220,7 +221,7 @@
 !     in the baseMethods module.
 !     --------------------------------------------------------------
 !
-     CALL generateTemporaryBoundaryArrays( sizer )
+      CALL generateTemporaryBoundaryArrays( sizer )
 !
 !     --------------------------------------------
 !     Mark the elements outside or near boundaries
@@ -359,6 +360,9 @@
       CALL unmarkNodesNearBoundaries( mesh % nodesIterator )
       CALL mesh % syncEdges()
       CALL mesh % renumberAllLists()
+      
+      IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
+      IF(ALLOCATED(curveTypeForID))       DEALLOCATE(curveTypeForID)
       
       IF(PrintMessage) PRINT *, "   Nodes and elements generated"
 
@@ -1539,13 +1543,14 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMChainedCurve)         , POINTER :: boundaryCurve => NULL()
-         CLASS(SMCurve)                , POINTER :: currentCurve  => NULL()
-         CLASS(SMNodePtr), DIMENSION(:), POINTER :: nodeArray     => NULL()
-         CLASS(SMNode)                 , POINTER :: node          => NULL()
-         INTEGER                                 :: nodeArraySize
-         INTEGER                                 :: j, k, jNode, id, jNode0, jNode1
-         REAL(KIND=RP)                           :: t, dt, t0, t1, x, dMin, d
+         CLASS(SMChainedCurve)         , POINTER   :: boundaryCurve => NULL()
+         CLASS(SMCurve)                , POINTER   :: currentCurve  => NULL()
+         CLASS(SMNodePtr), DIMENSION(:), POINTER   :: nodeArray     => NULL()
+         CLASS(SMNode)                 , POINTER   :: node          => NULL()
+         INTEGER                                   :: nodeArraySize
+         INTEGER                                   :: j, k, jNode, id, jNode0, jNode1
+         REAL(KIND=RP)                             :: t, dt, t0, t1, x, dMin, d
+         CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
          
          nodeArray     => GatheredNodes( list )
          nodeArraySize = SIZE(nodeArray)
@@ -1584,8 +1589,10 @@
          t0 = HUGE(t0)
          t1 = -10.0_RP !Doesn't really matter...
          
+         jnode0 = -1
+         jnode1 = -1
          DO j = 1, nodeArraySize 
-            t = nodeArray(j) % node % gWhereOnBoundary            
+            t = nodeArray(j) % node % gWhereOnBoundary
             IF( t < t0 )     THEN
                t0     = t
                jNode0 = j
@@ -1595,11 +1602,22 @@
                jNode1 = j
             END IF
          END DO
+         
          IF( t0 < 1.0_RP - t1 )     THEN
+           IF ( jNode0 < 0 )     THEN
+              WRITE(msg,*) "Joint node 0 not found"
+              CALL ThrowErrorExceptionOfType("FlagEndNodes", msg, FT_ERROR_FATAL)
+              RETURN 
+           END IF 
            nodeArray(jNode0) % node % whereOnBoundary = 0.0_RP
            nodeArray(jNode0) % node % nodeType        = boundaryCurve % jointClassification(0)
            nodeArray(jNode0) % node % bCurveID        = boundaryCurve % myCurveIDs(1)
          ELSE
+           IF ( jNode1 < 0 )     THEN
+              WRITE(msg,*) "Joint node 1 not found"
+              CALL ThrowErrorExceptionOfType("FlagEndNodes", msg, FT_ERROR_FATAL)
+              RETURN 
+           END IF 
            nodeArray(jNode1) % node % whereOnBoundary = 1.0_RP
            nodeArray(jNode1) % node % nodeType        = boundaryCurve % jointClassification(0)
          END IF
@@ -1616,15 +1634,21 @@
 !           TODO should bisect
 !           ----------------------
 !
-            dMin = HUGE(dMin)
+            dMin  = HUGE(dMin)
+            jNode = -1
             DO j = 1, SIZE(nodeArray) 
                x = nodeArray(j) % node % gWhereOnBoundary
                d = ABS(t - x)
                IF( d < dMin )     THEN
-                  dMin = d
+                  dMin  = d
                   jNode = j
                END IF
             END DO
+           IF ( jNode < 0 )     THEN
+              WRITE(msg,*) "Joint node not found"
+              CALL ThrowErrorExceptionOfType("FlagEndNodes", msg, FT_ERROR_FATAL)
+              RETURN 
+           END IF 
 !
 !           ------------------------
 !           Set the node information

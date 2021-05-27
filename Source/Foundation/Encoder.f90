@@ -17,16 +17,49 @@
       INTERFACE encode
          MODULE PROCEDURE :: encodeIntArray
          MODULE PROCEDURE :: encode2DRArray
+         MODULE PROCEDURE :: encodeString
       END INTERFACE  
       
       INTERFACE DECODE
          MODULE PROCEDURE :: decodeIntArray
          MODULE PROCEDURE :: decode2DRArray
+         MODULE PROCEDURE :: decodeString
       END INTERFACE 
 !
 !     --------      
       CONTAINS
 !     -------- 
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE encodeString(str, enc)
+         IMPLICIT NONE
+         CHARACTER(LEN=*)              :: str
+         CHARACTER(LEN=1), ALLOCATABLE :: enc(:)
+         INTEGER                       :: lngth, j
+         
+         lngth = LEN_TRIM(str)
+         ALLOCATE(enc(lngth))
+         DO j = 1, lngth 
+            enc(j) = str(j:j) 
+         END DO 
+         
+      END SUBROUTINE encodeString
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE decodeString(enc,strOut)
+         IMPLICIT NONE  
+         CHARACTER(LEN=*)   :: strOut
+         CHARACTER(LEN=1)   :: enc(:)
+         INTEGER :: j
+         
+         strOut = ""
+         DO j = 1, SIZE(enc) 
+            strOut(j:j) = enc(j) 
+         END DO 
+         
+      END SUBROUTINE decodeString
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

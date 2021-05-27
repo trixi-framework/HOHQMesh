@@ -31,6 +31,8 @@
          FINAL     :: destructSplineCurve
          PROCEDURE :: positionAt => positionOnSplineCurveAt
       END TYPE SMSplineCurve
+      
+      PRIVATE :: spline, seval, swapOrder
 !
 !     ========
       CONTAINS

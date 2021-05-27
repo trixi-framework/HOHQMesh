@@ -56,7 +56,7 @@
          CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: innerBoundariesIterator => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: interfaceBoundariesIterator => NULL()
-         CLASS(SMTopography)        , POINTER     :: topography
+         CLASS(SMTopography)        , POINTER     :: topography => NULL()
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
 !

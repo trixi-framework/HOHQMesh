@@ -67,25 +67,25 @@
 !        Preferences
 !        -----------
 !
-         INTEGER, PARAMETER :: MAX_VALENCE    = 8
          INTEGER, PARAMETER :: numCurvePoints = 500
          
-         INTEGER       :: minNumberOfElementsInsideArea = 6
+         INTEGER       :: minNumberOfElementsInsideArea = 4
          REAL(KIND=RP) :: curvatureFactor         = 2.0_RP
          REAL(KIND=RP) :: curveSubdivisionFactor  = 15.0_RP
-         REAL(KIND=RP) :: minimizationTolerance   = 1.0d-5
-         REAL(KIND=RP) :: edgeLengthFactor        = 0.3_RP
+         REAL(KIND=RP) :: minimizationTolerance   = 1.0d-7
+         REAL(KIND=RP) :: edgeLengthFactor        = 0.15_RP
          REAL(KIND=RP) :: maxParameterChange      = 0.5_RP 
          REAL(KIND=RP) :: parameterDelta          = 0.2_RP
          REAL(KIND=RP) :: subdivisionRelTol       = 0.05_RP
-         REAL(KIND=RP) :: directionPenalty        = 1.d-4
-         LOGICAL       :: boundarySlipping        = .TRUE.
+         REAL(KIND=RP) :: directionPenalty        = 1.0d-4
+         REAL(KIND=RP) :: boundingBoxOverlapTol   = 1.0d-5
+         LOGICAL       :: boundarySlipping        = .FALSE.
 !
 !        --------------------
 !        For printing history
 !        --------------------
 !
-         LOGICAL :: printMessage = .false.
+         LOGICAL :: printMessage = .FALSE.
 !
 !        ----------------------
 !        For close curve sizing
@@ -106,68 +106,6 @@
          INTEGER, PARAMETER :: VALENCE_TOO_HIGH_ERROR_CODE      = 1
          INTEGER, PARAMETER :: CURVE_NOT_FOUND_ERROR_CODE       = 2
          INTEGER, PARAMETER :: UNASSOCIATED_POINTER_ERROR_CODE  = 3
-         
-!        ========
-         CONTAINS
-!        ========
-!         
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE SetUpPreferences
-         IMPLICIT NONE
-         INTEGER           :: preferencesFileUnit
-         INTEGER, EXTERNAL :: UnusedUnit
-         INTEGER           :: ios
-!
-!        ----------------------------------------------------
-!        Read in the preferences file if it exists, write out
-!        default values if it doesn't
-!        ----------------------------------------------------
-!
-         preferencesFileUnit = UnusedUnit()
-         OPEN( UNIT   = preferencesFileUnit, &
-               FILE   = "HOMesh2DPreferences.txt", &
-               STATUS = "OLD", IOSTAT = ios )
-         IF( ios == 0 )     THEN
-            CALL LoadPreferences(preferencesFileUnit)
-            CLOSE(preferencesFileUnit)
-         ELSE
-            OPEN( UNIT = preferencesFileUnit, FILE = "HOMesh2DPreferences.txt", &
-                  STATUS = "NEW", IOSTAT = ios )
-            CALL WriteDefaultPreferences(preferencesFileUnit)
-            CLOSE(preferencesFileUnit)
-         END IF
-         
-      END SUBROUTINE SetUpPreferences
-!
-!////////////////////////////////////////////////////////////////////////
-!
-         SUBROUTINE LoadPreferences( fUnit ) 
-            IMPLICIT NONE
-            INTEGER :: fUnit
-            READ(fUnit,*) curvatureFactor      , curveSubdivisionFactor
-            READ(fUnit,*) minimizationTolerance, edgeLengthFactor
-            READ(fUnit,*) maxParameterChange   , parameterDelta, directionPenalty
-            READ(fUnit,*) closeCurveFactor     , closeCurveNormalAlignment
-            READ(fUnit,*) refinementType       , boundarySmoothingPasses
-            READ(fUnit,*) printMessage         , minNumberOfElementsInsideArea
-            READ(fUnit,*) boundarySlipping
-         END SUBROUTINE LoadPreferences
-!
-!////////////////////////////////////////////////////////////////////////
-!
-         SUBROUTINE WriteDefaultPreferences( fUnit ) 
-            IMPLICIT NONE
-            INTEGER :: fUnit
-            WRITE(fUnit,*) curvatureFactor      , curveSubdivisionFactor
-            WRITE(fUnit,*) minimizationTolerance, edgeLengthFactor
-            WRITE(fUnit,*) maxParameterChange   , parameterDelta, directionPenalty
-            WRITE(fUnit,*) closeCurveFactor     , closeCurveNormalAlignment
-            WRITE(fUnit,*) refinementType       , boundarySmoothingPasses
-            WRITE(fUnit,*) printMessage         , minNumberOfElementsInsideArea
-            WRITE(fUnit,*) boundarySlipping
-         END SUBROUTINE WriteDefaultPreferences
          
       END Module ProgramGlobals
       

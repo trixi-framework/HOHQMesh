@@ -573,92 +573,6 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-!      RECURSIVE SUBROUTINE printInputDictionary(inputDict)
-!!
-!!        ----------------------
-!!        For debugging purposes
-!!        ----------------------
-!!
-!         IMPLICIT NONE  
-!         TYPE (FTValueDictionary)               , POINTER :: inputDict
-!         CLASS(FTObject)                        , POINTER :: obj
-!         CHARACTER(LEN=FTDICT_KWD_STRING_LENGTH), POINTER :: keys(:)
-!         INTEGER                                          :: i
-!!
-!!        ----------------------
-!!        Check on Control input
-!!        ----------------------
-!!
-!         keys => inputDict % allKeys()
-!         PRINT *
-!         PRINT *, "---------------------"
-!         PRINT *, inputDict % stringValueForKey(key = "TYPE",requestedLength = 24)
-!         PRINT *, "---------------------"
-!         PRINT *
-!         
-!         DO i = 1, SIZE(keys)
-!         
-!            obj => inputDict % objectForKey(key = keys(i))
-!            
-!            SELECT TYPE (contentsForKey => obj) 
-!            
-!               CLASS IS (FTValueDictionary)
-!                  CALL printInputDictionary(inputDict = contentsForKey)
-!                  
-!               CLASS IS (FTLinkedList)
-!                  CALL printInputList(inputList = contentsForKey)
-!               
-!               TYPE IS (FTValue)
-!                  PRINT *, keys(i), contentsForKey % stringValue(32)
-!                  
-!               CLASS DEFAULT 
-!                  PRINT *, "Printing Unimplemented for type: ", contentsForKey % className() !TODO: Use exception
-!            END SELECT 
-!            
-!         END DO
-!         
-!         DEALLOCATE(keys)
-!      END SUBROUTINE printInputDictionary
-!!
-!!//////////////////////////////////////////////////////////////////////// 
-!! 
-!      RECURSIVE SUBROUTINE printInputList(inputList)
-!!
-!!        ----------------------
-!!        For debugging purposes
-!!        ----------------------
-!!
-!         IMPLICIT NONE
-!         CLASS(FTLinkedList)       , POINTER :: inputList
-!         TYPE(FTLinkedListIterator)          :: iterator
-!         CLASS(FTObject)           , POINTER :: obj
-!         
-!         IF( inputList % count() == 0)     RETURN
-!         
-!         CALL iterator % initWithFTLinkedList(list = inputList)
-!         CALL iterator % setToStart()
-!         
-!         DO WHILE (.NOT. iterator % isAtEnd())
-!            obj => iterator % object()
-!            
-!            SELECT TYPE ( contents => obj)
-!            
-!               CLASS IS (FTValueDictionary)
-!                  CALL printInputDictionary(inputDict = contents)
-!               
-!               CLASS IS (FTLinkedList)
-!                  CALL printInputList(inputList = contents)
-!                  
-!               CLASS DEFAULT 
-!                  PRINT *, "bad default" !TODO 
-!            END SELECT 
-!            
-!            CALL iterator % moveToNext()
-!         END DO 
-!      END SUBROUTINE printInputList
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
       SUBROUTINE replaceTabs(line)  
          IMPLICIT NONE
          CHARACTER(LEN=*) :: line
@@ -693,6 +607,7 @@
          CHARACTER(LEN=1), ALLOCATABLE    :: enc(:)
          TYPE (FTData)   , POINTER        :: dta
          CLASS(FTObject) , POINTER        :: obj
+         TYPE (FTException)     , POINTER :: exception
 !
 !        ----------------
 !        Number of points
@@ -723,11 +638,17 @@
             READ(fileUnit,"(A)", END = 1000) line
             j = INDEX(STRING = line, SUBSTRING = "\end{SPLINE_DATA}")
             IF ( j <= 0 )     THEN
-               PRINT *,"No \end{SPLINE_DATA} marker for spline data"!DEBUG
+               ALLOCATE(exception)
+               CALL exception % initFatalException( "No \end{SPLINE_DATA} marker for spline data" )
+               CALL throw(exceptionToThrow = exception)
+               CALL releaseFTException(exception)
             END IF 
             
          ELSE 
-            PRINT *, "Malformed spline block. No nKnots field"!DEBUG 
+            ALLOCATE(exception)
+            CALL exception % initFatalException( "Malformed Spline data. No nKnots" )
+            CALL throw(exceptionToThrow = exception)
+            CALL releaseFTException(exception)
          END IF 
           
 1000  CONTINUE 

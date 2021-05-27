@@ -77,6 +77,7 @@ CONTAINS
       fv=fx 
       fw=fx 
       tol3=tol/3.0d0 
+      d = 0.0d0
 !                            
 !  main loop starts here     
 !                            
