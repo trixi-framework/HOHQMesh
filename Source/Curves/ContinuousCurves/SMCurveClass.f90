@@ -39,7 +39,8 @@
          PROCEDURE                  :: setID
          PROCEDURE                  :: id
          PROCEDURE                  :: setCurveName
-         PROCEDURE                  :: curveName       
+         PROCEDURE                  :: curveName
+         PROCEDURE                  :: className => CurveClassName
       END TYPE SMCurve
 !
 !     -------
@@ -139,6 +140,26 @@
         CLASS(SMCurve) :: self
         curveName = self % curveName_ 
      END FUNCTION curveName
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!      -----------------------------------------------------------------
+!> Class name returns a string with the name of the type of the object
+!>
+!>  ### Usage:
+!>
+!>        PRINT *,  obj % className()
+!>        if( obj % className = "Curve")
+!>
+      FUNCTION CurveClassName(self)  RESULT(s)
+         IMPLICIT NONE  
+         CLASS(SMCurve)                             :: self
+         CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH) :: s
+         
+         s = "Curve"
+         IF( self % refCount() >= 0 ) CONTINUE 
+ 
+      END FUNCTION CurveClassName
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

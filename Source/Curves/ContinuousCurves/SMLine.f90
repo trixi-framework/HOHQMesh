@@ -28,6 +28,7 @@
          PROCEDURE :: positionAt       => positionOnLineAt
          PROCEDURE :: tangentAt        => tangentOnLineAt
          PROCEDURE :: printDescription => printLineDescription
+         PROCEDURE :: className        => LineClassName
       END TYPE SMLine
 !
 !     ========
@@ -112,5 +113,25 @@
         WRITE(iUnit,*) "SMLine Object"
         IF(self % refCount() >= 0)     CONTINUE 
      END SUBROUTINE printLineDescription
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!      -----------------------------------------------------------------
+!> Class name returns a string with the name of the type of the object
+!>
+!>  ### Usage:
+!>
+!>        PRINT *,  obj % className()
+!>        if( obj % className = "Line")
+!>
+      FUNCTION LineClassName(self)  RESULT(s)
+         IMPLICIT NONE  
+         CLASS(SMLine)                              :: self
+         CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH) :: s
+         
+         s = "Line"
+         IF( self % refCount() >= 0 ) CONTINUE 
+ 
+      END FUNCTION LineClassName
  
       END Module SMLineClass

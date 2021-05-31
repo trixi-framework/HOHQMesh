@@ -37,6 +37,7 @@
          FINAL     :: destructPECurve
          PROCEDURE :: positionAt => positionOnPECurveAt
          PROCEDURE :: printDescription => printPEDescription
+         PROCEDURE :: className        => PEClassName
       END TYPE SMParametricEquationCurve
 !
 !     ========
@@ -209,5 +210,25 @@
          CALL release(obj)
          
       END SUBROUTINE ThrowEquationFormatException
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!      -----------------------------------------------------------------
+!> Class name returns a string with the name of the type of the object
+!>
+!>  ### Usage:
+!>
+!>        PRINT *,  obj % className()
+!>        if( obj % className = "ParametricEquation")
+!>
+      FUNCTION PEClassName(self)  RESULT(s)
+         IMPLICIT NONE  
+         CLASS(SMParametricEquationCurve)           :: self
+         CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH) :: s
+         
+         s = "ParametricEquation"
+         IF( self % refCount() >= 0 ) CONTINUE 
+ 
+      END FUNCTION PEClassName
       
       END Module SMParametricEquationCurveClass

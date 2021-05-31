@@ -30,6 +30,7 @@
          PROCEDURE :: initWithPointsNameAndID
          FINAL     :: destructSplineCurve
          PROCEDURE :: positionAt => positionOnSplineCurveAt
+         PROCEDURE :: className  => SplineClassName
       END TYPE SMSplineCurve
       
       PRIVATE :: spline, seval, swapOrder
@@ -135,6 +136,48 @@
             self => NULL() 
          END IF      
       END SUBROUTINE releaseSplineCurve
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!      -----------------------------------------------------------------
+!> Class name returns a string with the name of the type of the object
+!>
+!>  ### Usage:
+!>
+!>        PRINT *,  obj % className()
+!>        if( obj % className = "Spline")
+!>
+      FUNCTION SplineClassName(self)  RESULT(s)
+         IMPLICIT NONE  
+         CLASS(SMSplineCurve)                       :: self
+         CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH) :: s
+         
+         s = "Spline"
+         IF( self % refCount() >= 0 ) CONTINUE 
+ 
+      END FUNCTION SplineClassName
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE castCurveToSplineCurve(obj,cast) 
+!
+!     -----------------------------------------------------
+!     Cast the base class FTObject to the FTValue class
+!     -----------------------------------------------------
+!
+         IMPLICIT NONE  
+         CLASS(SMCurve)      , POINTER :: obj
+         CLASS(SMSplineCurve), POINTER :: cast
+         
+         cast => NULL()
+         SELECT TYPE (e => obj)
+            CLASS IS(SMSplineCurve)
+               cast => e
+            CLASS DEFAULT
+               
+         END SELECT
+         
+      END SUBROUTINE castCurveToSplineCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
