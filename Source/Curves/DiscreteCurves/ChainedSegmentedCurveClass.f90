@@ -34,6 +34,7 @@
          CHARACTER(LEN=CHAINED_SEGMENTED_CURVE_NAME_LENGTH) :: curveName
          INTEGER                                            :: id
          INTEGER                                            :: numberOfCurvesInChain
+         INTEGER                                            :: numberOfPointsInChain
          LOGICAL                                            :: isCircular
          REAL(KIND=RP)                                      :: boundingBox(6)
          CLASS(FTMutableobjectArray), POINTER               :: chain  => NULL()
@@ -75,6 +76,7 @@
          self % curveName             = curveName
          self % id                    = id
          self % numberOfCurvesInChain = 0
+         self % numberOfPointsInChain = 0
          self % isCircular            = .FALSE.
          self % boundingBox           = 0.0_RP
          
@@ -144,6 +146,7 @@
 !
             obj => c
             CALL self % chain % addObject(obj) 
+            self % numberOfPointsInChain = self % numberOfPointsInChain + c % COUNT()
          ELSE 
 !
 !           ------------------------
@@ -159,6 +162,7 @@
             IF ( d < chainTol )     THEN
                obj => c
                CALL self % chain % addObject(obj)
+               self % numberOfPointsInChain = self % numberOfPointsInChain + c % COUNT()
                
             ELSE ! Check first if the new curve is reversed
             
@@ -169,6 +173,7 @@
                   CALL c % reverse()
                   obj => c
                   CALL self % chain % addObject(obj) 
+                  self % numberOfPointsInChain = self % numberOfPointsInChain + c % COUNT()
                ELSE ! Trouble - they don't match up
                   CALL throwCurveDoesntFollowException(self,c,xStart,xEnd)
                   RETURN

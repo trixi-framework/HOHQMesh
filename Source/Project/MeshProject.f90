@@ -721,8 +721,102 @@
          IF ( ASSOCIATED( self % model % interfaceBoundaries ) ) THEN
             CALL ComputeInterfaceCurveScales( self % sizer )
          END IF
+!
+!        TODO: ResizeSegmentedCurves is introduced to solve the dilemma that 
+!              in order to determine the distances curves are from eachother, 
+!              they must be discetized, but once the distances are found, it
+!              may be true that the spacing between the points is large in
+!              comparison. ResizeSegmentedCurves goes back and compares the
+!              spacing between the points int he segmented curves to the 
+!              computed spacing between the curves. This appears to be an
+!              iterative process, but is only done once. 
+!              The procedure compiles and runs, but until a case arises where
+!              it is necessary, the procedure has not been debugged. Hence,
+!              it is skipped until then.
+!
+!         CALL ResizeSegmentedCurves(self)
          
       END SUBROUTINE BuildSizerBoundaryCurves
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ResizeSegmentedCurves( self )
+!
+!     -----------------------------------------------------------
+!     After the spacing between a curve and itself, and a curve
+!     with other curves is computed, the distance between points
+!     on the segmented curves might be too large in comparison.
+!     If so, subdivide the segmented curves further.
+!     -----------------------------------------------------------
+!
+         IMPLICIT NONE 
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (MeshProject) :: self
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(MeshSizer)            , POINTER :: sizer
+         CLASS(FRSegmentedCurve)     , POINTER :: frsCurve
+         CLASS(SMChainedCurve)       , POINTER :: outerBoundary
+         CLASS(SMCurve)              , POINTER :: cCurve
+         CLASS(FTLinkedListIterator) , POINTER :: curveIterator, segmentedIterator
+         CLASS(FTObject)             , POINTER :: obj
+         CLASS(SMChainedCurve)       , POINTER :: innerCurveChain
+         CLASS(ChainedSegmentedCurve), POINTER :: innerSegmentedCurveChain
+         INTEGER                              :: j
+                  
+         sizer => self % sizer
+!
+!        --------------
+!        Outer boundary
+!        --------------
+!
+         IF ( ASSOCIATED( sizer % outerBoundary) )     THEN
+            outerBoundary => self % model % outerBoundary
+            DO j = 1, sizer % outerBoundary % curveCount() 
+               cCurve   => outerBoundary % curveAtIndex(j)
+               frsCurve => sizer % outerBoundary % segmentedCurveAtIndex(j) 
+               CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve)
+            END DO 
+         END IF 
+!
+!        ----------------
+!        Inner boundaries
+!        ----------------
+!
+         IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
+            curveIterator => self % model % innerBoundariesIterator
+            ALLOCATE(segmentedIterator)
+            CALL segmentedIterator % initWithFTLinkedList(sizer % innerBoundariesList)
+            
+            CALL curveIterator % setToStart()
+            CALL segmentedIterator % setToStart()
+            
+            DO WHILE (.NOT.curveIterator % isAtEnd())
+               obj     => curveIterator % object()
+               CALL castToSMChainedCurve(obj,innerCurveChain)
+               
+               obj     => segmentedIterator % object()
+               CALL castToChainedSegmentedCurve(obj,innerSegmentedCurveChain)
+               
+               DO j = 1, innerSegmentedCurveChain % curveCount()
+                  cCurve   => innerCurveChain % curveAtIndex(j)
+                  frsCurve => innerSegmentedCurveChain % segmentedCurveAtIndex(j) 
+                  CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve)
+               END DO 
+                
+               CALL curveIterator % moveToNext()
+               CALL segmentedIterator % moveToNext()
+            END DO
+         END IF
+         
+      END SUBROUTINE ResizeSegmentedCurves      
 !
 !////////////////////////////////////////////////////////////////////////
 !

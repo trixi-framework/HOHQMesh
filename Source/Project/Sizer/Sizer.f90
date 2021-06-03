@@ -44,7 +44,6 @@
          PROCEDURE :: addBoundaryCurve
          PROCEDURE :: sizeFunctionMinimumOnBox
          PROCEDURE :: setBaseSize
-!         PROCEDURE :: clearBoundaryCurves
          
       END TYPE MeshSizer
       
@@ -547,8 +546,7 @@
                k = k + 1
                CALL iterator % moveToNext()           
             END DO  
-            obj => iterator
-            CALL release(obj)
+            CALL releaseFTLinkedListIterator(iterator)
          END IF 
             
          IF ( self % noOfInterfaceBoundaries > 0 )     THEN
@@ -563,8 +561,7 @@
                k                           = k + 1
                CALL iterator % moveToNext()           
             END DO  
-            obj => iterator
-            CALL release(obj)
+            CALL releaseFTLinkedListIterator(iterator)
          END IF
 !
 !        -----------------------------------------------
@@ -976,7 +973,7 @@
 !
       INTEGER                               :: i, j, l, n
       CLASS(FRSegmentedCurve)     , POINTER :: innerSegment, outerSegment
-      REAL(KIND=RP)                         :: x(3), y(3), d, outerInvScale, innerInvScale
+      REAL(KIND=RP)                         :: x(3), y(3), d, outerInvScale, innerInvScale, ss
       REAL(KIND=RP)                         :: nHatInner(3), nHatOuter(3), normalsDot, targetDot
       REAL(KIND=RP)                         :: vecToTarget(3)
       LOGICAL                               :: isProperTarget
@@ -998,7 +995,7 @@
             nHatOuter     = outerSegment % normalAtIndex(j)
 !
 !           ----------------------------------
-!           For every other point in the curve
+!           For every other point along itself
 !           ----------------------------------
 !
             DO n = 1, segmentedCurveChain % curveCount()

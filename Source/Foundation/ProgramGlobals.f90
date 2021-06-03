@@ -92,7 +92,7 @@
 !        ----------------------
 !
          REAL(KIND=RP) :: closeCurveFactor          = 3.25_RP  ! Should be around 3
-         REAL(KIND=RP) :: closeCurveNormalAlignment = 0.8_RP   ! Dot product near 1
+         REAL(KIND=RP) :: closeCurveNormalAlignment = 0.7_RP   ! Dot product near 1. This used to be 0.8
          REAL(KIND=RP) :: normalTangentMin          = 0.01_RP  ! Dot of normal and tangent should be zero. Use this instead.
          
          INTEGER       :: refinementType          = 2

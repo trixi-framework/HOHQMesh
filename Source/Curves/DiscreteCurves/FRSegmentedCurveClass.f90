@@ -415,9 +415,10 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initFRSegmentedCurve( self, theCurve, h, controls, id )
+      SUBROUTINE initFRSegmentedCurve( self, theCurve, h, controls, idc )
          USE Geometry, ONLY:Curvature
-         USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE
+         USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE, UNDEFINED, printMessage
+         USE SMSplineCurveClass
 !
 !     ------------------------------------------------
 !     Construct the curve given a Curve class instance
@@ -433,23 +434,25 @@
          CLASS(SMCurve)     , POINTER :: theCurve
          CLASS(FTLinkedList), POINTER :: controls
          REAL(KIND=RP)                :: h
-         INTEGER                      :: id
+         INTEGER                      :: idc
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
-         CLASS(SMSegmentedCurveNode), POINTER   :: left => NULL(), right => NULL(), p => NULL()
-         REAL(KIND=RP)                          :: t, x(3)
-         REAL(KIND=RP)                          :: xL(3), xM(3), xR(3), tL, tM, tR, c, s
-         REAL(KIND=RP)                          :: xPrimeL(3), xPrimeR(3), xPrime(3), xDoublePrime(3)
-         REAL(KIND=RP)                          :: norm
-         INTEGER                                :: j, N, jointType
-         LOGICAL                                :: isCircular
-         CLASS(SMSegment)   , POINTER           :: rootSegment
-         CLASS(FTLinkedList), POINTER           :: nodes
-         CLASS(FTObject)    , POINTER           :: objPtr, obj
+         CLASS(SMSegmentedCurveNode), POINTER      :: left => NULL(), right => NULL(), p => NULL()
+         REAL(KIND=RP)                             :: t, x(3)
+         REAL(KIND=RP)                             :: xL(3), xM(3), xR(3), tL, tM, tR, c, s
+         REAL(KIND=RP)                             :: xPrimeL(3), xPrimeR(3), xPrime(3), xDoublePrime(3)
+         REAL(KIND=RP)                             :: norm
+         INTEGER                                   :: j, N, jointType
+         LOGICAL                                   :: isCircular
+         CLASS(SMSegment)    , POINTER             :: rootSegment
+         CLASS(FTLinkedList) , POINTER             :: nodes
+         CLASS(FTObject)     , POINTER             :: objPtr, obj
+         CLASS(SMSplineCurve), POINTER             :: spline
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
+         LOGICAL                                   :: useSplinePoints
 !
 !        ----
 !        Self
@@ -459,7 +462,7 @@
          ALLOCATE(self % nodeArray)
          
          self % curveName  = theCurve % curveName()
-         self % id         = id
+         self % id         = idc
          self % isCircular = .FALSE.
          ALLOCATE(left, right)
 !
@@ -528,139 +531,297 @@
             self % isCircular = .TRUE. 
          END IF
          
-         jointType = -1
+         jointType = UNDEFINED
          IF ( self % isCircular )     THEN
-            jointType = JointClassification(theCurve,theCurve,INNER)
+            jointType = JointClassification(theCurve, theCurve, INNER)
          END IF 
 !
-!        ----------------------
-!        Compute the curvatures
-!        ----------------------
+!        -------------------------------------------------------------------------
+!        ASSUMPTION: A spline curve is already discrete, and presumably defined
+!        with the number of points needed to represent it accurately. If
+!        the number of spline points is larger than the number that the refinement 
+!        algorithm has determined, then use the spline points and the associated 
+!        curvature for the spline. 
+!        -------------------------------------------------------------------------
 !
-         DO j = 1, N
-            obj => self % nodeArray % objectAtIndex(j)
-            CALL cast(obj,p)
+         useSplinePoints = .FALSE.
+         IF (  theCurve % className() == "Spline" )     THEN
+           CALL castCurveToSplineCurve(obj = theCurve, cast = spline)
+           IF ( spline % numKnots > self % nodeArray % COUNT() )     THEN
+               useSplinePoints = .TRUE. 
+            ELSE 
+               useSplinePoints = .FALSE. 
+            END IF 
+         END IF 
+         
+         IF (useSplinePoints )     THEN
+
+            CALL releaseFTMutableObjectArray(self % nodeArray)
+            ALLOCATE(self % nodeArray)
+            CALL self % nodeArray % initWithSize(arraySize = spline % numKnots)
             
-            IF ( j == 1 )     THEN
-               obj => self % nodeArray % objectAtIndex(1)
-               CALL cast(obj,left)
+            DO j = 1, spline % numKnots 
+               xPrime       = [spline % bx(j), spline % by(j), spline % bz(j)]
+               xDoublePrime = [2.0_RP*spline % cx(j), 2.0_RP*spline % cy(j), 2.0_RP*spline % cz(j)]
+               c = Curvature( xPrime, xDoublePrime)
+               s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature          
+
+               ALLOCATE(p)
+               CALL p % initSMSegmentedCurveNode(x = [spline % x(j), spline % y(j), spline % z(j)], &
+                                                 t = spline % t(j)) 
+               p % invScale = 1.0_RP/s
+               norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
+               p % nHat(1)  =  xPrime(2)/norm
+               p % nHat(2)  = -xPrime(1)/norm
+               p % nHat(3)  = 0.0_RP
                
-               obj => self % nodeArray % objectAtIndex(2)
-               CALL cast(obj,right)
-               xL           = left  % x
-               xR           = right % x
-               tL           = left  % t
-               tR           = right % t
-               xPrime       = (xR - xL)/(tR - tL)
-               xDoublePrime = 0.0_RP
-            ELSE IF (j == N)     THEN 
-               obj => self % nodeArray % objectAtIndex(N-1)
-               CALL cast(obj,left)
-               obj => self % nodeArray % objectAtIndex(N)
-               CALL cast(obj,right)
-               xL           = left  % x
-               xR           = right % x
-               tL           = left  % t
-               tR           = right % t
-               xPrime       = (xR - xL)/(tR - tL)
-               xDoublePrime = 0.0_RP
-            ELSE
+               obj => p
+               CALL self % nodeArray % addObject(obj)
+               CALL releaseSMSegmentedCurveNode(p)
+              
+            END DO 
+            
+         ELSE 
+!
+!           ----------------------
+!           Compute the curvatures
+!           ----------------------
+!
+            DO j = 1, N
+               obj => self % nodeArray % objectAtIndex(j)
+               CALL cast(obj,p)
+               
+               IF ( j == 1 )     THEN
+                  obj => self % nodeArray % objectAtIndex(1)
+                  CALL cast(obj,left)
+                  
+                  obj => self % nodeArray % objectAtIndex(2)
+                  CALL cast(obj,right)
+                  xL           = left  % x
+                  xR           = right % x
+                  tL           = left  % t
+                  tR           = right % t
+                  xPrime       = (xR - xL)/(tR - tL)
+                  xDoublePrime = 0.0_RP
+               ELSE IF (j == N)     THEN 
+                  obj => self % nodeArray % objectAtIndex(N-1)
+                  CALL cast(obj,left)
+                  obj => self % nodeArray % objectAtIndex(N)
+                  CALL cast(obj,right)
+                  xL           = left  % x
+                  xR           = right % x
+                  tL           = left  % t
+                  tR           = right % t
+                  xPrime       = (xR - xL)/(tR - tL)
+                  xDoublePrime = 0.0_RP
+               ELSE
+                  xM = p % x
+                  tM = p % t
+                  obj => self % nodeArray % objectAtIndex(j-1)
+                  CALL cast(obj,left)
+                  obj => self % nodeArray % objectAtIndex(j+1)
+                  CALL cast(obj,right)
+                  xL           = left  % x
+                  xR           = right % x
+                  tL           = left  % t
+                  tR           = right % t
+                  xPrimeR      = (xR - xM)/(tR - tM)
+                  xPrimeL      = (xM - xL)/(tM - tL)
+                  xPrime       = 0.5*(xPrimeR + xPrimeL)
+                  xDoublePrime = 2.0_RP*(xPrimeR - xPrimeL)/(tR - tL)
+               END IF 
+               
+               c = Curvature( xPrime, xDoublePrime )
+               s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature          
+               p % invScale = 1.0_RP/s
+               norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
+!
+!              --------------------------------------------------------------
+!              The normal direction is in the domain side for interior curves
+!              and to the exterior for the outer boundary curve
+!              --------------------------------------------------------------
+!
+               p % nHat(1)  =  xPrime(2)/norm
+               p % nHat(2)  = -xPrime(1)/norm
+               p % nHat(3)  = 0.0_RP
+            END DO
+!
+!           -------------------------------------------
+!           Match ends if the curve is a closed loop
+!           and if there is no sharp corner. Otherwise,
+!           extend the curvature from the second and
+!           next to last points.
+!           -------------------------------------------
+!
+            IF ( self % isCircular .AND. jointType == ROW_SIDE )     THEN
+            
+               obj => self % nodeArray % objectAtIndex(1)
+               CALL cast(obj,p)
+               
                xM = p % x
                tM = p % t
-               obj => self % nodeArray % objectAtIndex(j-1)
+   
+               obj => self % nodeArray % objectAtIndex(N-1)
                CALL cast(obj,left)
-               obj => self % nodeArray % objectAtIndex(j+1)
+               obj => self % nodeArray % objectAtIndex(2)
                CALL cast(obj,right)
+               
                xL           = left  % x
                xR           = right % x
-               tL           = left  % t
+               tL           = left  % t - 1.0_RP
                tR           = right % t
                xPrimeR      = (xR - xM)/(tR - tM)
                xPrimeL      = (xM - xL)/(tM - tL)
                xPrime       = 0.5*(xPrimeR + xPrimeL)
                xDoublePrime = 2.0_RP*(xPrimeR - xPrimeL)/(tR - tL)
+   
+               c = Curvature( xPrime, xDoublePrime )
+               s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature          
+               p % invScale = 1.0_RP/s
+               norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
+               p % nHat(1)  =  xPrime(2)/norm
+               p % nHat(2)  = -xPrime(1)/norm
+               p % nHat(3)  = 0.0_RP
+   
+               obj => self % nodeArray % objectAtIndex(N)
+               CALL cast(obj,left)
+               
+               left % x        = p % x
+               left % nHat     = p % nHat
+               left % invScale = p % invScale
+            ELSE
+               obj => self % nodeArray % objectAtIndex(1)
+               CALL cast(obj,p)
+   
+               obj => self % nodeArray % objectAtIndex(2)
+               CALL cast(obj,right)
+               
+               p % nHat     = right % nHat
+               p % invScale = right % invScale
+               
+               obj => self % nodeArray % objectAtIndex(N)
+               CALL cast(obj,p)
+   
+               obj => self % nodeArray % objectAtIndex(N-1)
+               CALL cast(obj,left)
+               
+               p % nHat     = left % nHat
+               p % invScale = left % invScale
+   
             END IF 
-            
-            c = Curvature( xPrime, xDoublePrime )
-            s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature          
-            p % invScale = 1.0_RP/s
-            norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
-!
-!           --------------------------------------------------------------
-!           The normal direction is in the domain side for interior curves
-!           and to the exterior for the outer boundary curve
-!           --------------------------------------------------------------
-!
-            p % nHat(1)  =  xPrime(2)/norm
-            p % nHat(2)  = -xPrime(1)/norm
-            p % nHat(3)  = 0.0_RP
-         END DO
-!
-!        -------------------------------------------
-!        Match ends if the curve is a closed loop
-!        and if there is no sharp corner. Otherwise,
-!        extend the curvature from the second and
-!        next to last points.
-!        -------------------------------------------
-!
-         IF ( self % isCircular .AND. jointType == ROW_SIDE )     THEN
-         
-            obj => self % nodeArray % objectAtIndex(1)
-            CALL cast(obj,p)
-            
-            xM = p % x
-            tM = p % t
-
-            obj => self % nodeArray % objectAtIndex(N-1)
-            CALL cast(obj,left)
-            obj => self % nodeArray % objectAtIndex(2)
-            CALL cast(obj,right)
-            
-            xL           = left  % x
-            xR           = right % x
-            tL           = left  % t - 1.0_RP
-            tR           = right % t
-            xPrimeR      = (xR - xM)/(tR - tM)
-            xPrimeL      = (xM - xL)/(tM - tL)
-            xPrime       = 0.5*(xPrimeR + xPrimeL)
-            xDoublePrime = 2.0_RP*(xPrimeR - xPrimeL)/(tR - tL)
-
-            c = Curvature( xPrime, xDoublePrime )
-            s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature          
-            p % invScale = 1.0_RP/s
-            norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
-            p % nHat(1)  =  xPrime(2)/norm
-            p % nHat(2)  = -xPrime(1)/norm
-            p % nHat(3)  = 0.0_RP
-
-            obj => self % nodeArray % objectAtIndex(N)
-            CALL cast(obj,left)
-            
-            left % x        = p % x
-            left % nHat     = p % nHat
-            left % invScale = p % invScale
-         ELSE
-            obj => self % nodeArray % objectAtIndex(1)
-            CALL cast(obj,p)
-
-            obj => self % nodeArray % objectAtIndex(2)
-            CALL cast(obj,right)
-            
-            p % nHat     = right % nHat
-            p % invScale = right % invScale
-            
-            obj => self % nodeArray % objectAtIndex(N)
-            CALL cast(obj,p)
-
-            obj => self % nodeArray % objectAtIndex(N-1)
-            CALL cast(obj,left)
-            
-            p % nHat     = left % nHat
-            p % invScale = left % invScale
-
          END IF 
          
       END SUBROUTINE initFRSegmentedCurve
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ResizeFRSegmentedCurve( self, curve)  
+         IMPLICIT NONE  
+!
+!     -----------------------------------------------------------------------
+!     Use the current value of invScale to make sure that the
+!     spacing between points along the curve is small enough. This is
+!     needed if a curve bends closer to itself or neighboring curves are
+!     closer than the distance between two points along the FRSegmentedCurve.
+!     If so, add extra points along the FRSegmentedCurve.
+!     -----------------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE( FRSegmentedCurve ) :: self
+         CLASS(SMCurve), POINTER  :: curve
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CLASS(FTMutableObjectArray), POINTER :: newPointArray
+         INTEGER                              :: k, j, N, M
+         CLASS(FTObject)            , POINTER :: pObj
+         CLASS(SMSegmentedCurveNode), POINTER :: pk, pkp1, newP
+         LOGICAL                              :: needsRefinement
+         REAL(KIND=RP)                        :: d, dx(3), s, x(3)
+         REAL(KIND=RP)                        :: t, dt, deltaT, jdt, invScale
+         REAL(KIND=RP), PARAMETER             :: ALLOWED_SIZE_RATIO = 1.1_RP !A parameter to play with
+         REAL(KIND=RP), PARAMETER             :: DESIRED_SIZE_RATIO = 0.5_RP !A parameter to play with
+         
+         N               = self % nodeArray % COUNT()
+         needsRefinement = .FALSE.
+!
+!        -----------------------------------
+!        Test to see if refinement is needed
+!        -----------------------------------
+!
+         DO k = 1, N-1
+               pObj => self % nodeArray % objectAtIndex(k)
+               CALL cast(pObj,pk)
+               pObj => self % nodeArray % objectAtIndex(k+1)
+               CALL cast(pObj,pkp1)
+               
+               dx = pkp1 % x - pk % x
+               d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
+               s  = 0.5_RP*(pk % invScale + pkp1 % invScale)
+               
+               IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
+                  needsRefinement = .TRUE.
+                  EXIT 
+               END IF 
+         END DO 
+         PRINT *, "**********************************"
+         IF(.NOT. needsRefinement)     RETURN 
+!
+!        ---------------------------------------------------------------
+!        Add new points to the segmented curve so that it is fine enouth
+!        ---------------------------------------------------------------
+!
+         ALLOCATE(newPointArray)
+         CALL newPointArray % initWithSize(arraySize = 3*N/2) !These numbers are arbitrary
+         CALL newPointArray % setChunkSize(chunkSize = 100)   !
+         
+         DO k = 1, N-1
+               pObj => self % nodeArray % objectAtIndex(k+1)
+               CALL cast(pObj,pkp1)
+               pObj => self % nodeArray % objectAtIndex(k)
+               CALL cast(pObj,pk)
+               
+               dx = pkp1 % x - pk % x
+               d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
+               s  = MAX(pk % invScale , pkp1 % invScale)
+               
+               IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
+               
+                  CALL newPointArray % addObject(pObj)
+                  
+                  deltaT = (pkp1 % t - pk % t)
+                  M = NINT(1.0_RP/(d*s*DESIRED_SIZE_RATIO))
+                  dt = deltaT/M
+                  
+                  DO j = 1, M-1
+                     jdt = j*dt
+                     t   = pk % t + jdt
+                     x   = curve % positionAt(t)
+                     
+                     ALLOCATE(newP)
+                     CALL newP % initSMSegmentedCurveNode(x,t)
+                     
+                     newP % invScale = pk % invScale*jdt + pkp1 % invScale*(1.0_RP - jdt)
+                     
+                     pObj => newP
+                     CALL newPointArray % addObject(pObj)
+                     CALL release(pObj)
+                  END DO 
+               ELSE
+                  CALL newPointArray % addObject(pObj)
+               END IF 
+         END DO 
+         pObj => self % nodeArray % objectAtIndex(N)
+         CALL newPointArray % addObject(pObj)
+         
+         CALL releaseFTMutableObjectArray(self = newPointArray) ! Do the swap still
+            
+      END SUBROUTINE ResizeFRSegmentedCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -780,7 +941,7 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(SMSegmentedCurveNode)  , POINTER :: node      => NULL()
+         CLASS(SMSegmentedCurveNode), POINTER :: node      => NULL()
          
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL cast(objectPtr,node)
@@ -808,7 +969,7 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(SMSegmentedCurveNode)  , POINTER :: node      => NULL()
+         CLASS(SMSegmentedCurveNode), POINTER :: node      => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -886,7 +1047,7 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: objectPtr => NULL()
-         CLASS(SMSegmentedCurveNode)  , POINTER :: node      => NULL()
+         CLASS(SMSegmentedCurveNode), POINTER :: node      => NULL()
 
          objectPtr => self % nodeArray % objectAtIndex(j)
          CALL castToSegmentedCurveNode(objectPtr,node)
@@ -904,7 +1065,7 @@
 !     -----------------------------------------------------
 !
          IMPLICIT NONE  
-         CLASS(FTObject)          , POINTER :: obj
+         CLASS(FTObject)            , POINTER :: obj
          CLASS(SMSegmentedCurveNode), POINTER :: cast
          
          cast => NULL()

@@ -947,7 +947,7 @@
 !
 !              ---------------------------------------------------------------
 !              Using fmin seems to give the same point sometimes for different
-!              p values. Just doing a search seems to work. HACK.
+!              p values. Just doing a search seems to work. TODO: HACK.
 !              ---------------------------------------------------------------
 !
 !               t = fmin(tStart, tEnd, c, p, [0.0_RP,0.0_RP,0.0_RP], minimizationTolerance )
