@@ -274,7 +274,7 @@
 !
          REAL(KIND=RP) :: tLeft, tRight
          tLeft  = MAX(0.0_RP,tOld - 0.1_RP)
-         tRight = MIN(tOld + 0.1_RP, 1.0)
+         tRight = MIN(tOld + 0.1_RP, 1.0_RP)
          xTarget = x
          t       = fmin(self,tLeft,tRight,minimizationTolerance)
          

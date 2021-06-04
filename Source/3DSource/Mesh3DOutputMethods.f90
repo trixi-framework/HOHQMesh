@@ -255,9 +255,9 @@
 !        Arguments
 !        ---------
 !
+         INTEGER       :: N
          REAL(KIND=RP) :: xFace(3,0:N,0:N)
          REAL(KIND=RP) :: xVolume(3,0:N,0:N,0:N)
-         INTEGER       :: N
          INTEGER       :: faceID
 !
 !        ---------------

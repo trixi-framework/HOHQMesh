@@ -251,9 +251,9 @@
 !     Arguments
 !     ---------
 !
+      INTEGER       :: N
       REAL(KIND=RP) :: p(3)               ! = (x,y,z)
       REAL(KIND=RP) :: curvePoints(3,0:N) ! = (x_i,y_j,z_j) i = 0, 1, \ldots , N
-      INTEGER       :: N
       INTEGER       :: w
 !
 !     ---------------
