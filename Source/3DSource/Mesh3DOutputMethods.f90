@@ -322,7 +322,7 @@
                   END DO 
                END DO 
             CASE DEFAULT 
-            ERROR STOP 
+               ERROR STOP "No face array for given faceID in FaceFromVolume"
          END SELECT          
           
       END SUBROUTINE FaceFromVolume

@@ -507,6 +507,7 @@
       SUBROUTINE GenerateBoundaryElements( mesh, model, list ) 
          USE fMinModule
          USE MeshOutputMethods, ONLY: WriteSkeletonToTecplot
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
 !
 !        ---------
@@ -836,14 +837,14 @@
                   k = k + 1
                   
                CASE DEFAULT
-                 PRINT *, " "
-                 PRINT *, "**************************************************************************"
-                 PRINT *, "An unknown row type has appeared in GenerateBoundaryElements"
-                 PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
-                 PRINT *, "**************************************************************************"
-                 PRINT *, " "
+                 WRITE(stderr,*) " "
+                 WRITE(stderr,*) "**************************************************************************"
+                 WRITE(stderr,*) "An unknown row type has appeared in GenerateBoundaryElements"
+                 WRITE(stderr,*) "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                 WRITE(stderr,*) "**************************************************************************"
+                 WRITE(stderr,*) " "
                   CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
-                  STOP "Meshing Terminated"
+                  ERROR STOP "Meshing Terminated. See stderr"
             END SELECT
             k = k + 1
          END DO

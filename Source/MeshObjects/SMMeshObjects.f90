@@ -325,24 +325,25 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE printNodeDescription( self, iUnit )
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
          CLASS(SMNode) :: self
          INTEGER       :: iUnit
          WRITE(iUnit,*) self % id, self % refCount(), self % x, self % bCurveChainID, self % activeStatus
-         IF(self % refCount() == 0) WRITE(iUnit,*) "%%%% Unreferenced Node %%% "
+         IF(self % refCount() == 0) WRITE(stderr,*) "%%%% Unreferenced Node %%% "
       END SUBROUTINE printNodeDescription
 !
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE PointNodePtr_To_( p, q )
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE 
          TYPE(SMNodePtr)          :: p, q
          CLASS(FTObject), POINTER :: obj
          
          IF( .NOT.ASSOCIATED(q % node) ) THEN
-            PRINT *, "Unassociated target node pointer"
-            CALL p % node % printDescription(6)
-            STOP
+            CALL p % node % printDescription(stderr)
+            ERROR STOP "Unassociated target node pointer"
          END IF
 !
          obj => p % node

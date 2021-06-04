@@ -214,6 +214,7 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE ReadControlFile(controlFileName, projectDict)
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
 !
 !        ---------
@@ -249,8 +250,8 @@
          IF ( ios == 0 )     THEN
             CALL cfReader % importFromControlFile(fileUnit = fUnit)
          ELSE
-            PRINT *, "Unable to open input file: ", TRIM(controlFileName)
-            STOP
+            WRITE(stderr,*)  "Unable to open input file: ", TRIM(controlFileName)
+            ERROR STOP "Unable to open input file"
          END IF 
          CLOSE(fUnit)
          

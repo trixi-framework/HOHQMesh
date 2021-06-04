@@ -66,6 +66,7 @@
 !     ----------------------------------------------------------------
 !
       FUNCTION GetRealValue( inputLine )
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          USE SMConstants
          IMPLICIT NONE 
 !
@@ -77,9 +78,9 @@
          strLen = LEN_TRIM( inputLine )
          READ( inputLine( leq+1:strLen ), *, IOSTAT=k ) VALUE
          IF ( k /=0 )     THEN
-            PRINT *, "Bad real value in input line:"
-            PRINT *, TRIM(inputLine)
-            STOP "Input file synax error"
+            WRITE(stderr,*)  "Bad real value in input line:"
+            WRITE(stderr,*)  TRIM(inputLine)
+            ERROR STOP "Input file synax error"
          END IF 
          GetRealValue = value
 !
@@ -94,6 +95,7 @@
 !
       FUNCTION GetRealArray( inputLine ) RESULT(x)
          USE SMConstants
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
 !
          REAL(KIND=RP), DIMENSION(3) :: x
@@ -106,10 +108,10 @@
          cEnd   = INDEX(inputLine, ']', .true. )
          READ( inputLine( cStart+1: cEnd-1 ), *, IOSTAT = k  ) x(1), x(2), x(3)
          IF ( k /=0 )     THEN
-            PRINT *, "Bad real array syntax in input line:"
-            PRINT *, TRIM(inputLine)
-            PRINT *, "Syntax is: [real,real,real]"
-            STOP "Input file synax error"
+            WRITE(stderr,*)  "Bad real array syntax in input line:"
+            WRITE(stderr,*)  TRIM(inputLine)
+            WRITE(stderr,*)  "Syntax is: [real,real,real]"
+            ERROR STOP "Input file synax error"
          END IF 
 !
       END FUNCTION GetRealArray
@@ -122,6 +124,7 @@
 !     ----------------------------------------------------------------
 !
       INTEGER FUNCTION GetIntValue( inputLine )
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
 !
          CHARACTER ( LEN = * ) :: inputLine
@@ -132,9 +135,9 @@
          strLen = LEN_TRIM( inputLine )
          READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) VALUE
          IF ( k /=0 )     THEN
-            PRINT *, "Bad integer value in input line:"
-            PRINT *, TRIM(inputLine)
-            STOP "Input file synax error"
+            WRITE(stderr,*) "Bad integer value in input line:"
+            WRITE(stderr,*) TRIM(inputLine)
+            ERROR STOP "Input file synax error"
          END IF 
          GetIntValue = VALUE
 !
@@ -148,6 +151,7 @@
 !     ----------------------------------------------------------------
 !
       FUNCTION GetIntArray( inputLine ) RESULT(N)
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
 !
          INTEGER, DIMENSION(3) :: N
@@ -159,10 +163,10 @@
          cEnd   = INDEX(inputLine, ']', .true. )
          READ( inputLine( cStart+1: cEnd-1 ), *, IOSTAT = k ) N(1), N(2), N(3)
          IF ( k /=0 )     THEN
-            PRINT *, "Bad integer array value in input line:"
-            PRINT *, TRIM(inputLine)
-            PRINT *, "Syntax is: [integer,integer,integer]"
-            STOP "Input file synax error"
+            WRITE(stderr,*)  "Bad integer array value in input line:"
+            WRITE(stderr,*)  TRIM(inputLine)
+            WRITE(stderr,*)  "Syntax is: [integer,integer,integer]"
+            ERROR STOP "Input file synax error"
          END IF 
 !
       END FUNCTION GetIntArray
@@ -194,6 +198,7 @@
 !     ----------------------------------------------------------------
 !
       LOGICAL FUNCTION GetLogicalValue( inputLine )
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
 !
          CHARACTER ( LEN = * ) :: inputLine
@@ -205,9 +210,9 @@
          READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) value
          GetLogicalValue = value
          IF ( k /=0 )     THEN
-            PRINT *, "Bad logical value in input line:"
-            PRINT *, TRIM(inputLine)
-            STOP "Input file synax error"
+            WRITE(stderr,*)  "Bad logical value in input line:"
+            WRITE(stderr,*)  TRIM(inputLine)
+            ERROR STOP "Input file synax error"
          END IF 
 !
       END FUNCTION GetLogicalValue

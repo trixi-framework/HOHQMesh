@@ -230,14 +230,15 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE CollectBoundaryEdges( mesh, errorCode )
-      USE MeshOutputMethods
+         USE MeshOutputMethods
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
 !
 !     ---------------------------------------------------
 !     Boundary edges are those who have at least one node
 !     on a boundary.
 !     ---------------------------------------------------
 !
-      IMPLICIT NONE 
+         IMPLICIT NONE 
 !
 !        ---------
 !        Arguments
@@ -277,13 +278,13 @@
                
                IF( curveID == 0 .OR. curveSide == 0 )     THEN 
                   IF( printMessage )     THEN 
-                     PRINT *, " "
-                     PRINT *, "**************************************************************************"
-                     PRINT *, "Curve not found for boundary point"
-                     PRINT *,  edge % nodes(1) % node % x, edge % nodes(2) % node % x
-                     PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
-                     PRINT *, "**************************************************************************"
-                     PRINT *, " "
+                     WRITE(stderr,*)  " "
+                     WRITE(stderr,*)  "**************************************************************************"
+                     WRITE(stderr,*)  "Curve not found for boundary point"
+                     WRITE(stderr,*)   edge % nodes(1) % node % x, edge % nodes(2) % node % x
+                     WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     WRITE(stderr,*)  "**************************************************************************"
+                     WRITE(stderr,*)  " "
                      CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
                   END IF 
                   errorCode = CURVE_NOT_FOUND_ERROR_CODE
@@ -297,13 +298,13 @@
                   edgeList => linkedListFromObject(obj)
                   IF ( .NOT.ASSOCIATED(edgeList) )     THEN
                      IF( printMessage )     THEN 
-                        PRINT *, " "
-                        PRINT *, "**************************************************************************"
-                        PRINT *, "edge list not associated"
-                        PRINT *, ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
-                        PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
-                        PRINT *, "**************************************************************************"
-                        PRINT *, " "
+                        WRITE(stderr,*)  " "
+                        WRITE(stderr,*)  "**************************************************************************"
+                        WRITE(stderr,*)  "edge list not associated"
+                        WRITE(stderr,*)  ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
+                        WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                        WRITE(stderr,*)  "**************************************************************************"
+                        WRITE(stderr,*)  " "
                         CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
                      END IF
                      errorCode = UNASSOCIATED_POINTER_ERROR_CODE
@@ -373,8 +374,10 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE OrderBoundaryEdges( mesh )
-      USE ErrorTypesModule
-      USE MeshOutputMethods
+         USE ErrorTypesModule
+         USE MeshOutputMethods
+         USE Geometry
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
 !
 !     -----------------------------------------------------------------
 !     For each boundary in the boundary edge arrays, re-order the edges
@@ -383,7 +386,6 @@
 !     with the head pointing to the end of the list
 !     -----------------------------------------------------------------
 !
-         USE Geometry
          IMPLICIT NONE 
 !
 !        ---------
@@ -562,20 +564,21 @@
                   eId = eId1
                END IF
                IF(eID == 0)     THEN
-                  PRINT *, " "
-                  PRINT *, "**************************************************************************"
-                  PRINT *, "It appears that an edge is not connected"
-                  PRINT *, "Plot the file 'DebugPlot.tec' to see where additional resolution is needed"
-                  PRINT *, "**************************************************************************"
-                  PRINT *, " "
+                  WRITE(stderr,*)  " "
+                  WRITE(stderr,*)  "**************************************************************************"
+                  WRITE(stderr,*)  "It appears that an edge is not connected"
+                  WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to see where additional resolution is needed"
+                  WRITE(stderr,*)  "**************************************************************************"
+                  WRITE(stderr,*)  " "
                   CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
-                  STOP "Meshing Terminated"
+                  ERROR STOP "Meshing Terminated. See stderr"
                END IF 
                edge => edgeArray(eId) % edge
                
                IF ( .NOT.ASSOCIATED(edge) )     THEN
                   CALL ThrowErrorExceptionOfType("OrderBoundaryEdges",&
-                           "Unable to form boundary edge list",FT_ERROR_WARNING) 
+                                                  "Unable to form boundary edge list", &
+                                                  FT_ERROR_WARNING) 
                   DEALLOCATE(edgeArray)
                   RETURN
                END IF 
@@ -1149,6 +1152,7 @@
 !     ------------------------------------------------------------------
 !
         USE SMModelClass
+        USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
         IMPLICIT NONE
 !
 !        ---------
@@ -1203,7 +1207,7 @@
                   obj => boundaryEdgesArray % objectAtIndex(j)
                   CALL cast(obj,currentEdgeList)
                   IF(.NOT. ASSOCIATED(currentEdgeList)) THEN
-                     PRINT *, "Unnassociated edgelist in SetNodeActiveStatus number",j
+                     WRITE(stderr,*)  "Unnassociated edgelist in SetNodeActiveStatus number",j
                      CYCLE
                   END IF 
                   

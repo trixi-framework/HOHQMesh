@@ -144,6 +144,7 @@
       SUBROUTINE ReadCommandLineArguments(version, test, generateTest, controlFileName, path)  
          USE CommandLineReader
          USE ProgramGlobals
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE  
 !
 !        ---------
@@ -160,8 +161,8 @@
          END IF
          
          IF ( CommandLineArgumentIsPresent("-help") )     THEN
-            PRINT *, "No help avalable yet. Sorry!"
-            STOP
+            WRITE(stderr,*)  "No help avalable yet. Sorry!"
+            ERROR STOP "No help available"
          END IF
          
          test = .false.

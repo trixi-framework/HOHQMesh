@@ -147,6 +147,7 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE trapExceptions  
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          USE SharedExceptionManagerModule
          IMPLICIT NONE 
 
@@ -156,23 +157,23 @@
          errorSeverity = FT_ERROR_NONE
          
          IF ( catch() )     THEN
-            PRINT *
-            PRINT *, "------------------------------------------------------------------"
-            PRINT *
-            PRINT *, "The following errors were found when constructing the project:"
+            WRITE(stderr,*) 
+            WRITE(stderr,*)  "------------------------------------------------------------------"
+            WRITE(stderr,*) 
+            WRITE(stderr,*)  "The following errors were found when constructing the project:"
             
             DO
                exception => popLastException()
                IF ( .NOT.ASSOCIATED(exception) )     EXIT
-               CALL exception % printDescription(6)
+               CALL exception % printDescription(stderr)
                errorSeverity = MAX(errorSeverity, exception % severity())
             END DO
-            PRINT *
-            PRINT *, "------------------------------------------------------------------"
-            PRINT *
+            WRITE(stderr,*) 
+            WRITE(stderr,*)  "------------------------------------------------------------------"
+            WRITE(stderr,*) 
             
             IF ( errorSeverity > FT_ERROR_WARNING )     THEN
-               STOP "The Errors were Fatal. Cannot generate mesh." 
+               ERROR STOP "The Errors were Fatal. Cannot generate mesh." 
             END IF 
          END IF 
 

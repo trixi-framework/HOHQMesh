@@ -145,7 +145,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE DoLevelOperation( self, operation ) 
-      IMPLICIT NONE
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+         IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -167,7 +168,7 @@
 !     ----------------
 !
       IF( self % level /= 0 )     THEN !ERROR: Not being called properly
-         PRINT *, "hanging node elimination must start at level 0"
+         WRITE(stderr,*) "hanging node elimination must start at level 0"
          RETURN
       END IF
 !

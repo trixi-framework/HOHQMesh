@@ -361,6 +361,7 @@
 !//////////////////////////////////////////////////////////////////////// 
 !
       SUBROUTINE SplitElementIntoThree( localNodeNumber, e, newElementsList, mesh )  
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
 !
 !        ---------
@@ -410,8 +411,8 @@
          edge  => edgesForElements(sideP,id) % edge
          
          IF ( .NOT.ASSOCIATED(edge) )     THEN
-            PRINT *, "Edge not associated for element ",  id, " and side ", sideP!TODO post exception
-            STOP
+            WRITE(stderr,*)  "Edge not associated for element ",  id, " and side ", sideP!TODO post exception
+            ERROR STOP "Edge not associated. See stderr"
          END IF 
 
          IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
@@ -426,8 +427,8 @@
          edge  => edgesForElements(sideM,id) % edge
          
          IF ( .NOT.ASSOCIATED(edge) )     THEN
-            PRINT *, "Edge not associated for element ",  id, " and side ", sideP
-            STOP
+            WRITE(stderr,*)  "Edge not associated for element ",  id, " and side ", sideP
+            ERROR STOP "Edge not associated. See stderr"
          END IF 
          
          IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
