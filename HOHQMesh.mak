@@ -695,3 +695,13 @@ Utilities.o :${HOHQMESHPATH}/Source/3DSource/Geometry/Utilities.f90 \
 SMConstants.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ ${HOHQMESHPATH}/Source/3DSource/Geometry/Utilities.f90
 
+
+###########
+# cleanup #
+###########
+clean:
+	rm -f *.mod
+	rm -f *.o
+	rm -f HOHQMesh*
+
+.PHONY: clean
