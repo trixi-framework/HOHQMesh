@@ -4,8 +4,8 @@
 ##################################################
 #
 F90 = /usr/local/bin/gfortran
-HOHQMESHPATH= /Users/davidkopriva/Programming/My\ Code/Fortran/HOHQMesh
-FTOLPATH= /Users/davidkopriva/Programming/My\ Code/Fortran/FTObjectLibrary
+HOHQMESHPATH = $(shell pwd)
+FTOLPATH = $(HOHQMESHPATH)/Contrib/FTObjectLibrary
 
 FFLAGS = -cpp -O
 ##########################

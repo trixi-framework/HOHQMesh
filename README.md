@@ -14,13 +14,13 @@ That will build HOHQMesh.
 
 To run the tests, type
 ```bash
-./HOHQmesh -test -path  <pathToBenchmarks>
+./HOHQMesh -test -path <pathToBenchmarks>
 ```
-where `<pathToBenchmarks>` is the path to the `Benchmarks` subdirectory of the HOHQmesh directory.
+where `<pathToBenchmarks>` is the path to the HOHQMesh directory.
 
 To mesh a control file, type
 ```bash
-./HOHQmesh -f <pathToControlFile>
+./HOHQMesh -f <pathToControlFile>
 ```
 
 ## Authors
