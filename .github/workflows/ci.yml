@@ -45,7 +45,6 @@ jobs:
       - name: Build
         run: |
           make -f HOHQMesh.mak -j 2 F90=${{ matrix.compiler }}
-        shell: bash
       - name: Run tests
         run: |
           ./HOHQMesh -test

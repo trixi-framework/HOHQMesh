@@ -4,7 +4,7 @@
 ##################################################
 #
 F90 = /usr/local/bin/gfortran
-HOHQMESHPATH = $(shell pwd)
+HOHQMESHPATH = .
 FTOLPATH = $(HOHQMESHPATH)/Contrib/FTObjectLibrary
 
 FFLAGS = -cpp -O
