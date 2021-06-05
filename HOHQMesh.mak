@@ -104,7 +104,7 @@ HOHQMesh : $(OBJS)
 #######################################
 # Object dependencies and compilation #
 #######################################
-3DMeshController.o :$(HOHQMESHPATH)/Source/3DSource/3DMeshController.f90 \
+3DMeshController.o: $(HOHQMESHPATH)/Source/3DSource/3DMeshController.f90 \
 FTValueDictionaryClass.o \
 SimpleSweep.o \
 SweeperClass.o \
