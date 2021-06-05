@@ -44,9 +44,8 @@ jobs:
           ./bootstrap
       - name: Build
         run: |
-          pwd
-          find .
           make -f HOHQMesh.mak -j 2 F90=${{ matrix.compiler }}
+        shell: ${{ matrix.shell }}
       - name: Run tests
         run: |
           ./HOHQMesh -test
