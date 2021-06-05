@@ -702,6 +702,7 @@ SMConstants.o
 clean:
 	rm -f *.mod
 	rm -f *.o
-	rm -f HOHQMesh*
+	rm -f HOHQMesh
+	rm -f HOHQMesh.exe
 
 .PHONY: clean
