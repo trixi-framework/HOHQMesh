@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
+Copyright (c) 2010-present David A. Kopriva and other contributors: [AUTHORS.md](AUTHORS.md)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy  
 of this software and associated documentation files (the "Software"), to deal  

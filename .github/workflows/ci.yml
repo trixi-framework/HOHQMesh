@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'AUTHORS.md'
+      - 'LICENSE.md'
+      - 'README.md'
+  pull_request:
+    paths-ignore:
+      - 'AUTHORS.md'
+      - 'LICENSE.md'
+      - 'README.md'
+  workflow_dispatch:
+
+jobs:
+  test:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    name: ${{ matrix.os }} - ${{ github.event_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gfortran-10
+            shell: bash
+          - os: macos-latest
+            compiler: gfortran-10
+            shell: bash
+          - os: windows-latest
+            compiler: gfortran
+            shell: 'msys2 {0}'
+    # Set default shell as suggested here: https://github.community/t/setting-default-shell-or-other-step-metadata-conditionally-in-workflows/154055
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      # - name: Add msbuild to PATH
+      #   if: ${{ matrix.os == 'windows-latest' }}
+      #   uses: microsoft/setup-msbuild@v1.0.2
+      - uses: msys2/setup-msys2@v2
+        if: ${{ matrix.os == 'windows-latest' }}
+        with:
+          update: true
+          install: git base-devel mingw-w64-x86_64-toolchain
+      - name: Bootstrap
+        run: |
+          ./bootstrap
+      - name: Build
+        run: |
+          make -f HOHQMesh.mak -j 2 F90=${{ matrix.compiler }}
+      # - name: Setup tmate session for debugging
+      #   if: ${{ matrix.os == 'windows-latest' }}
+      #   uses: mxschmitt/action-tmate@v3
+      - name: Run tests
+        run: |
+          ./HOHQMesh -test

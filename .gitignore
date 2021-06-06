@@ -16,3 +16,14 @@ xcuserdata
 # svn & cvs
 .svn
 CVS
+
+# build files
+*.o
+*.mod
+HOHQMesh
+HOHQMesh.exe
+
+# test output files
+Benchmarks/MeshFiles/Tests/*
+Benchmarks/PlotFiles/Tests/*
+Benchmarks/StatsFiles/Tests/*

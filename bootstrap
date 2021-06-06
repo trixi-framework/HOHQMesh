@@ -1,0 +1,5 @@
+#!/bin/bash
+set -exo pipefail
+
+# Clone FTObjectLibrary into Contrib
+git clone https://github.com/trixi-framework/FTObjectLibrary.git Contrib/FTObjectLibrary
