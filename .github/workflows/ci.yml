@@ -44,6 +44,10 @@ jobs:
       #   uses: microsoft/setup-msbuild@v1.0.2
       - uses: msys2/setup-msys2@v2
         if: ${{ matrix.os == 'windows-latest' }}
+        update: true
+        install: >-
+          git
+          base-devel
       - name: Bootstrap
         run: |
           ./bootstrap
