@@ -32,23 +32,28 @@ jobs:
             shell: bash
           - os: windows-latest
             compiler: gfortran
-            shell: msys2 {0}
+            shell: 'msys2 {0}'
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
       # - name: Add msbuild to PATH
       #   if: ${{ matrix.os == 'windows-latest' }}
       #   uses: microsoft/setup-msbuild@v1.0.2
+      - uses: msys2/setup-msys2@v2
+        if: ${{ matrix.os == 'windows-latest' }}
       - name: Bootstrap
         run: |
           ./bootstrap
-        shell: bash
+        # shell: bash
       - name: Build
         run: |
           make -f HOHQMesh.mak -j 2 F90=${{ matrix.compiler }}
-      - name: Setup tmate session
-        if: ${{ matrix.os == 'windows-latest' }}
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session for debugging
+      #   if: ${{ matrix.os == 'windows-latest' }}
+      #   uses: mxschmitt/action-tmate@v3
       - name: Run tests
         run: |
           ./HOHQMesh -test
