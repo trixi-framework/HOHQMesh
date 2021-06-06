@@ -24,6 +24,6 @@ HOHQMesh
 HOHQMesh.exe
 
 # test output files
-Benchmarks/**/*.tec
-Benchmarks/**/*.mesh
-Benchmarks/**/*.txt
+Benchmarks/MeshFiles/Tests/*
+Benchmarks/PlotFiles/Tests/*
+Benchmarks/StatsFiles/Tests/*
