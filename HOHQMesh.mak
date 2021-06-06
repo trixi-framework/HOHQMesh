@@ -99,7 +99,7 @@ TransfiniteMapClass.o \
 Utilities.o \
 
 HOHQMesh : $(OBJS)
-	 ${F90}  -o $@ $(OBJS)
+	 ${F90}  -o $@ $(OBJS) $(LDFLAGS)
 
 #######################################
 # Object dependencies and compilation #
