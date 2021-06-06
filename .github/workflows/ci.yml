@@ -51,7 +51,6 @@ jobs:
       - name: Bootstrap
         run: |
           ./bootstrap
-        # shell: bash
       - name: Build
         run: |
           make -f HOHQMesh.mak -j 2 F90=${{ matrix.compiler }}
