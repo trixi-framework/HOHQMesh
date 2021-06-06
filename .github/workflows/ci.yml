@@ -46,9 +46,7 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         with:
           update: true
-          install: >-
-            git
-            base-devel
+          install: git mingw-w64-x86_64-toolchain
       - name: Bootstrap
         run: |
           ./bootstrap
