@@ -33,6 +33,7 @@ jobs:
           - os: windows-latest
             compiler: gfortran
             shell: 'msys2 {0}'
+    # Set default shell as suggested here: https://github.community/t/setting-default-shell-or-other-step-metadata-conditionally-in-workflows/154055
     defaults:
       run:
         shell: ${{ matrix.shell }}
@@ -46,7 +47,7 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         with:
           update: true
-          install: git mingw-w64-x86_64-toolchain
+          install: git base-devel mingw-w64-x86_64-toolchain
       - name: Bootstrap
         run: |
           ./bootstrap
