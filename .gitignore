@@ -21,6 +21,7 @@ CVS
 *.o
 *.mod
 HOHQMesh
+HOHQMesh.exe
 
 # test output files
 Benchmarks/**/*.tec
