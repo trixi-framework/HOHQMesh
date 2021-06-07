@@ -27,3 +27,10 @@ HOHQMesh.exe
 Benchmarks/MeshFiles/Tests/*
 Benchmarks/PlotFiles/Tests/*
 Benchmarks/StatsFiles/Tests/*
+
+# gcov files
+*.gcda
+*.gcno
+
+# lcov report
+lcov.info
