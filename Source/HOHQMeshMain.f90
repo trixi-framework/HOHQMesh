@@ -91,7 +91,7 @@
          IF ( test )     THEN
          
             printMessage    = .FALSE.
-            CALL RunTests(pathToTestFiles = path, numberOfFailedTestsRet = numberOfFailedTests)
+            CALL RunTests(pathToTestFiles = path, numberOfFailedTests = numberOfFailedTests)
             
          ELSE 
          
