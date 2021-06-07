@@ -204,12 +204,17 @@
          IMPLICIT NONE
          CLASS(SizerCenterControl) :: self
          REAL(KIND=RP)             :: x(3)
-         REAL(KIND=RP)             :: d
+         REAL(KIND=RP)             :: d, arg
          
          d = SQRT((x(1) - self % center(1))**2 + (x(2) - self % center(2))**2)
          
          IF( self % centerType == CENTER_SMOOTH )      THEN
-            hInvForCenter = EXP(-LOG(3.0_RP)*d/self % width)/self % meshSize
+            arg = LOG(3.0_RP)*d/self % width
+            IF ( arg < 34.5_RP )     THEN
+               hInvForCenter = EXP(-arg)/self % meshSize
+            ELSE 
+               hInvForCenter = 0.0_RP
+            END IF 
          ELSE
             IF ( d < self % width )     THEN
                hInvForCenter = 1.0_RP/self % meshSize
@@ -228,7 +233,7 @@
          TYPE(SizerLineControl) :: self
          REAL(KIND=RP)          :: x(3)
          REAL(KIND=RP)          :: d, vLine(3), vTarget(3), lLine, lTarget, vEndTarget(3)
-         REAL(KIND=RP)          :: targetDotStartLine, targetDotEndLine
+         REAL(KIND=RP)          :: targetDotStartLine, targetDotEndLine, arg
          
          vLine      = self % lEnd - self % lStart
          vTarget    = x - self%lStart
@@ -243,7 +248,12 @@
          IF( targetDotStartLine >= 0.0_RP .AND. targetDotEndLine <= 0.0_RP )     THEN         
             d = SQRT(lTarget**2 - (targetDotStartLine/lLine)**2)
             IF( self % lineControlType == CENTER_SMOOTH )      THEN
-               hInvForLineControl = EXP(-LOG(3.0_RP)*d/self % width)/self % meshSize
+               arg = LOG(3.0_RP)*d/self % width
+               IF ( arg < 34.5_RP )     THEN
+                  hInvForLineControl = EXP(-arg)/self % meshSize
+               ELSE 
+                  hInvForLineControl = 0.0_RP
+               END IF 
             ELSE
                IF ( d < self % width )     THEN
                   hInvForLineControl = 1.0_RP/self % meshSize
