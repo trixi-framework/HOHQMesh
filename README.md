@@ -7,10 +7,10 @@
 
 
 ## Installation
-To build, edit the `HOHQMesh.mak` file as indicated in the header and move to
+To build, edit the `Makefile` file as indicated in the header and move to
 ones favorite directory. Type
 ```shell
-make -f HOHQMesh.mak
+make
 ```
 That will build HOHQMesh.
 
