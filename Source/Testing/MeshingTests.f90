@@ -72,7 +72,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-   SUBROUTINE RunTests(pathToTestFiles)  
+   SUBROUTINE RunTests(pathToTestFiles, numberOfFailedTestsRet)
       IMPLICIT NONE
 !
 !     ---------
@@ -80,6 +80,7 @@
 !     ---------
 !
       CHARACTER(LEN=*) :: pathToTestFiles
+      INTEGER, OPTIONAL :: numberOfFailedTestsRet
 !
 !     ---------------
 !     Local variables
@@ -91,6 +92,7 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath
       INTEGER                                 :: k
       EXTERNAL                                :: TestCurves
+      INTEGER                                 :: numberOfFailedTests
 !
 !     ------------------------------------------------------------------------------------
 !     The control files are located in a Benchmarks directory at the end of (if not empty)
@@ -132,8 +134,10 @@
 !     Run the tests
 !     -------------
 !
-      CALL testSuite % performTests()
+      CALL testSuite % performTests(numberOfFailedTests)
       CALL finalizeSharedAssertionsManager
+
+      IF(PRESENT(numberOfFailedTestsRet)) numberOfFailedTestsRet = numberOfFailedTests
       
    END SUBROUTINE RunTests
 !
