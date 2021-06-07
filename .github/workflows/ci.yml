@@ -41,18 +41,19 @@ jobs:
     # Set default shell as suggested here: https://github.community/t/setting-default-shell-or-other-step-metadata-conditionally-in-workflows/154055
     defaults:
       run:
-        shell: ${{ matrix.shell }}
+        # shell: ${{ matrix.shell }}
+        shell: bash
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
       # - name: Add msbuild to PATH
       #   if: ${{ matrix.os == 'windows-latest' }}
       #   uses: microsoft/setup-msbuild@v1.0.2
-      - uses: msys2/setup-msys2@v2
-        if: ${{ matrix.os == 'windows-latest' }}
-        with:
-          update: true
-          install: git base-devel mingw-w64-x86_64-toolchain
+      # - uses: msys2/setup-msys2@v2
+      #   if: ${{ matrix.os == 'windows-latest' }}
+      #   with:
+      #     update: true
+      #     install: git base-devel mingw-w64-x86_64-toolchain
       - name: Bootstrap
         run: |
           ./bootstrap
