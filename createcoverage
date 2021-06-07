@@ -4,10 +4,10 @@
 set -eox pipefail
 
 # Clean up
-make -f HOHQMesh.mak clean
+make clean
 
 # Build test suite
-make -f HOHQMesh.mak -j 2 F90=$F90 FFLAGS="-cpp --coverage -O0" LDFLAGS="--coverage"
+make -j 2 F90=$F90 FFLAGS="-cpp --coverage -O0" LDFLAGS="--coverage"
 
 # Reset counters
 lcov --directory . --zerocounters
