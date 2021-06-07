@@ -79,6 +79,7 @@
          LOGICAL          :: didGenerate3DMesh = .FALSE.
 
          TYPE(testData)   :: tData
+         INTEGER          :: numberOfFailedTests = 0
 !
 !        ***********************************************
 !                             Start
@@ -90,7 +91,7 @@
          IF ( test )     THEN
          
             printMessage    = .FALSE.
-            CALL RunTests(pathToTestFiles = path)
+            CALL RunTests(pathToTestFiles = path, numberOfFailedTests = numberOfFailedTests)
             
          ELSE 
          
@@ -136,6 +137,12 @@
 !
          CALL destructFTExceptions
          IF( PrintMessage ) PRINT *, "Execution complete. Exit."
+
+         IF ( numberOfFailedTests .gt. 0 )     THEN
+
+           ERROR STOP 'At least one test has failed'
+
+         END IF 
          
       END PROGRAM HOQMeshMain
 !
@@ -158,6 +165,7 @@
          
          IF ( CommandLineArgumentIsPresent("-version") )     THEN
             PRINT *, "HOMesh Version ", version
+            STOP
          END IF
          
          IF ( CommandLineArgumentIsPresent("-help") )     THEN

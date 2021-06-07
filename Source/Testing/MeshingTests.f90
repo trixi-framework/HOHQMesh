@@ -72,7 +72,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-   SUBROUTINE RunTests(pathToTestFiles)  
+   SUBROUTINE RunTests(pathToTestFiles, numberOfFailedTests)
       IMPLICIT NONE
 !
 !     ---------
@@ -80,6 +80,7 @@
 !     ---------
 !
       CHARACTER(LEN=*) :: pathToTestFiles
+      INTEGER, INTENT(OUT) :: numberOfFailedTests
 !
 !     ---------------
 !     Local variables
@@ -132,7 +133,7 @@
 !     Run the tests
 !     -------------
 !
-      CALL testSuite % performTests()
+      CALL testSuite % performTests(numberOfFailedTests)
       CALL finalizeSharedAssertionsManager
       
    END SUBROUTINE RunTests
