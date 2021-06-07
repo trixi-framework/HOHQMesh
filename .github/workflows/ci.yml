@@ -56,6 +56,9 @@ jobs:
       - name: Bootstrap
         run: |
           ./bootstrap
+      - name: Show version information
+        run: |
+          ${{ matrix.compiler }} --version
       - name: Build
         run: |
           make -f HOHQMesh.mak -j 2 F90=${{ matrix.compiler }}
