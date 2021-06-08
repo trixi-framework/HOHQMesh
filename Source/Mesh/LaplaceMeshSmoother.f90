@@ -227,7 +227,7 @@
 !        ---------------
 !
          INTEGER                    :: ios
-         CHARACTER(LEN=32)          :: str
+         CHARACTER(LEN=LINE_LENGTH) :: str
          CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
          REAL(KIND=RP), EXTERNAL    :: GetRealValue
          INTEGER      , EXTERNAL    :: GetIntValue
@@ -235,7 +235,7 @@
          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
          str = GetStringValue( inputLine )
          
-         IF( str == "ON" )     THEN
+         IF( TRIM(str) == "ON" )     THEN
             smp % smoothingON = .true.
          ELSE
             smp % smoothingON = .false.

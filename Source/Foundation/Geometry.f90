@@ -50,8 +50,8 @@
 !> Define generic geometry operations and constants
 !-------------------------------------------------------------------
 !
-      REAL(KIND=RP), PARAMETER :: UP = 1.0, DOWN = -1.0, CO_LINEAR = 0.0
-      INTEGER      , PARAMETER :: CLOCKWISE = 1, COUNTERCLOCKWISE = -1, NO_DIRECTION  = 0
+      INTEGER, PARAMETER :: UP = 1, DOWN = -1, CO_LINEAR = 0
+      INTEGER, PARAMETER :: CLOCKWISE = 1, COUNTERCLOCKWISE = -1, NO_DIRECTION  = 0
 !
 !     ========      
       CONTAINS
@@ -59,14 +59,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION CrossProductDirection(u,v) RESULT(d) 
+      PURE FUNCTION CrossProductDirection(u,v) RESULT(d) 
          IMPLICIT NONE
-         REAL(KIND=RP), DIMENSION(3) :: u, v
-         INTEGER                     :: d
-         REAL(KIND=RP)               :: c
+         REAL(KIND=RP), DIMENSION(3), INTENT(IN) :: u, v
+         INTEGER                                 :: d
+         REAL(KIND=RP)                           :: c
          c = u(1)*v(2) - v(1)*u(2)
          IF( ABS(c) < EPSILON(c)     )   THEN
-            d = INT(CO_LINEAR)
+            d = CO_LINEAR
          ELSE
             d = INT(SIGN( 1.0_RP, c ))
          END IF
@@ -176,10 +176,10 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION Point_IsInsideBox(p,bBox) 
+      PURE LOGICAL FUNCTION Point_IsInsideBox(p,bBox) 
          IMPLICIT NONE 
-         REAL(KIND=RP)  :: p(3)
-         REAL(KIND=RP)  :: bBox(6)
+         REAL(KIND=RP), INTENT(IN)  :: p(3)
+         REAL(KIND=RP), INTENT(IN)  :: bBox(6)
          
          Point_IsInsideBox = .true.
          
@@ -207,18 +207,18 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      REAL(KIND=RP) FUNCTION BoundingBoxArea(bBox)  
+      PURE REAL(KIND=RP) FUNCTION BoundingBoxArea(bBox)  
          IMPLICIT NONE  
-         REAL(KIND=RP) :: bBox(6)
+         REAL(KIND=RP), INTENT(IN) :: bBox(6)
          BoundingBoxArea = (bBox(BBOX_RIGHT) - bBox(BBOX_LEFT))*   &
                            (bBox(BBOX_TOP)   - bBox(BBOX_BOTTOM))
       END FUNCTION BoundingBoxArea
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      LOGICAL FUNCTION BBoxIntersects(boxA, boxB)  
+      PURE LOGICAL FUNCTION BBoxIntersects(boxA, boxB)  
          IMPLICIT NONE  
-         REAL(KIND=RP) :: boxA(6), boxB(6) 
+         REAL(KIND=RP), INTENT(IN) :: boxA(6), boxB(6) 
          
          BBoxIntersects = .TRUE.
          
@@ -232,14 +232,14 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      LOGICAL FUNCTION BBoxIsNested(boxA, boxB)  
+      PURE LOGICAL FUNCTION BBoxIsNested(boxA, boxB)  
 !
 !     ------------------------------
 !     Test if boxB is nested in boxA
 !     ------------------------------
 !
          IMPLICIT NONE  
-         REAL(KIND=RP) :: boxA(6), boxB(6) 
+         REAL(KIND=RP), INTENT(IN) :: boxA(6), boxB(6) 
          
          BBoxIsNested = .FALSE.
          
@@ -348,10 +348,10 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION AlmostEqual( x, y )
+      PURE LOGICAL FUNCTION AlmostEqual( x, y )
       USE SMConstants
       IMPLICIT NONE
-      REAL(KIND=RP) :: x, y
+      REAL(KIND=RP), INTENT(IN) :: x, y
       
       AlmostEqual = ABS(x - y) < 100*EPSILON(1.0_RP)
       

@@ -1007,7 +1007,7 @@
 !
       INTEGER                               :: i, j, l, n
       CLASS(FRSegmentedCurve)     , POINTER :: innerSegment, outerSegment
-      REAL(KIND=RP)                         :: x(3), y(3), d, outerInvScale, innerInvScale, ss
+      REAL(KIND=RP)                         :: x(3), y(3), d, outerInvScale, innerInvScale
       REAL(KIND=RP)                         :: nHatInner(3), nHatOuter(3), normalsDot, targetDot
       REAL(KIND=RP)                         :: vecToTarget(3)
       LOGICAL                               :: isProperTarget
