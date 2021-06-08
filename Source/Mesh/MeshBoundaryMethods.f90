@@ -1475,7 +1475,6 @@
          INTEGER        :: nPts1, nPts2
          REAL(KIND=RP)  :: testCurve1(3,0:nPts1), testCurve2(3,0:nPts2)
          LOGICAL        :: theyCross
-         INTEGER        :: k
 !
 !        ---------------
 !        Local Variables
@@ -1484,8 +1483,7 @@
          REAL(KIND=RP)              :: intersection(6)
          REAL(KIND=RP), ALLOCATABLE :: crv1inBox(:,:), crv2inBox(:,:)
          INTEGER                    :: nptsC1, nptsC2
-         REAL(KIND=RP)              :: subBox1(6), subBox2(6), splitBox(6,4)
-         REAL(KIND=RP)              :: xMid, yMid
+         REAL(KIND=RP)              :: subBox1(6), subBox2(6)
          
          theyCross = .TRUE.
          

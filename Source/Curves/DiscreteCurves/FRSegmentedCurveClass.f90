@@ -451,7 +451,7 @@
 !
       SUBROUTINE initFRSegmentedCurve( self, theCurve, h, controls, idc )
          USE Geometry, ONLY:Curvature
-         USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE, UNDEFINED, printMessage
+         USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE, UNDEFINED
          USE SMSplineCurveClass
 !
 !     ------------------------------------------------
@@ -485,7 +485,6 @@
          CLASS(FTLinkedList) , POINTER             :: nodes
          CLASS(FTObject)     , POINTER             :: objPtr, obj
          CLASS(SMSplineCurve), POINTER             :: spline
-         CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
          LOGICAL                                   :: useSplinePoints
 !
 !        ----
@@ -777,7 +776,7 @@
          CLASS(SMSegmentedCurveNode), POINTER :: pk, pkp1, newP
          LOGICAL                              :: needsRefinement
          REAL(KIND=RP)                        :: d, dx(3), s, x(3)
-         REAL(KIND=RP)                        :: t, dt, deltaT, jdt, invScale
+         REAL(KIND=RP)                        :: t, dt, deltaT, jdt
          REAL(KIND=RP), PARAMETER             :: ALLOWED_SIZE_RATIO = 1.1_RP !A parameter to play with
          REAL(KIND=RP), PARAMETER             :: DESIRED_SIZE_RATIO = 0.5_RP !A parameter to play with
          

@@ -866,8 +866,8 @@
          CLASS(SMNode)   , POINTER :: node => NULL()
          REAL(KIND=RP)             :: angles(4)
          INTEGER                   :: numberOfBadElements
-         INTEGER                   :: k, j, badNodeID, lastSharedNodeID
-         INTEGER                   :: nbrNodeLocalID , badNodeLocalID, lastSharedNodeLocalID
+         INTEGER                   :: k, j, badNodeID
+         INTEGER                   :: nbrNodeLocalID , badNodeLocalID
          
          INTEGER, EXTERNAL :: Loop
          

@@ -385,9 +385,9 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION isOnBoundaryCurve( node ) 
+      PURE LOGICAL FUNCTION isOnBoundaryCurve( node ) 
          IMPLICIT NONE 
-         CLASS(SMNode), POINTER :: node
+         CLASS(SMNode), POINTER, INTENT(IN) :: node
          IF( node % bCurveChainID > UNDEFINED )     THEN
             IsOnBoundaryCurve = .true.
          ELSE
@@ -397,9 +397,9 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION IsOnOuterBox( node ) 
+      PURE LOGICAL FUNCTION IsOnOuterBox( node ) 
          IMPLICIT NONE 
-         CLASS(SMNode), POINTER :: node
+         CLASS(SMNode), POINTER, INTENT(IN) :: node
          IF( node % bCurveChainID < UNDEFINED )     THEN
             IsOnOuterBox = .true.
          ELSE
@@ -409,9 +409,9 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION hasFixedPosition( node ) 
+      PURE LOGICAL FUNCTION hasFixedPosition( node ) 
          IMPLICIT NONE 
-         CLASS(SMNode), POINTER :: node
+         CLASS(SMNode), POINTER, INTENT(IN) :: node
          
           IF( node%distToBoundary < EPSILON(1.0_RP) )     THEN
             HasFixedPosition = .true.

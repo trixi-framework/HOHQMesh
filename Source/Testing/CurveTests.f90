@@ -62,7 +62,6 @@
          REAL(KIND=RP)                           :: xExact(3)
          INTEGER                                 :: j
          REAL(KIND=RP)                           :: dt = 0.2_RP, t, e, tol = 1.0d-5
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
 !
 !        ---------------
 !        Line definition
