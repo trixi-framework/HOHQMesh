@@ -73,13 +73,13 @@
 !        Other
 !        -----
 !         
-         CHARACTER(LEN=8) :: version           = "05.03.21"
-         LOGICAL          :: test              = .FALSE.
-         LOGICAL          :: generateTest      = .FALSE.
-         LOGICAL          :: didGenerate3DMesh = .FALSE.
+         CHARACTER(LEN=*), PARAMETER :: version           = "1.0.0-pre"
+         LOGICAL                     :: test              = .FALSE.
+         LOGICAL                     :: generateTest      = .FALSE.
+         LOGICAL                     :: didGenerate3DMesh = .FALSE.
 
-         TYPE(testData)   :: tData
-         INTEGER          :: numberOfFailedTests = 0
+         TYPE(testData)              :: tData
+         INTEGER                     :: numberOfFailedTests = 0
 !
 !        ***********************************************
 !                             Start
@@ -159,7 +159,7 @@
 !        ---------
 !
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName, path
-         CHARACTER(LEN=8)                        :: version
+         CHARACTER(LEN=*)                        :: version
          LOGICAL                                 :: test, generateTest
          
          
