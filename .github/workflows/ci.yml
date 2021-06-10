@@ -55,7 +55,7 @@ jobs:
           install: git base-devel mingw-w64-x86_64-toolchain
       - name: Bootstrap
         run: |
-          ./bootstrap
+          ./Utilities/bootstrap
       - name: Show version information
         run: |
           ${{ matrix.compiler }} --version
@@ -74,7 +74,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           sudo apt-get install -y lcov
-          F90=${{ matrix.compiler }} ./createcoverage
+          F90=${{ matrix.compiler }} ./Utilities/createcoverage
       - uses: codecov/codecov-action@v1
         if: ${{ matrix.os == 'ubuntu-latest' }}
         with:
