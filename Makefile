@@ -704,5 +704,8 @@ clean:
 	rm -f *.o
 	rm -f HOHQMesh
 	rm -f HOHQMesh.exe
+	rm -f Benchmarks/MeshFiles/Tests/*
+	rm -f Benchmarks/PlotFiles/Tests/*
+	rm -f Benchmarks/StatsFiles/Tests/*
 
 .PHONY: clean
