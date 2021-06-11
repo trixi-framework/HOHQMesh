@@ -34,3 +34,6 @@ Benchmarks/StatsFiles/Tests/*
 
 # lcov report
 lcov.info
+
+# release tarballs
+HOHQMesh-*.tar.gz
