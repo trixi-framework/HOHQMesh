@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Fail fast and verbosely
+set -eo pipefail
+
+# Check that a version has been provided
+if [ $# -eq 0 ]; then
+  echo "ERROR: missing argument: version number" >&2
+  exit 2
+fi
+
+# Clean up
+echo "Cleaning up..."
+make clean
+echo
+
+# Ensure that there are no uncommited files/directories *except* the FTOL sources
+if [[ "$(git status --ignored --porcelain)" != "!! Contrib/FTObjectLibrary/" ]]; then
+  echo "ERROR: directory is not clean or missing the FTObjectLibrary directory" >&2
+  git status --ignored --porcelain
+  exit 2
+fi
+
+# Ensure that 
