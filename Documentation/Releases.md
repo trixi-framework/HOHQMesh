@@ -6,15 +6,29 @@ current release version of HOHQMesh, and `1.3.0` with the new release you are
 about to create.
 
 *Note: All steps as described here are assumed to be performed in a
-clean clone of the `master` branch. Also make sure that nobody accidentally
-pushes to `master` while you are preparing or creating the new release*
+clean clone of the `master` branch.*
 
 ## Pre-release preparations
-1. Note the version number of the current HOHQMesh release by checking the
+1. Ensure that the current HOHQMesh commit on `master` has passed all tests on
+   GitHub by verifying that there is a green checkmark behind the latest commit
+   on https://github.com/trixi-framework/HOHQMesh/commits/master.
+2. Enter the HOHQMesh clone directory, switch to `master`, and pull the latest version from GitHub:
+   ```bash
+   cd HOHQMesh
+   git checkout master
+   git pull
+   ```
+3. Get the latest version tag by executing
+   ```bash
+   git tag --list 'v*' --sort -version:refname | head -n1
+   ```
+   This will yield something like `v1.2.3`, where `1.2.3` is the version number
+   and the `v` prefix is to indicate that this is really a version tag.
+4. Compare this with the
    [latest release](https://github.com/trixi-framework/HOHQMesh/releases/latest)
-   on GitHub. The version number will be something like `1.2.3`, with the
-   corresponding Git tag `v1.2.3`.
-2. Determine which kind of version increment is necessary based on the changes
+   on GitHub. If the version numbers of the latest tag and the latest release
+   differ, investigate (and possibly fix it) before proceeding.
+5. Determine which kind of version increment is necessary based on the changes
    since the last release. We use [semantic versioning](https://semver.org),
    which [states](https://semver.org/spec/v2.0.0.html#summary)
    > Given a version number MAJOR.MINOR.PATCH, increment the:
@@ -33,12 +47,28 @@ pushes to `master` while you are preparing or creating the new release*
 
 ## Release creation
 1. Increment the version number in [Source/HOHQMeshMain.f90](../Source/HOHQMeshMain.f90).
-   If this guide has been followed before, the current version in
-   the file should be something like `1.2.4-pre`, indicating that the
-   `master` branch is in a pre-release state (as is the case during development).
-   Change the pre-release version to the new version number you determined
-   above, e.g., to `1.3.0`.
-2. Commit and push to `master`.
+   The current version in the file should be something like `1.2.4-pre`,
+   indicating that the `master` branch is in a pre-release state (as it should be
+   during development). Change the pre-release version string to the new version
+   number you determined above, e.g., to `1.3.0`:
+   ```fortran
+   CHARACTER(LEN=*), PARAMETER :: version           = "1.3.0"
+   ```
+2. Commit and push to `master`:
+   ```bash
+   git add Source/HOHQMeshMain.f90
+   git commit -m 'Increment version to v1.3.0'
+   git push
+   ```
+3. Create a new release tarball by executing
+   ```bash
+   ./Utilities/createrelease 1.3.0
+   ```
+   where `1.3.0` again refers to the new release version. This will not just
+   create a release tarball but also verify that alIf
+   there are no errors, this will result in a new file `HOHQMesh-v1.3.0.tar.gz`
+   in the current directory.
+3. Create a new annotated Git tag for the current 
 3. Navigate to https://github.com/trixi-framework/HOHQMesh/releases/new to start
    creating a new release.
 4. Enter `v1.3.0` as the `Tag version`, which will create a Git tag of this
@@ -50,13 +80,6 @@ pushes to `master` while you are preparing or creating the new release*
 
 
 ## Post-release actions
-1. Create a new release tarball by executing
-   ```bash
-   ./Utilities/createrelease 1.3.0
-   ```
-   where `1.3.0` again refers to the new release you have just created. If
-   there are no errors, this will result in a new file `HOHQMesh-v1.3.0.tar.gz`
-   in the current directory.
 2. Attach the file you just created to the new release by navigating to the 
    [latest release](https://github.com/trixi-framework/HOHQMesh/releases/latest)
    and clicking `Edit release`. You can then drag and drop the tarball in the
