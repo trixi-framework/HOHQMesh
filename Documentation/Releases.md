@@ -42,7 +42,10 @@ tarball will fail!*
    functionality by navigating to the following address, adjusting the version
    tag appropriately:  
    https://github.com/trixi-framework/HOHQMesh/compare/v1.2.3...master
-
+   If you prefer to work to work locally in a console, you can execute
+   ```bash
+   git diff v1.2.3
+   ```
    Let's say that the changes require a *minor* version increment, thus the new
    release version following `1.2.3` would be `1.3.0`.
 
