@@ -229,8 +229,7 @@
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
                                            msg = "MODEL block is missing from control file", &
-                                           typ = FT_ERROR_FATAL) 
-            RETURN 
+                                           typ = FT_ERROR_WARNING) 
          ELSE
             modelDict   => valueDictionaryFromObject(obj)
          END IF 
