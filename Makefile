@@ -707,5 +707,8 @@ clean:
 	rm -f Benchmarks/MeshFiles/Tests/*
 	rm -f Benchmarks/PlotFiles/Tests/*
 	rm -f Benchmarks/StatsFiles/Tests/*
+	rm -f *.gcno
+	rm -f *.gcda
+	rm -f lcov.info
 
 .PHONY: clean
