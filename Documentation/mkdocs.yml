@@ -1,0 +1,49 @@
+
+# General settings
+site_name: HOHQMesh
+site_url: https://trixi-framework.github.io/HOHQMesh
+repo_url: https://github.com/trixi-framework/HOHQMesh
+edit_uri: blob/master/Documentation/docs
+strict: true # Fail on errors instead of just producing a warning
+
+# Visual settings
+theme:
+  name: material
+  favicon: images/TrixiInside_small_transparent.png
+  logo: images/TrixiInside_small_transparent.png
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.top
+    - navigation.sections
+
+copyright: Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/master/AUTHORS.md">The HOHQMesh Authors</a>
+nav:
+  - Home: 'index.md'
+  - Authors: 'authors.md'
+  - License: 'license.md'
+  - User Guide:
+    - Introduction: 'introduction.md'
+    - The Model: 'the-model.md'
+    - The Control Input: 'the-control-input.md'
+    - Three Dimensional Hexahedral Meshes: 'three-dimensional-hexahedral-meshes.md'
+    - The Control File: 'the-control-file.md'
+    - Compiling and Running HOHQMesh: 'compiling-and-running-hohqmesh.md'
+    - Appendix: 'appendix.md'
+  - 'For Developers':
+    - How HOHQMesh Works: 'how-hohqmesh-works.md'
+    - Assumptions and Algorithms: 'assumptions-and-algorithms.md'
+    - Building the Documentation: 'building-the-documentation.md'
+
+# Additional settings
+# * support for MathJax: https://squidfunk.github.io/mkdocs-material/reference/mathjax/
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - toc:
+      permalink: true
+
+extra_javascript:
+  - javascripts/config.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

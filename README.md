@@ -5,6 +5,9 @@
 [![Codecov](https://codecov.io/gh/trixi-framework/HOHQMesh/branch/master/graph/badge.svg)](https://codecov.io/gh/trixi-framework/HOHQMesh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/licenses/MIT)
 
+<p align="center">
+  <img width="400px" src="https://user-images.githubusercontent.com/3637659/121870408-50418800-cd03-11eb-9187-dcafdf73bab2.png" />
+</p>
 
 ## Installation
 To build, edit the `Makefile` file as indicated in the header and move to
