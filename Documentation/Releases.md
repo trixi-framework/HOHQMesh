@@ -88,8 +88,9 @@ tarball will fail!*
    If it fails, do *not* just change the files in your current directory!
    Instead, figure out why the tests fail, fix them, commit and push the changes
    and start over.
-6. Create a new annotated Git tag and push it to GitHub (make sure to use *your*
-   version number both for the tag and the message!):
+6. Create a new annotated Git tag and push it to GitHub (make sure to include
+   the `v` prefix and to use *your* version number both for the tag and the
+   message!):
    ```bash
    git tag -a v1.3.0 -m "HOHQMesh v1.3.0"
    git push --tags
