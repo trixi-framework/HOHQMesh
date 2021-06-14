@@ -21,6 +21,7 @@ filenames=(
  SplineGeometry.png
  Superior.png
  TrixiInside.png
+ TrixiInside_transparent.png
 )
 
 urls=(
@@ -42,6 +43,7 @@ urls=(
   "https://user-images.githubusercontent.com/3637659/121807895-5e859a80-cc56-11eb-820a-73c4be8676ee.png"
   "https://user-images.githubusercontent.com/3637659/121807899-65141200-cc56-11eb-990e-4550feb0f90e.png"
   "https://user-images.githubusercontent.com/3637659/121807910-6f361080-cc56-11eb-80da-a205f58c88c5.png"
+  "https://user-images.githubusercontent.com/3637659/121868456-4cad0180-cd01-11eb-8be5-bad6a797f6a2.png"
 )
 
 for i in "${!filenames[@]}"; do
