@@ -10,7 +10,7 @@ Inside the control input block the *RUN\_PARAMETERS*, *BACKGROUND\_GRID*, *SMOOT
 
 ## The Run Parameters<a name="RunParameters"></a>
 
-The *RUN\_PARAMETERS* block defines the file information and the polynomial order at which the boundary curves will be defined in the mesh file. Three files can be output by the mesher. The first is the actual mesh file. The second is a tecplot format file that can be used to visualize the mesh. The free programs VisIt or Paraview can be used to plot tecplot files. The final file (optional) is to report mesh statistics, like the distribution of largest angle, Jacobian, etc. See the “Verdict Library Reference Manual” by Stimpson et al. if you are interested to learn about the different shape quality measures. Include a unix style path to choose the directory for the results.
+The *RUN\_PARAMETERS* block defines the file information and the polynomial order at which the boundary curves will be defined in the mesh file. Three files can be output by the mesher. The first listed below is the actual mesh file. The second is a tecplot format file that can be used to visualize the mesh. The free programs VisIt or Paraview can be used to plot tecplot files. The final file (optional) is to report mesh statistics, like the distribution of largest angle, Jacobian, etc. See the “Verdict Library Reference Manual” by Stimpson et al. if you are interested to learn about the different shape quality measures. Include a unix style path to choose the directory for the results.
 
 The RUN_PARAMETERS block is:
 
@@ -18,14 +18,14 @@ The RUN_PARAMETERS block is:
 		mesh file name   = MeshFileName.mesh
 		plot file name   = PlotName.tec
 		stats file name  = StatsName.txt
-		mesh file format = ISM OR ISM-v2
+		mesh file format = ISM *OR* ISM-v2
 		polynomial order = 6
-		plot file format = skeleton OR sem
+		plot file format = skeleton *OR* sem
 	\end{RUN_PARAMETERS}
 
 The names can be anything, since they are simply text files. However the “.tec” extension on the plot file will help VisIt/Paraview know how to read it. If you don’t want a file created, simply choose the name to be *none*. 
 
-In the current version of  HOHQMesh, there are two mesh file formats, “ISM” which stands for “Implementing Spectral Methods” . This is the file format described in the book by David A. Kopriva. The other format is “ISM-v2”, which provides the edge information needed by the approximations so that the edge generation algorithms in the appendix of the book are not needed. See the section in this manual on ISM-v2 for a description of the additional information provided. In the future, other file formats may be implemented, too. Finally, high order boundary information is conveyed by outputting an interpolant of the specified order. That information can be viewed using the “sem” plot file format.
+In the current version of  HOHQMesh, there are two mesh file formats, “ISM” which stands for “Implementing Spectral Methods” . This is the file format described in the book by David A. Kopriva. The other format is “ISM-v2”, which provides the edge information needed by the approximations so that the edge generation algorithms in the appendix of the book are not needed. See the section in the Appendix of this manual on ISM-v2 for a description of the additional information provided. In the future, other file formats may be implemented, too. Finally, high order boundary information is conveyed by outputting an interpolant of the specified order. That information can be viewed using the “sem” plot file format.
 
 ## The Background Grid<a name="BackgroundGrid"></a>
 
@@ -37,13 +37,19 @@ The meshing algorithm starts with a uniform background grid. If an outer boundar
 		N  = [10,10,0]
 	\end{BACKGROUND_GRID}
 
-The example above creates a uniform grid with lower left corner at (-10,10) and upper right corner at (10,10).
+If there is no *MODEL* block, then the *BACKGROUND_GRID* block will define the Cartesian mesh that will be generated, with the lower left point located at *x0*, grid spacing *dx*, and *N* elements in each direction. For now, the *z* components must be zero so that the grid is in the x-y plane.
+
+The example above creates a uniform background grid with lower left corner at (-10,10) and upper right corner at (10,10).
 
 Alternatively, if there is an outer boundary curve, you want to specify the background grid size and let HOHQMesh compute the rest of the parameters:
 
 	\begin{BACKGROUND_GRID}
 		background grid size = [2.0,2.0,0.0]
 	\end{BACKGROUND_GRID}
+
+This is the equivalent of *dx* in the previous incarnation. 
+
+**Note**: In general you want to choose the grid size to be the same in each direction for the algorithms that make the mesh conforming to work properly. They can differ if a Cartesian mesh is being generated.
 
 ## The Smoother<a name="Smoother"></a>
 It is generally necessary to smooth the mesh after it is generated. Smoothing is done by the Smoother. 
@@ -61,7 +67,7 @@ The *SPRING\_SMOOTHER* uses a spring-dashpot model and time relaxation to smooth
 		time step            = 0.1 (Optional)
 	\end{SPRING_SMOOTHER}
 
-Just leave out any of the optional parameters if you want the default values to be used. The default values should be sufficient, but the additional flexibility might be useful on occasion.
+Just leave out any of the optional parameters if you want the default values to be used. The default values should be sufficient, but the additional flexibility might be useful on occasion. (The architecture is designed for developers to add different (better!) smoothers, and hence the name "SPRING_SMOOTHER".)
 
 ## Refinement Regions<a name="RefinementRegions"></a>
 ![Refinements](https://user-images.githubusercontent.com/3637659/121807868-46ae1680-cc56-11eb-8941-c9ad8d259da2.png)
@@ -118,3 +124,5 @@ Refinement regions are defined within a *REFINEMENT\_REGIONS* block, e.g.
        \end{REFINEMENT_CENTER}
 
 	\end{REFINEMENT_REGIONS}
+
+The ordering of the blocks within the *REFINEMENT\_REGIONS* block is arbitrary.
