@@ -704,5 +704,8 @@ clean:
 	rm -f *.o
 	rm -f HOHQMesh
 	rm -f HOHQMesh.exe
+	rm -f *.gcno
+	rm -f *.gcda
+	rm -f lcov.info
 
 .PHONY: clean
