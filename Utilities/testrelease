@@ -39,8 +39,14 @@ echo "OK"
 
 # Run tests
 printf "Run tests... "
-./HOHQMesh -test >/dev/null 2>&1
-echo "OK"
+if ./HOHQMesh -test >"$tmpdir"/output 2>&1; then
+  echo "OK"
+else
+  exitcode=$?
+  echo
+  echo "ERROR: please check the output in $tmpdir/output"
+  exit 1
+fi
 
 # Remove temporary directory
 printf "Remove temporary directory $tmpdir... "
