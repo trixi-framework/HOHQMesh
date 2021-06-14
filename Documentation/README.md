@@ -19,9 +19,12 @@ pip install Jinja2 --upgrade
 ```
 
 For local viewing, change to the directory where the `mkdocs.yml` file is
-located. Then execute `./preparedocs` to prepare and process some markdown files
-that are located out of the main documentation directory `docs`. Then, you have
-two options:
+located. Then execute
+```bash
+./preparedocs
+```
+to prepare some Markdown files that are located out of the main documentation
+directory `docs`. Then, you have two options:
 
 To view the documentation via the built-in webserver, execute
 ```bash
@@ -34,3 +37,13 @@ To generate a static set of files on disk, run
 mkdocs build --no-directory-urls
 ```
 and open the file `site/index.html` in your browser.
+
+If, for some reason, you would like to download all images used in the
+documentation that are hosted on GitHub, you can automate this process by
+executing
+```bash
+./download_github_images
+```
+This will download the GitHub-hosted images and save them in the current working
+directory. Note that the script will only consider images that have been added
+to it manually.

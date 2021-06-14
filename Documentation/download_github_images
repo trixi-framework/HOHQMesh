@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -eo pipefail
+
+filenames=(
+ AllFeatures.png
+ CavityRamp.png
+ CavityRampExtruded.png
+ Circles3.png
+ GingerbreadMan.png
+ HalfCircleExtruded.png
+ IglooAlt.png
+ IndianOcean.png
+ KT3Element.png
+ Meshables.png
+ NACA0012.png
+ Pond.png
+ Refinements.png
+ ScaledSigmoid.png
+ Snake.png
+ SplineGeometry.png
+ Superior.png
+ TrixiInside.png
+)
+
+urls=(
+  "https://user-images.githubusercontent.com/3637659/121807794-f3d45f00-cc55-11eb-9284-af5f4eed2c87.png"
+  "https://user-images.githubusercontent.com/3637659/121807804-fd5dc700-cc55-11eb-8cfe-2b21e79f0af7.png"
+  "https://user-images.githubusercontent.com/3637659/121807810-051d6b80-cc56-11eb-8c89-7911bc152bfb.png"
+  "https://user-images.githubusercontent.com/3637659/121807814-09e21f80-cc56-11eb-9e4d-fad5929c6822.png"
+  "https://user-images.githubusercontent.com/3637659/121807819-0fd80080-cc56-11eb-9adc-7b3b24095dcb.png"
+  "https://user-images.githubusercontent.com/3637659/121807827-18303b80-cc56-11eb-855a-891037168827.png"
+  "https://user-images.githubusercontent.com/3637659/121807832-1e261c80-cc56-11eb-8c86-9d2a9e07de00.png"
+  "https://user-images.githubusercontent.com/3637659/121807841-267e5780-cc56-11eb-9ef3-a1de263a8a81.png"
+  "https://user-images.githubusercontent.com/3637659/121807848-2da56580-cc56-11eb-9f0a-1a078cc3e612.png"
+  "https://user-images.githubusercontent.com/3637659/121807852-3302b000-cc56-11eb-93a9-e9c2e1b4ede8.png"
+  "https://user-images.githubusercontent.com/3637659/121807856-3b5aeb00-cc56-11eb-9b6f-5ec8d22da158.png"
+  "https://user-images.githubusercontent.com/3637659/121807861-40b83580-cc56-11eb-8d97-388924e08dee.png"
+  "https://user-images.githubusercontent.com/3637659/121807868-46ae1680-cc56-11eb-8941-c9ad8d259da2.png"
+  "https://user-images.githubusercontent.com/3637659/121807887-54639c00-cc56-11eb-9474-9d809320af9b.png"
+  "https://user-images.githubusercontent.com/3637659/121807890-588fb980-cc56-11eb-9698-d3efffafed82.png"
+  "https://user-images.githubusercontent.com/3637659/121807895-5e859a80-cc56-11eb-820a-73c4be8676ee.png"
+  "https://user-images.githubusercontent.com/3637659/121807899-65141200-cc56-11eb-990e-4550feb0f90e.png"
+  "https://user-images.githubusercontent.com/3637659/121807910-6f361080-cc56-11eb-80da-a205f58c88c5.png"
+)
+
+for i in "${!filenames[@]}"; do
+  filename="${filenames[i]}"
+  url="${urls[i]}"
+  printf "Downloading $filename... "
+  curl -sL "$url" > "$filename"
+  echo "OK"
+done
