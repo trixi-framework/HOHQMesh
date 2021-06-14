@@ -1,0 +1,28 @@
+%
+%   This control file uses no model and so generates a structured (Cartesian) mesh 
+%   in a square. The mesh size and position is given by the BackgroundGrid 
+%   block. This is the minimal control file. Boundaries are named with the
+%   default names: Top, Left, Bottom, Right
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = MeshFiles/Square.mesh
+      plot file name   = PlotFiles/Square.tec
+      stats file name  = none
+      mesh file format = ISM
+      polynomial order = 4
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+%
+%  Define a 5x5 element mesh on [0,5]^2 with h = 1.
+%
+   \begin{BACKGROUND_GRID}
+       x0 = [0.0, 0.0, 0.0]
+       dx = [1.0, 1.0, 0.0]
+       N  = [5,5,1]
+   \end{BACKGROUND_GRID}
+
+\end{CONTROL_INPUT}
+
+\end{FILE}
