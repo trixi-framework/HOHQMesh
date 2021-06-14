@@ -1,5 +1,11 @@
 #!/bin/bash
 set -exo pipefail
 
-# Clone FTObjectLibrary into Contrib
-git clone https://github.com/trixi-framework/FTObjectLibrary.git Contrib/FTObjectLibrary
+FTOL_DIR=Contrib/FTObjectLibrary
+
+# Update FTObjectLibrary in Contrib if it exists, otherwise do a fresh clone
+if [[ -d "$FTOL_DIR" ]]; then
+  git -C "$FTOL_DIR" pull
+else
+  git clone https://github.com/trixi-framework/FTObjectLibrary.git "$FTOL_DIR"
+fi
