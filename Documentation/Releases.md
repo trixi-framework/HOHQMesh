@@ -81,8 +81,10 @@ tarball will fail!*
    current directory.
 5. Test the new release by executing
    ```bash
-   ./Utilities/testrelease HOHQMesh-v1.3.0.tar.gz
+   F90=gfortran ./Utilities/testrelease HOHQMesh-v1.3.0.tar.gz
    ```
+   Make sure you change the Fortran compiler executable to one suitable
+   for your system by modifying the `F90` environment variable accordingly.
    If it fails, do *not* just change the files in your current directory!
    Instead, figure out why the tests fail, fix them, commit and push the changes
    and start over.
