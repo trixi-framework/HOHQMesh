@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
-  <img width="400px" src="https://user-images.githubusercontent.com/3637659/121868456-4cad0180-cd01-11eb-8be5-bad6a797f6a2.png" />
+  <img width="400px" src="https://user-images.githubusercontent.com/3637659/121870408-50418800-cd03-11eb-9187-dcafdf73bab2.png" />
 </p>
 
 ## Installation
