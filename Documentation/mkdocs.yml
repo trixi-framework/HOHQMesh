@@ -1,8 +1,7 @@
 
 # General settings
 site_name: HOHQMesh
-# site_url: https://trixi-framework.github.io/HOHQMesh
-site_url: https://trixi-framework.github.io/hohqmesh-docs-testing
+site_url: https://trixi-framework.github.io/HOHQMesh
 repo_url: https://github.com/trixi-framework/HOHQMesh
 edit_uri: blob/master/Documentation/docs
 strict: true # Fail on errors instead of just producing a warning
