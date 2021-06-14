@@ -57,6 +57,11 @@ printf "Create release tarball '$tarball'... "
 tar czf "$tarball" -C "$tmpdir" "$releasename"
 echo "OK"
 
+# Remove temporary directory
+printf "Remove temporary directory $tmpdir... "
+rm -rf "$tmpdir"
+echo "OK"
+
 echo
 echo "#########################################################"
 echo "# done!"

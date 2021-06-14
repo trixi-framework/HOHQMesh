@@ -37,3 +37,6 @@ lcov.info
 
 # release tarballs
 HOHQMesh-*.tar.gz
+
+# version information
+VERSION
