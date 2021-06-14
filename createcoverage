@@ -10,10 +10,10 @@ make clean
 make -j 2 F90=$F90 FFLAGS="-cpp --coverage -O0" LDFLAGS="--coverage"
 
 # Reset counters
-lcov --directory Source/ --no-external --zerocounters
+lcov --directory . --no-external --zerocounters
 
 # Run tests
 ./HOHQMesh -test
 
 # Process coverage
-lcov --directory Source/ --no-external --capture --output-file lcov.info
+lcov --directory . --no-external --capture --output-file lcov.info
