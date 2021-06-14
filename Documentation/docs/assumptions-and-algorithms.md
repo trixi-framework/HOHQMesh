@@ -1,3 +1,5 @@
+# Assumptions and Algorithms
+
 This is a collection of comments on some of the approximations and assumptions made in developing HOHQMesh. It is not exhaustive. It is also not in any particular order.
 
 1. When checking to see whether or not two curves cross (when reading in the model), actual intersection is not tested. Rather, it looks to see if one or two points end up within the same bounding box. The assumption is that if the curves are that close together then the resolution is not good enough to generate a mesh anyway. [CheckForBoundaryIntersections]

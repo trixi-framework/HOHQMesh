@@ -1,4 +1,4 @@
-# For Developers: How HOQMesh Works
+# How HOQMesh Works
 
 ## Introduction
 HOHQMesh is an automatic quad/hex mesh generator designed to be fully automatic. From the user's point of view, he/she creates a MODEL, which consists of (optionally) an outer boundary curve and any number of inner boundary curves. The user also includes CONTROL\_INPUT to direct which files are created, the file formats, and three aspects of the mesh creation process: the background grid, which is the basic mesh size desired, the smoother, and manual refinement by way of REFINEMENT\_CENTERs or REFINEMENT\_LINES. The mesher then uses the model curves and control parameters to automatically refine near model features to generate a mesh.
