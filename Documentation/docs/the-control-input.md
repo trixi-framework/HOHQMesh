@@ -1,16 +1,16 @@
 # The Control Input
 
-The meshing of the model is controlled by the *CONTROL_INPUT* block of the input control file, which gives all of the commands needed to mesh the model. Actually, there are not a lot of commands at the moment, so that’s not too bad. The control block is
+The meshing of the model is controlled by the `CONTROL_INPUT` block of the input control file, which gives all of the commands needed to mesh the model. Actually, there are not a lot of commands at the moment, so that’s not too bad. The control block is
 
 	\begin{CONTROL_INPUT}
 	...
 	\end{CONTROL_INPUT}
 
-Inside the control input block the *RUN\_PARAMETERS*, *BACKGROUND\_GRID*, *SMOOTHER*, and any number of *REFINEMENT\_CENTER*s and *REFINEMENT\_LINE*s  are defined.
+Inside the control input block the `RUN_PARAMETERS`, `BACKGROUND_GRID`, `SMOOTHER`, and any number of `REFINEMENT_CENTER`s and `REFINEMENT_LINE`s  are defined.
 
 ## The Run Parameters<a name="RunParameters"></a>
 
-The *RUN\_PARAMETERS* block defines the file information and the polynomial order at which the boundary curves will be defined in the mesh file. Three files can be output by the mesher. The first listed below is the actual mesh file. The second is a tecplot format file that can be used to visualize the mesh. The free programs VisIt or Paraview can be used to plot tecplot files. The final file (optional) is to report mesh statistics, like the distribution of largest angle, Jacobian, etc. See the “Verdict Library Reference Manual” by Stimpson et al. if you are interested to learn about the different shape quality measures. Include a unix style path to choose the directory for the results.
+The `RUN_PARAMETERS` block defines the file information and the polynomial order at which the boundary curves will be defined in the mesh file. Three files can be output by the mesher. The first listed below is the actual mesh file. The second is a tecplot format file that can be used to visualize the mesh. The free programs VisIt or Paraview can be used to plot tecplot files. The final file (optional) is to report mesh statistics, like the distribution of largest angle, Jacobian, etc. See the “Verdict Library Reference Manual” by Stimpson et al. if you are interested to learn about the different shape quality measures. Include a unix style path to choose the directory for the results.
 
 The RUN_PARAMETERS block is:
 
@@ -29,7 +29,7 @@ In the current version of  HOHQMesh, there are two mesh file formats, “ISM” 
 
 ## The Background Grid<a name="BackgroundGrid"></a>
 
-The meshing algorithm starts with a uniform background grid. If an outer boundary is specified in the model, HOHQMesh will create this background grid using the extents of the outer boundary and the background grid size specified in the *BACKGROUND\_GRID* block. If there is no outer boundary, then the background grid must be specified in the control input. The *BACKGROUND\_GRID* block specifies the coordinates of the lower left corner of the grid, the grid size in each coordinate direction, and the number of  grid cells in each direction:
+The meshing algorithm starts with a uniform background grid. If an outer boundary is specified in the model, HOHQMesh will create this background grid using the extents of the outer boundary and the background grid size specified in the `BACKGROUND_GRID` block. If there is no outer boundary, then the background grid must be specified in the control input. The `BACKGROUND_GRID` block specifies the coordinates of the lower left corner of the grid, the grid size in each coordinate direction, and the number of  grid cells in each direction:
 
 	\begin{BACKGROUND_GRID}
 		x0 = [-10.0, -10.0, 0.0]
@@ -37,7 +37,7 @@ The meshing algorithm starts with a uniform background grid. If an outer boundar
 		N  = [10,10,0]
 	\end{BACKGROUND_GRID}
 
-If there is no *MODEL* block, then the *BACKGROUND_GRID* block will define the Cartesian mesh that will be generated, with the lower left point located at *x0*, grid spacing *dx*, and *N* elements in each direction. For now, the *z* components must be zero so that the grid is in the x-y plane.
+If there is no `MODEL` block, then the `BACKGROUND_GRID` block will define the Cartesian mesh that will be generated, with the lower left point located at *x0*, grid spacing *dx*, and *N* elements in each direction. For now, the *z* components must be zero so that the grid is in the x-y plane.
 
 The example above creates a uniform background grid with lower left corner at (-10,10) and upper right corner at (10,10).
 
@@ -54,7 +54,7 @@ This is the equivalent of *dx* in the previous incarnation.
 ## The Smoother<a name="Smoother"></a>
 It is generally necessary to smooth the mesh after it is generated. Smoothing is done by the Smoother. 
 
-The *SPRING\_SMOOTHER* uses a spring-dashpot model and time relaxation to smooth the mesh. There are two spring topologies “LinearSpring” and “LinearAndCrossbarSpring”. The first only has springs between the nodes along the edges. The latter also puts springs along the diagonals of an element. The latter is preferred. The springs have a spring constant associated with them and a dashpot with a damping coefficient. The nodes have mass. The linear ODE system that describes the motion of the nodes is integrated with a forward Euler (Explicit!) approximation for which a time step and number of time steps are given. The *SPRING\_SMOOTHER* block, if one is used (Recommended!)  is
+The `SPRING_SMOOTHER` uses a spring-dashpot model and time relaxation to smooth the mesh. There are two spring topologies “LinearSpring” and “LinearAndCrossbarSpring”. The first only has springs between the nodes along the edges. The latter also puts springs along the diagonals of an element. The latter is preferred. The springs have a spring constant associated with them and a dashpot with a damping coefficient. The nodes have mass. The linear ODE system that describes the motion of the nodes is integrated with a forward Euler (Explicit!) approximation for which a time step and number of time steps are given. The `SPRING_SMOOTHER` block, if one is used (Recommended!)  is
 
 	\begin{SPRING_SMOOTHER}
 		smoothing            = ON **or** OFF (Optional)
@@ -79,7 +79,7 @@ Manual scaling of the mesh size can be performed by including any combination of
 * Refinement Lines
 
 ### Refinement Centers<a name="Centers"></a>
-It is possible to ask HOHQMesh to locally refine the mesh at particular locations. This is done with a *REFINEMENT\_CENTER* placed as desired. Two types of centers are available. One is “smooth”, which refines near a specified point and gradually de-refines towards the neighboring mesh size. The other is “sharp”, which keeps the refined size in the neighborhood of the center. The desired mesh size and the size of the center are also parameters. An example of a refinement center is
+It is possible to ask HOHQMesh to locally refine the mesh at particular locations. This is done with a `REFINEMENT_CENTER` placed as desired. Two types of centers are available. One is “smooth”, which refines near a specified point and gradually de-refines towards the neighboring mesh size. The other is “sharp”, which keeps the refined size in the neighborhood of the center. The desired mesh size and the size of the center are also parameters. An example of a refinement center is
 
 	\begin{REFINEMENT_CENTER}
 		type = smooth **or** sharp
@@ -91,7 +91,7 @@ It is possible to ask HOHQMesh to locally refine the mesh at particular location
 This will place a center at (1,1,0) with mesh size of 0.2 over a circular region of radius  0.5 . Any number of RefinementCenters can be included. The order in which they are defined is not important.
 
 ### Refinement Lines<a name="RefinementLines"></a>
-The mesh can also be refined along a line using a *REFINEMENT\_LINE*. Like the centers, there are two types, “smooth” and “sharp”. To refine along a line, include a block of the form 
+The mesh can also be refined along a line using a `REFINEMENT_LINE`. Like the centers, there are two types, “smooth” and “sharp”. To refine along a line, include a block of the form 
 
 	\begin{REFINEMENT_LINE}
 		type = smooth **or** sharp
@@ -104,7 +104,7 @@ The mesh can also be refined along a line using a *REFINEMENT\_LINE*. Like the c
 Here, *x0* and *x1* are the starting and ending points of the line, *h* is the desired mesh size and *w* tells how far out from the line the refinement extends. An example of center and line refinements can be seen in Fig. 15.
 ### Refinement Region Definition<a name="RefinementDefinition"></a>
 
-Refinement regions are defined within a *REFINEMENT\_REGIONS* block, e.g.  
+Refinement regions are defined within a `REFINEMENT_REGIONS` block, e.g.  
 
 	\begin{REFINEMENT_REGIONS}
 
@@ -125,4 +125,4 @@ Refinement regions are defined within a *REFINEMENT\_REGIONS* block, e.g.
 
 	\end{REFINEMENT_REGIONS}
 
-The ordering of the blocks within the *REFINEMENT\_REGIONS* block is arbitrary.
+The ordering of the blocks within the `REFINEMENT_REGIONS` block is arbitrary.

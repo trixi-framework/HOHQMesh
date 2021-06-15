@@ -12,9 +12,9 @@ If no model block is included at all, then a purely Cartesian mesh will be creat
 ## Boundary Curves<a name="BoundaryCurves"></a>
 
 ![AllFeatures](https://user-images.githubusercontent.com/3637659/121807794-f3d45f00-cc55-11eb-9284-af5f4eed2c87.png)
-<p align = "center"> Fig. 14. A mesh whose model uses all curve types. Three *END_POINTS_LINE*s for the outer triangle. A *SPLINE_CURVE* for the free-form inner boundary, and circles defined by a *PARAMETRIC_EQUATION_CURVE* and by a *CIRCULAR_ARC* curve (Examples/2D/AllFeatures).</p>
+<p align = "center"> Fig. 14. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, and circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve (Examples/2D/AllFeatures).</p>
 
-Boundaries are constructed as closed chains of parametrized curves, with the parameter in the interval [0,1], oriented counter-clockwise. The chains can have one or more segments as seen in Fig. 13. In Fig. 13a the outer boundary is constructed from six curves, whereas in Fig. 13b it is bounded by a single one. The inner boundaries in Fig. 13a are a single circle and a square constructed by a chain of four lines. In Fig. 14, the outer triangle is constructed as a chain of straight lines defined as *END\_POINTS_LINE*s.
+Boundaries are constructed as closed chains of parametrized curves, with the parameter in the interval [0,1], oriented counter-clockwise. The chains can have one or more segments as seen in Fig. 13. In Fig. 13a the outer boundary is constructed from six curves, whereas in Fig. 13b it is bounded by a single one. The inner boundaries in Fig. 13a are a single circle and a square constructed by a chain of four lines. In Fig. 14, the outer triangle is constructed as a chain of straight lines defined as `END_POINTS_LINE`s.
 
 A curve is defined by a block 
 
@@ -37,7 +37,7 @@ The architecture is designed for developers to easily add curve definitions in t
 
 ### The Parametric Equation Curve Definition.<a name="ParametricEqn"></a> 
 
-Curves can be defined by strings that define the equations for the (x,y,z) components of the curve using the *PARAMETRIC\_EQUATION\_CURVE* type. An example block for this kind of curve is
+Curves can be defined by strings that define the equations for the (x,y,z) components of the curve using the `PARAMETRIC_EQUATION_CURVE` type. An example block for this kind of curve is
 
 	\begin{PARAMETRIC_EQUATION_CURVE}
 		name = circle
@@ -51,7 +51,7 @@ The first line defines the name, followed by the x- , y- and z- equation definit
 The equations can be any legal representations of an equation as is standard in most computer languages. The first part, before the equals sign defines the parameter variable, in this case, *t*. On the right hand side is the formula that defines the curve. Exponentiation is defined as in BASIC, like *t^2*. For convenience, the constant **pi** is defined. Like BASIC, literals are defined as double precision values. There are no integer quantities. Standard functions like sin, cos, tan, atan, log, log10, exp, etc. are also available for use.
 
 ### The Spline Curve Definition<a name="Spline"></a>
-The second type of curve is the *SPLINE\_CURVE* type, which fits a cubic spline to a set of knots at given parameter values. The parameterization does not have to be uniform. An example of a spline-defined curve is
+The second type of curve is the `SPLINE_CURVE` type, which fits a cubic spline to a set of knots at given parameter values. The parameterization does not have to be uniform. An example of a spline-defined curve is
 
 	\begin{SPLINE_CURVE}
 		name = SplineBoundaryCurve
@@ -72,7 +72,7 @@ The second type of curve is the *SPLINE\_CURVE* type, which fits a cubic spline 
 As before, the first line after the \begin is the name of the curve. It is followed by the number of nodes in the spline. The data columns that follow are the nodes given by t<sub>j</sub>,x<sub>j</sub>,y<sub>j</sub>,z<sub>j</sub>. This particular spline is closed, so the location of the last node is the same as the first. Again, the z<sub>j</sub> values must currently be zero to ensure that curves are in the x-y plane.
 
 ### Endpoints Line Definition<a name="EndPointsLine"></a>
-The next type of curve is the *END\_POINTS\_LINE* type that takes two end points and puts a straight line between them. An example is
+The next type of curve is the `END_POINTS_LINE` type that takes two end points and puts a straight line between them. An example is
 
 	\begin{END_POINTS_LINE}
 		name   = B1
@@ -153,7 +153,7 @@ The model contains at most one outer boundary chain and any number of inner boun
 	...
 	\end{OUTER_BOUNDARY}
 
-Within the *OUTER_BOUNDARY* block is a list of boundary curves that form a chain. There is no need to explicitly chain (by way of \begin{CHAIN}...\end{CHAIN}) the curves for the outer boundary, as that is implied.
+Within the `OUTER_BOUNDARY` block is a list of boundary curves that form a chain. There is no need to explicitly chain (by way of `\begin{CHAIN}`...`\end{CHAIN}`) the curves for the outer boundary, as that is implied.
 
 Inner boundaries (if any) are defined within the block
 
@@ -161,7 +161,7 @@ Inner boundaries (if any) are defined within the block
 	...
 	\end{INNER_BOUNDARIES}
 
-Within this block one defines as many CHAINs as there are inner boundaries. **Each inner boundary must be defined within a chain. (Even if there is only one curve in the chain.)** The order in which the CHAINs are defined is not important. 
+Within this block one defines as many `CHAIN`s as there are inner boundaries. **Each inner boundary must be defined within a chain. (Even if there is only one curve in the chain.)** The order in which the `CHAIN`s are defined is not important. 
 
 As an example, the following defines a model that has a single circular outer boundary and three inner circular boundaries. As usual, indentation is for the reader’s eyes only. Note that *between* the blocks, comments can be inserted starting with “%”.
 
