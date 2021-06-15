@@ -3,7 +3,7 @@
 site_name: HOHQMesh
 site_url: https://trixi-framework.github.io/HOHQMesh
 repo_url: https://github.com/trixi-framework/HOHQMesh
-edit_uri: blob/master/Documentation/docs
+edit_uri: blob/main/Documentation/docs
 strict: true # Fail on errors instead of just producing a warning
 
 # Visual settings
@@ -17,7 +17,7 @@ theme:
     - navigation.top
     - navigation.sections
 
-copyright: Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/master/AUTHORS.md">The HOHQMesh Authors</a>
+copyright: Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/main/AUTHORS.md">The HOHQMesh Authors</a>
 nav:
   - Home: 'index.md'
   - Authors: 'authors.md'
