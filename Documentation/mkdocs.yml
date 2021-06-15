@@ -28,6 +28,7 @@ nav:
     - The Control Input: 'the-control-input.md'
     - Three Dimensional Hexahedral Meshes: 'three-dimensional-hexahedral-meshes.md'
     - The Control File: 'the-control-file.md'
+    - Pre-made Examples: 'examples.md'
     - Compiling and Running HOHQMesh: 'compiling-and-running-hohqmesh.md'
     - Appendix: 'appendix.md'
   - 'For Developers':
@@ -42,6 +43,10 @@ markdown_extensions:
       generic: true
   - toc:
       permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
 
 extra_javascript:
   - javascripts/config.js
