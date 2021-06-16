@@ -1,4 +1,4 @@
-# Creating a new HOHQMesh release
+# Releasing a New Version
 
 This document describes the necessary steps for creating a new HOHQMesh release.
 When following these guidelines, don't forget to replace `1.2.3` with the
