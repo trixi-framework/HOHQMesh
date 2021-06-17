@@ -106,12 +106,13 @@
 !     ------------------------
 !
       TYPE, EXTENDS(FTObject) ::  MeshProject
-         TYPE (SMModel)           , POINTER :: model    => NULL()
-         TYPE (SMMesh)            , POINTER :: mesh     => NULL()
-         TYPE (MeshSizer)         , POINTER :: sizer    => NULL()
-         CLASS(QuadTreeGrid)      , POINTER :: grid     => NULL()
-         CLASS(MeshSmoother)      , POINTER :: smoother => NULL()
-         TYPE(StructuredHexMesh)  , POINTER :: hexMesh  => NULL()
+         TYPE (SMModel)           , POINTER :: model         => NULL()
+         TYPE (SMMesh)            , POINTER :: mesh          => NULL()
+         TYPE (MeshSizer)         , POINTER :: sizer         => NULL()
+         CLASS(QuadTreeGrid)      , POINTER :: grid          => NULL()
+         CLASS(MeshSmoother)      , POINTER :: smoother      => NULL()
+         TYPE(StructuredHexMesh)  , POINTER :: hexMesh       => NULL()
+         TYPE(FTValueDictionary)  , POINTER :: control3DDict => NULL()
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
@@ -233,6 +234,34 @@
             END IF 
          END IF
 !
+!        --------------------------------------
+!        Save 3D control dictionaries for later
+!        --------------------------------------
+!
+         IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_ALGORITHM_KEY) .OR. &
+              controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)  .OR. &
+              controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN
+            
+            ALLOCATE(self % control3DDict)
+            CALL self % control3DDict % initWithSize(sze = 4)
+            
+            IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_ALGORITHM_KEY) )     THEN
+               obj => controlDict % objectForKey(key = SIMPLE_EXTRUSION_ALGORITHM_KEY)
+               CALL self % control3DDict % addObjectForKey(object = obj,key = SIMPLE_EXTRUSION_ALGORITHM_KEY)
+            END IF 
+            
+            IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN
+               obj => controlDict % objectForKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)
+               CALL self % control3DDict % addObjectForKey(object = obj,key = SIMPLE_ROTATION_ALGORITHM_KEY)
+            END IF 
+            
+            IF ( controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN
+               obj => controlDict % objectForKey(key = SWEEP_CURVE_CONTROL_KEY)
+               CALL self % control3DDict % addObjectForKey(object = obj,key = SWEEP_CURVE_CONTROL_KEY)
+            END IF 
+            
+         END IF 
+!
 !        -----------------
 !        Build the project
 !        -----------------
@@ -270,6 +299,11 @@
          IF (  ASSOCIATED(self % hexMesh) )     THEN
             CALL DestructStructuredHexMesh(hexMesh  = self % hexMesh) 
          END IF  
+         
+         IF (  ASSOCIATED(self % control3DDict) )     THEN
+            CALL releaseFTValueDictionary(self = self % control3DDict) 
+         END IF  
+        
          
       END SUBROUTINE DestructMeshProject
 !
@@ -1401,7 +1435,7 @@
 !        ---------
 !
          CLASS(FTValueDictionary), POINTER :: rotationBlockDict
-         TYPE(RotationTransform)             :: rotationTransformer
+         TYPE(RotationTransform)           :: rotationTransformer
 !
 !        ---------------
 !        Local Variables

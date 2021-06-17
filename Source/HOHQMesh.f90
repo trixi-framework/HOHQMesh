@@ -108,18 +108,20 @@
          CALL project % initWithDictionary( projectDict )
          CALL trapExceptions !Abort on fatal exceptions
          
-         obj              => projectDict % objectForKey(key = "CONTROL_INPUT")
-         controlDict      => valueDictionaryFromObject(obj)
+         controlDict      => project % control3DDict
          
-         shouldGenerate3D = shouldGenerate3DMesh(controlDict = controlDict)
-         IF ( shouldGenerate3D )     THEN
-            obj            => projectDict % objectForKey(key = "MODEL")
-            modelDict      => valueDictionaryFromObject(obj)
-            CALL modelDict % retain()
-            CALL Check3DMeshParametersIntegrity(controlDict, modelDict) 
-            CALL releaseFTValueDictionary(modelDict)
+         shouldGenerate3D = .FALSE.
+         IF ( ASSOCIATED(controlDict) )     THEN
+            shouldGenerate3D = .TRUE.
+            IF ( shouldGenerate3D )     THEN
+               obj            => projectDict % objectForKey(key = "MODEL")
+               modelDict      => valueDictionaryFromObject(obj)
+               CALL modelDict % retain()
+               CALL Check3DMeshParametersIntegrity(controlDict, modelDict) 
+               CALL releaseFTValueDictionary(modelDict)
+            END IF 
+            CALL trapExceptions !Abort on fatal exceptions
          END IF 
-         CALL trapExceptions !Abort on fatal exceptions
 !
 !        -----------------
 !        Generate the mesh
@@ -183,7 +185,7 @@
             IF(printMessage) PRINT *, "Sweeping quad mesh to Hex mesh..."
             
             CALL stopWatch % start()
-               CALL generate3DMesh( controlDict, project )
+               CALL generate3DMesh( project )
             CALL stopWatch % stop()
             
             CALL trapExceptions !Aborts on fatal exceptions

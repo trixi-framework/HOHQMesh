@@ -75,7 +75,8 @@
 !        ---------------
 !
          INTEGER :: k
-               
+         
+         CALL ResetProject(project)
          CALL GenerateAQuadMesh( project, errorCode ) 
 !
 !        -------------------------------------------------------------------------

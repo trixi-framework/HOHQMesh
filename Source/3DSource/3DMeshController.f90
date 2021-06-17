@@ -170,14 +170,13 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE generate3DMesh( controlDict, project )
+      SUBROUTINE generate3DMesh( project )
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         TYPE (FTValueDictionary), POINTER :: controlDict
          TYPE(MeshProject)                 :: project
 !
 !        ---------------
@@ -194,12 +193,15 @@
          REAL(KIND=RP)                           :: h, dz
          TYPE(CurveSweeper)                      :: sweeper
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: sweepAlgorithm
+         TYPE (FTValueDictionary), POINTER :: controlDict
 !
 !        ----------
 !        Interfaces
 !        ----------
 !
          LOGICAL, EXTERNAL :: ReturnOnFatalError
+         
+         controlDict => project % control3DDict
 !
 !        -------------------------------------------
 !        Apply topography to the bottom if requested
