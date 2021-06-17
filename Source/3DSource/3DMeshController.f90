@@ -56,13 +56,6 @@
 ! This module Coordinates the generation of a 3D Mesh from the 2D Mesh 
 !---------------------------------------------------------------------
 !
-!     ---------
-!     Constants
-!     ---------
-!
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_3D_ALGORITHM_CHOICE_KEY = "AlgorithmChoice"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_ELEMENT_TYPE_KEY        = "elementType"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_GENERATE3D_MESH_KEY     = "generate3DMesh"
 !
 !     ======== 
       CONTAINS
