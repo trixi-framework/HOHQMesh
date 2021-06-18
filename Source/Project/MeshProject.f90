@@ -119,6 +119,7 @@
          TYPE(RotationTransform)            :: rotationTransformer
          TYPE(ScaleTransform)               :: scaleTransformer
          CHARACTER(LEN=32)                  :: backgroundMaterialName
+         LOGICAL                            :: shouldGenerate3DMesh
 !         
 !        ========         
          CONTAINS
@@ -163,6 +164,8 @@
 !        ---------------------------
 !
          CALL self % FTObject % init()
+         
+         self % shouldGenerate3DMesh = .FALSE.
 !
 !        ------------------------------------
 !        Get run and model parameters
@@ -242,6 +245,7 @@
               controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)  .OR. &
               controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN
             
+            self % shouldGenerate3DMesh = .TRUE.
             ALLOCATE(self % control3DDict)
             CALL self % control3DDict % initWithSize(sze = 4)
             
