@@ -240,7 +240,8 @@ FTDictionaryClass.o : $(FTOLPATH)/Source/FTObjects/FTDictionaryClass.f90 \
 FTObjectArrayClass.o \
 FTLinkedListClass.o \
 FTObjectClass.o \
-FTLinkedListClass.o
+FTLinkedListClass.o \
+Hash.o
 	$(F90) -c $(FFLAGS) $(INCLUDES) -o $@ $(FTOLPATH)/Source/FTObjects/FTDictionaryClass.f90
 
 FTExceptionClass.o : $(FTOLPATH)/Source/FTObjects/FTExceptionClass.f90 \
