@@ -11,7 +11,7 @@
 
 ## Getting started
 
-## Obtaining the sources
+### Obtaining the sources
 You can download the
 [latest HOHQMesh release](https://github.com/trixi-framework/HOHQMesh/releases/latest)
 from GitHub. Make sure to get the tarball named `HOHQMesh-vVERSION.tar.gz`, as
@@ -26,7 +26,7 @@ Alternatively, you can build HOHQMesh directly from the latest sources in the
 before proceeding, which will download the `FTObjectLibrary` sources for you.
 This step is required only once.
 
-## Building
+### Building
 Enter the HOHQMesh directory and execute
 ```shell
 make
@@ -43,7 +43,7 @@ For example, to build HOHQMesh specifically with the Fortran compiler
 make -j 4 FC=gfortran-10
 ```
 
-## Testing
+### Testing
 After building HOHQMesh, you can verify that everything works as expected by
 running the internal test suite. To execute the tests, type
 ```bash
@@ -53,7 +53,7 @@ where `<pathToBenchmarks>` is the path to the HOHQMesh directory. If you are
 inside the HOHQMesh directory, you can also omit the `-path` option, as it
 defaults to `.`.
 
-## Generating a mesh
+### Generating a mesh
 To mesh a control file, type
 ```bash
 ./HOHQMesh -f <pathToControlFile>
