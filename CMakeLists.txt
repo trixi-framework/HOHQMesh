@@ -2,19 +2,19 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
 
 SET(FC "/usr/bin/gfortran" CACHE STRING "Fortran Compiler")
 SET(FFLAGS "-cpp" CACHE STRING "Fortran compiler flags")
-SET(FTOBJ_PREFIX "/usr/local/ftobjectlibrary" CACHE STRING "Path to the FTOBJ installation path")
+SET(FTOBJECTLIBRARY_DIR "/usr/local/ftobjectlibrary" CACHE STRING "Path to the FTOBJ installation path")
 
 MESSAGE("---------------  cmake START -------------------")
 MESSAGE("-- FC:                   ${FC}")
 MESSAGE("-- FFLAGS:               ${FFLAGS}")
-MESSAGE("-- FTOBJ_PREFIX:         ${FTOBJ_PREFIX}")
+MESSAGE("-- FTOBJECTLIBRARY_DIR:  ${FTOBJECTLIBRARY_DIR}")
 MESSAGE("-- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 MESSAGE("------------------------------------------------")
 
 SET(CMAKE_Fortran_COMPILER_INIT ${FC})
 SET(CMAKE_Fortran_FLAGS "${FFLAGS} ${CMAKE_Fortran_FLAGS}")
 
-INCLUDE_DIRECTORIES("${FTOBJ_PREFIX}/include")
+INCLUDE_DIRECTORIES("${FTOBJECTLIBRARY_DIR}/include")
 
 PROJECT(HOHQMesh Fortran)
 SET(VERSION 0.0.0)
