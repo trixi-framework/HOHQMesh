@@ -61,7 +61,7 @@ jobs:
           ${{ matrix.compiler }} --version
       - name: Build
         run: |
-          make -j 2 F90=${{ matrix.compiler }}
+          make -j 2 FC=${{ matrix.compiler }}
       - name: Run tests
         run: |
           ./HOHQMesh -test
@@ -74,7 +74,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           sudo apt-get install -y lcov
-          F90=${{ matrix.compiler }} ./Utilities/createcoverage
+          FC=${{ matrix.compiler }} ./Utilities/createcoverage
       - uses: codecov/codecov-action@v1
         if: ${{ matrix.os == 'ubuntu-latest' }}
         with:
