@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
 
 SET(FC "/usr/bin/gfortran" CACHE STRING "Fortran Compiler")
 SET(FFLAGS "-cpp" CACHE STRING "Fortran compiler flags")
-SET(FTOBJECTLIBRARY_DIR "/usr/local/ftobjectlibrary" CACHE STRING "Path to the FTOBJ installation path")
+#SET(FTOBJECTLIBRARY_DIR "/usr/local/ftobjectlibrary" CACHE STRING "Path to the FTOBJ installation path")
 
 MESSAGE("---------------  cmake START -------------------")
 MESSAGE("-- FC:                   ${FC}")
