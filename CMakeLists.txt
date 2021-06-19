@@ -1,7 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
 
-SET(FC "/usr/bin/gfortran" CACHE STRING "Fortran Compiler")
-SET(FFLAGS "-cpp" CACHE STRING "Fortran compiler flags")
+SET(FFLAGS "-cpp -O" CACHE STRING "Fortran compiler flags")
 
 MESSAGE("---------------  cmake START -------------------")
 MESSAGE("-- FC:                   ${FC}")
@@ -17,7 +16,7 @@ FIND_PACKAGE(FTObjectLibrary REQUIRED)
 INCLUDE_DIRECTORIES("${FTOBJECTLIBRARY_INCLUDE_DIRS}")
 
 PROJECT(HOHQMesh Fortran)
-SET(VERSION 0.0.0)
+SET(VERSION 1.0.0)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 IF(NOT CMAKE_Fortran_COMPILER_SUPPORTS_F90)
