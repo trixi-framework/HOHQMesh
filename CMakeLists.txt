@@ -12,9 +12,9 @@ MESSAGE("------------------------------------------------")
 SET(CMAKE_Fortran_COMPILER_INIT ${FC})
 SET(CMAKE_Fortran_FLAGS "${FFLAGS} ${CMAKE_Fortran_FLAGS}")
 
-FIND_PACKAGE(ftobjectlibrary)
+FIND_PACKAGE(FTOBJECTLIBRARY REQUIRED)
 
-INCLUDE_DIRECTORIES("${ftobjectlibrary_DIR}/include")
+INCLUDE_DIRECTORIES("${FTOBJECTLIBRARY_INCLUDE_DIRS}")
 
 PROJECT(HOHQMesh Fortran)
 SET(VERSION 0.0.0)
