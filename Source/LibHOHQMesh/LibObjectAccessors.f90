@@ -236,7 +236,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)  
+      SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)    BIND(C)
          IMPLICIT NONE
 !
 !        ---------
@@ -301,7 +301,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N, errFlag)  
+      SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N, errFlag)  BIND(C)
          USE MeshOutputMethods, ONLY:gatherEdgeInfo
          IMPLICIT NONE
 !
