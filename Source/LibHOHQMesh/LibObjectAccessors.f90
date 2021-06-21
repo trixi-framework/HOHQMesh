@@ -44,6 +44,7 @@
       Module ProjectInterfaceAccessors 
       USE MeshProjectClass
       USE InteropUtilitiesModule
+      USE HMLConstants
       USE ISO_C_BINDING
       IMPLICIT NONE
 !
@@ -51,6 +52,13 @@
       CONTAINS 
 !     --------
 !
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      INTEGER(C_INT) FUNCTION DefaultCharacterLength() BIND(C)
+         IMPLICIT NONE  
+         DefaultCharacterLength = DEFAULT_CHARACTER_LENGTH
+      END FUNCTION DefaultCharacterLength
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -129,7 +137,7 @@
 !
 !> Getter for number of nodes in the mesh
 !>
-      INTEGER FUNCTION HML_NumberOfNodes(cPtr)   BIND(C)
+      INTEGER(C_INT) FUNCTION HML_NumberOfNodes(cPtr)   BIND(C)
          IMPLICIT NONE  
          TYPE(c_ptr)                  :: cPtr
          TYPE( MeshProject ), POINTER :: project
@@ -142,7 +150,7 @@
 !
 !> Getter for number of elements in the mesh
 !>
-      INTEGER FUNCTION HML_NumberOfElements(cPtr)   BIND(C)
+      INTEGER(C_INT) FUNCTION HML_NumberOfElements(cPtr)   BIND(C)
          IMPLICIT NONE  
          TYPE(c_ptr)                  :: cPtr
          TYPE( MeshProject ), POINTER :: project
@@ -155,7 +163,7 @@
 !
 !> Getter for number of edges in the mesh
 !>
-      INTEGER FUNCTION HML_NumberOfEdges(cPtr)   BIND(C)
+      INTEGER(C_INT) FUNCTION HML_NumberOfEdges(cPtr)   BIND(C)
          IMPLICIT NONE  
          TYPE(c_ptr)                  :: cPtr
          TYPE( MeshProject ), POINTER :: project
@@ -166,64 +174,192 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE HML_NodeLocations(cPtr, locationsArray, N)  
+!> Gets the physical space node locations (x,y,z) for all the nodes
+!>
+      SUBROUTINE HML_NodeLocations(cPtr, locationsArray, N, errFlag)  BIND(C)
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         TYPE(c_ptr)                  :: cPtr
-         INTEGER                      :: N
-         REAL(KIND=C_DOUBLE)          :: locationsArray(3,N)
+         TYPE(c_ptr)          :: cPtr
+         INTEGER              :: N
+         REAL(KIND=C_DOUBLE)  :: locationsArray(3,N)
+         INTEGER(C_INT)       :: errFlag
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         TYPE( MeshProject ), POINTER :: project
+         TYPE( MeshProject )        , POINTER :: project
+         TYPE( SMMesh)              , POINTER :: mesh
+         TYPE( FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMNode)              , POINTER :: node
+         INTEGER                              :: j
+!
+!        ---------------
+!        Check on errors
+!        ---------------
+!
+         errFlag = HML_ERROR_NONE 
+        
+         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         mesh => project % mesh
+         IF ( .NOT. ASSOCIATED(mesh) )     THEN
+            errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
+            RETURN 
+         END IF 
+
+         IF ( N < project % mesh % nodes % count() )     THEN
+            errFlag = HML_ERROR_MEMORY_SIZE 
+            RETURN 
+         END IF 
+!
+!        ---------------------------
+!        Gather the requested values
+!        ---------------------------
+!
+         iterator => mesh % nodesIterator
+         CALL iterator % setToStart()
+         j = 1
+         DO WHILE( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL cast(obj,node)
+            locationsArray(:,j) = node % x
+            CALL iterator % movetoNext()
+            j = j + 1
+         END DO 
          
       END SUBROUTINE HML_NodeLocations
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N)  
+      SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)  
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         TYPE(c_ptr)                  :: cPtr
-         INTEGER                      :: N
-         REAL(KIND=C_DOUBLE)          :: connectivityArray(4,N)
+         TYPE(c_ptr)     :: cPtr
+         INTEGER         :: N
+         INTEGER(C_INT)  :: connectivityArray(4,N)
+         INTEGER(C_INT)  :: errFlag
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         TYPE( MeshProject ), POINTER :: project
+         TYPE( MeshProject )        , POINTER :: project
+         TYPE( SMMesh)              , POINTER :: mesh
+         TYPE( FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMElement)           , POINTER :: e
+         CLASS(SMNode)              , POINTER :: node
+         INTEGER                              :: j,k
+!
+!        ---------------
+!        Check on errors
+!        ---------------
+!
+         errFlag = HML_ERROR_NONE 
+        
+         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         mesh => project % mesh
+         IF ( .NOT. ASSOCIATED(mesh) )     THEN
+            errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
+            RETURN 
+         END IF 
+
+         IF ( N < project % mesh % elements % count() )     THEN
+            errFlag = HML_ERROR_MEMORY_SIZE 
+            RETURN 
+         END IF 
+!
+!        ---------------------------
+!        Gather the requested values
+!        ---------------------------
+!
+         iterator => mesh % elementsIterator
+         CALL iterator % setToStart()
+         j = 1
+         DO WHILE( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL cast(obj,e)
+            DO k = 1, 4
+               obj => e % nodes % objectAtIndex(k)
+               CALL castToSMNode(obj, node)
+               connectivityArray(k,j) = node % id
+            END DO  
+            CALL iterator % movetoNext()
+            j = j + 1
+         END DO 
          
       END SUBROUTINE HML_2DElementConnectivity
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N)  
+      SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N, errFlag)  
+         USE MeshOutputMethods, ONLY:gatherEdgeInfo
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         TYPE(c_ptr)                  :: cPtr
-         INTEGER                      :: N
-         REAL(KIND=C_DOUBLE)          :: connectivityArray(2,N)
+         TYPE(c_ptr)     :: cPtr
+         INTEGER         :: N
+         INTEGER(C_INT)  :: connectivityArray(6,N)
+         INTEGER(C_INT)  :: errFlag
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         TYPE( MeshProject ), POINTER :: project
+         TYPE( MeshProject )        , POINTER :: project
+         TYPE( SMMesh)              , POINTER :: mesh
+         TYPE( FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMEdge)              , POINTER :: e
+         CLASS(SMNode)              , POINTER :: node
+         INTEGER                              :: j,k
+         INTEGER                              :: edgeInfo(6)
+!
+!        ---------------
+!        Check on errors
+!        ---------------
+!
+         errFlag = HML_ERROR_NONE 
+        
+         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         mesh => project % mesh
+         IF ( .NOT. ASSOCIATED(mesh) )     THEN
+            errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
+            RETURN 
+         END IF 
+
+         IF ( N < project % mesh % edges % count() )     THEN
+            errFlag = HML_ERROR_MEMORY_SIZE 
+            RETURN 
+         END IF 
+!
+!        ---------------------------
+!        Gather the requested values
+!        ---------------------------
+!
+         iterator => mesh % edgesIterator
+         CALL iterator % setToStart()
+         j = 1
+         DO WHILE( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL cast(obj,e)
+            CALL gatherEdgeInfo(edge = e,info = edgeInfo)
+            connectivityArray(:,j) = edgeInfo
+            CALL iterator % movetoNext()
+            j = j + 1
+         END DO 
          
       END SUBROUTINE HML_2DEdgeConnectivity
    END Module ProjectInterfaceAccessors

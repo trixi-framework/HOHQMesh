@@ -57,25 +57,10 @@
    USE SharedExceptionManagerModule
    USE MeshController3D
    USE InteropUtilitiesModule
+   USE HMLConstants
    USE ISO_C_BINDING
    
    IMPLICIT NONE
-!
-!  -----------
-!  Error Codes
-!  -----------
-!
-!> Error Flag for no error
-   INTEGER, PARAMETER :: HML_ERROR_NONE = 0 
-!
-!> Error Flag when a project has more than one reference and cannot be deallocated
-   INTEGER, PARAMETER :: HML_ERROR_MULTIPLE_REFERENCES = 1
-!
-!> Error Flag if for some reason a MeshProject cannot be deallocated
-   INTEGER, PARAMETER :: HML_ERROR_DEALLOCATION = 2  
-!
-!> Error Flag if a routine is passed a c_ptr that doesn't resolve to a MeshProject
-   INTEGER, PARAMETER :: HML_ERROR_NOT_A_PROJECT = 3  
 !
 !  --------
    CONTAINS
@@ -107,7 +92,7 @@
 !     ---------
 !
       TYPE(c_ptr)                   :: cPtr
-      INTEGER, INTENT(OUT)          :: errFlag
+      INTEGER(C_INT), INTENT(OUT)          :: errFlag
 !
 !     ---------------
 !     Local Variables
@@ -151,7 +136,7 @@
 !
       TYPE(c_ptr)                          :: cPtr
       CHARACTER(KIND=c_char), DIMENSION(*) :: cFileName
-      INTEGER                              :: errFlag
+      INTEGER(C_INT)                       :: errFlag
 !
 !     ---------------
 !     Local variables
@@ -202,8 +187,8 @@
 !     Arguments
 !     ---------
 !
-      TYPE(c_ptr)   :: cPtr
-      INTEGER       :: errFlag
+      TYPE(c_ptr)    :: cPtr
+      INTEGER(C_INT) :: errFlag
 !
 !     ---------------
 !     Local Variables
@@ -265,8 +250,8 @@
 !     Arguments
 !     ---------
 !
-      TYPE(c_ptr)                                      :: cPtr
-      INTEGER                                         :: errFlag
+      TYPE(c_ptr)                                     :: cPtr
+      INTEGER(C_INT)                                  :: errFlag
       CHARACTER(KIND=c_char), DIMENSION(*), OPTIONAL  :: cFileName
 !
 !     ---------------
@@ -311,7 +296,7 @@
    SUBROUTINE HML_WritePlotFile(cPtr, errFlag)   BIND(C)
       IMPLICIT NONE  
       TYPE(c_ptr)                    :: cPtr
-      INTEGER                        :: errFlag
+      INTEGER(C_INT)                 :: errFlag
       TYPE( MeshProject )  , POINTER :: project
       CLASS ( MeshProject ), POINTER :: projAsClass
       
