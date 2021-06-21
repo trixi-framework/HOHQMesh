@@ -1,4 +1,4 @@
-# Creating a new HOHQMesh release
+# Releasing a New Version
 
 This document describes the necessary steps for creating a new HOHQMesh release.
 When following these guidelines, don't forget to replace `1.2.3` with the
@@ -81,10 +81,10 @@ tarball will fail!*
    current directory.
 5. Test the new release by executing
    ```bash
-   F90=gfortran ./Utilities/testrelease HOHQMesh-v1.3.0.tar.gz
+   FC=gfortran ./Utilities/testrelease HOHQMesh-v1.3.0.tar.gz
    ```
    Make sure you change the Fortran compiler executable to one suitable
-   for your system by modifying the `F90` environment variable accordingly.
+   for your system by modifying the `FC` environment variable accordingly.
    If it fails, do *not* just change the files in your current directory!
    Instead, figure out why the tests fail, fix them, commit and push the changes
    and start over.

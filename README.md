@@ -9,24 +9,57 @@
   <img width="400px" src="https://user-images.githubusercontent.com/3637659/121870408-50418800-cd03-11eb-9187-dcafdf73bab2.png" />
 </p>
 
-## Installation
-To build, edit the `Makefile` file as indicated in the header and move to
-ones favorite directory. Type
+## Getting started
+
+### Obtaining the sources
+You can download the
+[latest HOHQMesh release](https://github.com/trixi-framework/HOHQMesh/releases/latest)
+from GitHub. Make sure to get the tarball named `HOHQMesh-vVERSION.tar.gz`, as
+it already contains the required sources for the
+[FTObjectLibrary](https://github.com/trixi-framework/FTObjectLibrary)
+dependency, and unpack it with `tar xf HOHQMesh-vVERSION.tar.gz`.
+Alternatively, you can build HOHQMesh directly from the latest sources in the
+`main` branch. In this case, you need enter the clone directory and execute
+```bash
+./Utilities/bootstrap
+```
+before proceeding, which will download the `FTObjectLibrary` sources for you.
+This step is required only once.
+
+### Building
+Enter the HOHQMesh directory and execute
 ```shell
 make
 ```
-That will build HOHQMesh.
+This will build HOHQMesh using the `gfortran` compiler by default.
+The compiler choice can be overriden by passing `FC=<pathToCompiler>` to
+`make`.
+You can further pass the `-jN` option to `make` (with `N` being a non-negative
+integer), which will use `N` parallel processes.
 
-To run the tests, type
+For example, to build HOHQMesh specifically with the Fortran compiler
+`gfortran-10` and with 4 parallel processes, execute
+```bash
+make -j 4 FC=gfortran-10
+```
+
+### Testing
+After building HOHQMesh, you can verify that everything works as expected by
+running the internal test suite. To execute the tests, type
 ```bash
 ./HOHQMesh -test -path <pathToBenchmarks>
 ```
-where `<pathToBenchmarks>` is the path to the HOHQMesh directory.
+where `<pathToBenchmarks>` is the path to the HOHQMesh directory. If you are
+inside the HOHQMesh directory, you can also omit the `-path` option, as it
+defaults to `.`.
 
+### Generating a mesh
 To mesh a control file, type
 ```bash
 ./HOHQMesh -f <pathToControlFile>
 ```
+where `-f` allows you to provide the path to the control file for which you want
+to create your mesh.
 
 ## Authors
 HOHQMesh was initiated by
