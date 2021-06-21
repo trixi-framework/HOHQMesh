@@ -1,3 +1,37 @@
+! MIT License
+!
+! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy  
+! of this software and associated documentation files (the "Software"), to deal  
+! in the Software without restriction, including without limitation the rights  
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
+! copies of the Software, and to permit persons to whom the Software is  
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in all  
+! copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! SOFTWARE.
+! 
+! HOHQMesh contains code that, to the best of our knowledge, has been released as
+! public domain software:
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+!    Computer Methods for Mathematical Computations, 1977
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+!    Computer Methods for Mathematical Computations, 1977
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+!    Computer Methods for Mathematical Computations, 1977
+!
+! --- End License
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -92,10 +126,6 @@
 !
       CALL C_F_POINTER(cPtr = cPtr, FPTR = proj)
       projAsClass => proj
-      IF(.NOT. IsMeshProjectPtr(projAsClass))     THEN
-         errFlag = HML_ERROR_NOT_A_PROJECT
-         RETURN 
-      END IF 
       
       rc = proj % refCount()
       IF ( rc > 1 )     THEN
@@ -112,27 +142,28 @@
 !
 !> Initializer given a control file name
 !>
-   SUBROUTINE HML_InitWithControlFile(cPtr, fileName, errFlag)
+   SUBROUTINE HML_InitWithControlFile(cPtr, cFileName, errFlag) BIND(C)
       IMPLICIT NONE
 !
 !     ---------
 !     Arguments
 !     ---------
 !
-      TYPE(c_ptr)      :: cPtr
-      CHARACTER(LEN=*) :: fileName
-      INTEGER          :: errFlag
+      TYPE(c_ptr)                          :: cPtr
+      CHARACTER(KIND=c_char), DIMENSION(*) :: cFileName
+      INTEGER                              :: errFlag
 !
 !     ---------------
 !     Local variables
 !     ---------------
 !
-      TYPE( MeshProject )     , POINTER :: proj
-      TYPE (FTValueDictionary), POINTER :: projectDict => NULL()
-      CLASS(FTObject)         , POINTER :: obj
-      TYPE (FTValueDictionary), POINTER :: modelDict, controlDict
-      LOGICAL                           :: shouldGenerate3D  = .FALSE.
-      CLASS ( MeshProject )   , POINTER :: projAsClass
+      TYPE( MeshProject )     , POINTER     :: proj
+      TYPE (FTValueDictionary), POINTER     :: projectDict => NULL()
+      CLASS(FTObject)         , POINTER     :: obj
+      TYPE (FTValueDictionary), POINTER     :: modelDict, controlDict
+      LOGICAL                               :: shouldGenerate3D  = .FALSE.
+      CLASS ( MeshProject )   , POINTER     :: projAsClass
+      CHARACTER(len=:)        , ALLOCATABLE :: fFileName
 
       errFlag     = HML_ERROR_NONE
 
@@ -143,7 +174,8 @@
             RETURN 
       END IF 
       
-      CALL ReadControlFile(fileName, projectDict)
+      fFileName = c_to_f_string(c_string = cFileName )
+      CALL ReadControlFile(fFileName, projectDict)
       CALL proj % initWithDictionary( projectDict )
       CALL trapExceptions !Abort on fatal exceptions   
       
@@ -226,20 +258,46 @@
 !
 !> Writes the mesh file
 !>
-   SUBROUTINE HML_WriteMesh(cPtr, errFlag)   BIND(C)
+   SUBROUTINE HML_WriteMesh(cPtr, errFlag, cFileName)   BIND(C)
       IMPLICIT NONE  
-      TYPE(c_ptr)                    :: cPtr
-      INTEGER                        :: errFlag
-      TYPE( MeshProject )  , POINTER :: project
-      CLASS ( MeshProject ), POINTER :: projAsClass
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      TYPE(c_ptr)                                      :: cPtr
+      INTEGER                                         :: errFlag
+      CHARACTER(KIND=c_char), DIMENSION(*), OPTIONAL  :: cFileName
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      TYPE( MeshProject )  , POINTER     :: project
+      CLASS ( MeshProject ), POINTER     :: projAsClass
+      CHARACTER(len=:)     , ALLOCATABLE :: fFileName
       
       errFlag     = HML_ERROR_NONE
-
+!
+!     --------------------------------------
+!     Check integrity of the project pointer 
+!     --------------------------------------
+!
       CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
       projAsClass => project
       IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
             errFlag = HML_ERROR_NOT_A_PROJECT
             RETURN 
+      END IF 
+!
+!     ----------------------------------------------------------
+!     The filename present allows the control file set value to 
+!     be overwritten
+!     ----------------------------------------------------------
+!
+      IF(PRESENT(cFileName))     THEN 
+         fFileName = c_to_f_string(c_string = cFileName )
+         projAsClass % runParams % MeshFileName = fFileName
       END IF 
       
       CALL WriteMeshFile(projAsClass, projAsClass % shouldGenerate3DMesh)

@@ -223,7 +223,7 @@
 !        Arguments
 !        ---------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), INTENT(IN)  :: controlFileName ! Input
+         CHARACTER(LEN=*), INTENT(IN)  :: controlFileName ! Input
          TYPE(FTValueDictionary), POINTER                     :: projectDict     ! Output, retained
 !
 !        ---------------
