@@ -64,6 +64,7 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: MeshFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: plotFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: testResultsFileName
          INTEGER                                 :: meshFileFormat
          INTEGER                                 :: polynomialOrder
          INTEGER                                 :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
@@ -931,11 +932,12 @@
 !        Example block is:
 !
 !         \begin{RunParameters}
-!            model file name = "model.gm"
-!            mesh file name = "fname.mesh"
-!            stats file name = "fname.txt" (Optional)
+!            model file name  = "model.gm"
+!            mesh file name   = "fname.mesh"
+!            stats file name  = "fname.txt" (Optional)
+!            test file name   = "fname.txt" (Optional)
 !            mesh file format = "Basic", ...
-!            plot file name = "tName.tec"  (Optional)
+!            plot file name   = "tName.tec"  (Optional)
 !            plot file format = "skeleton" OR "sem"
 !         \end{RunParameters}
 !
@@ -995,6 +997,12 @@
                                            errorLevel = FT_ERROR_WARNING,       &
                                            message    = msg,                    &
                                            poster     = "SetRunParametersBlock")
+         
+         params % testResultsFileName = ""
+         IF( paramsDict % containsKey( TEST_RESULTS_FILE_NAME_KEY) )     THEN
+            params % testResultsFileName = paramsDict % stringValueForKey(key             = TEST_RESULTS_FILE_NAME_KEY, &
+                                                                          requestedLength = DEFAULT_CHARACTER_LENGTH)
+         END IF 
                                            
          msg = "Unknown mesh file format or mesh file format not set. Set to ISM"
          CALL SetStringValueFromDictionary(valueToSet = fileFormat,                &
@@ -1503,6 +1511,9 @@
             END IF 
             IF(self % runParams % statsFileName /= "none")      THEN 
                self % runParams % statsFileName = TRIM(path) // self % runParams % statsFileName
+            END IF 
+            IF(self % runParams % testResultsFileName /= "")      THEN 
+               self % runParams % testResultsFileName = TRIM(path) // self % runParams % testResultsFileName
             END IF 
          END IF
          

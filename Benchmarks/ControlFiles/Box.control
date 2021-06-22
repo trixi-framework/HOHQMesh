@@ -1,0 +1,28 @@
+%
+%   This control file uses no model and so generates a structured (Cartesian) mesh 
+%   in a square. The mesh size and position is given by the BackgroundGrid 
+%   block.
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/Box2D.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/Box2D.tec
+      stats file name  = none
+      test file name   = Benchmarks/BenchmarkData/Box.txt
+      mesh file format = ISM-v2
+      polynomial order = 4
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+%
+%  Define a 5x5 element mesh on [01]^2
+%
+   \begin{BACKGROUND_GRID}
+       x0 = [0.0, 0.0, 0.0]
+       dx = [1.0, 1.0, 0.0]
+       N  = [5,5,1]
+   \end{BACKGROUND_GRID}
+
+\end{CONTROL_INPUT}
+
+\end{FILE}

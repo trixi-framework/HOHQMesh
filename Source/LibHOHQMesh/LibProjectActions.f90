@@ -92,7 +92,7 @@
 !     ---------
 !
       TYPE(c_ptr)                   :: cPtr
-      INTEGER(C_INT), INTENT(OUT)          :: errFlag
+      INTEGER(C_INT), INTENT(OUT)   :: errFlag
 !
 !     ---------------
 !     Local Variables
@@ -146,7 +146,6 @@
       TYPE (FTValueDictionary), POINTER     :: projectDict => NULL()
       CLASS(FTObject)         , POINTER     :: obj
       TYPE (FTValueDictionary), POINTER     :: modelDict, controlDict
-      LOGICAL                               :: shouldGenerate3D  = .FALSE.
       CLASS ( MeshProject )   , POINTER     :: projAsClass
       CHARACTER(len=:)        , ALLOCATABLE :: fFileName
 
@@ -194,9 +193,7 @@
 !     Local Variables
 !     ---------------
 !
-      LOGICAL                           :: didGenerate3DMesh
       TYPE ( MeshProject )    , POINTER :: project
-      TYPE (FTValueDictionary), POINTER :: projectDict
       CLASS ( MeshProject )   , POINTER :: projAsClass
 !
 !     -----
@@ -243,7 +240,7 @@
 !
 !> Writes the mesh file
 !>
-   SUBROUTINE HML_WriteMesh(cPtr, errFlag, cFileName)   BIND(C)
+   SUBROUTINE HML_WriteMesh(cPtr, errFlag)   BIND(C)
       IMPLICIT NONE  
 !
 !     ---------
@@ -252,7 +249,6 @@
 !
       TYPE(c_ptr)                                     :: cPtr
       INTEGER(C_INT)                                  :: errFlag
-      CHARACTER(KIND=c_char), DIMENSION(*), OPTIONAL  :: cFileName
 !
 !     ---------------
 !     Local variables
@@ -260,7 +256,6 @@
 !
       TYPE( MeshProject )  , POINTER     :: project
       CLASS ( MeshProject ), POINTER     :: projAsClass
-      CHARACTER(len=:)     , ALLOCATABLE :: fFileName
       
       errFlag     = HML_ERROR_NONE
 !
@@ -273,16 +268,6 @@
       IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
             errFlag = HML_ERROR_NOT_A_PROJECT
             RETURN 
-      END IF 
-!
-!     ----------------------------------------------------------
-!     The filename present allows the control file set value to 
-!     be overwritten
-!     ----------------------------------------------------------
-!
-      IF(PRESENT(cFileName))     THEN 
-         fFileName = c_to_f_string(c_string = cFileName )
-         projAsClass % runParams % MeshFileName = fFileName
       END IF 
       
       CALL WriteMeshFile(projAsClass, projAsClass % shouldGenerate3DMesh)

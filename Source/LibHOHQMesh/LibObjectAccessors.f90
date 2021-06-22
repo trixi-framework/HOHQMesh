@@ -184,7 +184,7 @@
 !        ---------
 !
          TYPE(c_ptr)          :: cPtr
-         INTEGER              :: N
+         INTEGER(C_INT)       :: N
          REAL(KIND=C_DOUBLE)  :: locationsArray(3,N)
          INTEGER(C_INT)       :: errFlag
 !
@@ -244,7 +244,7 @@
 !        ---------
 !
          TYPE(c_ptr)     :: cPtr
-         INTEGER         :: N
+         INTEGER(C_INT)  :: N
          INTEGER(C_INT)  :: connectivityArray(4,N)
          INTEGER(C_INT)  :: errFlag
 !
@@ -310,7 +310,7 @@
 !        ---------
 !
          TYPE(c_ptr)     :: cPtr
-         INTEGER         :: N
+         INTEGER(C_INT)  :: N
          INTEGER(C_INT)  :: connectivityArray(6,N)
          INTEGER(C_INT)  :: errFlag
 !
@@ -323,8 +323,7 @@
          TYPE( FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          CLASS(SMEdge)              , POINTER :: e
-         CLASS(SMNode)              , POINTER :: node
-         INTEGER                              :: j,k
+         INTEGER                              :: j
          INTEGER                              :: edgeInfo(6)
 !
 !        ---------------
