@@ -6,6 +6,8 @@ All operations are to return an error flag. Constants currently defined as
 	INTEGER, PARAMETER :: HML_ERROR_MULTIPLE_REFERENCES = 1
 	INTEGER, PARAMETER :: HML_ERROR_DEALLOCATION = 2  
 	INTEGER, PARAMETER :: HML_ERROR_NOT_A_PROJECT = 3  
+    INTEGER, PARAMETER :: HML_ERROR_MEMORY_SIZE = 4  
+    INTEGER, PARAMETER :: HML_ERROR_NO_OBJECT_FOR_REQUEST = 5  
 
 All actions check to make sure that they are passed a proper 'MeshProject' object through the c_ptr.
 
