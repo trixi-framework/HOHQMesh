@@ -63,16 +63,31 @@ Example usage (in fortran)
 		SUBROUTINE HML_WriteMesh(cPtr, errFlag)   BIND(C)
 			TYPE(c_ptr) :: cPtr
 			INTEGER     :: errFlag
+
+	Writes a mesh file in the format and path as specified in the control file.
+	
 - **Writing a plot file**
 
 
 		SUBROUTINE HML_WritePlotFile(cPtr, errFlag)   BIND(C)
 			TYPE(c_ptr) :: cPtr
 			INTEGER     :: errFlag
+
+	Writes a plot file in tecplot format at the path as specified in the control file.
  		
 ## Accessors
 Accessors are used to get and set project parameters and mesh results, e.g. to be able to create a Trixi native mesh format, or plotting information without passing through a mesh file.
 
+- **Default string length**
+
+		INTEGER(C_INT) FUNCTION DefaultCharacterLength() BIND(C)
+	
+	For string allocation
+- **Boundary name string length**
+
+		INTEGER(C_INT) FUNCTION BoundaryNameLength() BIND(C)
+
+	For string allocation
 - **Number of nodes in a project's mesh**
 
 		INTEGER FUNCTION HML_NumberOfNodes(cPtr)   BIND(C)
@@ -97,7 +112,14 @@ Accessors are used to get and set project parameters and mesh results, e.g. to b
 			INTEGER (C_INT) :: N
 			INTEGER(C_INT)  :: connectivityArray(6,N)
         	INTEGER(C_INT)  :: errFlag
-	The six items for each edge are those needed for the ISM-v2 mesh file format.
+	Fills the six items for each edge needed for the ISM-v2 mesh file format:
+	
+           connectivityArray(1,j) = start node id
+           connectivityArray(2,j) = end node id
+           connectivityArray(3,j) = left element id
+           connectivityArray(4,j) = right element id (or 0, if a boundary edge)
+           connectivityArray(5,j) = element side for left element
+           connectivityArray(6,j) = element side for right element signed for direction (or 0 for boundary edge)
 
 - **Array of element connectivity**
 	
@@ -106,12 +128,19 @@ Accessors are used to get and set project parameters and mesh results, e.g. to b
 			INTEGER              :: N
 			REAL(KIND=C_DOUBLE)  :: connectivityArray(4,N)
         	INTEGER(C_INT)       :: errFlag
+
+	Fills connectivityArray(4,j) with node IDs of the four corners of element j
 - **Array of element edge curves**
+
 - **Array of element boundary names**
 
 ## Setters
 
-Setters would be used for setting parameters, as a way around using a control file. However, the project was written to be immutable (not, by design, but by function) so it will take some work to allow access to and edit individual objects stored within a project. (And downstream effects: For example, changing the background mesh size requires re-computing the discrete boundary curves.)
+Setters would be used for setting parameters, as a way to override values set in a control file. 
+
+- **Set the polynomial order of the boundaries**
+
+		SUBROUTINE HML_SetPolynomialOrder(cPtr, n, errFlag)  BIND(C)
 
 ## Utility Functions
 

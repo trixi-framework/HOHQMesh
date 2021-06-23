@@ -32,5 +32,8 @@
 !> Error Flag if an accessor is called before data needed for it is available
 !> (e.g. asking for node locations before a mesh is allocated)
    INTEGER, PARAMETER :: HML_ERROR_NO_OBJECT_FOR_REQUEST = 5  
+!
+!> Error Flag if a pointer being passed is null
+   INTEGER, PARAMETER :: HML_ERROR_NULL_POINTER = 6  
 
       END Module HMLConstants

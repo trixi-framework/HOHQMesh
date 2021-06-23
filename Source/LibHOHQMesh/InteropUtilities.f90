@@ -44,6 +44,7 @@
       Module InteropUtilitiesModule 
       use ISO_C_BINDING
       USE MeshProjectClass
+      USE HMLConstants
       IMPLICIT NONE
 !
 !     --------
@@ -146,4 +147,29 @@
          END IF 
 
       END FUNCTION CptrIsProjectPtr
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE ptrToProject(cPtr, proj, errFlag)  
+      IMPLICIT NONE  
+      TYPE(c_ptr)                    :: cPtr
+      TYPE( MeshProject )  , POINTER :: proj
+      CLASS ( MeshProject ), POINTER :: projAsClass
+      INTEGER(C_INT)                 :: errFlag
+      
+      errFlag     = HML_ERROR_NONE
+      IF ( .NOT. C_ASSOCIATED(cPtr) )     THEN
+         errFlag = HML_ERROR_NULL_POINTER
+         return 
+      END IF 
+      
+      CALL C_F_POINTER(cPtr = cPtr, FPTR = proj)
+      projAsClass => proj
+      IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
+            errFlag = HML_ERROR_NOT_A_PROJECT
+            proj => NULL()
+      END IF 
+      
+   END SUBROUTINE ptrToProject
+
    END Module InteropUtilitiesModule

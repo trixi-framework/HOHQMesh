@@ -773,7 +773,8 @@
          TYPE(ElementBoundaryInfo) :: self
          INTEGER                 :: N ! = polynomial order
          
-         ALLOCATE( self%x(3,0:N,4) )
+         IF(ALLOCATED(self % x)) DEALLOCATE(self % x)
+         ALLOCATE( self % x(3,0:N,4) )
          
          self % x          = 0.0_RP
          self % bCurveFlag = 0

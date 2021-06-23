@@ -102,14 +102,8 @@
       CLASS ( MeshProject ), POINTER :: projAsClass
       INTEGER                        :: rc
       
-      errFlag = HML_ERROR_NONE
-      IF( .NOT.C_ASSOCIATED(cPtr))     RETURN 
-!
-!     ------------------
-!     Convert to project
-!     ------------------
-!
-      CALL C_F_POINTER(cPtr = cPtr, FPTR = proj)
+      CALL ptrToProject(cPtr = cPtr, proj = proj, errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
       projAsClass => proj
       
       rc = proj % refCount()
@@ -148,15 +142,9 @@
       TYPE (FTValueDictionary), POINTER     :: modelDict, controlDict
       CLASS ( MeshProject )   , POINTER     :: projAsClass
       CHARACTER(len=:)        , ALLOCATABLE :: fFileName
-
-      errFlag     = HML_ERROR_NONE
-
-      CALL C_F_POINTER(cPtr = cPtr, FPTR = proj)
-      projAsClass => proj
-      IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
-            errFlag = HML_ERROR_NOT_A_PROJECT
-            RETURN 
-      END IF 
+      
+      CALL ptrToProject(cPtr = cPtr, proj = proj, errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
       
       fFileName = c_to_f_string(c_string = cFileName )
       CALL ReadControlFile(fFileName, projectDict)
@@ -201,15 +189,10 @@
 !     -----
 !         
       INTEGER                           :: errorCode
-! 
-      errFlag     = HML_ERROR_NONE
 
-      CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+      CALL ptrToProject(cPtr = cPtr,proj = project,errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
       projAsClass => project
-      IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
-            errFlag = HML_ERROR_NOT_A_PROJECT
-            RETURN 
-      END IF 
 !
 !     -----------------
 !     Generate the mesh
@@ -257,18 +240,9 @@
       TYPE( MeshProject )  , POINTER     :: project
       CLASS ( MeshProject ), POINTER     :: projAsClass
       
-      errFlag     = HML_ERROR_NONE
-!
-!     --------------------------------------
-!     Check integrity of the project pointer 
-!     --------------------------------------
-!
-      CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+      CALL ptrToProject(cPtr = cPtr,proj = project,errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
       projAsClass => project
-      IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
-            errFlag = HML_ERROR_NOT_A_PROJECT
-            RETURN 
-      END IF 
       
       CALL WriteMeshFile(projAsClass, projAsClass % shouldGenerate3DMesh)
 
@@ -285,14 +259,9 @@
       TYPE( MeshProject )  , POINTER :: project
       CLASS ( MeshProject ), POINTER :: projAsClass
       
-      errFlag     = HML_ERROR_NONE
-
-      CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+      CALL ptrToProject(cPtr = cPtr,proj = project,errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
       projAsClass => project
-      IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
-            errFlag = HML_ERROR_NOT_A_PROJECT
-            RETURN 
-      END IF 
       
       CALL WritePlotFile(projAsClass, projAsClass % shouldGenerate3DMesh)
 

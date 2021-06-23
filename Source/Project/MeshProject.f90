@@ -121,6 +121,7 @@
          TYPE(ScaleTransform)               :: scaleTransformer
          CHARACTER(LEN=32)                  :: backgroundMaterialName
          LOGICAL                            :: shouldGenerate3DMesh
+         LOGICAL                            :: meshIsGenerated
 !         
 !        ========         
          CONTAINS
@@ -344,6 +345,7 @@
          IF ( ASSOCIATED( self % mesh) )     THEN
             CALL releaseMesh(self % mesh)
          END IF 
+         self % meshIsGenerated = .FALSE.
 
       END SUBROUTINE ResetProject
 !@mark -
@@ -384,7 +386,9 @@
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
                   
          TYPE(SpringSmootherParameters) :: smootherParams
-                           
+         
+         self % meshIsGenerated = .FALSE.
+         
          NULLIFY( self % grid )
          NULLIFY( self % sizer )
          CALL ConstructIdentityScaleTransform(self = self % scaleTransformer)

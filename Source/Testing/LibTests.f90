@@ -226,9 +226,9 @@
          
          READ(fUnit, *) bnchmkNNodes, bnchmkNEdges, bnchmkNElements
          
-         nNodes    = HML_NumberOfNodes(cPtr = projCPtr)
-         nElements = HML_NumberOfElements(cPtr = projCPtr)
-         nEdges    = HML_NumberOfEdges(cPtr = projCPtr)
+         nNodes    = HML_NumberOfNodes(cPtr    = projCPtr, errFlag = flag)
+         nElements = HML_NumberOfElements(cPtr = projCPtr, errFlag = flag)
+         nEdges    = HML_NumberOfEdges(cPtr    = projCPtr, errFlag = flag)
          
          CALL FTAssertEqual(expectedValue = bnchmkNNodes, &
                             actualValue   = nNodes,       &

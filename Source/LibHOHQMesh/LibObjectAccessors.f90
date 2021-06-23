@@ -55,6 +55,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+!> For string allocation
+!>
       INTEGER(C_INT) FUNCTION DefaultCharacterLength() BIND(C)
          IMPLICIT NONE  
          DefaultCharacterLength = DEFAULT_CHARACTER_LENGTH
@@ -62,46 +64,71 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE HML_SetMeshFileName( cPtr, cFileName)  BIND(c)
+!> For string allocation
+!>
+      INTEGER(C_INT) FUNCTION BoundaryNameLength() BIND(C)
+         IMPLICIT NONE  
+         BoundaryNameLength = LENGTH_OF_BC_STRING
+      END FUNCTION BoundaryNameLength
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!> Reset the path to the mesh file from that set by the control file
+!>
+      SUBROUTINE HML_SetMeshFileName( cPtr, cFileName, errFlag)  BIND(c)
          IMPLICIT NONE  
          TYPE(c_ptr)                          :: cPtr
          CHARACTER(KIND=c_char), DIMENSION(*) :: cFileName
+         INTEGER(C_INT), INTENT(OUT)          :: errFlag
          
          CHARACTER(len=:), ALLOCATABLE :: fFileName
          TYPE( MeshProject ), POINTER  :: project
          
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          fFileName = c_to_f_string(c_string = cFileName )
          
          project % runParams % MeshFileName = fFileName
       END SUBROUTINE HML_SetMeshFileName
 !
 !//////////////////////////////////////////////////////////////////////// 
-! 
-      FUNCTION HML_MeshFileName(cPtr) RESULT(c_string)
+!
+!> Get the current path to which the mesh file is to be written
+!>
+      FUNCTION HML_MeshFileName(cPtr, errFlag) RESULT(c_string)
          IMPLICIT NONE  
          TYPE(c_ptr)                                       :: cPtr
+         INTEGER(C_INT), INTENT(OUT)                       :: errFlag
          TYPE( MeshProject )   , POINTER                   :: project
          CHARACTER(KIND=c_char), DIMENSION(:), ALLOCATABLE :: c_string
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)           :: fileName
          
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          fileName = project % runParams % MeshFileName
          c_string = f_to_c_string(fileName)
          
       END FUNCTION HML_MeshFileName
 !
 !//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE HML_SetMeshFileFormat( cPtr, cString)  
+!
+!> Reset the mesh file format, "ISM", "ISM-v2" or "ISM_MM" from that
+!> set in the control file.
+!>
+      SUBROUTINE HML_SetMeshFileFormat( cPtr, cString, errFlag)  
          IMPLICIT NONE  
          TYPE(c_ptr)                          :: cPtr
          CHARACTER(KIND=c_char), DIMENSION(*) :: cString
+         INTEGER(C_INT), INTENT(OUT)          :: errFlag
          
          CHARACTER(len=:), ALLOCATABLE :: fileFormat
          TYPE( MeshProject ), POINTER  :: project
          
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          fileFormat = c_to_f_string(c_string = cString )
          
          SELECT CASE ( fileFormat )
@@ -117,6 +144,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+!> Get the mesh file format the project will use to write a mesh file
+!>
       FUNCTION HML_MeshFileFormat(self)  RESULT(fileFormat)
          IMPLICIT NONE  
          CLASS (MeshProject)                       :: self
@@ -135,46 +164,55 @@
 
 !//////////////////////////////////////////////////////////////////////// 
 !
-!> Getter for number of nodes in the mesh
+!> Get the number of nodes in the mesh
 !>
-      INTEGER(C_INT) FUNCTION HML_NumberOfNodes(cPtr)   BIND(C)
+      INTEGER(C_INT) FUNCTION HML_NumberOfNodes(cPtr, errFlag)   BIND(C)
          IMPLICIT NONE  
          TYPE(c_ptr)                  :: cPtr
          TYPE( MeshProject ), POINTER :: project
+         INTEGER(C_INT), INTENT(OUT)  :: errFlag
          
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          HML_NumberOfNodes = project % mesh % nodes % count()
       END FUNCTION HML_NumberOfNodes
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
-!> Getter for number of elements in the mesh
+!> Get the number of elements in the mesh
 !>
-      INTEGER(C_INT) FUNCTION HML_NumberOfElements(cPtr)   BIND(C)
+      INTEGER(C_INT) FUNCTION HML_NumberOfElements(cPtr, errFlag)   BIND(C)
          IMPLICIT NONE  
          TYPE(c_ptr)                  :: cPtr
          TYPE( MeshProject ), POINTER :: project
+         INTEGER(C_INT), INTENT(OUT)  :: errFlag
          
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          HML_NumberOfElements = project % mesh % elements % count()
       END FUNCTION HML_NumberOfElements
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
-!> Getter for number of edges in the mesh
+!> Get the number of edges in the mesh
 !>
-      INTEGER(C_INT) FUNCTION HML_NumberOfEdges(cPtr)   BIND(C)
+      INTEGER(C_INT) FUNCTION HML_NumberOfEdges(cPtr, errFlag)   BIND(C)
          IMPLICIT NONE  
          TYPE(c_ptr)                  :: cPtr
+         INTEGER(C_INT), INTENT(OUT)  :: errFlag
          TYPE( MeshProject ), POINTER :: project
          
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          HML_NumberOfEdges = project % mesh % edges % count()
       END FUNCTION HML_NumberOfEdges
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-!> Gets the physical space node locations (x,y,z) for all the nodes
+!> Fill an array of dimension (3,numberOfNodes) with the physical space node locations (x,y,z)
 !>
       SUBROUTINE HML_NodeLocations(cPtr, locationsArray, N, errFlag)  BIND(C)
          IMPLICIT NONE
@@ -203,9 +241,9 @@
 !        Check on errors
 !        ---------------
 !
-         errFlag = HML_ERROR_NONE 
-        
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          mesh => project % mesh
          IF ( .NOT. ASSOCIATED(mesh) )     THEN
             errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
@@ -235,7 +273,66 @@
       END SUBROUTINE HML_NodeLocations
 !
 !//////////////////////////////////////////////////////////////////////// 
-! 
+!
+!> Override the polynomial order specified in the control file. If
+!> the mesh has already been generated, then re-compute the boundary
+!> information where it is used.
+!>
+      SUBROUTINE HML_SetPolynomialOrder(cPtr, n, errFlag)  BIND(C)
+         USE MeshGenerationMethods, ONLY:CompleteElementConstruction
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(c_ptr)    :: cPtr
+         INTEGER(C_INT) :: n
+         INTEGER(C_INT) :: errFlag
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE( MeshProject ) , POINTER :: project
+         CLASS( MeshProject ), POINTER :: projAsClass
+         TYPE( SMMesh)       , POINTER :: mesh
+          
+         
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
+         projAsClass => project
+         IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
+               errFlag = HML_ERROR_NOT_A_PROJECT
+               RETURN 
+         END IF
+
+         IF ( N < project % mesh % elements % count() )     THEN
+            errFlag = HML_ERROR_MEMORY_SIZE 
+            RETURN 
+         END IF 
+         
+         IF ( n /= project % runParams % polynomialOrder )     THEN
+            mesh => project % mesh
+            IF ( .NOT. ASSOCIATED(mesh) )     THEN
+               project % runParams % polynomialOrder = n 
+               RETURN 
+            END IF
+            IF ( project % meshIsGenerated )     THEN
+               project % runParams % polynomialOrder = n 
+               CALL CompleteElementConstruction(project)
+            END IF 
+         END IF 
+          
+      END SUBROUTINE HML_SetPolynomialOrder
+      
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!> Fill an array, dimension (4,N), for a 2D quad element with the node IDs 
+!> for the four corners
+!>
       SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)    BIND(C)
          IMPLICIT NONE
 !
@@ -264,9 +361,10 @@
 !        Check on errors
 !        ---------------
 !
-         errFlag = HML_ERROR_NONE 
-        
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          mesh => project % mesh
          IF ( .NOT. ASSOCIATED(mesh) )     THEN
             errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
@@ -300,7 +398,80 @@
       END SUBROUTINE HML_2DElementConnectivity
 !
 !//////////////////////////////////////////////////////////////////////// 
-! 
+!
+!> Fill an array, dimension (LENGTH_OF_BC_STRING+1,4,N), for a 2D quad element with the 
+!> names of the boundaries a side is on. Interior edges have boundary names = "---"
+!>
+      SUBROUTINE HML_2DElementBoundaryNames(cPtr, namesArray, N, errFlag)    BIND(C)
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(c_ptr)       :: cPtr
+         INTEGER(C_INT)    :: N
+         CHARACTER(LEN=1)  :: namesArray(LENGTH_OF_BC_STRING+1,4,N)
+         INTEGER(C_INT)    :: errFlag
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE( MeshProject )        , POINTER :: project
+         TYPE( SMMesh)              , POINTER :: mesh
+         TYPE( FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMElement)           , POINTER :: e
+         CLASS(SMNode)              , POINTER :: node
+         INTEGER                              :: j,k
+!
+!        ---------------
+!        Check on errors
+!        ---------------
+!
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
+         mesh => project % mesh
+         IF ( .NOT. ASSOCIATED(mesh) )     THEN
+            errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
+            RETURN 
+         END IF 
+
+         IF ( N < project % mesh % elements % count() )     THEN
+            errFlag = HML_ERROR_MEMORY_SIZE 
+            RETURN 
+         END IF 
+!
+!        ---------------------------
+!        Gather the requested values
+!        ---------------------------
+!
+         iterator => mesh % elementsIterator
+         CALL iterator % setToStart()
+         j = 1
+         DO WHILE( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL cast(obj,e)
+            ! Do transfer here
+            CALL iterator % movetoNext()
+            j = j + 1
+         END DO 
+         
+      END SUBROUTINE HML_2DElementBoundaryNames
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!> Fill an array of dimension (6,numberOfEdges) with the connectivity 
+!> needed for the ISM-v2 mesh file format. For edge j,
+!>            connectivityArray(1,j) = start node id
+!>            connectivityArray(2,j) = end node id
+!>            connectivityArray(3,j) = left element id
+!>            connectivityArray(4,j) = right element id (or 0, if a boundary edge)
+!>            connectivityArray(5,j) = element side for left element
+!>            connectivityArray(6,j) = element side for right element signed for direction (or 0 for boundary edge)
+!> 
       SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N, errFlag)  BIND(C)
          USE MeshOutputMethods, ONLY:gatherEdgeInfo
          IMPLICIT NONE
@@ -330,9 +501,9 @@
 !        Check on errors
 !        ---------------
 !
-         errFlag = HML_ERROR_NONE 
-        
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
          mesh => project % mesh
          IF ( .NOT. ASSOCIATED(mesh) )     THEN
             errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 

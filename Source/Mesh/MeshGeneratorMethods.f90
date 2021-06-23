@@ -106,6 +106,7 @@
                IF( errorCode == A_OK_ERROR_CODE)     EXIT 
             END DO 
         END IF 
+        IF(errorCode == A_OK_ERROR_CODE)     project % meshIsGenerated = .TRUE.
         
       END SUBROUTINE GenerateQuadMesh
 !//////////////////////////////////////////////////////////////////////// 
@@ -2008,7 +2009,9 @@
             CALL iterator % moveToNext()
          END DO
 
-         DEALLOCATE( boundaryCurves)
+         DEALLOCATE( boundaryCurves )
+         DEALLOCATE( nodes )
+         DEALLOCATE( values )
          
       END SUBROUTINE CompleteElementConstruction
 !
@@ -2064,6 +2067,7 @@
          REAL(KIND=RP) :: values(0:N,3)
          INTEGER       :: i, j, k
          
+         IF(ALLOCATED(e % xPatch)) DEALLOCATE(e % xPatch)
          ALLOCATE(e % xPatch(3,0:N,0:N))
 !
 !        -------------------
