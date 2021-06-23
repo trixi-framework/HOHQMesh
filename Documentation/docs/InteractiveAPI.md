@@ -2,12 +2,13 @@
 
 All operations are to return an error flag. Constants currently defined as
 
-	INTEGER, PARAMETER :: HML_ERROR_NONE = 0 
-	INTEGER, PARAMETER :: HML_ERROR_MULTIPLE_REFERENCES = 1
-	INTEGER, PARAMETER :: HML_ERROR_DEALLOCATION = 2  
-	INTEGER, PARAMETER :: HML_ERROR_NOT_A_PROJECT = 3  
-    INTEGER, PARAMETER :: HML_ERROR_MEMORY_SIZE = 4  
-    INTEGER, PARAMETER :: HML_ERROR_NO_OBJECT_FOR_REQUEST = 5  
+	INTEGER, PARAMETER :: HML_ERROR_NONE = 0  ! Everything is OK
+	INTEGER, PARAMETER :: HML_ERROR_MULTIPLE_REFERENCES = 1 ! Object has multiple references and cannot be deallocated
+	INTEGER, PARAMETER :: HML_ERROR_DEALLOCATION = 2  ! Problem during deallocation
+	INTEGER, PARAMETER :: HML_ERROR_NOT_A_PROJECT = 3  ! c_Ptr cannot be converted to a project pointer
+    INTEGER, PARAMETER :: HML_ERROR_MEMORY_SIZE = 4  ! Array was allocated with the wrong size
+    INTEGER, PARAMETER :: HML_ERROR_NO_OBJECT_FOR_REQUEST = 5  ! Trying to access a null pointer
+    INTEGER, PARAMETER :: HML_ERROR_NULL_POINTER = 6  ! c_ptr is null
 
 All actions check to make sure that they are passed a proper 'MeshProject' object through the c_ptr.
 
@@ -23,9 +24,9 @@ Example usage (in fortran)
          CALL HML_GenerateMesh(cPtr = projCPtr, errFlag = flag)
          CALL StopOnError(flag)
          
-         PRINT *, HML_NumberOfNodes(projCPtr),  &
-                  HML_NumberOfEdges(projCPtr),  &
-                  HML_NumberOfElements(projCPtr)
+         PRINT *, HML_NumberOfNodes(projCPtr, flag),  &
+                  HML_NumberOfEdges(projCPtr, flag),  &
+                  HML_NumberOfElements(projCPtr, flag)
          
          CALL HML_WriteMesh(cPtr = projCPtr, errFlag = flag )
          CALL StopOnError(flag)
@@ -48,7 +49,7 @@ Example usage (in fortran)
 		SUBROUTINE HML_CloseProject(cPtr, errFlag)  BIND(C)
 			TYPE(c_ptr)      :: cPtr
 			INTEGER          :: errFlag
-	Call this when done with a project. Forgetting to do so keeps all the memory around.
+	Call this when done with a project. Forgetting to do so keeps all the memory around and may then leak.
 
 - **Initializing a project.** 
 
@@ -82,22 +83,22 @@ Accessors are used to get and set project parameters and mesh results, e.g. to b
 
 		INTEGER(C_INT) FUNCTION DefaultCharacterLength() BIND(C)
 	
-	For string allocation
+	For string allocation outside of HOHQMesh
 - **Boundary name string length**
 
 		INTEGER(C_INT) FUNCTION BoundaryNameLength() BIND(C)
 
-	For string allocation
+	For string allocation outside of HOHQMesh
 - **Number of nodes in a project's mesh**
 
-		INTEGER FUNCTION HML_NumberOfNodes(cPtr)   BIND(C)
+		INTEGER FUNCTION HML_NumberOfNodes(cPtr, errFlag)   BIND(C)
 		
 - **Number of elements in a project's mesh**
 
-		INTEGER FUNCTION HML_NumberOfElements(cPtr)   BIND(C)
+		INTEGER FUNCTION HML_NumberOfElements(cPtr, errFlag)   BIND(C)
 - **Number of edges in a project's mesh**
 
-		INTEGER FUNCTION HML_NumberOfEdges(cPtr)   BIND(C)
+		INTEGER FUNCTION HML_NumberOfEdges(cPtr, errFlag)   BIND(C)
 - **Array of node locations**
 
 		SUBROUTINE HML_NodeLocations(cPtr, locationsArray, N, errFlag)  BIND(C)  

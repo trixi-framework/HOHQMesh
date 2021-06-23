@@ -57,19 +57,19 @@
 ! 
 !> For string allocation
 !>
-      INTEGER(C_INT) FUNCTION DefaultCharacterLength() BIND(C)
+      INTEGER(C_INT) FUNCTION HML_DefaultCharacterLength() BIND(C)
          IMPLICIT NONE  
-         DefaultCharacterLength = DEFAULT_CHARACTER_LENGTH
-      END FUNCTION DefaultCharacterLength
+         HML_DefaultCharacterLength = DEFAULT_CHARACTER_LENGTH
+      END FUNCTION HML_DefaultCharacterLength
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
 !> For string allocation
 !>
-      INTEGER(C_INT) FUNCTION BoundaryNameLength() BIND(C)
+      INTEGER(C_INT) FUNCTION HML_BoundaryNameLength() BIND(C)
          IMPLICIT NONE  
-         BoundaryNameLength = LENGTH_OF_BC_STRING
-      END FUNCTION BoundaryNameLength
+         HML_BoundaryNameLength = LENGTH_OF_BC_STRING
+      END FUNCTION HML_BoundaryNameLength
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -326,12 +326,26 @@
          END IF 
           
       END SUBROUTINE HML_SetPolynomialOrder
-      
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE HML_PolynomialOrder(cPtr, p, errFlag)  
+         IMPLICIT NONE  
+         TYPE(c_ptr)                  :: cPtr
+         INTEGER(C_INT)               :: p, errFlag
+         TYPE( MeshProject ), POINTER :: project
+         
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
+         p = project % runParams % polynomialOrder
+         
+      END SUBROUTINE HML_PolynomialOrder
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
 !> Fill an array, dimension (4,N), for a 2D quad element with the node IDs 
-!> for the four corners
+!> for the four corners for each of the N elements
 !>
       SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)    BIND(C)
          IMPLICIT NONE
@@ -361,20 +375,12 @@
 !        Check on errors
 !        ---------------
 !
-         
          CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
          IF(errFlag /= HML_ERROR_NONE)     RETURN 
          
+         CALL MeshCheck(project,N ,errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
          mesh => project % mesh
-         IF ( .NOT. ASSOCIATED(mesh) )     THEN
-            errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
-            RETURN 
-         END IF 
-
-         IF ( N < project % mesh % elements % count() )     THEN
-            errFlag = HML_ERROR_MEMORY_SIZE 
-            RETURN 
-         END IF 
 !
 !        ---------------------------
 !        Gather the requested values
@@ -433,16 +439,9 @@
          CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
          IF(errFlag /= HML_ERROR_NONE)     RETURN 
          
+         CALL MeshCheck(project,N ,errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
          mesh => project % mesh
-         IF ( .NOT. ASSOCIATED(mesh) )     THEN
-            errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
-            RETURN 
-         END IF 
-
-         IF ( N < project % mesh % elements % count() )     THEN
-            errFlag = HML_ERROR_MEMORY_SIZE 
-            RETURN 
-         END IF 
 !
 !        ---------------------------
 !        Gather the requested values
@@ -460,6 +459,132 @@
          END DO 
          
       END SUBROUTINE HML_2DElementBoundaryNames
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!> Fill an array, dimension (3,p+1,4,N), for a 2D quad element, where 
+!> N is the number of elements and p is the polynomial order.
+!>
+      SUBROUTINE HML_2DElementBoundaryPoints(cPtr, boundaryPoints, p, N, errFlag)    BIND(C)
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(c_ptr)       :: cPtr
+         INTEGER(C_INT)    :: N, p
+         REAL(C_DOUBLE)    :: boundaryPoints(3,p+1,4,N)
+         INTEGER(C_INT)    :: errFlag
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE( MeshProject )        , POINTER :: project
+         TYPE( SMMesh)              , POINTER :: mesh
+         TYPE( FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMElement)           , POINTER :: e
+         CLASS(SMNode)              , POINTER :: node
+         INTEGER                              :: j, k, nE
+!
+!        ---------------
+!        Check on errors
+!        ---------------
+!
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
+         CALL MeshCheck(project,N ,errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         mesh => project % mesh
+!
+!        ---------------------------
+!        Gather the requested values
+!        ---------------------------
+!
+         iterator => mesh % elementsIterator
+         CALL iterator % setToStart()
+         nE = 1
+         DO WHILE( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL cast(obj,e)
+            
+            DO k = 1, 4
+               DO j = 0, p 
+                  boundaryPoints(:,j+1,k,nE) =  e % boundaryInfo % x(:,j,k)
+               END DO
+            END DO
+            
+            CALL iterator % movetoNext()
+            nE = nE + 1
+         END DO 
+         
+      END SUBROUTINE HML_2DElementBoundaryPoints
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!> Fill an array, dimension (4,N), for a 2D quad element, where 
+!> N is the number of elements. The value (k,e) is either 
+!>    0  if side k of element e is a straight line OR
+!>    1  if side k of element e is defined by some other curve
+!>
+      SUBROUTINE HML_2DElementEdgeFlag(cPtr, curveFlag, N, errFlag)    BIND(C)
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(c_ptr)       :: cPtr
+         INTEGER(C_INT)    :: N, p
+         INTEGER(C_INT)    :: curveFlag(4,N)
+         INTEGER(C_INT)    :: errFlag
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE( MeshProject )        , POINTER :: project
+         TYPE( SMMesh)              , POINTER :: mesh
+         TYPE( FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTObject)            , POINTER :: obj
+         CLASS(SMElement)           , POINTER :: e
+         CLASS(SMNode)              , POINTER :: node
+         INTEGER                              :: j, k, nE
+!
+!        ---------------
+!        Check on errors
+!        ---------------
+!
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
+         CALL MeshCheck(project,N ,errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         mesh => project % mesh
+!
+!        ---------------------------
+!        Gather the requested values
+!        ---------------------------
+!
+         iterator => mesh % elementsIterator
+         CALL iterator % setToStart()
+         nE = 1
+         DO WHILE( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL cast(obj,e)
+            
+            DO k = 1, 4
+               curveFlag(k,nE) =  e % boundaryInfo % bCurveFlag(k)
+            END DO
+            
+            CALL iterator % movetoNext()
+            nE = nE + 1
+         END DO 
+         
+      END SUBROUTINE HML_2DElementEdgeFlag
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
@@ -504,16 +629,9 @@
          CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
          IF(errFlag /= HML_ERROR_NONE)     RETURN 
          
+         CALL MeshCheck(project,N ,errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
          mesh => project % mesh
-         IF ( .NOT. ASSOCIATED(mesh) )     THEN
-            errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
-            RETURN 
-         END IF 
-
-         IF ( N < project % mesh % edges % count() )     THEN
-            errFlag = HML_ERROR_MEMORY_SIZE 
-            RETURN 
-         END IF 
 !
 !        ---------------------------
 !        Gather the requested values
@@ -532,4 +650,26 @@
          END DO 
          
       END SUBROUTINE HML_2DEdgeConnectivity
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE MeshCheck(project,N, errFlag)  
+         IMPLICIT NONE  
+         TYPE( MeshProject ), POINTER :: project
+         TYPE( SMMesh)      , POINTER :: mesh
+         INTEGER(C_INT)               :: N
+         INTEGER(C_INT)               :: errFlag
+         
+         mesh => project % mesh
+         IF ( .NOT. ASSOCIATED(mesh) )     THEN
+            errFlag = HML_ERROR_NO_OBJECT_FOR_REQUEST 
+            RETURN 
+         END IF 
+
+         IF ( N < project % mesh % elements % count() )     THEN
+            errFlag = HML_ERROR_MEMORY_SIZE 
+            RETURN 
+         END IF 
+      END SUBROUTINE MeshCheck
+      
    END Module ProjectInterfaceAccessors

@@ -60,8 +60,53 @@
          cFName = f_to_c_string(f_string = pathToRepo)
          
          CALL RunTests(cPathToRepo = cFName, numberOfFailedTests = nFailed)
-         
+
       END PROGRAM HOQMeshMain
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE MeshFromControlFile(controlFileName)
+         USE ProjectInterfaceModule
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)             :: controlFileName
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CHARACTER(KIND=c_char), DIMENSION(:)  , ALLOCATABLE :: cFName
+         INTEGER(C_INT)                                      :: flag
+         TYPE(c_ptr)                                         :: projCPtr
+         INTEGER(C_INT)                                      :: nNodes, nElements, nEdges
+         
+         cFName = f_to_c_string(f_string = controlFileName)
+         projCPtr = HML_NewProject()
+         
+         CALL HML_InitWithControlFile(cPtr      = projCPtr, &
+                                      cFileName = cFName, &
+                                      errFlag   = flag)
+         CALL StopOnError(flag)
+         
+         CALL HML_GenerateMesh(cPtr = projCPtr, errFlag = flag)
+         CALL StopOnError(flag)
+         
+         PRINT *, HML_NumberOfNodes(projCPtr, flag),  &
+                  HML_NumberOfEdges(projCPtr, flag),  &
+                  HML_NumberOfElements(projCPtr, flag)
+         
+         CALL HML_WriteMesh(cPtr = projCPtr, errFlag = flag )
+         CALL StopOnError(flag)
+         CALL HML_WritePlotFile(cPtr = projCPtr, errFlag = flag )
+         CALL StopOnError(flag)
+         
+         CALL HML_CloseProject(cPtr = projCPtr, errFlag = flag)
+         
+      END SUBROUTINE MeshFromControlFile
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

@@ -132,23 +132,28 @@
 !        Local variables
 !        ---------------
 !
-         TYPE( MeshProject )  , POINTER                      :: project
-         CLASS ( MeshProject ), POINTER                      :: projAsClass
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)             :: controlFileName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)             :: path
-         REAL(KIND=C_DOUBLE)   , DIMENSION(:,:), ALLOCATABLE :: locationsArray, bnchmkLocationsArray
-         INTEGER(KIND=C_INT)   , DIMENSION(:,:), ALLOCATABLE :: connectivityArray, bnchmkConnectivityArray
-         INTEGER(KIND=C_INT)   , DIMENSION(:,:), ALLOCATABLE :: edgesArray, bnchmkEdgesArray
-         CHARACTER(KIND=c_char), DIMENSION(:)  , ALLOCATABLE :: cFName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)             :: testResultsLocation
-         TYPE(c_ptr)                                         :: projCPtr
-         INTEGER(C_INT)                                      :: flag
-         INTEGER(C_INT)                                      :: nNodes, nElements, nEdges
-         INTEGER                                             :: j, lc, ios, fUnit
-         INTEGER                                             :: bnchmkNNodes, bnchmkNEdges, bnchmkNElements
-         REAL(KIND=RP)                                       :: eNorm
-         INTEGER                                             :: iNorm
-         INTEGER, EXTERNAL                                   :: UnusedUnit
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)                 :: controlFileName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)                 :: path
+         REAL(KIND=C_DOUBLE)   , DIMENSION(:,:)    , ALLOCATABLE :: locationsArray, bnchmkLocationsArray
+         INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: connectivityArray, bnchmkConnectivityArray
+         INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: edgesArray, bnchmkEdgesArray
+         INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: bCurveFlags
+         REAL(KIND=C_DOUBLE)   , DIMENSION(:,:,:,:), ALLOCATABLE :: boundaryPoints
+         CHARACTER(KIND=c_char), DIMENSION(:)      , ALLOCATABLE :: cFName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)                 :: testResultsLocation
+         TYPE( MeshProject )  , POINTER                          :: project
+         CLASS ( MeshProject ), POINTER                          :: projAsClass
+         TYPE(c_ptr)                                             :: projCPtr
+         INTEGER(C_INT)                                          :: flag
+         INTEGER(C_INT)                                          :: nNodes, nElements, nEdges
+         INTEGER(C_INT)                                          :: pOrder
+         INTEGER                                                 :: j, lc, ios, fUnit, k, i
+         INTEGER                                                 :: bnchmkNNodes, bnchmkNEdges, bnchmkNElements, bnchmkPOrder
+         REAL(KIND=RP)                                           :: eNorm
+         INTEGER                                                 :: iNorm
+         INTEGER, EXTERNAL                                       :: UnusedUnit
+         INTEGER(C_INT), DIMENSION(4)                            :: bnchmkBCurveFlags
+         REAL(C_DOUBLE), DIMENSION(3)                            :: bmchmkboundaryPoints
 !
 !        ----------------------
 !        Allocate a new project
@@ -218,13 +223,14 @@
             CALL FTAssert(test = .FALSE.,msg = "Test data location not specified") 
             RETURN 
          END IF
+         
          fUnit = UnusedUnit()
          ios   = 0
          OPEN(FILE = testResultsLocation, UNIT = fUnit, STATUS = "OLD", IOSTAT = ios)
          CALL FTAssertEqual(expectedValue = 0,actualValue = ios,msg = "Cannot open file: "//TRIM(testResultsLocation))
          IF ( ios /= 0 )     RETURN 
          
-         READ(fUnit, *) bnchmkNNodes, bnchmkNEdges, bnchmkNElements
+         READ(fUnit, *) bnchmkNNodes, bnchmkNEdges, bnchmkNElements, bnchmkPOrder
          
          nNodes    = HML_NumberOfNodes(cPtr    = projCPtr, errFlag = flag)
          nElements = HML_NumberOfElements(cPtr = projCPtr, errFlag = flag)
@@ -262,7 +268,7 @@
 !
             CALL HML_NodeLocations(cPtr           = projCPtr,       &
                                    locationsArray = locationsArray, &
-                                   N              = nNodes,              &
+                                   N              = nNodes,         &
                                    errFlag        = flag)
             CALL FTAssertEqual(expectedValue = 0,    &
                                actualValue   = flag, &
@@ -308,6 +314,63 @@
             END DO 
             
             DEALLOCATE(bnchmkConnectivityArray, connectivityArray)
+!
+!           -----------------------
+!           Access the bCurve Flags
+!           -----------------------
+!
+            ALLOCATE(bCurveFlags(4,nElements))
+            CALL HML_2DElementEdgeFlag(cPtr      = projCPtr,   &
+                                       curveFlag = bCurveFlags,&
+                                       N         = nElements,  &
+                                       errFlag   = flag)
+
+            CALL FTAssertEqual(expectedValue = 0,    &
+                               actualValue   = flag, &
+                               msg           = "Error flag calling HML_2DElementEdgeFlag")
+                               
+           DO j = 1, nElements 
+               READ(fUnit,*) bnchmkBCurveFlags
+               iNorm = MAXVAL(ABS(bnchmkBCurveFlags(:) - bCurveFlags(:,j)))
+               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm)
+           END DO 
+            
+            DEALLOCATE(bcurveFlags)         
+!
+!           ----------------------
+!           Access the edge points
+!           ----------------------
+!
+            CALL HML_PolynomialOrder(cPtr = projCPtr,p = pOrder,errFlag = flag)
+            CALL FTAssertEqual(expectedValue = 0,    &
+                               actualValue   = flag, &
+                               msg           = "Error flag calling HML_2DElementEdgeFlag")
+            CALL FTAssertEqual(expectedValue = bnchmkPOrder,     &
+                               actualValue   = pOrder,           &
+                               msg           = "Error flag calling HML_2DElementEdgeFlag")
+!            
+            ALLOCATE(boundaryPoints(3,pOrder+1,4,nElements))
+            
+            CALL HML_2DElementBoundaryPoints(cPtr = projCPtr,                 &
+                                             boundaryPoints = boundaryPoints, &
+                                             p = pOrder,                      &
+                                             N = nElements,                   &
+                                             errFlag = flag)
+            CALL FTAssertEqual(expectedValue = 0,    &
+                               actualValue   = flag, &
+                               msg           = "Error flag calling HML_2DElementEdgeFlag")
+                               
+            DO j = 1, nElements 
+               DO k = 1, 4
+                  DO i = 1, pOrder + 1 
+                     READ(fUnit,*) bmchmkboundaryPoints
+                     eNorm = MAXVAL(ABS(bmchmkboundaryPoints - boundaryPoints(:,i,k,j)))
+                     CALL FTAssertEqual(expectedValue = 0.0_RP,actualValue = eNorm,tol = 1.d-6)
+                  END DO 
+               END DO
+            END DO 
+            
+            DEALLOCATE(boundaryPoints)         
          END IF 
 !
 !        --------------------
@@ -343,16 +406,19 @@
             END DO 
             
             DEALLOCATE(bnchmkEdgesArray, edgesArray)
-         END IF 
+         END IF
+
 !
-!        ----------------------
-!        Closed out the project
-!        ----------------------
+!        ---------------------
+!        Close out the project
+!        ---------------------
 !
          CALL HML_CloseProject(cPtr = projCPtr, errFlag = flag)
          CALL FTAssertEqual(expectedValue = 0,    &
                             actualValue   = flag, &
                             msg           = "Error flag calling HML_CloseProject")
          
+         CLOSE(fUnit)
       END SUBROUTINE testAPIWithControlFile
+      
    END Module LibTestModule
