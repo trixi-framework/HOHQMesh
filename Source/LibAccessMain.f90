@@ -59,7 +59,7 @@
          pathToRepo = CommandLineArgument()
          cFName = f_to_c_string(f_string = pathToRepo)
          
-         CALL RunTests(cPathToRepo = cFName, numberOfFailedTests = nFailed)
+         CALL HML_RunTests(cPathToRepo = cFName, numberOfFailedTests = nFailed)
 
       END PROGRAM HOQMeshMain
 !

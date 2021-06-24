@@ -538,7 +538,7 @@
 !        ---------
 !
          TYPE(c_ptr)       :: cPtr
-         INTEGER(C_INT)    :: N, p
+         INTEGER(C_INT)    :: N
          INTEGER(C_INT)    :: curveFlag(4,N)
          INTEGER(C_INT)    :: errFlag
 !

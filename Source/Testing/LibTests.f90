@@ -57,7 +57,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-   SUBROUTINE RunTests(cPathToRepo, numberOfFailedTests) BIND(C)
+   SUBROUTINE HML_RunTests(cPathToRepo, numberOfFailedTests) BIND(C)
       IMPLICIT NONE
 !
 !     ---------
@@ -114,7 +114,7 @@
       CALL testSuite % performTests(numberOfFailedTests)
       CALL finalizeSharedAssertionsManager
       
-   END SUBROUTINE RunTests
+   END SUBROUTINE HML_RunTests
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
