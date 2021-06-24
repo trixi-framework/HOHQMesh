@@ -35,5 +35,8 @@
 !
 !> Error Flag if a pointer being passed is null
    INTEGER, PARAMETER :: HML_ERROR_NULL_POINTER = 6  
+!
+!> Error Flag if a string has been truncated
+   INTEGER, PARAMETER :: HML_ERROR_STRING_TRUNCATED = 7  
 
       END Module HMLConstants

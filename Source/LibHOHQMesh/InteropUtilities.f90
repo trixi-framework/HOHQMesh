@@ -117,6 +117,24 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      SUBROUTINE f_to_c_stringSub(fString, cString, cStrLen)
+         IMPLICIT NONE 
+         CHARACTER(LEN=*)      , INTENT(IN)                  :: fString
+         CHARACTER(KIND=c_char), DIMENSION(*), INTENT(OUT)   :: cString
+         INTEGER(C_INT)                      , INTENT(INOUT) :: cStrLen
+         ! On input, CStrLen is the buffer size, on output, it is the 
+         ! actual length of the string, including the null terminator
+         INTEGER                                             :: i, nchars
+       
+         nchars = LEN_TRIM(fString)
+         DO i = 1, nchars 
+            cString(i) = fString(i:i) 
+         END DO 
+         cString(nchars+1) = c_null_char
+      END SUBROUTINE f_to_c_stringSub
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
       LOGICAL FUNCTION IsMeshProjectPtr(ptr)
          IMPLICIT NONE  
          CLASS ( MeshProject ), POINTER :: ptr

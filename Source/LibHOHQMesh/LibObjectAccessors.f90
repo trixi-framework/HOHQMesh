@@ -47,7 +47,7 @@
       USE HMLConstants
       USE ISO_C_BINDING
       IMPLICIT NONE
-!
+!e 
 !     ________
       CONTAINS 
 !     --------
@@ -95,22 +95,35 @@
 !//////////////////////////////////////////////////////////////////////// 
 !
 !> Get the current path to which the mesh file is to be written
+!> On entry, strBuf is the allocated buffer size for the cString. 
+!> On return, it is the actual length.
+!> An error is returned if the string is truncated.
 !>
-      FUNCTION HML_MeshFileName(cPtr, errFlag) RESULT(c_string)
+      SUBROUTINE HML_MeshFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
          IMPLICIT NONE  
-         TYPE(c_ptr)                                       :: cPtr
-         INTEGER(C_INT), INTENT(OUT)                       :: errFlag
-         TYPE( MeshProject )   , POINTER                   :: project
-         CHARACTER(KIND=c_char), DIMENSION(:), ALLOCATABLE :: c_string
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)           :: fileName
+         TYPE(c_ptr)                                :: cPtr
+         INTEGER(C_INT), INTENT(OUT)                :: errFlag
+         INTEGER(C_INT), INTENT(INOUT)              :: strBuf ! Includes termination
+         TYPE( MeshProject )   , POINTER            :: project
+         CHARACTER(KIND=c_char), DIMENSION(strBuf)  :: nameAsCString
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: fileName
+         INTEGER(C_INT)                             :: fNameLength
          
          CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
          IF(errFlag /= HML_ERROR_NONE)     RETURN 
          
          fileName = project % runParams % MeshFileName
-         c_string = f_to_c_string(fileName)
+         fNameLength = LEN_TRIM(fileName)
+         IF( fNameLength > strBuf-1)     THEN
+            errFlag = HML_ERROR_STRING_TRUNCATED
+            strBuf = fNameLength
+         END IF  
          
-      END FUNCTION HML_MeshFileName
+         CALL f_to_c_stringSub(fString = fileName,      &
+                               cString = nameAsCString, &
+                               cStrLen = strBuf)
+         
+      END SUBROUTINE HML_MeshFileName
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
@@ -405,7 +418,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
-!> Fill an array, dimension (LENGTH_OF_BC_STRING+1,4,N), for a 2D quad element with the 
+!> Fill an array, dimension (LENGTH_OF_BC_STRING+1,4,N),e  for a 2D quad element with the 
 !> names of the boundaries a side is on. Interior edges have boundary names = "---"
 !>
       SUBROUTINE HML_2DElementBoundaryNames(cPtr, namesArray, N, errFlag)    BIND(C)
@@ -430,7 +443,9 @@
          CLASS(FTObject)            , POINTER :: obj
          CLASS(SMElement)           , POINTER :: e
          CLASS(SMNode)              , POINTER :: node
-         INTEGER                              :: j,k
+         INTEGER                              :: i, j, k, l
+         INTEGER                              :: strLen
+         CHARACTER(LEN=LENGTH_OF_BC_STRING)   :: bcString
 !
 !        ---------------
 !        Check on errors
@@ -453,7 +468,16 @@
          DO WHILE( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL cast(obj,e)
-            ! Do transfer here
+            
+            bcString = e % boundaryInfo % bCurveName(k)
+            strLen   = LEN_TRIM(bcString)
+            DO k = 1, 4
+               DO i = 1, strLen
+                  namesArray(i,k,j) = bcString(i:i) 
+               END DO 
+               namesArray(strLen+1,k,j)  = c_null_char
+            END DO 
+            
             CALL iterator % movetoNext()
             j = j + 1
          END DO 
