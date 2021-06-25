@@ -134,26 +134,31 @@
 !
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)                 :: controlFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)                 :: path
-         REAL(KIND=C_DOUBLE)   , DIMENSION(:,:)    , ALLOCATABLE :: locationsArray, bnchmkLocationsArray
-         INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: connectivityArray, bnchmkConnectivityArray
-         INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: edgesArray, bnchmkEdgesArray
+         
+         REAL(KIND=C_DOUBLE)   , DIMENSION(:,:)    , ALLOCATABLE :: locationsArray
+         INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: connectivityArray
+         INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: edgesArray
          INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: bCurveFlags
          REAL(KIND=C_DOUBLE)   , DIMENSION(:,:,:,:), ALLOCATABLE :: boundaryPoints
          CHARACTER(KIND=c_char), DIMENSION(:)      , ALLOCATABLE :: cFName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)                 :: testResultsLocation
-         TYPE( MeshProject )  , POINTER                          :: project
-         CLASS ( MeshProject ), POINTER                          :: projAsClass
+         
+         TYPE( MeshProject )       , POINTER                     :: project
+         CLASS(MeshProject)        , POINTER                     :: projAsClass
+         TYPE(SMMesh)              , POINTER                     :: testMesh
+         CLASS(FTObject)           , POINTER                     :: obj
+         CLASS(SMNode)             , POINTER                     :: node
+         CLASS(SMEdge)             , POINTER                     :: edge
+         CLASS(SMElement)          , POINTER                     :: e
+         TYPE(FTLinkedListIterator), POINTER                     :: iterator
+         
          TYPE(c_ptr)                                             :: projCPtr
          INTEGER(C_INT)                                          :: flag
          INTEGER(C_INT)                                          :: nNodes, nElements, nEdges
          INTEGER(C_INT)                                          :: pOrder
-         INTEGER                                                 :: j, lc, ios, fUnit, k, i
-         INTEGER                                                 :: bnchmkNNodes, bnchmkNEdges, bnchmkNElements, bnchmkPOrder
+         INTEGER                                                 :: j, lc, k, i
          REAL(KIND=RP)                                           :: eNorm
          INTEGER                                                 :: iNorm
-         INTEGER, EXTERNAL                                       :: UnusedUnit
-         INTEGER(C_INT), DIMENSION(4)                            :: bnchmkBCurveFlags
-         REAL(C_DOUBLE), DIMENSION(3)                            :: bmchmkboundaryPoints
+         INTEGER                                                 :: edgeInfo(6), ids(4)
 !
 !        ----------------------
 !        Allocate a new project
@@ -218,31 +223,19 @@
 !        Get the test data
 !        -----------------
 !
-         testResultsLocation =  project % runParams % testResultsFileName
-         IF ( testResultsLocation == "" )     THEN
-            CALL FTAssert(test = .FALSE.,msg = "Test data location not specified") 
-            RETURN 
-         END IF
-         
-         fUnit = UnusedUnit()
-         ios   = 0
-         OPEN(FILE = testResultsLocation, UNIT = fUnit, STATUS = "OLD", IOSTAT = ios)
-         CALL FTAssertEqual(expectedValue = 0,actualValue = ios,msg = "Cannot open file: "//TRIM(testResultsLocation))
-         IF ( ios /= 0 )     RETURN 
-         
-         READ(fUnit, *) bnchmkNNodes, bnchmkNEdges, bnchmkNElements, bnchmkPOrder
+         testMesh => project % mesh
          
          nNodes    = HML_NumberOfNodes(cPtr    = projCPtr, errFlag = flag)
          nElements = HML_NumberOfElements(cPtr = projCPtr, errFlag = flag)
          nEdges    = HML_NumberOfEdges(cPtr    = projCPtr, errFlag = flag)
          
-         CALL FTAssertEqual(expectedValue = bnchmkNNodes, &
+         CALL FTAssertEqual(expectedValue = testMesh % nodes % count(), &
                             actualValue   = nNodes,       &
                             msg           = "Number of nodes in the mesh")
-         CALL FTAssertEqual(expectedValue = bnchmkNEdges, &
+         CALL FTAssertEqual(expectedValue = testMesh % edges % count(), &
                             actualValue   = nEdges,       &
                             msg           = "Number of edges in the mesh")
-         CALL FTAssertEqual(expectedValue = bnchmkNElements, &
+         CALL FTAssertEqual(expectedValue = testMesh % elements % count(), &
                             actualValue   = nElements,       &
                             msg           = "Number of edges in the mesh")
 !
@@ -250,22 +243,10 @@
 !        Test the accessors: Nodes
 !        -------------------------
 !
-         IF(nNodes == bnchmkNNodes)     THEN 
+         IF(nNodes == testMesh % nodes % count())     THEN 
 
-            ALLOCATE(locationsArray(3,nNodes), bnchmkLocationsArray(3,bnchmkNNodes))
-!
-!           -------
-!           "Exact"
-!           -------
-!
-            DO j = 1, bnchmkNNodes 
-               READ(fUnit,*) bnchmkLocationsArray(:,j)
-            END DO 
-!
-!           ----------
-!           "Computed"
-!           ----------
-!
+            ALLOCATE(locationsArray(3,nNodes))
+
             CALL HML_NodeLocations(cPtr           = projCPtr,       &
                                    locationsArray = locationsArray, &
                                    N              = nNodes,         &
@@ -273,33 +254,29 @@
             CALL FTAssertEqual(expectedValue = 0,    &
                                actualValue   = flag, &
                                msg           = "Error flag calling HML_NodeLocations")
-            DO j = 1, nNodes 
-               eNorm = MAXVAL(ABS(bnchmkLocationsArray(:,j) - locationsArray(:,j)))
+            
+            iterator => testMesh % nodesIterator
+            CALL iterator % setToStart()
+            j = 1
+            DO WHILE(.NOT. iterator % isAtEnd()) 
+               obj => iterator % object()
+               CALL cast(obj,node)
+               eNorm = MAXVAL(ABS(node % x - locationsArray(:,j)))
                CALL FTAssertEqual(expectedValue = 0.0_RP,actualValue = eNorm,tol = 1.d-6)
+               j = j + 1
+               CALL iterator % moveToNext()
             END DO 
             
-            DEALLOCATE(bnchmkLocationsArray, locationsArray)
+            DEALLOCATE( locationsArray)
          END IF 
 !
 !        -----------------------
 !        Test Acessors: Elements
 !        -----------------------
 !
-         IF(nElements == bnchmkNElements)     THEN 
+         IF(nElements == testMesh % elements % count())     THEN 
 
-            ALLOCATE(connectivityArray(4,nElements), bnchmkConnectivityArray(4,bnchmkNElements))
-!
-!           -------
-!           "Exact"
-!           -------
-!
-            DO j = 1, bnchmkNElements 
-               READ(fUnit,*) bnchmkConnectivityArray(:,j)
-            END DO 
-!
-!           ----------
-!           "Computed"
-!           ----------
+            ALLOCATE(connectivityArray(4,nElements))
 !
             CALL HML_2DElementConnectivity(cPtr              = projCPtr,          &
                                            connectivityArray = connectivityArray, &
@@ -307,13 +284,7 @@
                                            errFlag           = flag)
             CALL FTAssertEqual(expectedValue = 0,    &
                                actualValue   = flag, &
-                               msg           = "Error flag calling HML_2DElementConnectivity")
-            DO j = 1, nElements 
-               iNorm = MAXVAL(ABS(bnchmkConnectivityArray(:,j) - connectivityArray(:,j)))
-               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm)
-            END DO 
-            
-            DEALLOCATE(bnchmkConnectivityArray, connectivityArray)
+                               msg           = "Error flag calling HML_2DElementConnectivity")            
 !
 !           -----------------------
 !           Access the bCurve Flags
@@ -328,14 +299,6 @@
             CALL FTAssertEqual(expectedValue = 0,    &
                                actualValue   = flag, &
                                msg           = "Error flag calling HML_2DElementEdgeFlag")
-                               
-           DO j = 1, nElements 
-               READ(fUnit,*) bnchmkBCurveFlags
-               iNorm = MAXVAL(ABS(bnchmkBCurveFlags(:) - bCurveFlags(:,j)))
-               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm)
-           END DO 
-            
-            DEALLOCATE(bcurveFlags)         
 !
 !           ----------------------
 !           Access the edge points
@@ -345,7 +308,7 @@
             CALL FTAssertEqual(expectedValue = 0,    &
                                actualValue   = flag, &
                                msg           = "Error flag calling HML_2DElementEdgeFlag")
-            CALL FTAssertEqual(expectedValue = bnchmkPOrder,     &
+            CALL FTAssertEqual(expectedValue = project % runParams % polynomialOrder,     &
                                actualValue   = pOrder,           &
                                msg           = "Error flag calling HML_2DElementEdgeFlag")
 !            
@@ -359,17 +322,54 @@
             CALL FTAssertEqual(expectedValue = 0,    &
                                actualValue   = flag, &
                                msg           = "Error flag calling HML_2DElementEdgeFlag")
-                               
-            DO j = 1, nElements 
+!
+!           ---------------
+!           Check integrity
+!           ---------------
+!
+            iterator => testMesh % elementsIterator
+            CALL iterator % setToStart()
+            j = 1
+            DO WHILE(.NOT. iterator % isAtEnd()) 
+               obj => iterator % object()
+               CALL cast(obj,e)
+!
+!              ---------------
+!              Boundary values
+!              ---------------
+!
                DO k = 1, 4
                   DO i = 1, pOrder + 1 
-                     READ(fUnit,*) bmchmkboundaryPoints
-                     eNorm = MAXVAL(ABS(bmchmkboundaryPoints - boundaryPoints(:,i,k,j)))
+                     eNorm = MAXVAL(ABS(e % boundaryInfo % x(:,i-1,k) - boundaryPoints(:,i,k,j)))
                      CALL FTAssertEqual(expectedValue = 0.0_RP,actualValue = eNorm,tol = 1.d-6)
                   END DO 
-               END DO
+               END DO 
+!
+!              --------------
+!              Boundary flags
+!              --------------
+!
+               iNorm = MAXVAL(ABS(e % boundaryInfo % bCurveFlag - bCurveFlags(:,j)))
+               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm)
+!
+!              ------------
+!              Connectivity
+!              ------------
+!
+               DO k = 1, 4
+                  obj => e % nodes % objectAtIndex(k)
+                  CALL castToSMNode(obj, node)
+                  ids(k) = node % id
+               END DO  
+               iNorm = MAXVAL(ABS(ids - connectivityArray(:,j)))
+               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm)
+
+               j = j + 1
+               CALL iterator % moveToNext()
             END DO 
             
+            DEALLOCATE(bcurveFlags)         
+            DEALLOCATE(connectivityArray)
             DEALLOCATE(boundaryPoints)         
          END IF 
 !
@@ -377,37 +377,34 @@
 !        Test Acessors: Edges
 !        --------------------
 !
-         IF(nEdges == bnchmkNEdges)     THEN 
+         IF(nEdges == testMesh % edges % count())     THEN 
 
-            ALLOCATE(edgesArray(6,nEdges), bnchmkEdgesArray(6,bnchmkNEdges))
-!
-!           -------
-!           "Exact"
-!           -------
-!
-            DO j = 1, bnchmkNEdges 
-               READ(fUnit,*) bnchmkEdgesArray(:,j)
-            END DO 
-!
-!           ----------
-!           "Computed"
-!           ----------
-!
+            ALLOCATE(edgesArray(6,nEdges))
+            
             CALL HML_2DEdgeConnectivity(cPtr              = projCPtr,   &
                                         connectivityArray = edgesArray, &
                                         N                 = nEdges,     &
                                         errFlag           = flag)
+                                        
             CALL FTAssertEqual(expectedValue = 0,    &
                                actualValue   = flag, &
                                msg           = "Error flag calling HML_2DEdgeConnectivity")
-            DO j = 1, nEdges 
-               iNorm = MAXVAL(ABS(bnchmkEdgesArray(:,j) - edgesArray(:,j)))
+
+            iterator => testMesh % edgesIterator
+            CALL iterator % setToStart()
+            j = 1
+            DO WHILE(.NOT. iterator % isAtEnd()) 
+               obj => iterator % object()
+               CALL cast(obj,edge)
+               CALL gatherEdgeInfo(edge = edge,info = edgeInfo)
+               iNorm = MAXVAL(ABS(edgeInfo - edgesArray(:,j)))
                CALL FTAssertEqual(expectedValue = 0, actualValue = iNorm)
+               j = j + 1
+               CALL iterator % moveToNext()
             END DO 
             
-            DEALLOCATE(bnchmkEdgesArray, edgesArray)
+            DEALLOCATE(edgesArray)
          END IF
-
 !
 !        ---------------------
 !        Close out the project
@@ -418,7 +415,6 @@
                             actualValue   = flag, &
                             msg           = "Error flag calling HML_CloseProject")
          
-         CLOSE(fUnit)
       END SUBROUTINE testAPIWithControlFile
       
    END Module LibTestModule

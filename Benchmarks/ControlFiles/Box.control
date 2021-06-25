@@ -9,7 +9,6 @@
       mesh file name   = Benchmarks/MeshFiles/Tests/Box2D.mesh
       plot file name   = Benchmarks/PlotFiles/Tests/Box2D.tec
       stats file name  = none
-      test file name   = Benchmarks/BenchmarkData/Box.txt
       mesh file format = ISM-v2
       polynomial order = 4
       plot file format = skeleton
