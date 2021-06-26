@@ -82,7 +82,6 @@
          CHARACTER(KIND=c_char), DIMENSION(:)  , ALLOCATABLE :: cFName
          INTEGER(C_INT)                                      :: flag
          TYPE(c_ptr)                                         :: projCPtr
-         INTEGER(C_INT)                                      :: nNodes, nElements, nEdges
          
          cFName = f_to_c_string(f_string = controlFileName)
          projCPtr = HML_NewProject()

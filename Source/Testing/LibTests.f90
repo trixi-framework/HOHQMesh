@@ -141,6 +141,7 @@
          INTEGER(KIND=C_INT)   , DIMENSION(:,:)    , ALLOCATABLE :: bCurveFlags
          REAL(KIND=C_DOUBLE)   , DIMENSION(:,:,:,:), ALLOCATABLE :: boundaryPoints
          CHARACTER(KIND=c_char), DIMENSION(:)      , ALLOCATABLE :: cFName
+         CHARACTER(KIND=C_CHAR), DIMENSION(:,:,:)  , ALLOCATABLE :: namesArray
          
          TYPE( MeshProject )       , POINTER                     :: project
          CLASS(MeshProject)        , POINTER                     :: projAsClass
@@ -159,6 +160,7 @@
          REAL(KIND=RP)                                           :: eNorm
          INTEGER                                                 :: iNorm
          INTEGER                                                 :: edgeInfo(6), ids(4)
+         CHARACTER(LEN=LENGTH_OF_BC_STRING)                      :: bName, testName
 !
 !        ----------------------
 !        Allocate a new project
@@ -323,6 +325,19 @@
                                actualValue   = flag, &
                                msg           = "Error flag calling HML_2DElementEdgeFlag")
 !
+!           --------------
+!           Boundary names
+!           --------------
+!
+            ALLOCATE(namesArray(LENGTH_OF_BC_STRING+1,4,nElements))
+            CALL HML_2DElementBoundaryNames(cPtr       = projCPtr,   &
+                                            namesArray = namesArray, &
+                                            N          = nElements,  &
+                                            errFlag    = flag)
+            CALL FTAssertEqual(expectedValue = 0,    &
+                               actualValue   = flag, &
+                               msg           = "Error flag calling HML_2DElementBoundaryNames")
+!
 !           ---------------
 !           Check integrity
 !           ---------------
@@ -341,7 +356,10 @@
                DO k = 1, 4
                   DO i = 1, pOrder + 1 
                      eNorm = MAXVAL(ABS(e % boundaryInfo % x(:,i-1,k) - boundaryPoints(:,i,k,j)))
-                     CALL FTAssertEqual(expectedValue = 0.0_RP,actualValue = eNorm,tol = 1.d-6)
+                     CALL FTAssertEqual(expectedValue = 0.0_RP, &
+                                        actualValue   = eNorm,  &
+                                        tol = 1.d-6,            &
+                                        msg = "Boundary points")
                   END DO 
                END DO 
 !
@@ -350,7 +368,7 @@
 !              --------------
 !
                iNorm = MAXVAL(ABS(e % boundaryInfo % bCurveFlag - bCurveFlags(:,j)))
-               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm)
+               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm, msg = "Boundary Curve Flags")
 !
 !              ------------
 !              Connectivity
@@ -362,15 +380,29 @@
                   ids(k) = node % id
                END DO  
                iNorm = MAXVAL(ABS(ids - connectivityArray(:,j)))
-               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm)
-
+               CALL FTAssertEqual(expectedValue = 0,actualValue = iNorm, msg = "connectivity")
+!
+!              --------------------
+!              Boundary curve names
+!              --------------------
+!
+               DO k = 1, 4 
+                  bName = e % boundaryInfo % bCurveName(k)
+                  DO i = 1, LEN_TRIM(bName) 
+                     testName(i:i) = namesArray(i,k,j) 
+                  END DO 
+                  CALL FTAssert(test = namesArray(i,k,j) == c_null_char,msg = "Boundary name null termination") 
+                  CALL FTAssert(test = testName(1:i-1) == bName,msg = "Boundary name") 
+               END DO 
+               
                j = j + 1
                CALL iterator % moveToNext()
             END DO 
             
             DEALLOCATE(bcurveFlags)         
             DEALLOCATE(connectivityArray)
-            DEALLOCATE(boundaryPoints)         
+            DEALLOCATE(boundaryPoints)
+            DEALLOCATE(namesArray)   
          END IF 
 !
 !        --------------------
@@ -398,7 +430,7 @@
                CALL cast(obj,edge)
                CALL gatherEdgeInfo(edge = edge,info = edgeInfo)
                iNorm = MAXVAL(ABS(edgeInfo - edgesArray(:,j)))
-               CALL FTAssertEqual(expectedValue = 0, actualValue = iNorm)
+               CALL FTAssertEqual(expectedValue = 0, actualValue = iNorm, msg = "Edge Info")
                j = j + 1
                CALL iterator % moveToNext()
             END DO 

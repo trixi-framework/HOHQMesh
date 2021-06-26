@@ -185,6 +185,7 @@
          TYPE( MeshProject ), POINTER :: project
          INTEGER(C_INT), INTENT(OUT)  :: errFlag
          
+         HML_NumberOfNodes = NONE
          CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
          IF(errFlag /= HML_ERROR_NONE)     RETURN 
          
@@ -201,6 +202,8 @@
          TYPE( MeshProject ), POINTER :: project
          INTEGER(C_INT), INTENT(OUT)  :: errFlag
          
+         HML_NumberOfElements = NONE
+         errFlag              = HML_ERROR_NONE
          CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
          IF(errFlag /= HML_ERROR_NONE)     RETURN 
          
@@ -217,6 +220,8 @@
          INTEGER(C_INT), INTENT(OUT)  :: errFlag
          TYPE( MeshProject ), POINTER :: project
          
+         HML_NumberOfEdges = NONE 
+         errFlag           = HML_ERROR_NONE
          CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
          IF(errFlag /= HML_ERROR_NONE)     RETURN 
          
@@ -430,7 +435,7 @@
 !
          TYPE(c_ptr)       :: cPtr
          INTEGER(C_INT)    :: N
-         CHARACTER(LEN=1)  :: namesArray(LENGTH_OF_BC_STRING+1,4,N)
+         CHARACTER(KIND=c_char)  :: namesArray(LENGTH_OF_BC_STRING+1,4,N)
          INTEGER(C_INT)    :: errFlag
 !
 !        ---------------
@@ -442,8 +447,7 @@
          TYPE( FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          CLASS(SMElement)           , POINTER :: e
-         CLASS(SMNode)              , POINTER :: node
-         INTEGER                              :: i, j, k, l
+         INTEGER                              :: i, j, k
          INTEGER                              :: strLen
          CHARACTER(LEN=LENGTH_OF_BC_STRING)   :: bcString
 !
@@ -469,9 +473,9 @@
             obj => iterator % object()
             CALL cast(obj,e)
             
-            bcString = e % boundaryInfo % bCurveName(k)
-            strLen   = LEN_TRIM(bcString)
             DO k = 1, 4
+               bcString = e % boundaryInfo % bCurveName(k)
+               strLen   = LEN_TRIM(bcString)
                DO i = 1, strLen
                   namesArray(i,k,j) = bcString(i:i) 
                END DO 
@@ -510,7 +514,6 @@
          TYPE( FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          CLASS(SMElement)           , POINTER :: e
-         CLASS(SMNode)              , POINTER :: node
          INTEGER                              :: j, k, nE
 !
 !        ---------------
@@ -575,8 +578,7 @@
          TYPE( FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          CLASS(SMElement)           , POINTER :: e
-         CLASS(SMNode)              , POINTER :: node
-         INTEGER                              :: j, k, nE
+         INTEGER                              :: k, nE
 !
 !        ---------------
 !        Check on errors

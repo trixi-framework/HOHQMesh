@@ -140,7 +140,6 @@
       TYPE (FTValueDictionary), POINTER     :: projectDict => NULL()
       CLASS(FTObject)         , POINTER     :: obj
       TYPE (FTValueDictionary), POINTER     :: modelDict, controlDict
-      CLASS ( MeshProject )   , POINTER     :: projAsClass
       CHARACTER(len=:)        , ALLOCATABLE :: fFileName
       
       CALL ptrToProject(cPtr = cPtr, proj = proj, errFlag = errFlag)
