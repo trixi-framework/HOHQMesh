@@ -93,6 +93,27 @@
       END SUBROUTINE HML_SetMeshFileName
 !
 !//////////////////////////////////////////////////////////////////////// 
+! 
+!> Reset the path to the mesh file from that set by the control file
+!>
+      SUBROUTINE HML_SetPlotFileName( cPtr, cFileName, errFlag)  BIND(c)
+         IMPLICIT NONE  
+         TYPE(c_ptr)                          :: cPtr
+         CHARACTER(KIND=c_char), DIMENSION(*) :: cFileName
+         INTEGER(C_INT), INTENT(OUT)          :: errFlag
+         
+         CHARACTER(len=:), ALLOCATABLE :: fFileName
+         TYPE( MeshProject ), POINTER  :: project
+         
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
+         fFileName = c_to_f_string(c_string = cFileName )
+         
+         project % runParams % plotFileName = fFileName
+      END SUBROUTINE HML_SetPlotFileName
+!
+!//////////////////////////////////////////////////////////////////////// 
 !
 !> Get the current path to which the mesh file is to be written
 !> On entry, strBuf is the allocated buffer size for the cString. 
@@ -124,6 +145,39 @@
                                cStrLen = strBuf)
          
       END SUBROUTINE HML_MeshFileName
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!> Get the current path to which the mesh file is to be written
+!> On entry, strBuf is the allocated buffer size for the cString. 
+!> On return, it is the actual length.
+!> An error is returned if the string is truncated.
+!>
+      SUBROUTINE HML_PlotFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
+         IMPLICIT NONE  
+         TYPE(c_ptr)                                :: cPtr
+         INTEGER(C_INT), INTENT(OUT)                :: errFlag
+         INTEGER(C_INT), INTENT(INOUT)              :: strBuf ! Includes termination
+         TYPE( MeshProject )   , POINTER            :: project
+         CHARACTER(KIND=c_char), DIMENSION(strBuf)  :: nameAsCString
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: fileName
+         INTEGER(C_INT)                             :: fNameLength
+         
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
+         fileName = project % runParams % plotFileName
+         fNameLength = LEN_TRIM(fileName)
+         IF( fNameLength > strBuf-1)     THEN
+            errFlag = HML_ERROR_STRING_TRUNCATED
+            strBuf = fNameLength
+         END IF  
+         
+         CALL f_to_c_stringSub(fString = fileName,      &
+                               cString = nameAsCString, &
+                               cStrLen = strBuf)
+         
+      END SUBROUTINE HML_PlotFileName
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
