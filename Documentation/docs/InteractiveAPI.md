@@ -124,8 +124,8 @@ Accessors are used to get and set project parameters and mesh results, e.g. to b
 - **Getting the polynomial order**
 
 		SUBROUTINE HML_PolynomialOrder(cPtr, p, errFlag)
-	      TYPE(c_ptr)                  :: cPtr
-         INTEGER(C_INT)               :: p, errFlag
+	      TYPE(c_ptr)    :: cPtr
+         INTEGER(C_INT)  :: p, errFlag
 
 	Inquiry function to see what polynomial order the project has defined.
 
