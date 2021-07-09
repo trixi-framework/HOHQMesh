@@ -102,17 +102,20 @@
 !        -----------------------------
 !
          N       = SIZE(x)
-         xx(1,:) = x
-         xx(2,:) = y
-         circ = Circulation(x = xx)
-         IF(circ == CLOCKWISE)     THEN
-            CALL swapOrder(x = x,N = N)
-            CALL swapOrder(x = y,N = N)
-            CALL swapOrder(x = z,N = N)
-            CALL swapOrder(x = t,N = N)
-            DO j = 1, N 
-               t(j) = 1.0_RP - t(j)
-            END DO 
+         IF(AlmostEqual(x(1),x(N)) .AND. &
+            AlmostEqual(y(1),y(N)))     THEN 
+            xx(1,:) = x
+            xx(2,:) = y
+            circ = Circulation(x = xx)
+            IF(circ == CLOCKWISE)     THEN
+               CALL swapOrder(x = x,N = N)
+               CALL swapOrder(x = y,N = N)
+               CALL swapOrder(x = z,N = N)
+               CALL swapOrder(x = t,N = N)
+               DO j = 1, N 
+                  t(j) = 1.0_RP - t(j)
+               END DO 
+            END IF
          END IF
 
          CALL self % SMCurve % initWithNameAndID(curveName,id)
