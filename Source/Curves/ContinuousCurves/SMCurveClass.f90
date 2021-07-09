@@ -355,22 +355,18 @@
          
          aDotB = a(1)*b(1) + a(2)*b(2) + a(3)*b(3)
          gamma = ACOS( aDotB/(nrmA*nrmB) )
-         
-         IF( inOutFlag == OUTER )     THEN ! 2D ONLY
-            alpha = PI - gamma
-            aCrossB = a(1)*b(2) - b(1)*a(2)
-            IF(  aCrossB < 0.0_RP )     THEN
-               alpha = 2*PI - alpha
-            END IF
-         ELSE
-            alpha = PI - gamma
-            aCrossB = a(1)*b(2) - b(1)*a(2)
-            IF(  aDotB < 0.0_RP )     THEN
-               alpha = 2*PI - alpha
-            END IF
+
+         alpha = PI - gamma
+         aCrossB = a(1)*b(2) - b(1)*a(2)
+         IF(  aCrossB < 0.0_RP )     THEN
+            alpha = 2*PI - alpha
          END IF
-         JointClassification = Classification( alpha )
          
+         IF ( inOutFlag == INNER )     THEN
+            alpha = 2*PI - alpha 
+         END IF 
+         
+         JointClassification = Classification( alpha )
       END FUNCTION JointClassification
 !
 !////////////////////////////////////////////////////////////////////////
