@@ -375,12 +375,15 @@
          USE ProgramGlobals, ONLY: ROW_END,ROW_SIDE,ROW_CORNER,ROW_REVERSAL
          IMPLICIT NONE
          REAL(KIND=RP) :: angle
+         !Note: The range for a ROW_SIDE used to go up to 2PI/3. That
+         ! missed some obvious joints. Note that these ranges are fuzzy
+         ! A side should be "near" 180deg. End "near" 90deg.
          
          IF ( angle <= 2*PI/3 )     THEN
             Classification = ROW_END
-         ELSE IF ( angle > 2*PI/3 .AND. angle < 3*PI/2 )     THEN
+         ELSE IF ( angle > 2*PI/3 .AND. angle < 1.15_RP*PI)     THEN
             Classification = ROW_SIDE
-         ELSE IF ( angle >= 3*PI/2 .AND. angle <= 5*PI/3 )     THEN
+         ELSE IF ( angle >= 1.15_RP*PI.AND. angle <= 5*PI/3 )     THEN
             classification = ROW_CORNER
          ELSE
             Classification = ROW_REVERSAL
