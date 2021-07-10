@@ -355,22 +355,18 @@
          
          aDotB = a(1)*b(1) + a(2)*b(2) + a(3)*b(3)
          gamma = ACOS( aDotB/(nrmA*nrmB) )
-         
-         IF( inOutFlag == OUTER )     THEN ! 2D ONLY
-            alpha = PI - gamma
-            aCrossB = a(1)*b(2) - b(1)*a(2)
-            IF(  aCrossB < 0.0_RP )     THEN
-               alpha = 2*PI - alpha
-            END IF
-         ELSE
-            alpha = PI - gamma
-            aCrossB = a(1)*b(2) - b(1)*a(2)
-            IF(  aDotB < 0.0_RP )     THEN
-               alpha = 2*PI - alpha
-            END IF
+
+         alpha = PI - gamma
+         aCrossB = a(1)*b(2) - b(1)*a(2)
+         IF(  aCrossB < 0.0_RP )     THEN
+            alpha = 2*PI - alpha
          END IF
-         JointClassification = Classification( alpha )
          
+         IF ( inOutFlag == INNER )     THEN
+            alpha = 2*PI - alpha 
+         END IF 
+         
+         JointClassification = Classification( alpha )
       END FUNCTION JointClassification
 !
 !////////////////////////////////////////////////////////////////////////
@@ -379,12 +375,15 @@
          USE ProgramGlobals, ONLY: ROW_END,ROW_SIDE,ROW_CORNER,ROW_REVERSAL
          IMPLICIT NONE
          REAL(KIND=RP) :: angle
+         !Note: The range for a ROW_SIDE used to go up to 2PI/3. That
+         ! missed some obvious joints. Note that these ranges are fuzzy
+         ! A side should be "near" 180deg. End "near" 90deg.
          
          IF ( angle <= 2*PI/3 )     THEN
             Classification = ROW_END
-         ELSE IF ( angle > 2*PI/3 .AND. angle < 3*PI/2 )     THEN
+         ELSE IF ( angle > 2*PI/3 .AND. angle < 1.15_RP*PI)     THEN
             Classification = ROW_SIDE
-         ELSE IF ( angle >= 3*PI/2 .AND. angle <= 5*PI/3 )     THEN
+         ELSE IF ( angle >= 1.15_RP*PI.AND. angle <= 5*PI/3 )     THEN
             classification = ROW_CORNER
          ELSE
             Classification = ROW_REVERSAL
