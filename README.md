@@ -22,7 +22,7 @@ git clone https://github.com/spack/spack.git ~/spack
 source ~/spack/share/spack/setup-env.sh
 spack install hohqmesh@main
 ```
-This will install HOHQMesh and all of it's dependencies (including FTObjectLibrary) from source code.
+This will install HOHQMesh and all of its dependencies (including FTObjectLibrary) from source code.
 Once installed, HOHQMesh can be added to your environment using
 ```
 spack load hohqmesh
