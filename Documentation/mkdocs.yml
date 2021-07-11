@@ -36,6 +36,7 @@ nav:
     - Assumptions and Algorithms: 'assumptions-and-algorithms.md'
     - Building the Documentation: 'building-the-documentation.md'
     - Releasing a New Version: 'releasing-a-new-version.md'
+    - Updating Spack Packages: 'updating-spack-packages.md'
 
 # Additional settings
 # * support for MathJax: https://squidfunk.github.io/mkdocs-material/reference/mathjax/
