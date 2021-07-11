@@ -11,8 +11,8 @@ tarball will fail!*
 
 ## Pre-release preparations
 1. Ensure that the current HOHQMesh commit on `main` has passed all tests on
-   GitHub by verifying that there is a green checkmark behind the latest commit
-   on https://github.com/trixi-framework/HOHQMesh/commits/main.
+   GitHub by verifying that there is a green checkmark behind the latest commit on
+   [https://github.com/trixi-framework/HOHQMesh/commits/main](https://github.com/trixi-framework/HOHQMesh/commits/main).
 2. Enter the HOHQMesh clone directory, switch to `main`, and pull the latest version from GitHub:
    ```bash
    cd HOHQMesh
