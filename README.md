@@ -12,6 +12,23 @@
 
 ## Getting started
 
+
+
+### Install with Spack
+You can install HOHQMesh using the [Spack package manager](https://spack.io). 
+To install the HOHQMesh with Spack,
+```
+git clone https://github.com/spack/spack.git ~/spack
+source ~/spack/share/spack/setup-env.sh
+spack install hohqmesh@main
+```
+This will install HOHQMesh and all of its dependencies (including FTObjectLibrary) from source code.
+Once installed, HOHQMesh can be added to your environment using
+```
+spack load hohqmesh
+```
+
+
 ### Obtaining the sources
 You can download the
 [latest HOHQMesh release](https://github.com/trixi-framework/HOHQMesh/releases/latest)
@@ -61,6 +78,7 @@ To mesh a control file, type
 ```
 where `-f` allows you to provide the path to the control file for which you want
 to create your mesh.
+
 
 ## Authors
 HOHQMesh was initiated by
