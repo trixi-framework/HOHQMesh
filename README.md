@@ -11,7 +11,7 @@
 </p>
 
 **HOHQMesh**, the *High Order Hex-Quad Mesher*, is an open-source mesh generator
-that allows to automatically create quadrilateral/hexahedral meshes with high-order boundary
+that automatically creates quadrilateral/hexahedral meshes with high-order boundary
 information.
 
 ## Getting started
