@@ -10,8 +10,19 @@
   <img width="400px" src="https://user-images.githubusercontent.com/3637659/121870408-50418800-cd03-11eb-9187-dcafdf73bab2.png" />
 </p>
 
+**HOHQMesh**, the *High Order Hex-Quad Mesher*, is an open-source mesh generator
+that allows to automatically create quadrilateral/hexahedral meshes with high-order boundary
+information.
+
 ## Getting started
 
+HOHQMesh can be used via
+[HOHQMesh.jl](https://github.com/trixi-framework/HOHQMesh.jl), a
+[Julia](https://julialang.org) package that provides an interface to HOHQMesh and that
+supplies precompiled executables for Linux, macOS, Windows, and
+FreeBSD. If you would like to use HOHQMesh directly from the command line,
+please continue reading the next sections for instructions on how to obtain
+the sources and compile HOHQMesh yourself.
 
 
 ### Install with Spack
