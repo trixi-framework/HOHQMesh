@@ -2,33 +2,33 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
@@ -36,8 +36,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      MeshOutputMethods.f95
-!      Created: 2010-09-24 09:32:48 -0400 
-!      By: David Kopriva  
+!      Created: 2010-09-24 09:32:48 -0400
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -48,12 +48,12 @@
       IMPLICIT NONE
 !
 !     ========
-      CONTAINS 
+      CONTAINS
 !     ========
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE WriteSkeletonToTecplot( mesh, fName ) 
+      SUBROUTINE WriteSkeletonToTecplot( mesh, fName )
          IMPLICIT NONE
 !
 !        ---------
@@ -69,7 +69,7 @@
 !
          INTEGER           :: iUnit, j
          INTEGER, EXTERNAL :: UnusedUnit
-         
+
          CLASS(SMElement), POINTER :: e    => NULL()
          CLASS(FTObject) , POINTER :: obj  => NULL()
          CLASS(SMNode)   , POINTER :: node => NULL()
@@ -114,18 +114,18 @@
                obj => e % nodes % objectAtIndex(j)
                CALL castToSMNode(obj, node)
                ids(j) = node % id
-            END DO  
+            END DO
             WRITE( iUnit, *) (ids(j), j = 1, 4)
             CALL mesh % elementsIterator % moveToNext()
          END DO
 
          CLOSE( iUnit )
-         
+
       END SUBROUTINE WriteSkeletonToTecplot
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE WriteSEMMeshToTecplot( mesh, fName, N ) 
+      SUBROUTINE WriteSEMMeshToTecplot( mesh, fName, N )
          IMPLICIT NONE
 !
 !        ---------
@@ -142,12 +142,12 @@
 !
          INTEGER            :: fUnit
          INTEGER            :: i, j
-         
+
          CLASS(SMElement), POINTER :: e    => NULL()
          CLASS(FTObject) , POINTER :: obj  => NULL()
 !
 !        ----------
-!        Interfaces 
+!        Interfaces
 !        ----------
 !
          INTEGER, EXTERNAL  :: UnusedUnit
@@ -159,22 +159,22 @@
          fUnit = UnusedUnit()
          OPEN( UNIT = fUnit, FILE = fName )
 !
-         
+
          WRITE(fUnit,*) ' TITLE = "SEM Quad mesh" '
          WRITE(fUnit,*) ' VARIABLES = "x","y", "z"'
-         
+
          CALL mesh % elementsIterator % setToStart()
          DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
             obj => mesh % elementsIterator % object()
             CALL castToSMelement(obj,e)
-            
+
             WRITE(fUnit,*) "ZONE I=", N+1, ",J=",N+1,", F=POINT"
-            DO j= 0, N 
-               DO i = 0, N 
+            DO j= 0, N
+               DO i = 0, N
                   WRITE(fUnit,'(6E13.5)') e % xPatch(1, i, j), e % xPatch(2, i, j), e % xPatch(3, i, j)
                END DO
             END DO
-           
+
             CALL mesh % elementsIterator % moveToNext()
          END DO
 
@@ -183,7 +183,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE WriteISMMeshFile( mesh, fName, N, version )
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -203,7 +203,7 @@
          CLASS(SMEdge)      , POINTER         :: edge => NULL()
          CLASS(SMElement)   , POINTER         :: e    => NULL()
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
-         
+
          INTEGER                  :: iUnit, j, k
          INTEGER, DIMENSION(6)    :: edgeInfoArray
          INTEGER, EXTERNAL        :: UnusedUnit
@@ -250,7 +250,7 @@
             CALL cast(obj,node)
             WRITE(iUnit,*) node % x
             CALL iterator % moveToNext()
-         END DO  
+         END DO
 !
 !        --------------------------------------------
 !        In version 2, print out the edge information
@@ -276,7 +276,7 @@
                CALL gatherEdgeInfo(edge, edgeInfoArray)
                WRITE(iUnit, '(6(I6,2x))') edgeInfoArray
                CALL iterator % moveToNext()
-            END DO  
+            END DO
          END IF
 !
 !        ---------------------------------------------------------
@@ -285,36 +285,133 @@
 !
          iterator => mesh % elementsIterator
          CALL iterator % setToStart
-         
+
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL cast(obj,e)
-            
+
             IF ( version == ISM_MM )     THEN
                WRITE( iUnit, *) e % boundaryInfo % nodeIDs, TRIM(e % materialName)
             ELSE
                WRITE( iUnit, *) e % boundaryInfo % nodeIDs
             END IF
-            
-            WRITE( iUnit, *) e % boundaryInfo % bCurveFlag            
+
+            WRITE( iUnit, *) e % boundaryInfo % bCurveFlag
 !
             DO k = 1, 4
                IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN
-                  DO j = 0, N 
+                  DO j = 0, N
                      WRITE( iUnit, * ) e % boundaryInfo % x(:,j,k)
                   END DO
                END IF
             END DO
-            
+
             WRITE( iUnit, *) (TRIM(e % boundaryInfo % bCurveName(k)), " ", k = 1, 4)
-            
+
             CALL iterator % moveToNext()
          END DO
-!         
+!
       END SUBROUTINE WriteISMMeshFile
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE WriteABAQUSMeshFile( mesh, fName, N, version )
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE ( SMMesh )   , POINTER :: mesh
+         CHARACTER(LEN=*)            :: fName
+         INTEGER                     :: N       ! The polynomial order of the boundaries.
+         INTEGER                     :: version !version number of the ISM format.
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CLASS(FTObject)    , POINTER         :: obj  => NULL()
+         CLASS(SMNode)      , POINTER         :: node => NULL()
+         CLASS(SMEdge)      , POINTER         :: edge => NULL()
+         CLASS(SMElement)   , POINTER         :: e    => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+
+         INTEGER                  :: iUnit, j, k
+         INTEGER, DIMENSION(6)    :: edgeInfoArray
+         INTEGER, EXTERNAL        :: UnusedUnit
+!
+!        ------------------------------------------
+!        Get set up - ensure everything is in order
+!        ------------------------------------------
+!
+         CALL mesh % renumberAllLists()
+!
+!        -----------
+!        Open a file
+!        -----------
+!
+         iUnit = UnusedUnit()
+         OPEN( UNIT = iUnit, FILE = fName )
+!
+!        ----------------
+!        Print out header
+!        ----------------
+!
+         IF ( version == ABAQUS )     THEN
+            WRITE(iUnit, '(A8)')"*Heading"
+            WRITE(iUnit, *)fName
+         ELSE
+            PRINT *, "Unknown file format type... mesh file not written"
+            CLOSE( iUnit )
+            RETURN
+         END IF
+!
+!        -----------
+!        Print Nodes
+!        -----------
+!
+         WRITE(iUnit, '(A5)')"*NODE"
+         iterator => mesh % nodesIterator
+         CALL iterator % setToStart
+!
+!        -----------------------------------------------------------------------------------
+!        The ABAQUS format is incredibly picky with respect to leading/trailing white spaces
+!        and comma placement. Also, ABAQUS carries the node index as its first entry on the
+!        file line, so we track and output this with the helper j variable.
+!        -----------------------------------------------------------------------------------
+!
+         j = 1
+         DO WHILE(.NOT.iterator % isAtEnd())
+            obj => iterator % object()
+            CALL cast(obj,node)
+            WRITE(iUnit, '(I0,3(", ", F18.14))') j,node % x(1),node % x(2),node % x(3)
+            CALL iterator % moveToNext()
+            j = j + 1
+         END DO
+!
+!        -----------------------------------------------------------------------
+!        Print element connectivity
+!           TODO: Save boundary curve data and names (maybe in a different file)
+!        -----------------------------------------------------------------------
+!
+         WRITE(iUnit, '(A35)')"*ELEMENT, type=CPS4, ELSET=Surface1"
+         iterator => mesh % elementsIterator
+         CALL iterator % setToStart
+         j = 1
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL cast(obj,e)
+            WRITE( iUnit, '(I0,4(", ", I0))') j,e % boundaryInfo % nodeIDs(1),e % boundaryInfo % nodeIDs(2),&
+                               e % boundaryInfo % nodeIDs(3),e % boundaryInfo % nodeIDs(4)
+            CALL iterator % moveToNext()
+            j = j + 1
+         END DO
+!
+      END SUBROUTINE WriteABAQUSMeshFile
+!
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE Write2DMeshStatistics( mesh, statsFileName)
          USE FTMutableObjectArrayClass
          USE MeshQualityAnalysisClass
@@ -336,11 +433,11 @@
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(SMElement)            , POINTER :: e   => NULL()
          INTEGER, EXTERNAL                     :: UnusedUnit
-         
+
          statsFileUnit = UnusedUnit()
          OPEN(FILE = statsFileName, UNIT = statsFileUnit)
          badElements => BadElementsInMesh( mesh )
-         
+
          IF ( ASSOCIATED(POINTER = badElements) )     THEN
             IF (PrintMessage) PRINT *, badElements % COUNT()," Bad element(s) Found"
             WRITE(statsFileUnit,*) " "
@@ -348,18 +445,18 @@
             WRITE(statsFileUnit,*) "Bad Element Info"
             WRITE(statsFileUnit,*) "----------------"
             WRITE(statsFileUnit,*) " "
-            
+
             DO k = 1, badElements % COUNT()
                obj => badElements % objectAtIndex(indx = k)
                CALL cast(obj,e)
                CALL PrintBadElementInfo( e, statsFileUnit )
             END DO
             CALL releaseFTMutableObjectArray(badElements)
-            
-         ELSE IF (PrintMessage)     THEN 
+
+         ELSE IF (PrintMessage)     THEN
             PRINT *, "********* Elements are OK *********"
-         END IF 
-         
+         END IF
+
          WRITE(statsFileUnit,*) " "
          WRITE(statsFileUnit,*) "------------------------"
          WRITE(statsFileUnit,*) "2D Mesh Quality Measures"
@@ -367,7 +464,7 @@
          WRITE(statsFileUnit,*) " "
          CALL OutputMeshQualityMeasures( mesh, fUnit  = statsFileUnit )
          CLOSE(statsFileUnit)
-         
+
       END SUBROUTINE Write2DMeshStatistics
 !
 !////////////////////////////////////////////////////////////////////////
@@ -385,7 +482,7 @@
 !            info(4) = right element id (or 0, if a boundary edge)
 !            info(5) = element side for left element
 !            info(6) = element side for right element signed for direction (or 0 for boundary edge)
-!     
+!
 !     --------------------------------------------
 !
          IMPLICIT NONE
@@ -403,7 +500,7 @@
 !
          INTEGER                  :: i, j
          INTEGER, DIMENSION(4,4)  :: s = RESHAPE((/-1,-1,1,1,-1,-1,1,1,1,1,-1,-1,1,1,-1,-1/),(/4,4/))
-         
+
          IF( ASSOCIATED(edge % elements(2) % element ) )    THEN
             i = edge % elementSide(1)
             j = edge % elementSide(2)
@@ -423,9 +520,9 @@
             info(4) = 0
             info(5) = i
             info(6) = 0
-         END IF 
-         
+         END IF
+
       END SUBROUTINE gatherEdgeInfo
-      
+
       END Module MeshOutputMethods
-      
+
