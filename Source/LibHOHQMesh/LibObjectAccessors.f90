@@ -47,7 +47,7 @@
       USE HMLConstants
       USE ISO_C_BINDING
       IMPLICIT NONE
-!e 
+!
 !     ________
       CONTAINS 
 !     --------
@@ -55,7 +55,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-!> For string allocation
+!> For string allocation, returns the allocated character length for fortran 
+!> strings
 !>
       INTEGER(C_INT) FUNCTION HML_DefaultCharacterLength() BIND(C)
          IMPLICIT NONE  
@@ -64,7 +65,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-!> For string allocation
+!> For string allocation, returns the allocated character length for the 
+!> boundary name strings
 !>
       INTEGER(C_INT) FUNCTION HML_BoundaryNameLength() BIND(C)
          IMPLICIT NONE  
