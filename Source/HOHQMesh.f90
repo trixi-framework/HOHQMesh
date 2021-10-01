@@ -339,9 +339,16 @@
             IF ( project % runParams % meshFileFormat == BASIC_MESH_FORMAT )     THEN
                PRINT *, "*** BSC Format needs to be implemented ***"
             ELSE IF ( project % runParams % meshFileFormat == ABAQUS )    THEN
-               CALL WriteABAQUSMeshFile( project % mesh, project % runParams % MeshFileName, &
-                                         project % runParams % polynomialOrder, &
-                                         project % runParams % meshFileFormat )
+               IF ( didGenerate3DMesh )     THEN
+                  CALL WriteABAQUSHexMeshFile(mesh    = project % hexMesh,&
+                                              fName   = project % runParams % MeshFileName,&
+                                              N       = project % runParams % polynomialOrder,&
+                                              version = project % runParams % meshFileFormat)
+               ELSE
+                  CALL WriteABAQUSMeshFile( project % mesh, project % runParams % MeshFileName, &
+                                            project % runParams % polynomialOrder, &
+                                            project % runParams % meshFileFormat )
+               END IF
             ELSE
                IF ( didGenerate3DMesh )     THEN
                   CALL WriteISMHexMeshFile(mesh    = project % hexMesh,&
