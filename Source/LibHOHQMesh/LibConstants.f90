@@ -38,5 +38,11 @@
 !
 !> Error Flag if a string has been truncated
    INTEGER, PARAMETER :: HML_ERROR_STRING_TRUNCATED = 7  
+!
+!> Error Flag if a routine is passed a c_ptr that doesn't resolve to a FTDictionary
+   INTEGER, PARAMETER :: HML_ERROR_NOT_A_DICT = 8  
+!
+!> Error Flag if a routine is passed a c_ptr that doesn't resolve to a MeshProject
+   INTEGER, PARAMETER :: HML_ERROR_NOT_A_LIST = 9 
 
       END Module HMLConstants

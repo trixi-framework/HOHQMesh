@@ -75,7 +75,7 @@
       CHARACTER(LEN=1), POINTER               :: optData(:) 
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:) 
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath
-      EXTERNAL                                :: TestCurves
+      EXTERNAL                                :: BasicCollectionTests
       CHARACTER(len=:)        , ALLOCATABLE   :: fFilePath
 !
 !     ------------------------------------------------------------------------------------
@@ -106,6 +106,12 @@
 
       CALL testSuite % addTestSubroutineWithName(testAPIWithControlFile,"ControlFile: " // TRIM(controlFile), optData)
       DEALLOCATE(optDataA)
+!
+!     ------------------------------------------------------------
+!     Add the basic tests of the collection interface to the suite
+!     ------------------------------------------------------------
+!
+      CALL testSuite % addTestSubroutineWithName(BasicCollectionTests, "Basic Collection Tests")
 !
 !     -------------
 !     Run the tests
@@ -450,3 +456,163 @@
       END SUBROUTINE testAPIWithControlFile
       
    END Module LibTestModule
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE BasicCollectionTests
+         USE FTValueDictionaryClass
+         USE FTLinkedListClass
+         USE InteropUtilitiesModule
+         USE ContainerInterfaceActions
+         USE TestSuiteManagerClass
+         USE FTAssertions
+         IMPLICIT NONE  
+         
+         TYPE(c_ptr)                                       :: cPtrToDict, cPtrToList
+         TYPE(c_ptr)                                       :: cPtrToList2, cPtrToDict2
+         TYPE(c_ptr)                                       :: cPtrToDict3, cPtrToDict4
+         TYPE( FTValueDictionary ), POINTER                :: dict, dict2, dict3, dict4, dict5
+         TYPE(FTLinkedList), POINTER                       :: list, list2
+         CHARACTER(LEN=FTDICT_KWD_STRING_LENGTH)           :: str, fKey
+         CHARACTER(KIND=c_char), DIMENSION(:), ALLOCATABLE :: cKey, cVal
+         INTEGER                                           :: flag
+         CLASS(FTObject), POINTER                          :: obj
+!
+!        -------------------
+!        Create a dictionary
+!        -------------------
+!
+         cPtrToDict = HML_NewDictionary()
+         CALL HML_InitDictionary(cPtr = cPtrToDict,errFlag = flag)
+         CALL FTAssert(test = C_ASSOCIATED(cPtrToDict),msg = "Associated cPtr to dictionary")
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitDictionary")
+!
+!        -------------------
+!        Add a key and value
+!        -------------------
+!
+         fKey = "key"
+         str  = "value"
+         cKey = f_to_c_string(f_string = fKey)
+         cVal = f_to_c_string(f_string = str )
+
+         CALL HML_AddDictKeyAndValue(cPtrToDict = cPtrToDict, &
+                                     cKey       = cKey,       &
+                                     cValue     = cVal,       &
+                                     errFlag    = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_AddDictKeyAndValue")
+         
+         CALL ptrToDictionary(cPtr = cPtrToDict,dict = dict,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "ptrToDictionary")
+         
+         CALL FTAssert(test = ASSOCIATED(dict), msg = "Dictionary from cPtr to Dictionary")
+         CALL FTAssertEqual(expectedValue = dict % stringValueForKey(key = fKey, requestedLength = 5), &
+                            actualValue = str, &
+                            msg = "stringValueForKey")
+!
+!        -------------
+!        Create a list
+!        -------------
+!
+         cPtrToList = HML_NewList()
+         CALL FTAssert(test = C_ASSOCIATED(cPtrToList),msg = "Associated cPtr to list")
+         CALL HML_InitList(cPtr = cPtrToList,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitList")
+!
+!        ----------------
+!        Add dict to list
+!        ----------------
+!
+         CALL HML_AddDictToList(cPtrToDictToAdd = cPtrToDict, &
+                                cPtrToList      = cPtrToList, &
+                                errFlag         = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_AddDictToList")
+!
+!        ----------------------------------
+!        Create another list and dictionary
+!        ----------------------------------
+!
+         cPtrToList2 = HML_NewList()
+         CALL ptrToList(cPtr = cPtrToList2,list = list2,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "ptrToList 2")
+         CALL HML_InitList(cPtr = cPtrToList2,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitList 2")
+         
+         cPtrToDict2 = HML_NewDictionary()
+         CALL HML_InitDictionary(cPtr = cPtrToDict2,errFlag = flag)
+         CALL FTAssert(test = C_ASSOCIATED(cPtrToDict2),msg = "Associated cPtr to dictionary 2")
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitDictionary 2")
+!
+!        ------------------------
+!        Add the list to the dict
+!        ------------------------
+!
+         CALL HML_AddListToDict(cPtrToList = cPtrToList2, &
+                                cPtrToDict = cPtrToDict2, &
+                                errFlag    = flag)
+         CALL FTAssertEqual(expectedValue = 0, actualValue = flag, msg = "HML_AddListToDict")
+         CALL ptrToDictionary(cPtr = cPtrToDict2,dict = dict2,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0, actualValue = flag, msg = "ptrToDictionary 2")
+         CALL FTAssert(test = dict2 % containsKey(key = "LIST"),msg = "Dictionary has LIST key")
+!
+!        ----------------------------------------
+!        Test adding a dictionary to a dictionary
+!        ----------------------------------------
+!
+         cPtrToDict3 = HML_NewDictionary()
+         CALL FTAssert(test = C_ASSOCIATED(cPtrToDict3),msg = "Associated cPtr to dictionary 3")
+         CALL HML_InitDictionary(cPtr = cPtrToDict3, errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitDictionary 3")
+         CALL HML_AddDictKeyAndValue(cPtrToDict = cPtrToDict3, &
+                                     cKey       = cKey,        &
+                                     cValue     = cVal,        &
+                                     errFlag    = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_AddDictKeyAndValue 2")
+         CALL ptrToDictionary(cPtr = cPtrToDict3, dict = dict3,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0, actualValue = flag, msg = "ptrToDictionary 3")
+         CALL FTAssert(test = dict3 % containsKey(fKey),msg = "Dict3 contains key")
+         CALL FTAssertEqual(expectedValue = dict3 % stringValueForKey(key = fKey, requestedLength = 5), &
+                            actualValue   = str, &
+                            msg           = "stringValueForKey 2")
+         
+         cPtrToDict4 = HML_NewDictionary()
+         CALL FTAssert(test = C_ASSOCIATED(cPtrToDict4),msg = "Associated cPtr to dictionary 4")
+         CALL HML_InitDictionary(cPtr = cPtrToDict4, errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitDictionary 4")
+         
+         cKey = f_to_c_string(f_string = "DICT")
+         CALL HML_AddDictForKey(cPtrToDict      = cPtrToDict4, &
+                                cPtrToDictToAdd = cPtrToDict3, &
+                                key             = cKey,        &
+                                errFlag         = flag)
+         CALL FTAssertEqual(expectedValue = 0, actualValue = flag, msg = "HML_AddDictForKey")
+         CALL ptrToDictionary(cPtr = cPtrToDict4, dict = dict4, errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0, actualValue = flag, msg = "ptrToDictionary 4")
+         CALL FTAssert(test = dict4 % containsKey("DICT"), msg = "Dict4 contains key DICT")
+         obj => dict4 % objectForKey(key = "DICT")
+         dict5 => valueDictionaryFromObject(obj)
+         CALL FTAssert(test = dict5 % containsKey(fKey),msg = "Dict5 contains key")
+         CALL FTAssertEqual(expectedValue = dict5 % stringValueForKey(key = fKey, requestedLength = 5), &
+                            actualValue   = str, &
+                            msg           = "stringValueForKey 5")
+!
+!        ---------------
+!        Close out stuff
+!        ---------------
+         CALL HML_CloseDictionary(cPtr = cPtrToDict,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseDictionary")
+         CALL HML_CloseList(cPtr = cPtrToList,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseList")
+!
+         CALL HML_CloseList(cPtr = cPtrToList2,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseList 2")
+         CALL HML_CloseDictionary(cPtr = cPtrToDict2,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseDictiona 2")
+
+         CALL HML_CloseDictionary(cPtr = cPtrToDict3, errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseDictiona 3")
+
+         CALL HML_CloseDictionary(cPtr = cPtrToDict4, errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseDictiona 4")
+                  
+      END SUBROUTINE BasicCollectionTests
