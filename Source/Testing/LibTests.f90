@@ -507,8 +507,8 @@
          
          CALL FTAssert(test = ASSOCIATED(dict), msg = "Dictionary from cPtr to Dictionary")
          CALL FTAssertEqual(expectedValue = dict % stringValueForKey(key = fKey, requestedLength = 5), &
-                            actualValue = str, &
-                            msg = "stringValueForKey")
+                            actualValue   = str, &
+                            msg           = "stringValueForKey")
 !
 !        -------------
 !        Create a list

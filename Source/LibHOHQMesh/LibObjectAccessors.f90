@@ -39,11 +39,35 @@
 !      Created: June 17, 2021 at 1:20 PM 
 !      By: David Kopriva  
 !
+!      INTEGER(C_INT) FUNCTION HML_DefaultCharacterLength() BIND(C)
+!      INTEGER(C_INT) FUNCTION HML_BoundaryNameLength() BIND(C)
+!      INTEGER(C_INT) FUNCTION HML_NumberOfNodes(cPtr, errFlag)   BIND(C)
+!      INTEGER(C_INT) FUNCTION HML_NumberOfElements(cPtr, errFlag)   BIND(C)
+!      INTEGER(C_INT) FUNCTION HML_NumberOfEdges(cPtr, errFlag)   BIND(C)
+!
+!      SUBROUTINE HML_SetMeshFileName( cPtr, cFileName, errFlag)  BIND(c)
+!      SUBROUTINE HML_SetPlotFileName( cPtr, cFileName, errFlag)  BIND(c)
+!      SUBROUTINE HML_MeshFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
+!      SUBROUTINE HML_PlotFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
+!      SUBROUTINE HML_SetMeshFileFormat( cPtr, cString, errFlag)  
+!      SUBROUTINE HML_NodeLocations(cPtr, locationsArray, N, errFlag)  BIND(C)
+!      SUBROUTINE HML_SetPolynomialOrder(cPtr, n, errFlag)  BIND(C)
+!      SUBROUTINE HML_PolynomialOrder(cPtr, p, errFlag)  
+!      SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)    BIND(C)
+!      SUBROUTINE HML_2DElementBoundaryNames(cPtr, namesArray, N, errFlag)    BIND(C)
+!      SUBROUTINE HML_2DElementBoundaryPoints(cPtr, boundaryPoints, p, N, errFlag)    BIND(C)
+!      SUBROUTINE HML_2DElementEdgeFlag(cPtr, curveFlag, N, errFlag)    BIND(C)
+!      SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N, errFlag)  BIND(C)
+!
+!      FUNCTION HML_MeshFileFormat(self)  RESULT(fileFormat)
+!      SUBROUTINE MeshCheck(project,N, errFlag)  
+!
 !////////////////////////////////////////////////////////////////////////
 !
       Module ProjectInterfaceAccessors 
       USE MeshProjectClass
       USE InteropUtilitiesModule
+      USE ProjectInterfaceActions
       USE HMLConstants
       USE ISO_C_BINDING
       IMPLICIT NONE

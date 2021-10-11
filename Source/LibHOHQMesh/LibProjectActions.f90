@@ -49,6 +49,19 @@
 !> This module provides the interfaces to the MeshProject objects
 !>
 !
+!   FUNCTION   HML_NewProject() BIND(C) RESULT(cPtr)
+!   SUBROUTINE HML_CloseProject(cPtr, errFlag)   BIND(C)
+!   SUBROUTINE HML_InitWithControlFile(cPtr, cFileName, errFlag) BIND(C)
+!   SUBROUTINE HML_InitWithDictionary(cPtr, cPtrToDict, errFlag) BIND(C)
+!   SUBROUTINE HML_GenerateMesh(cPtr, errFlag)   BIND(C)
+!   SUBROUTINE HML_WriteMesh(cPtr, errFlag)   BIND(C)
+!   SUBROUTINE HML_WritePlotFile(cPtr, errFlag)   BIND(C)
+!
+!   SUBROUTINE StopOnError(errorFlag)  
+!   LOGICAL FUNCTION IsMeshProjectPtr(ptr)
+!   LOGICAL FUNCTION CptrIsProjectPtr(cPtr)  
+!   SUBROUTINE ptrToProject(cPtr, proj, errFlag)  
+!
    Module ProjectInterfaceActions
    USE MeshProjectClass
    USE FTValueDictionaryClass
@@ -58,6 +71,7 @@
    USE MeshController3D
    USE InteropUtilitiesModule
    USE HMLConstants
+   USE ContainerInterfaceActions
    USE ISO_C_BINDING
    
    IMPLICIT NONE
@@ -116,6 +130,64 @@
       END IF 
 
    END SUBROUTINE HML_CloseProject
+
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION IsMeshProjectPtr(ptr)
+         IMPLICIT NONE  
+         CLASS ( MeshProject ), POINTER :: ptr
+         SELECT TYPE (p => ptr)
+            TYPE IS(MeshProject)
+               IsMeshProjectPtr = .TRUE.
+            CLASS DEFAULT
+               IsMeshProjectPtr = .FALSE.
+         END SELECT
+      END FUNCTION IsMeshProjectPtr
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION CptrIsProjectPtr(cPtr)  
+         IMPLICIT NONE
+         TYPE(c_ptr) :: cPtr
+!
+         TYPE( MeshProject )  , POINTER     :: project
+         CLASS ( MeshProject ), POINTER     :: projAsClass
+         
+         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
+         
+         projAsClass      => project
+         CptrIsProjectPtr = .FALSE.
+         
+         IF ( IsMeshProjectPtr(projAsClass) )     THEN
+               CptrIsProjectPtr = .TRUE.
+         END IF 
+
+      END FUNCTION CptrIsProjectPtr
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE ptrToProject(cPtr, proj, errFlag)  
+      IMPLICIT NONE  
+      TYPE(c_ptr)                    :: cPtr
+      TYPE( MeshProject )  , POINTER :: proj
+      CLASS ( MeshProject ), POINTER :: projAsClass
+      INTEGER(C_INT)                 :: errFlag
+      
+      errFlag     = HML_ERROR_NONE
+      IF ( .NOT. C_ASSOCIATED(cPtr) )     THEN
+         errFlag = HML_ERROR_NULL_POINTER
+         return 
+      END IF 
+      
+      CALL C_F_POINTER(cPtr = cPtr, FPTR = proj)
+      projAsClass => proj
+      IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
+            errFlag = HML_ERROR_NOT_A_PROJECT
+            proj => NULL()
+      END IF 
+      
+   END SUBROUTINE ptrToProject
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
@@ -136,6 +208,7 @@
 !     Local variables
 !     ---------------
 !
+      TYPE(c_ptr)                           :: cPtrToProjectDict
       TYPE( MeshProject )     , POINTER     :: proj
       TYPE (FTValueDictionary), POINTER     :: projectDict => NULL()
       CLASS(FTObject)         , POINTER     :: obj
@@ -147,6 +220,40 @@
       
       fFileName = c_to_f_string(c_string = cFileName )
       CALL ReadControlFile(fFileName, projectDict)
+      cPtrToProjectDict = C_LOC(projectdict)
+      CALL HML_InitWithDictionary(cPtr = cPtr,cPtrToDict = cPtrToProjectDict,errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
+    
+   END SUBROUTINE HML_InitWithControlFile
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!> Initializer given a control file name
+!>
+   SUBROUTINE HML_InitWithDictionary(cPtr, cPtrToDict, errFlag) BIND(C)
+      IMPLICIT NONE
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      TYPE(c_ptr)                          :: cPtr,cPtrToDict
+      INTEGER(C_INT)                       :: errFlag
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      TYPE( MeshProject )     , POINTER     :: proj
+      TYPE (FTValueDictionary), POINTER     :: projectDict => NULL()
+      CLASS(FTObject)         , POINTER     :: obj
+      TYPE (FTValueDictionary), POINTER     :: modelDict, controlDict
+      
+      CALL ptrToProject(cPtr = cPtr, proj = proj, errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
+      CALL ptrToDictionary(cPtr = cPtrToDict,dict = projectDict,errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
+      
       CALL proj % initWithDictionary( projectDict )
       CALL trapExceptions !Abort on fatal exceptions   
       
@@ -160,7 +267,7 @@
       
       CALL trapExceptions !Abort on fatal exceptions
     
-   END SUBROUTINE HML_InitWithControlFile
+   END SUBROUTINE HML_InitWithDictionary
 !
 !//////////////////////////////////////////////////////////////////////// 
 !

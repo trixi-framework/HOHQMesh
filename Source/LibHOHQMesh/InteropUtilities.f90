@@ -39,13 +39,16 @@
 !      Created: June 17, 2021 at 3:46 PM 
 !      By: David Kopriva  
 !
+!      SUBROUTINE C_string_ptr_to_F_string(C_string, F_string)
+!      FUNCTION   f_to_c_string(f_string) RESULT(c_string)
+!      SUBROUTINE f_to_c_stringSub(fString, cString, cStrLen)
+!      FUNCTION   f_to_c_string(f_string) RESULT(c_string)
+!
 !////////////////////////////////////////////////////////////////////////
 !
       Module InteropUtilitiesModule 
       use ISO_C_BINDING
-      USE MeshProjectClass
       USE HMLConstants
-      USE FTValueDictionaryClass
       IMPLICIT NONE
 !
 !     --------
@@ -56,7 +59,7 @@
 !     http://fortranwiki.org/fortran/show/c_interface_module
 !     by Joseph M. Krahn
 !
-      subroutine C_string_ptr_to_F_string(C_string, F_string)
+      SUBROUTINE C_string_ptr_to_F_string(C_string, F_string)
           type(C_PTR), intent(in) :: C_string
           character(len=*), intent(out) :: F_string
           character(len=1, kind=C_CHAR), dimension(:), pointer :: p_chars
@@ -71,7 +74,7 @@
             end do
             if (i <= len(F_string)) F_string(i:) = ' '
           end if
-      end SUBROUTINE      
+      end SUBROUTINE C_string_ptr_to_F_string
 
       ! Sources:
       ! * https://community.intel.com/t5/Intel-Fortran-Compiler/Converting-c-string-to-Fortran-string/m-p/959515/highlight/true#M94338
@@ -133,157 +136,5 @@
          END DO 
          cString(nchars+1) = c_null_char
       END SUBROUTINE f_to_c_stringSub
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      LOGICAL FUNCTION IsDictionaryPtr(ptr)
-         IMPLICIT NONE  
-         CLASS ( FTValueDictionary ), POINTER :: ptr
-         SELECT TYPE (p => ptr)
-            TYPE IS(FTValueDictionary)
-               IsDictionaryPtr = .TRUE.
-            CLASS DEFAULT
-               IsDictionaryPtr = .FALSE.
-         END SELECT
-      END FUNCTION IsDictionaryPtr
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      LOGICAL FUNCTION CptrIsDictionaryPtr(cPtr)  
-         IMPLICIT NONE
-         TYPE(c_ptr) :: cPtr
-!
-         TYPE( FTValueDictionary )  , POINTER     :: dict
-         CLASS ( FTValueDictionary ), POINTER     :: dictAsClass
-         
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = dict)
-         
-         dictAsClass         => dict
-         CptrIsDictionaryPtr = .FALSE.
-         
-         IF ( IsDictionaryPtr(dictAsClass) )     THEN
-               CptrIsDictionaryPtr = .TRUE.
-         END IF 
-
-      END FUNCTION CptrIsDictionaryPtr
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE ptrToDictionary(cPtr, dict, errFlag)  
-      IMPLICIT NONE  
-      TYPE(c_ptr)                          :: cPtr
-      TYPE( FTValueDictionary )  , POINTER :: dict
-      CLASS ( FTValueDictionary ), POINTER :: dictAsClass
-      INTEGER(C_INT)                       :: errFlag
-      
-      errFlag     = HML_ERROR_NONE
-      IF ( .NOT. C_ASSOCIATED(cPtr) )     THEN
-         errFlag = HML_ERROR_NULL_POINTER
-         return 
-      END IF 
-      
-      CALL C_F_POINTER(cPtr = cPtr, FPTR = dict)
-      dictAsClass => dict
-      IF ( .NOT. IsDictionaryPtr(dictAsClass) )     THEN
-            errFlag = HML_ERROR_NOT_A_DICT
-            dict => NULL()
-      END IF 
-      
-   END SUBROUTINE ptrToDictionary
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      LOGICAL FUNCTION IsListPtr(ptr)
-         IMPLICIT NONE  
-         CLASS ( FTLinkedList ), POINTER :: ptr
-         SELECT TYPE (p => ptr)
-            TYPE IS(FTLinkedList)
-               IsListPtr = .TRUE.
-            CLASS DEFAULT
-               IsListPtr = .FALSE.
-         END SELECT
-      END FUNCTION IsListPtr
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE ptrToList(cPtr, list, errFlag)  
-      IMPLICIT NONE  
-      TYPE(c_ptr)                     :: cPtr
-      TYPE( FTLinkedList )  , POINTER :: list
-      CLASS ( FTLinkedList ), POINTER :: listAsClass
-      INTEGER(C_INT)                  :: errFlag
-      
-      errFlag     = HML_ERROR_NONE
-      IF ( .NOT. C_ASSOCIATED(cPtr) )     THEN
-         errFlag = HML_ERROR_NULL_POINTER
-         return 
-      END IF 
-      
-      CALL C_F_POINTER(cPtr = cPtr, FPTR = list)
-      listAsClass => list
-      IF ( .NOT. IsListPtr(listAsClass) )     THEN
-            errFlag = HML_ERROR_NOT_A_LIST
-            list => NULL()
-      END IF 
-      
-   END SUBROUTINE ptrToList
-
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      LOGICAL FUNCTION IsMeshProjectPtr(ptr)
-         IMPLICIT NONE  
-         CLASS ( MeshProject ), POINTER :: ptr
-         SELECT TYPE (p => ptr)
-            TYPE IS(MeshProject)
-               IsMeshProjectPtr = .TRUE.
-            CLASS DEFAULT
-               IsMeshProjectPtr = .FALSE.
-         END SELECT
-      END FUNCTION IsMeshProjectPtr
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      LOGICAL FUNCTION CptrIsProjectPtr(cPtr)  
-         IMPLICIT NONE
-         TYPE(c_ptr) :: cPtr
-!
-         TYPE( MeshProject )  , POINTER     :: project
-         CLASS ( MeshProject ), POINTER     :: projAsClass
-         
-         CALL C_F_POINTER(cPtr = cPtr, FPTR = project)
-         
-         projAsClass      => project
-         CptrIsProjectPtr = .FALSE.
-         
-         IF ( IsMeshProjectPtr(projAsClass) )     THEN
-               CptrIsProjectPtr = .TRUE.
-         END IF 
-
-      END FUNCTION CptrIsProjectPtr
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE ptrToProject(cPtr, proj, errFlag)  
-      IMPLICIT NONE  
-      TYPE(c_ptr)                    :: cPtr
-      TYPE( MeshProject )  , POINTER :: proj
-      CLASS ( MeshProject ), POINTER :: projAsClass
-      INTEGER(C_INT)                 :: errFlag
-      
-      errFlag     = HML_ERROR_NONE
-      IF ( .NOT. C_ASSOCIATED(cPtr) )     THEN
-         errFlag = HML_ERROR_NULL_POINTER
-         return 
-      END IF 
-      
-      CALL C_F_POINTER(cPtr = cPtr, FPTR = proj)
-      projAsClass => proj
-      IF ( .NOT. IsMeshProjectPtr(projAsClass) )     THEN
-            errFlag = HML_ERROR_NOT_A_PROJECT
-            proj => NULL()
-      END IF 
-      
-   END SUBROUTINE ptrToProject
 
    END Module InteropUtilitiesModule

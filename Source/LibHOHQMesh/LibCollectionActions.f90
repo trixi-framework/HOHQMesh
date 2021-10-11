@@ -5,6 +5,20 @@
 !      Created: October 7, 2021 at 10:12 AM 
 !      By: David Kopriva  
 !
+!      FUNCTION   HML_NewDictionary() BIND(C) RESULT(cPtr)
+!      FUNCTION   HML_NewList() BIND(C) RESULT(cPtr)
+!
+!      SUBROUTINE HML_InitDictionary(cPtr, errFlag) BIND(C)
+!      SUBROUTINE HML_CloseDictionary(cPtr, errFlag)   BIND(C)
+!
+!      SUBROUTINE HML_InitList(cPtr, errFlag) BIND(C)
+!      SUBROUTINE HML_CloseList(cPtr, errFlag)   BIND(C)
+!
+!      SUBROUTINE HML_AddDictKeyAndValue(cPtrToDict, cKey, cValue, errFlag)  
+!      SUBROUTINE HML_AddDictForKey(cPtrToDict, cPtrToDictToAdd, key, errFlag)  
+!      SUBROUTINE HML_AddDictToList( cPtrToDictToAdd, cPtrToList, errFlag)  
+!      SUBROUTINE HML_AddListToDict( cPtrToList, cPtrToDict, errFlag)  
+!
 !////////////////////////////////////////////////////////////////////////
 !
    Module ContainerInterfaceActions 
@@ -298,5 +312,99 @@
       errFlag = 0
 
    END SUBROUTINE HML_CloseList
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION IsDictionaryPtr(ptr)
+         IMPLICIT NONE  
+         CLASS ( FTValueDictionary ), POINTER :: ptr
+         SELECT TYPE (p => ptr)
+            TYPE IS(FTValueDictionary)
+               IsDictionaryPtr = .TRUE.
+            CLASS DEFAULT
+               IsDictionaryPtr = .FALSE.
+         END SELECT
+      END FUNCTION IsDictionaryPtr
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION CptrIsDictionaryPtr(cPtr)  
+         IMPLICIT NONE
+         TYPE(c_ptr) :: cPtr
+!
+         TYPE( FTValueDictionary )  , POINTER     :: dict
+         CLASS ( FTValueDictionary ), POINTER     :: dictAsClass
+         
+         CALL C_F_POINTER(cPtr = cPtr, FPTR = dict)
+         
+         dictAsClass         => dict
+         CptrIsDictionaryPtr = .FALSE.
+         
+         IF ( IsDictionaryPtr(dictAsClass) )     THEN
+               CptrIsDictionaryPtr = .TRUE.
+         END IF 
+
+      END FUNCTION CptrIsDictionaryPtr
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE ptrToDictionary(cPtr, dict, errFlag)  
+      IMPLICIT NONE  
+      TYPE(c_ptr)                          :: cPtr
+      TYPE( FTValueDictionary )  , POINTER :: dict
+      CLASS ( FTValueDictionary ), POINTER :: dictAsClass
+      INTEGER(C_INT)                       :: errFlag
+      
+      errFlag     = HML_ERROR_NONE
+      IF ( .NOT. C_ASSOCIATED(cPtr) )     THEN
+         errFlag = HML_ERROR_NULL_POINTER
+         return 
+      END IF 
+      
+      CALL C_F_POINTER(cPtr = cPtr, FPTR = dict)
+      dictAsClass => dict
+      IF ( .NOT. IsDictionaryPtr(dictAsClass) )     THEN
+            errFlag = HML_ERROR_NOT_A_DICT
+            dict => NULL()
+      END IF 
+      
+   END SUBROUTINE ptrToDictionary
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION IsListPtr(ptr)
+         IMPLICIT NONE  
+         CLASS ( FTLinkedList ), POINTER :: ptr
+         SELECT TYPE (p => ptr)
+            TYPE IS(FTLinkedList)
+               IsListPtr = .TRUE.
+            CLASS DEFAULT
+               IsListPtr = .FALSE.
+         END SELECT
+      END FUNCTION IsListPtr
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE ptrToList(cPtr, list, errFlag)  
+      IMPLICIT NONE  
+      TYPE(c_ptr)                     :: cPtr
+      TYPE( FTLinkedList )  , POINTER :: list
+      CLASS ( FTLinkedList ), POINTER :: listAsClass
+      INTEGER(C_INT)                  :: errFlag
+      
+      errFlag     = HML_ERROR_NONE
+      IF ( .NOT. C_ASSOCIATED(cPtr) )     THEN
+         errFlag = HML_ERROR_NULL_POINTER
+         return 
+      END IF 
+      
+      CALL C_F_POINTER(cPtr = cPtr, FPTR = list)
+      listAsClass => list
+      IF ( .NOT. IsListPtr(listAsClass) )     THEN
+            errFlag = HML_ERROR_NOT_A_LIST
+            list => NULL()
+      END IF 
+      
+   END SUBROUTINE ptrToList
 
    END Module ContainerInterfaceActions
