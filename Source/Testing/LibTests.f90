@@ -477,6 +477,11 @@
          CHARACTER(KIND=c_char), DIMENSION(:), ALLOCATABLE :: cKey, cVal
          INTEGER                                           :: flag
          CLASS(FTObject), POINTER                          :: obj
+         REAL(KIND=C_DOUBLE)                               :: array(3,4)
+         CLASS(FTData)   , POINTER                         :: arrayData
+         CHARACTER(LEN=1), POINTER                         :: encodedData(:)
+         REAL(KIND=C_DOUBLE), ALLOCATABLE                  :: decodedArray(:,:)
+         REAL(KIND(1.0d0))                                 :: er
 !
 !        -------------------
 !        Create a dictionary
@@ -507,8 +512,30 @@
          
          CALL FTAssert(test = ASSOCIATED(dict), msg = "Dictionary from cPtr to Dictionary")
          CALL FTAssertEqual(expectedValue = dict % stringValueForKey(key = fKey, requestedLength = 5), &
-                            actualValue   = str, &
-                            msg           = "stringValueForKey")
+                            actualValue = str, &
+                            msg = "stringValueForKey")
+!
+!        ------------
+!        Add an array
+!        ------------
+!
+         array      = 3.14d0
+         array(2,3) = 7.28d0
+         CALL HML_AddArrayToDict(array = array, &
+                                 N = 3,M = 4,   &
+                                 cPtrToDict = cPtrToDict, &
+                                 errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_AddArrayToDict")
+         CALL FTAssert(test = dict % containsKey(key = "data"), msg = "Dictionary contains data")
+         
+         obj         => dict % objectForKey(key = "data")
+         arrayData   => dataFromObject(obj)
+         encodedData => arrayData % storedData()
+         CALL FTAssert(test = ASSOCIATED(encodedData),msg = "Encoded data is in dictionary")         
+         CALL DECODE(enc = encodedData, N = 3, M = 4, arrayOut = decodedArray)
+         er = MAXVAL(decodedArray-array)
+         CALL FTAssertEqual(expectedValue = 0.0d0, actualValue = er, tol = 1.0d-10, &
+                            msg = "Difference in output and input arrays")
 !
 !        -------------
 !        Create a list

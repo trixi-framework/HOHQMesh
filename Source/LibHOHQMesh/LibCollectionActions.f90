@@ -25,6 +25,8 @@
    USE FTValueDictionaryClass
    USE InteropUtilitiesModule
    USE HMLConstants
+   USE FTDataClass
+   USE EncoderModule
    IMPLICIT NONE  
 
    CONTAINS  
@@ -172,6 +174,49 @@
       errFlag = 0
       
    END SUBROUTINE HML_AddDictForKey
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+!> Add a two-dimensional double precision array
+!> to an FTValueDictionary
+!>
+   SUBROUTINE HML_AddArrayToDict(array, N, M, cPtrToDict, errFlag)  
+      IMPLICIT NONE  
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      INTEGER(C_INT)                       :: N, M
+      REAL(KIND=C_DOUBLE)                  :: array(N,M)
+      TYPE(c_ptr)                          :: cPtrToDict
+      INTEGER(C_INT), INTENT(OUT)          :: errFlag
+!
+!     ---------------
+!     Local Variables
+!     ---------------
+!
+      TYPE  ( FTValueDictionary ), POINTER :: dict
+      CHARACTER(LEN=1), ALLOCATABLE        :: enc(:)
+      TYPE (FTData)   , POINTER            :: dta
+      CLASS(FTObject) , POINTER            :: obj
+      
+      CALL ptrToDictionary(cPtr = cPtrToDict, dict = dict, errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
+      
+            
+      CALL encode(arrayIn = array, enc = enc)
+      
+      ALLOCATE(dta)
+      CALL dta % initWithDataOfType(genericData = enc,&
+                                    dataType    = "Array2DReal")
+      
+      obj => dta
+      CALL dict % addObjectForKey(object = obj, key = "data")
+      CALL releaseFTData(self = dta)
+      errFlag = 0
+
+   END SUBROUTINE HML_AddArrayToDict
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
