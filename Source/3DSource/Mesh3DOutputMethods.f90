@@ -277,7 +277,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE WriteABAQUSHexMeshFile( mesh, fName, N, version )
+      SUBROUTINE WriteABAQUSHexMeshFile( mesh, fName, N )
          IMPLICIT NONE
 !
 !        ---------
@@ -287,7 +287,6 @@
          TYPE( StructuredHexMesh )          :: mesh
          CHARACTER(LEN=*)                   :: fName
          INTEGER                            :: N ! The polynomial order of the boundaries.
-         INTEGER                            :: version !version number of the ISM format.
 !
 !        ---------------
 !        Local Variables
