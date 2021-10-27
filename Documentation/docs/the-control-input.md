@@ -18,14 +18,14 @@ The RUN_PARAMETERS block is:
 		mesh file name   = MeshFileName.mesh
 		plot file name   = PlotName.tec
 		stats file name  = StatsName.txt
-		mesh file format = ISM *OR* ISM-v2
+		mesh file format = ISM *OR* ISM-v2 *OR* ABAQUS
 		polynomial order = 6
 		plot file format = skeleton *OR* sem
 	\end{RUN_PARAMETERS}
 
-The names can be anything, since they are simply text files. However the “.tec” extension on the plot file will help VisIt/Paraview know how to read it. If you don’t want a file created, simply choose the name to be *none*. 
+The names can be anything, since they are simply text files. However the “.tec” extension on the plot file will help VisIt/Paraview know how to read it. If you don’t want a file created, simply choose the name to be *none*.
 
-In the current version of  HOHQMesh, there are two mesh file formats, “ISM” which stands for “Implementing Spectral Methods” . This is the file format described in the book by David A. Kopriva. The other format is “ISM-v2”, which provides the edge information needed by the approximations so that the edge generation algorithms in the appendix of the book are not needed. See the section in the Appendix of this manual on ISM-v2 for a description of the additional information provided. In the future, other file formats may be implemented, too. Finally, high order boundary information is conveyed by outputting an interpolant of the specified order. That information can be viewed using the “sem” plot file format.
+In the current version of  HOHQMesh, there are two mesh file formats, “ISM” which stands for “Implementing Spectral Methods” . This is the file format described in the book by David A. Kopriva. The other available formats are “ISM-v2”, which provides the edge information needed by the approximations so that the edge generation algorithms in the appendix of the book are not needed, and "ABAQUS", which provides the corner nodes and element connectivity data in the specific [Abaqus file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm). See the corresponding sections in the Appendix of this manual on ISM-v2 and ABAQUS for a description of the additional information they provide. In the future, other file formats may be implemented, too. Finally, high order boundary information is conveyed by outputting an interpolant of the specified order. That information can be viewed using the “sem” plot file format.
 
 ## The Background Grid<a name="BackgroundGrid"></a>
 
@@ -47,12 +47,12 @@ Alternatively, if there is an outer boundary curve, you want to specify the back
 		background grid size = [2.0,2.0,0.0]
 	\end{BACKGROUND_GRID}
 
-This is the equivalent of *dx* in the previous incarnation. 
+This is the equivalent of *dx* in the previous incarnation.
 
 **Note**: In general you want to choose the grid size to be the same in each direction for the algorithms that make the mesh conforming to work properly. They can differ if a Cartesian mesh is being generated.
 
 ## The Smoother<a name="Smoother"></a>
-It is generally necessary to smooth the mesh after it is generated. Smoothing is done by the Smoother. 
+It is generally necessary to smooth the mesh after it is generated. Smoothing is done by the Smoother.
 
 The `SPRING_SMOOTHER` uses a spring-dashpot model and time relaxation to smooth the mesh. There are two spring topologies “LinearSpring” and “LinearAndCrossbarSpring”. The first only has springs between the nodes along the edges. The latter also puts springs along the diagonals of an element. The latter is preferred. The springs have a spring constant associated with them and a dashpot with a damping coefficient. The nodes have mass. The linear ODE system that describes the motion of the nodes is integrated with a forward Euler (Explicit!) approximation for which a time step and number of time steps are given. The `SPRING_SMOOTHER` block, if one is used (Recommended!)  is
 
@@ -91,7 +91,7 @@ It is possible to ask HOHQMesh to locally refine the mesh at particular location
 This will place a center at (1,1,0) with mesh size of 0.2 over a circular region of radius  0.5 . Any number of RefinementCenters can be included. The order in which they are defined is not important.
 
 ### Refinement Lines<a name="RefinementLines"></a>
-The mesh can also be refined along a line using a `REFINEMENT_LINE`. Like the centers, there are two types, “smooth” and “sharp”. To refine along a line, include a block of the form 
+The mesh can also be refined along a line using a `REFINEMENT_LINE`. Like the centers, there are two types, “smooth” and “sharp”. To refine along a line, include a block of the form
 
 	\begin{REFINEMENT_LINE}
 		type = smooth **or** sharp
@@ -104,7 +104,7 @@ The mesh can also be refined along a line using a `REFINEMENT_LINE`. Like the ce
 Here, *x0* and *x1* are the starting and ending points of the line, *h* is the desired mesh size and *w* tells how far out from the line the refinement extends. An example of center and line refinements can be seen in Fig. 15.
 ### Refinement Region Definition<a name="RefinementDefinition"></a>
 
-Refinement regions are defined within a `REFINEMENT_REGIONS` block, e.g.  
+Refinement regions are defined within a `REFINEMENT_REGIONS` block, e.g.
 
 	\begin{REFINEMENT_REGIONS}
 

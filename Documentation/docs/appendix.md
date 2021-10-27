@@ -1,22 +1,22 @@
 # Appendix
 
 ## Appendix A: Additions for ISM-v2<a name="ISMv-2"></a>
-The ISM-v2 adds edge information to the mesh file. 
+The ISM-v2 adds edge information to the mesh file.
 
-The first line of the mesh file will state that fact, that is, if the first line is ISM-V2 then it will have the edge information. 
+The first line of the mesh file will state that fact, that is, if the first line is ISM-V2 then it will have the edge information.
 
 Line 1:
 
  	ISM-V2
- 
+
 The second line now also includes the number of edges in the mesh as follows:
 
 	#nodes, #edges, #elements, polynomial order of boundary edges
-	
+
 The edges are read immediately after the nodes. For each edge the following are listed:
 
 	start node ID, end node ID, element ID on left, element ID on right, side of left element, side of right element
-	
+
 These are the quantities that are computed in Alg. 148 of "Implementing Spectral Methods". If the edge is a boundary edge, then the second side element will be ID = 0 and the side of that element will be 0. If the sides have indices that increase in opposite directions, then the last column in the data will be negative.￼
 ## Appendix B: Summary of Boundary Curve Definitions<a name="BCSummary"></a>
 
@@ -28,7 +28,7 @@ Defining a parametric equation:
 		 yEqn = y(t) = <y-equation>
 		 zEqn = z(t) = 0.0
 	 \end{PARAMETRIC_EQUATION_CURVE}
-	 
+
 Defining a Spline:
 
 	\begin{SPLINE_CURVE}
@@ -41,7 +41,7 @@ Defining a Spline:
 	      .
         \end{SPLINE_DATA}
 	 \end{SPLINE_CURVE}
-	 
+
 Defining a Straight Line
 
       \begin{END_POINTS_LINE}
@@ -49,7 +49,7 @@ Defining a Straight Line
 	 	xStart = [x,y,0]
            xEnd   = [x,y,0]
       \end{END_POINTS_LINE}
-      
+
 Defining a Circular Arc
 
       \begin{CIRCULAR_ARC}
@@ -60,7 +60,7 @@ Defining a Circular Arc
 		start angle = Tstart
 		end angle   = Tend
       \end{CIRCULAR_ARC}
-      
+
 Chaining curves
 
 	\begin{CHAIN}
@@ -82,7 +82,7 @@ No inner boundaries:
 			Last curve definition
 	 	\end{OUTER_BOUNDARY}
 	\end{MODEL}
-	
+
 No outer boundaries:
 
 	   \begin{MODEL}
@@ -93,7 +93,7 @@ No outer boundaries:
 			Last chain definition
 	 	\end{INNER_BOUNDARIES}
 	\end{MODEL}
-	
+
 Both inner and outer boundaries:
 
 	   \begin{MODEL}
@@ -113,14 +113,14 @@ Both inner and outer boundaries:
 
 ## Appendix D: Summary of the Control Block<a name="ControlSummary"></a>
 
-The control block (required): 
+The control block (required):
 
 	\begin{CONTROL_INPUT}
 		...
 	\end{CONTROL_INPUT}
-	
+
 The run parameters (required):
-	
+
 	\begin{RUN_PARAMETERS}
 	  mesh file name   = <pathToMeshFile>
 	  plot file name   = <pathToPlotFile>
@@ -131,13 +131,13 @@ The run parameters (required):
 	\end{RUN_PARAMETERS}
 
 To specify the background grid (required):
-	
+
 	\begin{BACKGROUND_GRID}
 	  background grid size = [x,y,0.0]
 	\end{BACKGROUND_GRID}
 
 if there is an outer boundary curve in the model. If there is no outer boundary, just an implied box, then use
-	
+
 	\begin{BACKGROUND_GRID}
 	   x0 = [xLeft, yBottom, 0.0]
 	   dx = [dx, dy, 0.0]
@@ -145,7 +145,7 @@ if there is an outer boundary curve in the model. If there is no outer boundary,
 	\end{BACKGROUND_GRID}
 
 Smoothing is recommended (highly!)
-	
+
 	\begin{SPRING_SMOOTHER}
 	  smoothing            = ON **or** OFF
 	  smoothing type       = LinearAndCrossbarSpring **or* LinearSpring
@@ -176,7 +176,7 @@ with blocks of the types
        \end{REFINEMENT_LINE}
 
 To generate 3D meshes, add an extrusion algorithm, either
-	
+
 	\begin{SIMPLE_EXTRUSION}
 	  direction          = 1 (=x), 2 (=y), 3 (=z)
 	  height             = height of extrusion
@@ -225,9 +225,55 @@ If the SIMPLE_EXTRUSION is used, bottom topography can be optionally added to th
 		eqn = f(x,y) = some function of (x,y) as an equation
 	\end{TOPOGRAPHY}
 
+## Appendix E: ABAQUS mesh file format<a name="ABAQUS"></a>
+The ABAQUS mesh file which should use the extension `.inp` is divided into two parts. The top portion is the standard [Abaqus file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm). The skeleton of this form for a quadrilateral mesh with 122 corner nodes and 103 elements is as follows:
 
+	*Heading
+ 	 File created by HOHQMesh
+	*NODE
+	1, x1, y1, z1
+	2, x2, y2, z2
+	.
+	.
+	.
+	122, x122, y122, z122
+	*ELEMENT, type=CPS4, ELSET=Surface1
+	1, 1, 2, 9, 8
+	2, 2, 3, 10, 9
+	.
+	.
+	.
+	103, 7, 122, 87, 8
 
+Note that the first column in the node or element list is used for indexing purposes. The four other indices in each line of the *ELEMENT list
+are the corner IDs that dictate the element connectivity. These corner IDs are listed to guarantee right-handed element just as with the ISM format.
+The Abaqus element type "CPS4" corresponds to a quadrilateral element. For the three-dimensional variant of this mesh file output we use
 
+	*ELEMENT, type=C3D8, ELSET=Volume1
 
+where "C3D8" corresponds to a hexahedron.
 
+The standard Abaqus file format can be used to create a straight-sided mesh. The high-order boundary information and curvature
+generated by HOHQMesh is output in the second portion of this mesh file. We demarcate between the two portions of the mesh file with the comment
+line
 
+	** ***** HOHQMesh boundary information ***** **
+
+In the Abaqus format anything prefaced with `** ` is treated as a comment and is ignored by an ABAQUS file parser. Therefore, all the HOHQMesh
+information output in the second portion of the mesh file is prefaced with to act as an Abaqus comment. After the above comment line the mesh
+file gives the polynomial degree of the boundary curves in the mesh. Then, this mesh file format closely resembles the ISM format albeit slightly reordered. First, there is a list of the element connectivity, curved edge checks, and polynomial interpolant information after which comes the list of boundary names.
+
+The order of the boundary names is a final difference in the mesh format. The Abaqus format and libraries that use it (e.g. [`p4est`](https://github.com/cburstedde/p4est)) require the boundary labels in a particular order. In general, we can think of a quadrilateral element to have sides labeled
+
+                          +y
+                   -----------------
+                   |               |
+                   | ^ y           |
+                -x | |             | +x
+                   | |             |
+                   | ---> x        |
+                   -----------------
+                           -y
+
+For this mesh file output the boundary labels are reordered to adopt the order convention of `-x +x -y +y`. For comparison, the default HOHQMesh
+ordering used by ISM or ISM-v2 the boundary labels are `-y +x +y -x`.
