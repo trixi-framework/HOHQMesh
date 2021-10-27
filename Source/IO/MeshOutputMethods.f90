@@ -358,7 +358,7 @@
 !        ----------------
 !
          WRITE(iUnit, '(A8)')"*Heading"
-         WRITE(iUnit, *)" File created by HOHQMesh"
+         WRITE(iUnit, *)"File created by HOHQMesh"
 !
 !        -----------
 !        Print Nodes
@@ -400,26 +400,29 @@
             j = j + 1
          END DO
 !
-!        -----------------------------------------------------------
+!        -------------------------------------------------------------
 !        Print element IDs with high-order boundary edge information
-!        -----------------------------------------------------------
+!        This additional data is prefaced with "** " which is the
+!        comment character in the ABAQUS format. This makes the data
+!        invisible to standard ABAQUS mesh file parsers but available.
+!        -------------------------------------------------------------
 !
-         WRITE(iUnit, '(A45)')"******* HOHQMesh boundary information *******"
-         WRITE(iUnit, '(A25,I0)')"mesh polynomial degree = ",N
+         WRITE(iUnit, '(A47)')"** ***** HOHQMesh boundary information ***** **"
+         WRITE(iUnit, '(A28,I0)')"** mesh polynomial degree = ",N
          iterator => mesh % elementsIterator
          CALL iterator % setToStart
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL cast(obj,e)
             ! Print the corner IDs
-            WRITE( iUnit, '(4(" ", I0))') e % boundaryInfo % nodeIDs
+            WRITE( iUnit, '(A3,4(" ", I0))') "** ", e % boundaryInfo % nodeIDs
             ! Print flag if an edge is curved
-            WRITE( iUnit, '(4(" ", I0))') e % boundaryInfo % bCurveFlag
+            WRITE( iUnit, '(A3,4(" ", I0))') "** ", e % boundaryInfo % bCurveFlag
             ! Print the high-order boundary curve information
             DO k = 1, 4
                IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN
                   DO j = 0, N
-                     WRITE(iUnit, '(3(F18.13))') e % boundaryInfo % x(:,j,k)
+                     WRITE(iUnit, '(A3,3(F18.13))') "** ", e % boundaryInfo % x(:,j,k)
                   END DO
                END IF
             END DO
@@ -448,7 +451,7 @@
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL cast(obj,e)
-            WRITE( iUnit, *) (TRIM(e % boundaryInfo % bCurveName(bndyNameRemap(k))), " ", k = 1, 4)
+            WRITE( iUnit, '(9A)') "** ", (TRIM(e % boundaryInfo % bCurveName(bndyNameRemap(k))), " ", k = 1, 4)
             CALL iterator % moveToNext()
          END DO
 !
