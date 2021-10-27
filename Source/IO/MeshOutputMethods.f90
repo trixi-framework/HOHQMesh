@@ -358,7 +358,7 @@
 !        ----------------
 !
          WRITE(iUnit, '(A8)')"*Heading"
-         WRITE(iUnit, *)fName
+         WRITE(iUnit, *)" File created by HOHQMesh"
 !
 !        -----------
 !        Print Nodes
