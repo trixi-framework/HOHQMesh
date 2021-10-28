@@ -378,14 +378,14 @@
          DO WHILE(.NOT.iterator % isAtEnd())
             obj => iterator % object()
             CALL cast(obj,node)
-            WRITE(iUnit, '(I0,3(", ", F18.13))') j,node % x(1),node % x(2),node % x(3)
+            WRITE(iUnit, '(I0,3(", ", F18.13))') j, node % x
             CALL iterator % moveToNext()
             j = j + 1
          END DO
 !
-!        -----------------------------------------------------------------------
+!        --------------------------
 !        Print element connectivity
-!        -----------------------------------------------------------------------
+!        --------------------------
 !
          WRITE(iUnit, '(A35)')"*ELEMENT, type=CPS4, ELSET=Surface1"
          iterator => mesh % elementsIterator
@@ -394,8 +394,7 @@
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL cast(obj,e)
-            WRITE( iUnit, '(I0,4(", ", I0))') j,e % boundaryInfo % nodeIDs(1),e % boundaryInfo % nodeIDs(2),&
-                               e % boundaryInfo % nodeIDs(3),e % boundaryInfo % nodeIDs(4)
+            WRITE( iUnit, '(I0,4(", ", I0))') j, e % boundaryInfo % nodeIDs
             CALL iterator % moveToNext()
             j = j + 1
          END DO

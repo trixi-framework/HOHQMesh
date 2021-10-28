@@ -295,6 +295,7 @@
          INTEGER                    :: iUnit, j, k
          INTEGER                    :: f, jj, ii
          INTEGER, EXTERNAL          :: UnusedUnit
+         INTEGER, DIMENSION(6)      :: bndyNameRemap
          INTEGER                    :: eID
          REAL(KIND=RP), ALLOCATABLE :: faceX(:,:,:)
 !
@@ -305,18 +306,12 @@
          iUnit = UnusedUnit()
          OPEN( UNIT = iUnit, FILE = fName )
 !
-!        ----------------------------------------------------------
-!        To print out face locations, use this as a temporary array
-!        ----------------------------------------------------------
-!
-!         ALLOCATE( faceX(3,0:N,0:N) )
-!
 !        ----------------
 !        Print out header
 !        ----------------
 !
          WRITE(iUnit, '(A8)')"*Heading"
-         WRITE(iUnit, *)fName
+         WRITE(iUnit, *)"File created by HOHQMesh"
 !
 !        -----------
 !        Print Nodes
@@ -333,46 +328,108 @@
          ii = 1
          DO j = 0, SIZE(mesh % nodes,2)-1
             DO k = 1, SIZE(mesh % nodes,1)
-               WRITE(iUnit, '(I0,3(", ", F18.14))') ii, mesh % nodes(k,j) % x(1), &
-                                                        mesh % nodes(k,j) % x(2), &
-                                                        mesh % nodes(k,j) % x(3)
+               WRITE(iUnit, '(I0,3(", ", F18.13))') ii, mesh % nodes(k,j) % x
                ii = ii + 1
             END DO
          END DO
 !
-!        ---------------------------------------------------------
+!        --------------------------
 !        Print element connectivity
-!           For now ignore the boundary information and names
-!        ---------------------------------------------------------
+!        --------------------------
 !
          WRITE(iUnit, '(A34)')"*ELEMENT, type=C3D8, ELSET=Volume1"
          DO j = 1, mesh % numberofLayers             ! level
             DO k = 1, mesh % numberOfQuadElements    ! element on original quad mesh
                eID = mesh % elements(k,j) % globalID
-               WRITE(iUnit, '(I0,8(", ", I0))') eID, mesh % elements(k,j) % nodeIDs(1), &
-                                                     mesh % elements(k,j) % nodeIDs(2), &
-                                                     mesh % elements(k,j) % nodeIDs(3), &
-                                                     mesh % elements(k,j) % nodeIDs(4), &
-                                                     mesh % elements(k,j) % nodeIDs(5), &
-                                                     mesh % elements(k,j) % nodeIDs(6), &
-                                                     mesh % elements(k,j) % nodeIDs(7), &
-                                                     mesh % elements(k,j) % nodeIDs(8)
+               WRITE(iUnit, '(I0,8(", ", I0))') eID, mesh % elements(k,j) % nodeIDs
+            END DO
+         END DO
 
-               ! DO f = 1, 6
-               !    IF ( mesh % elements(k,j) % bFaceFlag(f) == ON )     THEN
-               !       CALL FaceFromVolume(xFace   = faceX,                      &
-               !                           xVolume = mesh % elements(k,j) % x,   &
-               !                           faceID  = f,                          &
-               !                           N       = N )
-               !       DO jj = 0, N
-               !          DO ii = 0, N
-               !             WRITE(iUnit, *) faceX(:,ii,jj)
-               !          END DO
-               !       END DO
-               !    END IF
-               ! END DO
-
-               ! WRITE( iUnit, *) (TRIM(mesh % elements(k,j) % bFaceName(f)), " ", f = 1, 6)
+!
+!        -------------------------------------------------------------
+!        Print element IDs with high-order boundary edge information
+!        This additional data is prefaced with "** " which is the
+!        comment character in the ABAQUS format. This makes the data
+!        invisible to standard ABAQUS mesh file parsers but available.
+!        -------------------------------------------------------------
+!
+         ALLOCATE( faceX(3, 0:N, 0:N) ) ! temporary array to print face data
+         WRITE(iUnit, '(A47)')"** ***** HOHQMesh boundary information ***** **"
+         WRITE(iUnit, '(A28,I0)')"** mesh polynomial degree = ",N
+         DO j = 1, mesh % numberofLayers             ! level
+            DO k = 1, mesh % numberOfQuadElements    ! element on original quad mesh
+               ! Print the corner IDs
+               WRITE(iUnit, '(A3,8(" ", I0))') "** ", mesh % elements(k,j) % nodeIDs
+               ! Print flag if an edge is curved
+               WRITE(iUnit, '(A3,6(" ", I0))')  "** ", mesh % elements(k,j) % bFaceFlag
+               ! Print the high-order boundary face information
+               DO f = 1, 6
+                  IF ( mesh % elements(k,j) % bFaceFlag(f) == ON )     THEN
+                     CALL FaceFromVolume(xFace   = faceX,                      &
+                                         xVolume = mesh % elements(k,j) % x,   &
+                                         faceID  = f,                          &
+                                         N       = N )
+                     DO jj = 0, N
+                        DO ii = 0, N
+                           WRITE(iUnit, '(A3,3(F18.13))') "** ", faceX(:,ii,jj)
+                        END DO
+                     END DO
+                  END IF
+               END DO
+            END DO
+         END DO
+         DEALLOCATE(faceX)
+!
+!        ------------------------------------------------------------------------------------------------
+!        Print boundary name information. In general, we can think of a hex element to have faces labeled
+!                           ┌────────────────────────────────────────────────────┐
+!                          ╱│                                                   ╱│
+!                         ╱ │                       ξ <───┐                    ╱ │
+!                        ╱  │                            ╱                    ╱  │
+!                       ╱   │                   +y      V                    ╱   │
+!                      ╱    │                          η                    ╱    │
+!                     ╱     │                                              ╱     │
+!                    ╱      │                                             ╱      │
+!                   ╱       │                                            ╱       │
+!                  ╱        │                                           ╱        │
+!                 ╱         │                      -z     η            ╱         │
+!                ╱          │                             ↑           ╱          │
+!               ╱           │                             │          ╱           │
+!              ╱            │                       ξ <───┘         ╱            │
+!             ┌────────────────────────────────────────────────────┐     +x      │
+!             │             │                                      │             │
+!             │             │                                      │      ξ      │
+!             │             │                                      │      ↑      │
+!             │      -x     │                                      │      │      │
+!             │             │                                      │      │      │
+!             │     ╱│      │                                      │     ╱       │
+!             │    V │      │                                      │    V        │
+!             │   η  ↓      │                                      │   η         │
+!             │      ξ      └──────────────────────────────────────│─────────────┘
+!             │            ╱         η     +z                      │            ╱
+!             │           ╱          ↑                             │           ╱
+!             │          ╱           │                             │          ╱
+!             │         ╱            └───> ξ                       │         ╱
+!             │        ╱                                           │        ╱
+!             │       ╱                                            │       ╱ Global coordinates:
+!             │      ╱                                             │      ╱        y
+!             │     ╱                      ┌───> ξ                 │     ╱         ↑
+!             │    ╱                      ╱                        │    ╱          │
+!             │   ╱                      V        -y               │   ╱           │
+!             │  ╱                      η                          │  ╱            └─────> x
+!             │ ╱                                                  │ ╱            ╱
+!             │╱                                                   │╱            V
+!             └────────────────────────────────────────────────────┘            z
+!        For this mesh file output the boundary names are reordered to adopt the order convention of
+!        -x +x -y +y -z +z that is expected by p4est to create its mesh connectivity. In contrast, the
+!        default HOHQMesh ordering (also the FEM standard ordering) of the boundary names
+!        is -y +y -z +x +z -x.
+!        ------------------------------------------------------------------------------------------------
+!
+         bndyNameRemap = (/ 6 , 4 , 1 , 2 , 3 , 5 /)
+         DO j = 1, mesh % numberofLayers             ! level
+            DO k = 1, mesh % numberOfQuadElements    ! element on original quad mesh
+               WRITE( iUnit, '(13A)') "** ", (TRIM(mesh % elements(k,j) % bFaceName(bndyNameRemap(f))), " ", f = 1, 6)
             END DO
          END DO
 
