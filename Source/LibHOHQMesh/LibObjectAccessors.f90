@@ -49,10 +49,10 @@
 !      SUBROUTINE HML_SetPlotFileName( cPtr, cFileName, errFlag)  BIND(c)
 !      SUBROUTINE HML_MeshFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
 !      SUBROUTINE HML_PlotFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
-!      SUBROUTINE HML_SetMeshFileFormat( cPtr, cString, errFlag)  
+!      SUBROUTINE HML_SetMeshFileFormat( cPtr, cString, errFlag)     BIND(C)
 !      SUBROUTINE HML_NodeLocations(cPtr, locationsArray, N, errFlag)  BIND(C)
 !      SUBROUTINE HML_SetPolynomialOrder(cPtr, n, errFlag)  BIND(C)
-!      SUBROUTINE HML_PolynomialOrder(cPtr, p, errFlag)  
+!      SUBROUTINE HML_PolynomialOrder(cPtr, p, errFlag)    BIND(C) 
 !      SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)    BIND(C)
 !      SUBROUTINE HML_2DElementBoundaryNames(cPtr, namesArray, N, errFlag)    BIND(C)
 !      SUBROUTINE HML_2DElementBoundaryPoints(cPtr, boundaryPoints, p, N, errFlag)    BIND(C)
@@ -210,7 +210,7 @@
 !> Reset the mesh file format, "ISM", "ISM-v2" or "ISM_MM" from that
 !> set in the control file.
 !>
-      SUBROUTINE HML_SetMeshFileFormat( cPtr, cString, errFlag)  
+      SUBROUTINE HML_SetMeshFileFormat( cPtr, cString, errFlag)     BIND(C)
          IMPLICIT NONE  
          TYPE(c_ptr)                          :: cPtr
          CHARACTER(KIND=c_char), DIMENSION(*) :: cString
@@ -239,7 +239,7 @@
 ! 
 !> Get the mesh file format the project will use to write a mesh file
 !>
-      FUNCTION HML_MeshFileFormat(self)  RESULT(fileFormat)
+      FUNCTION HML_MeshFileFormat(self) RESULT(fileFormat)
          IMPLICIT NONE  
          CLASS (MeshProject)                       :: self
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)   :: fileFormat
@@ -427,7 +427,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE HML_PolynomialOrder(cPtr, p, errFlag)  
+      SUBROUTINE HML_PolynomialOrder(cPtr, p, errFlag)   BIND(C)  
          IMPLICIT NONE  
          TYPE(c_ptr)                  :: cPtr
          INTEGER(C_INT)               :: p, errFlag

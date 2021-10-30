@@ -84,7 +84,7 @@
          TYPE(c_ptr)                                         :: projCPtr
          
          cFName = f_to_c_string(f_string = controlFileName)
-         projCPtr = HML_NewProject()
+         projCPtr = HML_AllocProject()
          
          CALL HML_InitWithControlFile(cPtr      = projCPtr, &
                                       cFileName = cFName, &
@@ -103,7 +103,7 @@
          CALL HML_WritePlotFile(cPtr = projCPtr, errFlag = flag )
          CALL StopOnError(flag)
          
-         CALL HML_CloseProject(cPtr = projCPtr, errFlag = flag)
+         CALL HML_ReleaseProject(cPtr = projCPtr, errFlag = flag)
          
       END SUBROUTINE MeshFromControlFile
 !

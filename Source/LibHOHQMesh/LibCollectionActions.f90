@@ -5,19 +5,21 @@
 !      Created: October 7, 2021 at 10:12 AM 
 !      By: David Kopriva  
 !
-!      FUNCTION   HML_NewDictionary() BIND(C) RESULT(cPtr)
-!      FUNCTION   HML_NewList() BIND(C) RESULT(cPtr)
+!      FUNCTION   HML_AllocDictionary() BIND(C) RESULT(cPtr)
+!      FUNCTION   HML_AllocList() BIND(C) RESULT(cPtr)
 !
 !      SUBROUTINE HML_InitDictionary(cPtr, errFlag) BIND(C)
-!      SUBROUTINE HML_CloseDictionary(cPtr, errFlag)   BIND(C)
+!      SUBROUTINE HML_ReleaseDictionary(cPtr, errFlag)   BIND(C)
 !
 !      SUBROUTINE HML_InitList(cPtr, errFlag) BIND(C)
-!      SUBROUTINE HML_CloseList(cPtr, errFlag)   BIND(C)
+!      SUBROUTINE HML_ReleaseList(cPtr, errFlag)   BIND(C)
 !
-!      SUBROUTINE HML_AddDictKeyAndValue(cPtrToDict, cKey, cValue, errFlag)  
-!      SUBROUTINE HML_AddDictForKey(cPtrToDict, cPtrToDictToAdd, key, errFlag)  
-!      SUBROUTINE HML_AddDictToList( cPtrToDictToAdd, cPtrToList, errFlag)  
-!      SUBROUTINE HML_AddListToDict( cPtrToList, cPtrToDict, errFlag)  
+!      SUBROUTINE HML_AddDictKeyAndValue(cPtrToDict, cKey, cValue, errFlag)     BIND(C)
+!      SUBROUTINE HML_AddDictForKey(cPtrToDict, cPtrToDictToAdd, key, errFlag)     BIND(C)
+!      SUBROUTINE HML_AddDictToList( cPtrToDictToAdd, cPtrToList, errFlag)   BIND(C)  
+!      SUBROUTINE HML_AddListToDict( cPtrToList, cPtrToDict, errFlag)   BIND(C) 
+!
+!      SUBROUTINE HML_AddArrayToDict(array, N, M, cPtrToDict, errFlag)   BIND(C)  
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -35,13 +37,13 @@
 !
 !> Function that returns a c_ptr pointer to a new FTValueDictionary
 !>
-   FUNCTION HML_NewDictionary() BIND(C) RESULT(cPtr)
+   FUNCTION HML_AllocDictionary() BIND(C) RESULT(cPtr)
       IMPLICIT NONE
       TYPE( FTValueDictionary ), POINTER :: dict
       TYPE(c_ptr)                        :: cPtr
       ALLOCATE(dict)
       cPtr = C_LOC(dict)
-   END FUNCTION HML_NewDictionary
+   END FUNCTION HML_AllocDictionary
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
@@ -76,7 +78,7 @@
 !> CloseDictionary returns a null pointer even if there are multiple references
 !> to the dictionary. 
 !>
-   SUBROUTINE HML_CloseDictionary(cPtr, errFlag)   BIND(C)
+   SUBROUTINE HML_ReleaseDictionary(cPtr, errFlag)   BIND(C)
       IMPLICIT NONE  
 !
 !     ---------
@@ -101,14 +103,14 @@
       cPtr    = c_null_ptr
       errFlag = 0
 
-   END SUBROUTINE HML_CloseDictionary
+   END SUBROUTINE HML_ReleaseDictionary
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
 !> Add a key and value (string) referenced as C compatible variables
 !> to an FTValueDictionary
 !>
-   SUBROUTINE HML_AddDictKeyAndValue(cPtrToDict, cKey, cValue, errFlag)  
+   SUBROUTINE HML_AddDictKeyAndValue(cPtrToDict, cKey, cValue, errFlag)     BIND(C)
       IMPLICIT NONE  
 !
 !     ---------
@@ -143,7 +145,7 @@
 ! 
 !> Add an FTValueDictionary to another FTValueDictionary with a given key.
 !>
-   SUBROUTINE HML_AddDictForKey(cPtrToDict, cPtrToDictToAdd, key, errFlag)  
+   SUBROUTINE HML_AddDictForKey(cPtrToDict, cPtrToDictToAdd, key, errFlag)     BIND(C)
       IMPLICIT NONE  
 !
 !     ---------
@@ -180,7 +182,7 @@
 !> Add a two-dimensional double precision array
 !> to an FTValueDictionary
 !>
-   SUBROUTINE HML_AddArrayToDict(array, N, M, cPtrToDict, errFlag)  
+   SUBROUTINE HML_AddArrayToDict(array, N, M, cPtrToDict, errFlag)    BIND(C) 
       IMPLICIT NONE  
 !
 !     ---------
@@ -222,7 +224,7 @@
 ! 
 !> Add an FTValueDictionary to an FTLinkedList, both referenced as c_ptrs.
 !>
-   SUBROUTINE HML_AddDictToList( cPtrToDictToAdd, cPtrToList, errFlag)  
+   SUBROUTINE HML_AddDictToList( cPtrToDictToAdd, cPtrToList, errFlag) BIND(C)
       IMPLICIT NONE  
 !
 !     ---------
@@ -256,7 +258,7 @@
 !> Add an FTLinkedList to an FTValueDictionary with key = "LIST",
 !> both referenced as c_ptrs.
 !>
-   SUBROUTINE HML_AddListToDict( cPtrToList, cPtrToDict, errFlag)  
+   SUBROUTINE HML_AddListToDict( cPtrToList, cPtrToDict, errFlag)    BIND(C) 
       IMPLICIT NONE  
 !
 !     ---------
@@ -290,13 +292,13 @@
 !
 !> Function that returns a c_ptr pointer to a new FTLinkedList list
 !>
-   FUNCTION HML_NewList() BIND(C) RESULT(cPtr)
+   FUNCTION HML_AllocList() BIND(C) RESULT(cPtr)
       IMPLICIT NONE
       TYPE( FTLinkedList ), POINTER :: list
       TYPE(c_ptr)                   :: cPtr
       ALLOCATE(list)
       cPtr = C_LOC(list)
-   END FUNCTION HML_NewList
+   END FUNCTION HML_AllocList
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
@@ -328,10 +330,10 @@
 !//////////////////////////////////////////////////////////////////////// 
 !
 !> Call to close out/kill an FTLinkedList referenced as a c_ptr and release all its memory
-!> HML_CloseList returns a null pointer even if there are multiple references
+!> HML_ReleaseList returns a null pointer even if there are multiple references
 !> to the dictionary. 
 !>
-   SUBROUTINE HML_CloseList(cPtr, errFlag)   BIND(C)
+   SUBROUTINE HML_ReleaseList(cPtr, errFlag)   BIND(C)
       IMPLICIT NONE  
 !
 !     ---------
@@ -356,7 +358,7 @@
       cPtr = c_null_ptr
       errFlag = 0
 
-   END SUBROUTINE HML_CloseList
+   END SUBROUTINE HML_ReleaseList
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

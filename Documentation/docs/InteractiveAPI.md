@@ -1,8 +1,15 @@
-#HOHQMesh Library API
+#Fortran Library API
 
 HOHQMesh can be accessed as a library to allow it to be manipulated interactively. At this point, interactivity is limited to run parameters, and not the model.
 
 Library procedures are of the form HML_* (for HOHQMesh Library) and have the BIND(C) attribute so they can be accessed by anything that can deal with C. All procedures (except for the NewProject procedure) take a pointer to a project and either operate on it or inquire it for data. All return an error flag.
+
+## Contents
+
+1. [HOHQMesh API](#HOHQMesh)
+2. [FTObjectLibrary API](#FTOL)
+
+#HOHQMesh Library API<a name="HOHQMesh"></a>
 
  Constants currently defined as
 
@@ -13,12 +20,15 @@ Library procedures are of the form HML_* (for HOHQMesh Library) and have the BIN
     INTEGER, PARAMETER :: HML_ERROR_MEMORY_SIZE = 4  ! Array was allocated with the wrong size
     INTEGER, PARAMETER :: HML_ERROR_NO_OBJECT_FOR_REQUEST = 5  ! Trying to access a null pointer
     INTEGER, PARAMETER :: HML_ERROR_NULL_POINTER = 6  ! c_ptr is null
+    INTEGER, PARAMETER :: HML_ERROR_STRING_TRUNCATED = 7  ! a string has been truncated
+    INTEGER, PARAMETER :: HML_ERROR_NOT_A_DICT = 8  ! a c_ptr doesn't resolve to a FTDictionary
+    INTEGER, PARAMETER :: HML_ERROR_NOT_A_LIST = 9 ! a c_ptr doesn't resolve to a FTLinkedList
 
 All actions check to make sure that they are passed a proper 'MeshProject' object through the c_ptr.
 
 Example usage (in fortran)
 
-         projCPtr = HML_NewProject()
+         projCPtr = HML_AllocProject()
          
          CALL HML_InitWithControlFile(cPtr      = projCPtr,            &
                                       cFileName = controlFileNameCStr, &
@@ -33,22 +43,22 @@ Example usage (in fortran)
          CALL HML_WriteMesh(cPtr = projCPtr, errFlag = flag )
          CALL HML_WritePlotFile(cPtr = projCPtr, errFlag = flag )
          
-         CALL HML_CloseProject(cPtr = projCPtr, errFlag = flag)
+         CALL HML_ReleaseProject(cPtr = projCPtr, errFlag = flag)
          
 The errorFlag should be checked at each stage to make sure it is safe to continue.
 ## Actions
 - **Project Creation:** Allocates memory for and returns a c_ptr to a project
 
-		FUNCTION HML_NewProject() BIND(C) RESULT(cPtr)
+		FUNCTION HML_AllocProject() BIND(C) RESULT(cPtr)
 			TYPE(c_ptr)      :: cPtr
 
 - **Project Destruction:** Deletes the project and all memory associated with it.
 
 
-		SUBROUTINE HML_CloseProject(cPtr, errFlag)  BIND(C)
+		SUBROUTINE HML_ReleaseProject(cPtr, errFlag)  BIND(C)
 			TYPE(c_ptr)      :: cPtr
 			INTEGER          :: errFlag
-	Call this when done with a project. Forgetting to do so keeps all the memory around and may then leak. Rule: if `HML_NewProject` is called there must be a corresponding call to `HML_CloseProject`.
+	Call this when done with a project. Forgetting to do so keeps all the memory around and may then leak. Rule: if `HML_AllocProject` is called there must be a corresponding call to `HML_ReleaseProject`.
 
 - **Initializing a project** 
 
@@ -178,4 +188,65 @@ For each element, e, and each edge in the element, k, `boundaryPoints` contains 
 - **Array of element boundary names**
 
 	TBD
-	
+#FTObjectLibrary Library API<a name="FTOL"></a>
+
+- **Create a new Dictionary**
+
+		   FUNCTION HML_AllocDictionary() BIND(C) RESULT(cPtr)
+		      TYPE( FTValueDictionary ), POINTER :: dict
+		      TYPE(c_ptr)                        :: cPtr
+- **Initialize a Dictionary**
+
+		   SUBROUTINE HML_InitDictionary(cPtr, errFlag) BIND(C)
+		      TYPE(c_ptr)    :: cPtr
+		      INTEGER(C_INT) :: errFlag
+- **Destruct a Dictionary**
+
+		   SUBROUTINE HML_ReleaseDictionary(cPtr, errFlag)   BIND(C)
+		      TYPE(c_ptr)                   :: cPtr
+		      INTEGER(C_INT), INTENT(OUT)   :: errFlag
+- **Add a key and value to a Dictionary**
+
+		   SUBROUTINE HML_AddDictKeyAndValue(cPtrToDict, cKey, cValue, errFlag)  
+		      TYPE(c_ptr)                          :: cPtrToDict
+		      CHARACTER(KIND=c_char), DIMENSION(*) :: cKey, cValue
+		      INTEGER(C_INT), INTENT(OUT)          :: errFlag
+- **Add a Dictionary to another Dictionary**
+
+		   SUBROUTINE HML_AddDictForKey(cPtrToDict, cPtrToDictToAdd, key, errFlag)  
+		      TYPE(c_ptr)                          :: cPtrToDict,cPtrToDictToAdd
+		      CHARACTER(KIND=c_char), DIMENSION(*) :: key
+		      INTEGER(C_INT), INTENT(OUT)          :: errFlag
+- **Add a two-dimensional array to a Dictionary**
+
+		   SUBROUTINE HML_AddArrayToDict(array, N, M, cPtrToDict, errFlag)  
+		      INTEGER(C_INT)                       :: N, M
+		      REAL(KIND=C_DOUBLE)                  :: array(N,M)
+		      TYPE(c_ptr)                          :: cPtrToDict
+		      INTEGER(C_INT), INTENT(OUT)          :: errFlag
+- **Create a new linked list**
+
+		   FUNCTION HML_AllocList() BIND(C) RESULT(cPtr)
+		      IMPLICIT NONE
+		      TYPE( FTLinkedList ), POINTER :: list
+		      TYPE(c_ptr)                   :: cPtr
+- **Initialize a linked list**
+
+		   SUBROUTINE HML_InitList(cPtr, errFlag) BIND(C)
+		      TYPE(c_ptr)                          :: cPtr
+		      INTEGER(C_INT)                       :: errFlag
+- **Destruct a linked list**
+
+		   SUBROUTINE HML_ReleaseList(cPtr, errFlag)   BIND(C)
+		      TYPE(c_ptr)                   :: cPtr
+		      INTEGER(C_INT), INTENT(OUT)   :: errFlag
+- **Add a linked list to a Dictionary**
+
+		   SUBROUTINE HML_AddListToDict( cPtrToList, cPtrToDict, errFlag)  
+		      TYPE(c_ptr)                 :: cPtrToList,cPtrToDict
+		      INTEGER(C_INT), INTENT(OUT) :: errFlag
+- **Add a Dictionary to a Linked List**
+
+		   SUBROUTINE HML_AddDictToList( cPtrToDictToAdd, cPtrToList, errFlag)  
+		      TYPE(c_ptr)                          :: cPtrToList,cPtrToDictToAdd
+		      INTEGER(C_INT), INTENT(OUT)          :: errFlag

@@ -172,7 +172,26 @@
 !        Allocate a new project
 !        ----------------------
 !
-         projCPtr = HML_NewProject()
+         projCPtr = HML_AllocProject()
+         IF ( .NOT. CptrIsProjectPtr(projCPtr) )     THEN
+            CALL FTAssert(test = .FALSE., msg = "c_ptr is not a pointer to a MeshProject 1")
+            RETURN 
+         END IF 
+!
+!        ---------------------
+!        Close out the project
+!        ---------------------
+!
+         CALL HML_ReleaseProject(cPtr = projCPtr, errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,    &
+                            actualValue   = flag, &
+                            msg           = "Error flag calling HML_ReleaseProject 1")
+!
+!        --------------------------
+!        Allocate new project again
+!        --------------------------
+!
+         projCPtr = HML_AllocProject()
          IF ( .NOT. CptrIsProjectPtr(projCPtr) )     THEN
             CALL FTAssert(test = .FALSE., msg = "c_ptr is not a pointer to a MeshProject")
             RETURN 
@@ -448,10 +467,10 @@
 !        Close out the project
 !        ---------------------
 !
-         CALL HML_CloseProject(cPtr = projCPtr, errFlag = flag)
+         CALL HML_ReleaseProject(cPtr = projCPtr, errFlag = flag)
          CALL FTAssertEqual(expectedValue = 0,    &
                             actualValue   = flag, &
-                            msg           = "Error flag calling HML_CloseProject")
+                            msg           = "Error flag calling HML_ReleaseProject 2")
          
       END SUBROUTINE testAPIWithControlFile
       
@@ -487,7 +506,7 @@
 !        Create a dictionary
 !        -------------------
 !
-         cPtrToDict = HML_NewDictionary()
+         cPtrToDict = HML_AllocDictionary()
          CALL HML_InitDictionary(cPtr = cPtrToDict,errFlag = flag)
          CALL FTAssert(test = C_ASSOCIATED(cPtrToDict),msg = "Associated cPtr to dictionary")
          CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitDictionary")
@@ -541,7 +560,7 @@
 !        Create a list
 !        -------------
 !
-         cPtrToList = HML_NewList()
+         cPtrToList = HML_AllocList()
          CALL FTAssert(test = C_ASSOCIATED(cPtrToList),msg = "Associated cPtr to list")
          CALL HML_InitList(cPtr = cPtrToList,errFlag = flag)
          CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitList")
@@ -559,13 +578,13 @@
 !        Create another list and dictionary
 !        ----------------------------------
 !
-         cPtrToList2 = HML_NewList()
+         cPtrToList2 = HML_AllocList()
          CALL ptrToList(cPtr = cPtrToList2,list = list2,errFlag = flag)
          CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "ptrToList 2")
          CALL HML_InitList(cPtr = cPtrToList2,errFlag = flag)
          CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitList 2")
          
-         cPtrToDict2 = HML_NewDictionary()
+         cPtrToDict2 = HML_AllocDictionary()
          CALL HML_InitDictionary(cPtr = cPtrToDict2,errFlag = flag)
          CALL FTAssert(test = C_ASSOCIATED(cPtrToDict2),msg = "Associated cPtr to dictionary 2")
          CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitDictionary 2")
@@ -586,7 +605,7 @@
 !        Test adding a dictionary to a dictionary
 !        ----------------------------------------
 !
-         cPtrToDict3 = HML_NewDictionary()
+         cPtrToDict3 = HML_AllocDictionary()
          CALL FTAssert(test = C_ASSOCIATED(cPtrToDict3),msg = "Associated cPtr to dictionary 3")
          CALL HML_InitDictionary(cPtr = cPtrToDict3, errFlag = flag)
          CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitDictionary 3")
@@ -602,7 +621,7 @@
                             actualValue   = str, &
                             msg           = "stringValueForKey 2")
          
-         cPtrToDict4 = HML_NewDictionary()
+         cPtrToDict4 = HML_AllocDictionary()
          CALL FTAssert(test = C_ASSOCIATED(cPtrToDict4),msg = "Associated cPtr to dictionary 4")
          CALL HML_InitDictionary(cPtr = cPtrToDict4, errFlag = flag)
          CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_InitDictionary 4")
@@ -626,20 +645,20 @@
 !        ---------------
 !        Close out stuff
 !        ---------------
-         CALL HML_CloseDictionary(cPtr = cPtrToDict,errFlag = flag)
-         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseDictionary")
-         CALL HML_CloseList(cPtr = cPtrToList,errFlag = flag)
-         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseList")
+         CALL HML_ReleaseDictionary(cPtr = cPtrToDict,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_ReleaseDictionary")
+         CALL HML_ReleaseList(cPtr = cPtrToList,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_ReleaseList")
 !
-         CALL HML_CloseList(cPtr = cPtrToList2,errFlag = flag)
-         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseList 2")
-         CALL HML_CloseDictionary(cPtr = cPtrToDict2,errFlag = flag)
-         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseDictiona 2")
+         CALL HML_ReleaseList(cPtr = cPtrToList2,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_ReleaseList 2")
+         CALL HML_ReleaseDictionary(cPtr = cPtrToDict2,errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_ReleaseDictiona 2")
 
-         CALL HML_CloseDictionary(cPtr = cPtrToDict3, errFlag = flag)
-         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseDictiona 3")
+         CALL HML_ReleaseDictionary(cPtr = cPtrToDict3, errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_ReleaseDictiona 3")
 
-         CALL HML_CloseDictionary(cPtr = cPtrToDict4, errFlag = flag)
-         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_CloseDictiona 4")
+         CALL HML_ReleaseDictionary(cPtr = cPtrToDict4, errFlag = flag)
+         CALL FTAssertEqual(expectedValue = 0,actualValue = flag, msg = "HML_ReleaseDictiona 4")
                   
       END SUBROUTINE BasicCollectionTests

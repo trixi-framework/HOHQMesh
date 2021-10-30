@@ -42,7 +42,7 @@
 !> Error Flag if a routine is passed a c_ptr that doesn't resolve to a FTDictionary
    INTEGER, PARAMETER :: HML_ERROR_NOT_A_DICT = 8  
 !
-!> Error Flag if a routine is passed a c_ptr that doesn't resolve to a MeshProject
+!> Error Flag if a routine is passed a c_ptr that doesn't resolve to a FTLinkedList
    INTEGER, PARAMETER :: HML_ERROR_NOT_A_LIST = 9 
 
       END Module HMLConstants

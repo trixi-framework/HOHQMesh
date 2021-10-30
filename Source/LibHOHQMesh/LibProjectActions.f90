@@ -49,8 +49,8 @@
 !> This module provides the interfaces to the MeshProject objects
 !>
 !
-!   FUNCTION   HML_NewProject() BIND(C) RESULT(cPtr)
-!   SUBROUTINE HML_CloseProject(cPtr, errFlag)   BIND(C)
+!   FUNCTION   HML_AllocProject() BIND(C) RESULT(cPtr)
+!   SUBROUTINE HML_ReleaseProject(cPtr, errFlag)   BIND(C)
 !   SUBROUTINE HML_InitWithControlFile(cPtr, cFileName, errFlag) BIND(C)
 !   SUBROUTINE HML_InitWithDictionary(cPtr, cPtrToDict, errFlag) BIND(C)
 !   SUBROUTINE HML_GenerateMesh(cPtr, errFlag)   BIND(C)
@@ -84,13 +84,14 @@
 !
 !> Function that returns a c_ptr pointer to a new project
 !>
-   FUNCTION HML_NewProject() BIND(C) RESULT(cPtr)
+   FUNCTION HML_AllocProject() BIND(C) RESULT(cPtr)
       IMPLICIT NONE
       TYPE( MeshProject ), POINTER :: proj
       TYPE(c_ptr)                  :: cPtr
       ALLOCATE(proj)
+      CALL proj % FTObject % init()
       cPtr = C_LOC(proj)
-   END FUNCTION HML_NewProject
+   END FUNCTION HML_AllocProject
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
@@ -98,7 +99,7 @@
 !> CloseProject returns an error flag to tell whether or not the operation
 !> is successful. 
 !>
-   SUBROUTINE HML_CloseProject(cPtr, errFlag)   BIND(C)
+   SUBROUTINE HML_ReleaseProject(cPtr, errFlag)   BIND(C)
       IMPLICIT NONE  
 !
 !     ---------
@@ -129,7 +130,7 @@
          cPtr = c_null_ptr
       END IF 
 
-   END SUBROUTINE HML_CloseProject
+   END SUBROUTINE HML_ReleaseProject
 
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -228,7 +229,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
-!> Initializer given a control file name
+!> Initializer given a control file dictionary
 !>
    SUBROUTINE HML_InitWithDictionary(cPtr, cPtrToDict, errFlag) BIND(C)
       IMPLICIT NONE
@@ -237,8 +238,9 @@
 !     Arguments
 !     ---------
 !
-      TYPE(c_ptr)                          :: cPtr,cPtrToDict
-      INTEGER(C_INT)                       :: errFlag
+      TYPE(c_ptr)      :: cPtr       ! Project to initialize
+      TYPE(c_ptr)      :: cPtrToDict !Dictionary to initialize with
+      INTEGER(C_INT)   :: errFlag
 !
 !     ---------------
 !     Local variables
