@@ -289,6 +289,135 @@
    END SUBROUTINE HML_AddListToDict   
 !
 !//////////////////////////////////////////////////////////////////////// 
+! 
+!> Print a value dictionary containing lists and keys. Mostly for debugging
+!> purposes.
+!>
+   RECURSIVE SUBROUTINE HML_PrintDict(cPtrToDict, errFlag)     BIND(C)
+      IMPLICIT NONE  
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      TYPE(c_ptr)                          :: cPtrToDict
+      INTEGER(C_INT), INTENT(OUT)          :: errFlag
+!
+!     ---------------
+!     Local Variables
+!     ---------------
+!
+      TYPE  ( FTValueDictionary ) , POINTER :: dict
+      INTEGER                               :: indent = 0
+      
+      CALL ptrToDictionary(cPtr = cPtrToDict, dict = dict, errFlag = errFlag)
+      IF(errFlag /= HML_ERROR_NONE)     RETURN 
+      
+      CALL printProjectDictionary(dict, indent)
+      errFlag = 0
+
+   END SUBROUTINE HML_PrintDict
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   RECURSIVE SUBROUTINE PrintProjectDictionary(dict, indent)
+      IMPLICIT NONE  
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      TYPE  ( FTValueDictionary ), POINTER :: dict
+      INTEGER                              :: indent
+!
+!     ---------------
+!     Local Variables
+!     ---------------
+!
+      CLASS ( FTValueDictionary )            , POINTER :: dictAsClass
+      TYPE(FTMutableObjectArray)             , POINTER :: objectArray
+      CLASS(FTObject)                        , POINTER :: obj
+      CHARACTER(LEN=FTDICT_KWD_STRING_LENGTH), POINTER :: keys(:)
+      INTEGER                                          :: k, i
+      CHARACTER(LEN=4)                                 :: tab = "    "
+      
+      keys        => dict % allKeys()
+      objectArray => dict % allObjects()
+      
+      DO k = 1, objectArray % COUNT()
+         obj => objectArray % objectAtIndex(k)
+         
+         SELECT TYPE (obj)
+            TYPE IS (FTValueDictionary)
+               Write(6,*)
+               DO i = 1,indent 
+                  WRITE(6,FMT="(A4)",ADVANCE = "NO") tab
+               END DO 
+               Write(6,*) "Dictionary"
+               Write(6,*)
+               CALL PrintProjectDictionary(obj, indent+1)
+            TYPE IS (FTLinkedList)
+               Write(6,*)
+               DO i = 1,indent 
+                  WRITE(6,FMT="(A4)",ADVANCE = "NO") tab
+               END DO 
+               Write(6,*) "List"
+               Write(6,*)
+               CALL PrintProjectList(obj, indent+1)
+            CLASS DEFAULT
+               DO i = 1,indent 
+                  WRITE(6,FMT="(A4)",ADVANCE = "NO") tab
+               END DO 
+               Write(6,*) TRIM(keys(k)), " = " ,TRIM(dict % stringValueForKey(key = keys(k), &
+                                                  requestedLength = FTDICT_KWD_STRING_LENGTH))
+         END SELECT
+
+      END DO 
+      
+      DEALLOCATE(keys)
+      CALL releaseFTMutableObjectArray(objectArray)
+      
+   END SUBROUTINE PrintProjectDictionary
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   RECURSIVE SUBROUTINE PrintProjectList(list, indent)
+      IMPLICIT NONE  
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      TYPE(FTLinkedList)                               :: list
+      INTEGER                                          :: indent
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      TYPE(FTMutableObjectArray)             , POINTER :: objectArray
+      CLASS(FTObject)                        , POINTER :: obj
+      INTEGER                                          :: k
+      
+      objectArray => list % allObjects()
+      
+      DO k = 1, objectArray % COUNT() 
+      
+         SELECT TYPE (obj)
+            TYPE IS (FTValueDictionary)
+               CALL PrintProjectDictionary(obj, indent)
+            TYPE IS (FTLinkedList)
+               CALL printProjectList(obj, indent)
+            CLASS DEFAULT
+               Write(6,*) "Unknown type to print in list"
+         END SELECT
+         
+      END DO 
+      
+      CALL releaseFTMutableObjectArray(objectArray)
+   END SUBROUTINE PrintProjectList
+!
+!//////////////////////////////////////////////////////////////////////// 
 !
 !> Function that returns a c_ptr pointer to a new FTLinkedList list
 !>
