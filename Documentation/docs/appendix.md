@@ -227,7 +227,7 @@ If the SIMPLE_EXTRUSION is used, bottom topography can be optionally added to th
 
 ## Appendix E: ABAQUS mesh file format<a name="ABAQUS"></a>
 
-The [Abaqus mesh file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm) is common in the finite element community. The ABAQUS mesh file should use the `.inp` extension. The standard Abaqus format includes a list corner data and list of element connectivity information. In this sense it is similar to the ISM format without high-order boundary information. The standard Abaqus format encodes a straight sided (linear) mesh.
+The [Abaqus mesh file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm) is common in the finite element community. The ABAQUS mesh file should use the `.inp` extension. The standard Abaqus format includes a list of node data and a list of element connectivity information. In this sense it is similar to the ISM format without high-order boundary information. The standard Abaqus format encodes a straight sided (linear) mesh.
 
 Herein, we decribe an extended version to the ABAQUS format, divided into two parts. The first parts includes the standard Abaqus node and element lists. The second part encodes the high-order boundary information and naming information created by HOHQMesh. This second set of information is output in such a way that it will be ignored by standard ABAQUS file parsers, but the information is available if desired. For example, a `.inp` mesh file created by HOHQMesh can be parsed into [Trixi.jl](https://github.com/trixi-framework/Trixi.jl) to create high-order curved AMR meshes.
 
@@ -281,4 +281,4 @@ The order of the boundary names is a final difference in the mesh format. The Ab
                            -y
 
 For this mesh file output the boundary labels are reordered to adopt the order convention of `-x +x -y +y`. For comparison, the default HOHQMesh
-ordering used by ISM or ISM-v2 gives the boundary labels in the order `-y +x +y -x`.
+ordering used by ISM or ISM-v2 gives the boundary labels in the order `-y +x +y -x`. Similarly, the boundary names are reordered for the 3D HOHQMesh output to adopt the convention `-x +x -y +y -z +z` compared to the ISM formatting of 3D boundary names which is `-y +y -z +x +z -x`.
