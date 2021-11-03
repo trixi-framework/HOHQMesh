@@ -7,8 +7,8 @@
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
-      mesh file name   = MeshFiles/Snake.mesh
-      plot file name   = PlotFiles/Snake.tec
+      mesh file name   = Examples/3D/Snake/Snake.mesh
+      plot file name   = Examples/3D/Snake/Snake.tec
       stats file name  = None
       mesh file format = ISM
       polynomial order = 4

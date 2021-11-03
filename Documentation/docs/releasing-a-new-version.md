@@ -29,7 +29,7 @@ tarball will fail!*
    git tag --list 'v*' --sort -version:refname | head -n1
    ```
    This will yield something like `v1.2.3`, where `1.2.3` is the version number
-   and the `v` prefix is to indicate that this is really a version tag.
+   and the `v` prefix indicates that this is really a version tag.
 5. Compare this with the
    [latest release](https://github.com/trixi-framework/HOHQMesh/releases/latest)
    on GitHub. If the version numbers of the latest tag and the latest release
@@ -39,13 +39,13 @@ tarball will fail!*
    which [states](https://semver.org/spec/v2.0.0.html#summary)
    > Given a version number MAJOR.MINOR.PATCH, increment the:
    >
-   > MAJOR version when you make incompatible API changes,  
-   > MINOR version when you add functionality in a backwards compatible manner, and  
+   > MAJOR version when you make incompatible API changes,
+   > MINOR version when you add functionality in a backwards compatible manner, and
    > PATCH version when you make backwards compatible bug fixes.
 
    To see all the changes since the last release, you can use GitHub's `compare`
    functionality by navigating to the following address, adjusting the version
-   tag appropriately:  
+   tag appropriately:
    https://github.com/trixi-framework/HOHQMesh/compare/v1.2.3...main
    If you prefer to work to work locally in a console, you can execute
    ```bash
@@ -97,7 +97,7 @@ tarball will fail!*
    ```
 7. Navigate to https://github.com/trixi-framework/HOHQMesh/releases/new to start
    creating a new release.
-8. Enter `v1.3.0` as the `Tag version`, which will should find the Git tag you
+8. Enter `v1.3.0` as the `Tag version`, which should find the Git tag you
    just created.
 9. Use `HOHQMesh v1.3.0` as the `Release title`.
 10. Feel free to add more information about this release in the description field
