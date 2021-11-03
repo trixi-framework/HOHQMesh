@@ -4,9 +4,9 @@
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
-      mesh file name   = MeshFiles/Pond3D.mesh
-      plot file name   = PlotFiles/Pond3D.tec
-      stats file name  = Statistics/Pond3D.txt
+      mesh file name   = Examples/3D/Pond/Pond3D.mesh
+      plot file name   = Examples/3D/Pond/Pond3D.tec
+      stats file name  = Examples/3D/Pond/Pond3D.txt
       mesh file format = ISM
       polynomial order = 6
       plot file format = sem

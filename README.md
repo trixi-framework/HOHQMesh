@@ -1,5 +1,6 @@
 # HOHQMesh
 
+[![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://trixi-framework.github.io/HOHQMesh)
 [![Build Status](https://github.com/trixi-framework/HOHQMesh/workflows/CI/badge.svg)](https://github.com/trixi-framework/HOHQMesh/actions?query=workflow%3ACI)
 [![Coveralls](https://coveralls.io/repos/github/trixi-framework/HOHQMesh/badge.svg?branch=main)](https://coveralls.io/github/trixi-framework/HOHQMesh?branch=main)
 [![Codecov](https://codecov.io/gh/trixi-framework/HOHQMesh/branch/main/graph/badge.svg)](https://codecov.io/gh/trixi-framework/HOHQMesh)
@@ -9,7 +10,35 @@
   <img width="400px" src="https://user-images.githubusercontent.com/3637659/121870408-50418800-cd03-11eb-9187-dcafdf73bab2.png" />
 </p>
 
+**HOHQMesh**, the *High Order Hex-Quad Mesher*, is an open-source mesh generator
+that automatically creates quadrilateral/hexahedral meshes with high-order boundary
+information.
+
 ## Getting started
+
+HOHQMesh can be used via
+[HOHQMesh.jl](https://github.com/trixi-framework/HOHQMesh.jl), a
+[Julia](https://julialang.org) package that provides an interface to HOHQMesh and that
+supplies precompiled executables for Linux, macOS, Windows, and
+FreeBSD. If you would like to use HOHQMesh directly from the command line,
+please continue reading the next sections for instructions on how to obtain
+the sources and compile HOHQMesh yourself.
+
+
+### Install with Spack
+You can install HOHQMesh using the [Spack package manager](https://spack.io). 
+To install the HOHQMesh with Spack,
+```
+git clone https://github.com/spack/spack.git ~/spack
+source ~/spack/share/spack/setup-env.sh
+spack install hohqmesh@main
+```
+This will install HOHQMesh and all of its dependencies (including FTObjectLibrary) from source code.
+Once installed, HOHQMesh can be added to your environment using
+```
+spack load hohqmesh
+```
+
 
 ### Obtaining the sources
 You can download the
@@ -60,6 +89,7 @@ To mesh a control file, type
 ```
 where `-f` allows you to provide the path to the control file for which you want
 to create your mesh.
+
 
 ## Authors
 HOHQMesh was initiated by

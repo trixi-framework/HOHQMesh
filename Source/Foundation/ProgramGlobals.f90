@@ -2,33 +2,33 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
@@ -36,8 +36,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      ProgramGlobals.f90
-!      Created: 2010-09-01 09:06:30 -0400 
-!      By: David Kopriva  
+!      Created: 2010-09-01 09:06:30 -0400
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -81,7 +81,7 @@
 !        Mesh formatting constants
 !        -------------------------
 !
-         INTEGER, PARAMETER :: BASIC_MESH_FORMAT = 1, BASIC_PLUS_EDGES_FORMAT = 2, ISM = 3, ISM2 = 4, ISM_MM = 5
+         INTEGER, PARAMETER :: BASIC_MESH_FORMAT = 1, BASIC_PLUS_EDGES_FORMAT = 2, ISM = 3, ISM2 = 4, ISM_MM = 5, ABAQUS = 6
 !
 !        ----------------------
 !        Element type constants
@@ -102,13 +102,13 @@
 !        -----------
 !
          INTEGER, PARAMETER :: numCurvePoints = 500
-         
+
          INTEGER       :: minNumberOfElementsInsideArea = 4
          REAL(KIND=RP) :: curvatureFactor         = 2.0_RP
          REAL(KIND=RP) :: curveSubdivisionFactor  = 15.0_RP
          REAL(KIND=RP) :: minimizationTolerance   = 1.0d-7
          REAL(KIND=RP) :: edgeLengthFactor        = 0.15_RP
-         REAL(KIND=RP) :: maxParameterChange      = 0.5_RP 
+         REAL(KIND=RP) :: maxParameterChange      = 0.5_RP
          REAL(KIND=RP) :: parameterDelta          = 0.2_RP
          REAL(KIND=RP) :: subdivisionRelTol       = 0.05_RP
          REAL(KIND=RP) :: directionPenalty        = 1.0d-4
@@ -128,7 +128,7 @@
          REAL(KIND=RP) :: closeCurveFactor          = 3.25_RP  ! Should be around 3
          REAL(KIND=RP) :: closeCurveNormalAlignment = 0.7_RP   ! Dot product near 1. This used to be 0.8
          REAL(KIND=RP) :: normalTangentMin          = 0.01_RP  ! Dot of normal and tangent should be zero. Use this instead.
-         
+
          INTEGER       :: refinementType          = 2
          INTEGER       :: boundarySmoothingPasses = 1
 !
@@ -219,4 +219,3 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SM_GENERATE3D_MESH_KEY     = "generate3DMesh"
 
       END Module ProgramGlobals
-      
