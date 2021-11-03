@@ -344,7 +344,6 @@
                WRITE(iUnit, '(I0,8(", ", I0))') eID, mesh % elements(k,j) % nodeIDs
             END DO
          END DO
-
 !
 !        -------------------------------------------------------------
 !        Print element IDs with high-order boundary edge information
