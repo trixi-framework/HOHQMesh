@@ -231,6 +231,8 @@
                project % runParams % meshFileFormat = ISM2
             CASE ("ISM_MM")
                project % runParams % meshFileFormat = ISM_MM
+            CASE ("ABAQUS")
+               project % runParams % meshFileFormat = ABAQUS
             CASE DEFAULT 
          END SELECT 
       END SUBROUTINE HML_SetMeshFileFormat
