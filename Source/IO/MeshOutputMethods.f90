@@ -177,6 +177,7 @@
 
             CALL mesh % elementsIterator % moveToNext()
          END DO
+         CLOSE(fUnit)
 
       END SUBROUTINE WriteSEMMeshToTecplot
 !
@@ -310,6 +311,7 @@
 
             CALL iterator % moveToNext()
          END DO
+         CLOSE(iUnit)
 !
       END SUBROUTINE WriteISMMeshFile
 !
@@ -453,6 +455,7 @@
             WRITE( iUnit, '(9A)') "** ", (TRIM(e % boundaryInfo % bCurveName(bndyNameRemap(k))), " ", k = 1, 4)
             CALL iterator % moveToNext()
          END DO
+         CLOSE(iUnit)
 !
       END SUBROUTINE WriteABAQUSMeshFile
 !
