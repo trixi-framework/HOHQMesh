@@ -4,12 +4,12 @@
 !      +FUNCTION   HML_AllocProject() BIND(C) RESULT(cPtr)
 !      +SUBROUTINE HML_ReleaseProject(cPtr, errFlag)   BIND(C)
 !      +SUBROUTINE HML_InitWithControlFile(cPtr, cFileName, errFlag) BIND(C)
-!       SUBROUTINE HML_InitWithDictionary(cPtr, cPtrToDict, errFlag) BIND(C)
+!      -SUBROUTINE HML_InitWithDictionary(cPtr, cPtrToDict, errFlag) BIND(C)
 !
 !      +SUBROUTINE HML_GenerateMesh(cPtr, errFlag)   BIND(C)
 !      +SUBROUTINE HML_WriteMesh(cPtr, errFlag)   BIND(C)
 !      +SUBROUTINE HML_WritePlotFile(cPtr, errFlag)   BIND(C)
-!       FUNCTION HML_MeshFileFormat(self)  RESULT(fileFormat)
+!      -FUNCTION HML_MeshFileFormat(self)  RESULT(fileFormat)
 !
 !      +INTEGER(C_INT) FUNCTION HML_DefaultCharacterLength() BIND(C)
 !      +INTEGER(C_INT) FUNCTION HML_BoundaryNameLength() BIND(C)
@@ -19,8 +19,8 @@
 !
 !      +SUBROUTINE HML_SetMeshFileName( cPtr, cFileName, errFlag)  BIND(c)
 !      +SUBROUTINE HML_SetPlotFileName( cPtr, cFileName, errFlag)  BIND(c)
-!       SUBROUTINE HML_MeshFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
-!       SUBROUTINE HML_PlotFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
+!      +SUBROUTINE HML_MeshFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
+!      +SUBROUTINE HML_PlotFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
 !      +SUBROUTINE HML_SetMeshFileFormat( cPtr, cString, errFlag)  
 !
 !      +SUBROUTINE HML_SetPolynomialOrder(cPtr, n, errFlag)  BIND(C)
@@ -28,9 +28,9 @@
 !
 !       +SUBROUTINE HML_NodeLocations(cPtr, locationsArray, N, errFlag)  BIND(C)
 !       +SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)    BIND(C)
-!       SUBROUTINE HML_2DElementBoundaryNames(cPtr, namesArray, N, errFlag)    BIND(C)
-!       SUBROUTINE HML_2DElementBoundaryPoints(cPtr, boundaryPoints, p, N, errFlag)    BIND(C)
-!       SUBROUTINE HML_2DElementEdgeFlag(cPtr, curveFlag, N, errFlag)    BIND(C)
+!       -SUBROUTINE HML_2DElementBoundaryNames(cPtr, namesArray, N, errFlag)    BIND(C)
+!       +SUBROUTINE HML_2DElementBoundaryPoints(cPtr, boundaryPoints, p, N, errFlag)    BIND(C)
+!       +SUBROUTINE HML_2DElementEdgeFlag(cPtr, curveFlag, N, errFlag)    BIND(C)
 !       +SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N, errFlag)  BIND(C)
 !
 ! FTOL Functions wrapped
@@ -257,6 +257,52 @@ function HML_SetMeshFileName(proj,fileName::AbstractString)
     if erp > 0
         error(errorMessages[erp])
     end
+end
+#
+#----------------------------------------------------------------------------------
+#
+"""
+    HML_MeshFileName(proj)
+
+Returns the mesh file name used by the project
+"""
+function HML_MeshFileName(proj)
+    nBuf      = HML_DefaultCharacterLength()
+    fName     = Vector{UInt8}(undef, nBuf)
+    erp::Cint = 0
+
+    ccall((:hml_meshfilename,lib_path()),
+          Cvoid,
+          (Ref{Ptr{Cvoid}},Ptr{UInt8},Ref{Cint},Ref{Cint}), 
+          proj,fName,nBuf,erp)
+    if erp > 0
+        error(errorMessages[erp])
+    end
+    
+    return GC.@preserve fName unsafe_string(pointer(fName))
+end
+#
+#----------------------------------------------------------------------------------
+#
+"""
+    HML_PlotFileName(proj)
+
+Returns the plot file name used by the project
+"""
+function HML_PlotFileName(proj)
+    nBuf      = HML_DefaultCharacterLength()
+    fName     = Vector{UInt8}(undef, nBuf)
+    erp::Cint = 0
+
+    ccall((:hml_plotfilename,lib_path()),
+          Cvoid,
+          (Ref{Ptr{Cvoid}},Ptr{UInt8},Ref{Cint},Ref{Cint}), 
+          proj,fName,nBuf,erp)
+    if erp > 0
+        error(errorMessages[erp])
+    end
+    
+    return GC.@preserve fName unsafe_string(pointer(fName))
 end
 #
 #----------------------------------------------------------------------------------
@@ -696,7 +742,7 @@ function exerciseMesher()
     println(n)
     m = HML_NumberOfElements(p)
     println(m)
-    con = HML_2DElementConnectivity(p)
-    #display(con)
+    println(HML_MeshFileName(p))
+    println(HML_PlotFileName(p))
     HML_ReleaseProject(p)
 end
