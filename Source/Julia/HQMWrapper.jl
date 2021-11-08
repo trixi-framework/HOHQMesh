@@ -9,7 +9,6 @@
 !      +SUBROUTINE HML_GenerateMesh(cPtr, errFlag)   BIND(C)
 !      +SUBROUTINE HML_WriteMesh(cPtr, errFlag)   BIND(C)
 !      +SUBROUTINE HML_WritePlotFile(cPtr, errFlag)   BIND(C)
-!      -FUNCTION HML_MeshFileFormat(self)  RESULT(fileFormat)
 !
 !      +INTEGER(C_INT) FUNCTION HML_DefaultCharacterLength() BIND(C)
 !      +INTEGER(C_INT) FUNCTION HML_BoundaryNameLength() BIND(C)
@@ -22,13 +21,13 @@
 !      +SUBROUTINE HML_MeshFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
 !      +SUBROUTINE HML_PlotFileName(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
 !      +SUBROUTINE HML_SetMeshFileFormat( cPtr, cString, errFlag)  
-!
+!      +SUBROUTINE HML_MeshFileFormat(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
 !      +SUBROUTINE HML_SetPolynomialOrder(cPtr, n, errFlag)  BIND(C)
 !      +SUBROUTINE HML_PolynomialOrder(cPtr, p, errFlag)
 !
 !       +SUBROUTINE HML_NodeLocations(cPtr, locationsArray, N, errFlag)  BIND(C)
 !       +SUBROUTINE HML_2DElementConnectivity(cPtr, connectivityArray, N, errFlag)    BIND(C)
-!       -SUBROUTINE HML_2DElementBoundaryNames(cPtr, namesArray, N, errFlag)    BIND(C)
+!       +SUBROUTINE HML_2DElementBoundaryNames(cPtr, namesArray, N, errFlag)    BIND(C)
 !       +SUBROUTINE HML_2DElementBoundaryPoints(cPtr, boundaryPoints, p, N, errFlag)    BIND(C)
 !       +SUBROUTINE HML_2DElementEdgeFlag(cPtr, curveFlag, N, errFlag)    BIND(C)
 !       +SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N, errFlag)  BIND(C)
@@ -67,6 +66,10 @@ errorMessages = ["Object has multiple references and will not be deallocated",
                  "The Cptr being passed is not a dictionary",
                  "The Cptr being passed is not a list"]
 
+blocksThatStoreLists = Set(["OUTER_BOUNDARY", 
+                            "REFINEMENT_REGIONS" ,
+                            "INNER_BOUNDARIES", 
+                            "CHAIN"])
 #
 #----------------------------------------------------------------------------------
 #
@@ -326,6 +329,29 @@ end
 #----------------------------------------------------------------------------------
 #
 """
+    HML_MeshFileFormat(proj)
+
+Returns the format used by the project for writing a mesh file
+"""
+function HML_MeshFileFormat(proj)
+    nBuf      = HML_DefaultCharacterLength()
+    fName     = Vector{UInt8}(undef, nBuf)
+    erp::Cint = 0
+
+    ccall((:hml_meshfileformat,lib_path()),
+          Cvoid,
+          (Ref{Ptr{Cvoid}},Ptr{UInt8},Ref{Cint},Ref{Cint}), 
+          proj,fName,nBuf,erp)
+    if erp > 0
+        error(errorMessages[erp])
+    end
+    
+    return GC.@preserve fName unsafe_string(pointer(fName))
+end
+#
+#----------------------------------------------------------------------------------
+#
+"""
     HML_NumberOfNodes(proj)
 
 Returns the number of nodes in the project's mesh.
@@ -530,26 +556,35 @@ end
 """
     HML_2DElementBoundaryPoints(proj)
 
-Fill an array, dimension (3,p+1,4,N), for a 2D quad element, where 
-  N is the number of elements and p is the polynomial order.
-"""
-function HML_2DElementBoundaryPoints(proj)
+ Fill an array, dimension (LENGTH_OF_BC_STRING+1,4,N), for a 2D quad element with the 
+names of the boundaries a side is on. Interior edges have boundary names = "---"
+    """
+function HML_2DElementBoundaryNames(proj)
+    nBuf      = HML_BoundaryNameLength() + 1
+    nEl       = HML_NumberOfElements(proj)
+    names     = Array{UInt8}(undef, nBuf,4,nEl)
     erp::Cint = 0
-    N::Int = HML_NumberOfNodes(proj)
-    p::Int = HML_PolynomialOrder(proj)
 
-    if N >0
-        boundaryPoints = zeros(Cdouble,3,p+1,4,N)
-        ccall((:hml_2delementboundarypoints,lib_path()),
-        Cvoid,
-        (Ref{Ptr{Cvoid}},Ref{Cdouble},Ref{Cint},Ref{Cint},Ref{Cint}), 
-         proj,boundaryPoints,p,N,erp)
-        if erp > 0
-            error(errorMessages[erp])
-        end
-        return nodes
+    ccall((:hml_2delementboundarynames,lib_path()),
+          Cvoid,
+          (Ref{Ptr{Cvoid}},Ptr{UInt8},Ref{Cint},Ref{Cint}), 
+          proj,names,nEl,erp)
+    if erp > 0
+        error(errorMessages[erp])
     end
-    return nothing
+
+    jNames = Array{String}(undef,4,nEl)
+    cName  = Array{UInt8}(undef,nBuf)
+    for j in 1:nEl
+        for i in 1:4
+            cName = names[:,i,j]
+            name = unsafe_string(pointer(cName))
+            jNames[i,j] = name
+        end
+    end
+
+    return jNames
+    
 end
 #
 #----------------------------------------------------------------------------------
@@ -665,7 +700,7 @@ function HML_AddDictForKey(cPtrToDict, cPtrToDictToAdd, key::String)
     end
 end
 """
-    HML_AddDictToList(cPtrToDict, cPtrToDictToAdd, key::String)
+    HML_AddDictToList(cPtrToDict, cPtrToDictToAdd)
 
 Add a dictionary, encoded as a Cptr, for a given key to the FTLinkedList.
 """
@@ -724,6 +759,72 @@ function HML_PrintDictionary(cPtrToDict)
         error(errorMessages[erp])
     end
 end
+#
+#--------------------------------------------------------------------------------------
+#
+"""
+    FDictFromJDict(jDict::Dict{String,Any})
+
+    Take a control dictionary from the Julia side and convert it to
+    an FTOL dictionary for the Fortran side.
+"""
+function FDictFromJDict(jDict::Dict{String,Any})
+
+    d = HML_AllocDictionary()
+    HML_InitDictionary(d)
+
+    ConvertJDictToFDict(jDict,d)
+
+    return d
+end
+#
+#--------------------------------------------------------------------------------------
+#
+function ConvertJDictToFDict(jDict::Dict{String,Any},fDict::Ptr{Cvoid})
+
+    for (key, value) in jDict
+        if isa(value, AbstractDict)
+            if in(key,blocksThatStoreLists)
+                fList  = HML_AllocList()
+                HML_InitList(fList)
+                HML_AddListToDict(fList,fDict)
+
+                jList = value["LIST"]
+                StepThroughList(jList,fList)
+
+            else
+                d = HML_AllocDictionary()
+                HML_InitDictionary(d)
+                HML_AddDictForKey(fDict,d,key)
+                ConvertJDictToFDict(value,d)
+            end 
+        elseif isa(value, AbstractString)
+            HML_AddDictKeyAndValue(fDict,key,value)
+        elseif isa(value, AbstractArray)
+            if key == "LIST"
+                fList  = HML_AllocList()
+                HML_InitList(fList)
+                HML_AddListToDict(fList,fDict)
+                StepThroughList(value,fList)
+            elseif key == "SPLINE_DATA"
+                arraySize = size(value)
+                HML_AddArrayToDict(value,arraySize[1],arraySize[2],jDict)
+            end 
+        end 
+    end
+end
+#
+#--------------------------------------------------------------------------------------
+#
+function StepThroughList(jList::AbstractArray,fList::Ptr{Cvoid})
+
+    for jDict in jList
+        d = HML_AllocDictionary()
+        HML_InitDictionary(d)
+        ConvertJDictToFDict(jDict,d)
+        HML_AddDictToList(d,fList)
+    end
+end
 
 function exerciseDict()
     d = HML_AllocDictionary()
@@ -744,5 +845,38 @@ function exerciseMesher()
     println(m)
     println(HML_MeshFileName(p))
     println(HML_PlotFileName(p))
+    println(HML_MeshFileFormat(p))
+    names = HML_2DElementBoundaryNames(p)
     HML_ReleaseProject(p)
+end
+
+function testDict()
+    jRoot = Dict{String,Any}()
+    jRoot["TYPE"] = "root"
+
+    jC = Dict{String,Any}()
+    jC["TYPE"] = "CONTROL"
+    jC["key1"] = "value1"
+    jRoot["CONTROL"] = jC
+
+    jM = Dict{String,Any}()
+    jM["TYPE"] = "MODEL"
+    jM["key2"] = "value2"
+    jRoot["MODEL"] = jM
+
+    jL = []
+    jM["LIST"] = jL
+
+    d1 = Dict{String,Any}()
+    d1["c1"] = "dummcurve1"
+    push!(jL,d1)
+
+
+    d2 = Dict{String,Any}()
+    d2["c2"] = "dummcurve2"
+    push!(jL,d2)
+
+
+    d = FDictFromJDict(jRoot)
+    HML_PrintDictionary(d)
 end

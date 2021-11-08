@@ -59,7 +59,7 @@
 !      SUBROUTINE HML_2DElementEdgeFlag(cPtr, curveFlag, N, errFlag)    BIND(C)
 !      SUBROUTINE HML_2DEdgeConnectivity(cPtr, connectivityArray, N, errFlag)  BIND(C)
 !
-!      FUNCTION HML_MeshFileFormat(self)  RESULT(fileFormat)
+!      SUBROUTINE HML_MeshFileFormat(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
 !      SUBROUTINE MeshCheck(project,N, errFlag)  
 !
 !////////////////////////////////////////////////////////////////////////
@@ -241,21 +241,67 @@
 ! 
 !> Get the mesh file format the project will use to write a mesh file
 !>
-      FUNCTION HML_MeshFileFormat(self) RESULT(fileFormat)
+!      FUNCTION HML_MeshFileFormat(self) RESULT(fileFormat)
+!         IMPLICIT NONE  
+!         CLASS (MeshProject)                       :: self
+!         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)   :: fileFormat
+!         
+!         SELECT CASE ( self % runParams % meshFileFormat )
+!            CASE( ISM ) 
+!               fileFormat = "ISM"
+!            CASE (ISM2)
+!               fileFormat = "ISM-v2"
+!            CASE (ISM_MM)
+!               fileFormat = "ISM-MM"
+!            CASE (ABAQUS)
+!               fileFormat = "ABAQUS"
+!            CASE DEFAULT 
+!         END SELECT 
+!      END FUNCTION HML_MeshFileFormat
+!
+!//////////////////////////////////////////////////////////////////////// 
+!
+!> Get the mesh file format the project will use to write a mesh file
+!> On entry, strBuf is the allocated buffer size for the cString. 
+!> On return, it is the actual length.
+!> An error is returned if the string is truncated.
+!>
+      SUBROUTINE HML_MeshFileFormat(cPtr, nameAsCString, strBuf, errFlag) BIND(C)
          IMPLICIT NONE  
-         CLASS (MeshProject)                       :: self
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)   :: fileFormat
+         TYPE(c_ptr)                                :: cPtr
+         INTEGER(C_INT), INTENT(OUT)                :: errFlag
+         INTEGER(C_INT), INTENT(INOUT)              :: strBuf ! Includes termination
+         TYPE( MeshProject )   , POINTER            :: project
+         CHARACTER(KIND=c_char), DIMENSION(strBuf)  :: nameAsCString
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: fileFormat
+         INTEGER(C_INT)                             :: fFormatLength
          
-         SELECT CASE ( self % runParams % meshFileFormat )
+         CALL ptrToProject(cPtr = cPtr, proj = project, errFlag = errFlag)
+         IF(errFlag /= HML_ERROR_NONE)     RETURN 
+         
+         SELECT CASE ( project % runParams % meshFileFormat )
             CASE( ISM ) 
                fileFormat = "ISM"
             CASE (ISM2)
                fileFormat = "ISM-v2"
             CASE (ISM_MM)
                fileFormat = "ISM-MM"
+            CASE (ABAQUS)
+               fileFormat = "ABAQUS"
             CASE DEFAULT 
          END SELECT 
-      END FUNCTION HML_MeshFileFormat
+         
+         fFormatLength = LEN_TRIM(fileFormat)
+         IF( fFormatLength > strBuf-1)     THEN
+            errFlag = HML_ERROR_STRING_TRUNCATED
+            strBuf = fFormatLength
+         END IF  
+         
+         CALL f_to_c_stringSub(fString = fileFormat,      &
+                               cString = nameAsCString, &
+                               cStrLen = strBuf)
+         
+      END SUBROUTINE HML_MeshFileFormat
 
 !//////////////////////////////////////////////////////////////////////// 
 !

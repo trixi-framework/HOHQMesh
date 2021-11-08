@@ -397,18 +397,35 @@
 !
       TYPE(FTMutableObjectArray)             , POINTER :: objectArray
       CLASS(FTObject)                        , POINTER :: obj
-      INTEGER                                          :: k
+      INTEGER                                          :: k, i
+      CHARACTER(LEN=4)                                 :: tab = "    "
       
       objectArray => list % allObjects()
       
       DO k = 1, objectArray % COUNT() 
-      
+         obj => objectArray % objectAtIndex(k)
+         
          SELECT TYPE (obj)
             TYPE IS (FTValueDictionary)
-               CALL PrintProjectDictionary(obj, indent)
+               Write(6,*)
+               DO i = 1,indent 
+                  WRITE(6,FMT="(A4)",ADVANCE = "NO") tab
+               END DO 
+               Write(6,*) "Dictionary"
+               Write(6,*)
+               CALL PrintProjectDictionary(obj, indent+1)
             TYPE IS (FTLinkedList)
-               CALL printProjectList(obj, indent)
+               Write(6,*)
+               DO i = 1,indent 
+                  WRITE(6,FMT="(A4)",ADVANCE = "NO") tab
+               END DO 
+               Write(6,*) "List"
+               Write(6,*)
+               CALL printProjectList(obj, indent+1)
             CLASS DEFAULT
+               DO i = 1,indent 
+                  WRITE(6,FMT="(A4)",ADVANCE = "NO") tab
+               END DO 
                Write(6,*) "Unknown type to print in list"
          END SELECT
          
