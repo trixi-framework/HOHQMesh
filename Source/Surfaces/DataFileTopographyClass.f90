@@ -99,18 +99,22 @@
          INTEGER :: nnodes, j, k, file_check
          REAL(KIND=RP) :: inv_dx, inv_dy
          CHARACTER(LEN=ERROR_MESSAGE_LENGTH) :: msg
+         LOGICAL :: a_data_file
+
+         ! Check to make sure the input topographyFile is valid
+         ! TODO: Fix me. I am not certain who the poster should be in this context. If this is uncommented then the code won't compile
+         ! INQUIRE( FILE=topographyFile, EXIST=a_data_file )
+         ! IF (.NOT.a_data_file) THEN
+         !    CALL ThrowErrorExceptionOfType(poster = "SMDataFileTopography", &
+         !                                   msg    = "Unable to open the given topography data file" &
+         !                                          &  //TRIM(ADJUSTL(topographyFile)), &
+         !                                   typ    = FT_ERROR_FATAL)
+         ! END IF
 
          CALL self % SMTopography % initTopography()
 
          ! Save the data source
          self % file_name = topographyFile
-
-         ! TODO: Use INQUIRE and throw an appropriate error
-      !    IF( file_check .GT. 0)     THEN
-      !       msg = "Unable to open the given topography data file "//TRIM(ADJUSTL(topographyFile))
-      !       PRINT*, msg
-      !       STOP
-      !    END IF
 
          ! Open the file and make sure everything is okay
          ! TODO: How to pick the UNIT? I always use 24601 because I know it is free, but that is a bit hacky
