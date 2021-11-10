@@ -295,9 +295,11 @@
          dz_dx  = pullFourCorners( self % dzdx  , j, k, self % nnodes )
          dz_dy  = pullFourCorners( self % dzdy  , j, k, self % nnodes )
          dz_dxy = pullFourCorners( self % d2zdxy, j, k, self % nnodes )
-
-         ! Compute the bicubic coefficents
-
+!
+!        --------------------------------
+!        Compute the bicubic coefficients
+!        --------------------------------
+!
          ! Get the pre-computed weigthing matrix for the coefficients
          weight_Matrix = fillBicubicWeightMatrix()
 
@@ -313,8 +315,11 @@
 
          ! Store resulting coefficents in a form better for Horner's rule
          coeffs = RESHAPE( coeff_vec, (/4, 4/), ORDER = (/2, 1/) )
-
-         ! Compute the bi-cubic interpolation with the auxiliary variables u, v
+!
+!        --------------------------------------------------------------------
+!        Compute the bi-cubic interpolation with the auxiliary variables u, v
+!        --------------------------------------------------------------------
+!
          z_val = 0.0_RP
          v = ( t(1) - self % x_values(j) ) / dx
          u = ( t(2) - self % y_values(k) ) / dy
