@@ -1,0 +1,50 @@
+%
+% An example using a bottom topography constructed from a data file
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/3D/MtStHelens/MtStHelens.inp
+      plot file name   = Examples/3D/MtStHelens/MtStHelens.tec
+      stats file name  = Examples/3D/MtStHelens/MtStHelens.txt
+      mesh file format = ABAQUS
+      polynomial order = 5
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+
+   \begin{MESH_PARAMETERS}
+      element type         = hex
+   \end{MESH_PARAMETERS}
+%
+% x_end = 9.38, y_end = 13.57
+%
+   \begin{BACKGROUND_GRID}
+       x0 = [ 0.0, 0.0, 0.0]
+       dx = [ 0.335, 0.33925, 1.0]
+       N  = [ 28, 40, 5]
+   \end{BACKGROUND_GRID}
+
+   \begin{SIMPLE_EXTRUSION}
+      direction          = 3
+      height             = 4.0
+      subdivisions       = 6
+      start surface name = Mountain
+      end surface name   = Sky
+   \end{SIMPLE_EXTRUSION}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+\begin{TOPOGRAPHY}
+	data file = Examples/3D/MtStHelens/sthelens_grid_data.dat
+\end{TOPOGRAPHY}
+
+\end{MODEL}
+\end{FILE}
