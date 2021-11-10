@@ -801,6 +801,7 @@
          INTEGER                                    :: numKnots
          
          INTEGER, EXTERNAL :: GetIntValue
+         LOGICAL :: curveFileFound
 !
 !        ------------
 !        Get the data
@@ -814,17 +815,35 @@
                                            message = "spline block has no name. Using default name spline", &
                                            poster = "ImportSplineBlock")
 
-         curveFile = ""
-         CALL SetStringValueFromDictionary(valueToSet = curveFile,                 &
-                                           sourceDict = splineDict,                &
-                                           key = "file",                           &
-                                           errorLevel = FT_ERROR_WARNING,          &
-                                           message = "spline block has no file. Assuming knots are given in spline data block", &
-                                           poster = "ImportSplineBlock")
+         IF( splineDict % containsKey(SPLINE_FILE_KEY) )THEN
 
+            CALL SetStringValueFromDictionary(valueToSet = curveFile,                 &
+                                              sourceDict = splineDict,                &
+                                              key = "file",                           &
+                                              errorLevel = FT_ERROR_WARNING,          &
+                                              message = "spline block has no file. Assuming knots are given in spline data block", &
+                                              poster = "ImportSplineBlock")
 
-         IF(TRIM(curveFile) == "") THEN
+            INQUIRE( FILE=TRIM(curveFile), EXIST=curveFileFound )
+
+            IF(.NOT. curveFileFound)     THEN
+               CALL ThrowErrorExceptionOfType(poster = "ImportSplineBlock", &
+                                              msg    = "Spline curve file not found",&
+                                              typ    = FT_ERROR_FATAL)
+               RETURN 
+            END IF 
+
+            ALLOCATE(cCurve)
+            CALL cCurve % initWithDataFile( TRIM(curveFile), curveName, self % curveCount + 1 )
+            !Spline curves have no exceptions thrown
+            curvePtr => cCurve
+            CALL chain  % addCurve(curvePtr)
+            obj => cCurve
+            CALL release(obj)
+
 !
+         ELSE
+
             CALL SetIntegerValueFromDictionary(valueToSet = numKnots,             &
                                                sourceDict = splineDict,           &
                                                key = "nKnots",                    &
@@ -862,14 +881,6 @@
             CALL chain  % addCurve(curvePtr)
             obj => cCurve
             CALL release(obj)
-
-         ELSE ! Data File Given
-
-            ALLOCATE(cCurve)
-            CALL cCurve % initWithDataFile( TRIM(curveFile), curveName, self % curveCount + 1 )
-            !Spline curves have no exceptions thrown
-            curvePtr => cCurve
-            CALL chain  % addCurve(curvePtr)
 
          ENDIF
 

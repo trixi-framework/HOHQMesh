@@ -46,6 +46,12 @@
       USE SMConstants
       IMPLICIT NONE
 !
+!     ---------
+!     Constants
+!     ---------
+!
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SPLINE_FILE_KEY = 'file'
+!
 !     ---------------------
 !     Class type definition
 !     ---------------------
