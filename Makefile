@@ -24,6 +24,7 @@ ControlFileReader.o \
 CurveConversions.o \
 CurveInterpolantClass.o \
 CurveTests.o \
+DataFileTopographyClass.o \
 ElementOperations.o \
 Encoder.o \
 EquationEvaluatorClass.o \
@@ -187,6 +188,14 @@ Assert.o \
 SMSplineCurveClass.o \
 SMTopographyClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/CurveTests.f90
+
+DataFileTopographyClass.o : $(HOHQMESHPATH)/Source/Surfaces/DataFileTopographyClass.f90 \
+FTExceptionClass.o \
+SMConstants.o \
+SMTopographyClass.o \
+EquationEvaluatorClass.o \
+ProgramGlobals.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/DataFileTopographyClass.f90
 
 ElementOperations.o :$(HOHQMESHPATH)/Source/MeshObjects/ElementOperations.f90 \
 SMMeshClass.o
@@ -635,6 +644,7 @@ FTExceptionClass.o \
 FTDataClass.o \
 SMChainedCurveClass.o \
 ParametricEquationCurveClass.o \
+DataFileTopographyClass.o \
 SMConstants.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Project/Model/SMModel.f90
 
