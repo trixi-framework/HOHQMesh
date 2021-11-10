@@ -92,6 +92,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
        SUBROUTINE initWithDataFile(self, topographyFile)
+         USE ErrorTypesModule
          IMPLICIT NONE
          CLASS(SMDataFileTopography) :: self
          CHARACTER(LEN=*)            :: topographyFile
@@ -102,14 +103,14 @@
          LOGICAL :: a_data_file
 
          ! Check to make sure the input topographyFile is valid
-         ! TODO: Fix me. I am not certain who the poster should be in this context. If this is uncommented then the code won't compile
-         ! INQUIRE( FILE=topographyFile, EXIST=a_data_file )
-         ! IF (.NOT.a_data_file) THEN
-         !    CALL ThrowErrorExceptionOfType(poster = "SMDataFileTopography", &
-         !                                   msg    = "Unable to open the given topography data file" &
-         !                                          &  //TRIM(ADJUSTL(topographyFile)), &
-         !                                   typ    = FT_ERROR_FATAL)
-         ! END IF
+         ! TODO: Fix me. I am not certain who the poster should be in this context. 
+         INQUIRE( FILE=topographyFile, EXIST=a_data_file )
+         IF (.NOT.a_data_file) THEN
+            CALL ThrowErrorExceptionOfType(poster = "SMDataFileTopography", &
+                                           msg    = "Unable to open the given topography data file" &
+                                                  &  //TRIM(ADJUSTL(topographyFile)), &
+                                           typ    = FT_ERROR_FATAL)
+         END IF
 
          CALL self % SMTopography % initTopography()
 
