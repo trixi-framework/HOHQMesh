@@ -71,6 +71,28 @@ The second type of curve is the `SPLINE_CURVE` type, which fits a cubic spline t
 
 As before, the first line after the \begin is the name of the curve. It is followed by the number of nodes in the spline. The data columns that follow are the nodes given by t<sub>j</sub>,x<sub>j</sub>,y<sub>j</sub>,z<sub>j</sub>. This particular spline is closed, so the location of the last node is the same as the first. Again, the z<sub>j</sub> values must currently be zero to ensure that curves are in the x-y plane.
 
+You can also specify spline curve data in a separate file.
+
+	\begin{SPLINE_CURVE}
+		name = SplineBoundaryCurve
+		file = myspline.txt
+        \end{SPLINE_CURVE}
+
+The first line of the file containing the spline data states the number of knots in the spline, and the following lines list the spline parameter and x,y,z positions on each row. For example, `myspline.txt` that is consistent with the above example would read
+
+        9
+	0.000000000000000 -3.50000000000000  3.50000000000000 0.0
+	3.846153846153846E-002 -3.20000000000000  5.00000000000 0.0
+	7.692307692307693E-002 -2.00000000000000  6.00000000000 0.0
+	0.769230769230769  0.000000000000000 -1.00000000000000 0.0
+	0.807692307692308 -1.00000000000000 -1.00000000000000 0.0
+	0.846153846153846 -2.00000000000000 -0.800000000000000 0.0
+	0.884615384615385 -2.50000000000000  0.000000000000000 0.0
+	0.923076923076923 -3.00000000000000  1.00000000000000 0.0
+	1.00000000000000 -3.50000000000000  3.50000000000000 0.0
+
+See `Examples/2d/IndianOceanFromFile` for an example.
+
 ### Endpoints Line Definition<a name="EndPointsLine"></a>
 The next type of curve is the `END_POINTS_LINE` type that takes two end points and puts a straight line between them. An example is
 
