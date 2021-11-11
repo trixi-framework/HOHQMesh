@@ -817,13 +817,9 @@
 
          IF( splineDict % containsKey(SPLINE_FILE_KEY) )THEN
 
-            CALL SetStringValueFromDictionary(valueToSet = curveFile,                 &
-                                              sourceDict = splineDict,                &
-                                              key = "file",                           &
-                                              errorLevel = FT_ERROR_WARNING,          &
-                                              message = "spline block has no file. Assuming knots are given in spline data block", &
-                                              poster = "ImportSplineBlock")
-
+            curveFile = splineDict % stringValueforKey( key = SPLINE_FILE_KEY, &
+                                                        requestedLength = DEFAULT_CHARACTER_LENGTH )
+                                                
             INQUIRE( FILE=TRIM(curveFile), EXIST=curveFileFound )
 
             IF(.NOT. curveFileFound)     THEN
