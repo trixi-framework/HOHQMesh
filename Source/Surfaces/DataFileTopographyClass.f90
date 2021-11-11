@@ -103,13 +103,11 @@
          LOGICAL :: a_data_file
 
          ! Check to make sure the input topographyFile is valid
-         ! TODO: Fix me. I am not certain who the poster should be in this context. 
          INQUIRE( FILE=topographyFile, EXIST=a_data_file )
          IF (.NOT.a_data_file) THEN
-            CALL ThrowErrorExceptionOfType(poster = "SMDataFileTopography", &
-                                           msg    = "Unable to open the given topography data file" &
-                                                  &  //TRIM(ADJUSTL(topographyFile)), &
-                                           typ    = FT_ERROR_FATAL)
+            WRITE(msg, *)"Unable to open the topography data file "//TRIM(ADJUSTL(topographyFile))
+            CALL ThrowErrorExceptionOfType("initWithDataFile", msg, FT_ERROR_FATAL)
+            RETURN
          END IF
 
          CALL self % SMTopography % initTopography()
@@ -172,6 +170,7 @@
             END DO ! j
          END DO ! k
 
+         RETURN
        END SUBROUTINE initWithDataFile
 !
 !////////////////////////////////////////////////////////////////////////
