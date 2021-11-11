@@ -740,7 +740,7 @@
 !
          CHARACTER(LEN = EQUATION_STRING_LENGTH)   :: eqn
          CLASS(SMEquationTopography), POINTER      :: topog
-         CHARACTER(LEN=EQUATION_STRING_LENGTH)     :: topog_file
+         CHARACTER(LEN = DEFAULT_FILE_PATH_LENGTH) :: topog_file
          CLASS(SMDataFileTopography), POINTER      :: topog_data
 !
 !        ----------
@@ -762,7 +762,7 @@
             self % topography => topog
          ELSEIF ( dict % containsKey(TOPOGRAPHY_FROM_FILE_KEY) )     THEN
             topog_file = dict % stringValueForKey(key             = TOPOGRAPHY_FROM_FILE_KEY, &
-                                                  requestedLength = EQUATION_STRING_LENGTH)
+                                                  requestedLength = DEFAULT_FILE_PATH_LENGTH)
             ALLOCATE(topog_data)
             CALL topog_data % initWithDataFile(topographyFile = topog_file)
             IF(ReturnOnFatalError())     RETURN

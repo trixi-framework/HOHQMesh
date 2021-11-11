@@ -16,7 +16,7 @@
       element type         = hex
    \end{MESH_PARAMETERS}
 %
-% x \in [0.0, 9.38], y \in [0.0, 13.57]
+% x \in [0.0 km, 9.38 km], y \in [0.0 km, 13.57 km]
 %
    \begin{BACKGROUND_GRID}
        x0 = [ 0.0, 0.0, 0.0]
