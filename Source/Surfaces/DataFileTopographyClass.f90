@@ -97,7 +97,7 @@
          CLASS(SMDataFileTopography) :: self
          CHARACTER(LEN=*)            :: topographyFile
 
-         INTEGER :: nnodes, j, k, file_check
+         INTEGER :: nnodes, j, k, file_unit
          REAL(KIND=RP) :: inv_dx, inv_dy
          CHARACTER(LEN=ERROR_MESSAGE_LENGTH) :: msg
          LOGICAL :: a_data_file
@@ -106,7 +106,9 @@
          INQUIRE( FILE=topographyFile, EXIST=a_data_file )
          IF (.NOT.a_data_file) THEN
             WRITE(msg, *)"Unable to open the topography data file "//TRIM(ADJUSTL(topographyFile))
-            CALL ThrowErrorExceptionOfType("initWithDataFile", msg, FT_ERROR_FATAL)
+            CALL ThrowErrorExceptionOfType(poster = "DataFileTopography/initWithDataFile", &
+                                           msg    = msg, &
+                                           typ    = FT_ERROR_FATAL)
             RETURN
          END IF
 
@@ -116,12 +118,11 @@
          self % file_name = topographyFile
 
          ! Open the file and make sure everything is okay
-         ! TODO: How to pick the UNIT? I always use 24601 because I know it is free, but that is a bit hacky
-         OPEN(UNIT=24601, FILE=topographyFile, IOSTAT=file_check)
+         OPEN(NEWUNIT=file_unit, FILE=topographyFile)
 
          ! Read the number of points available in the bottom topography data
-         READ(24601, *) ! eat the header
-         READ(24601, *) nnodes
+         READ(file_unit, *) ! eat the header
+         READ(file_unit, *) nnodes
          self % nnodes = nnodes
 
          ! Allocate the memory and zero it out
@@ -137,25 +138,25 @@
          self % d2zdxy   = 0.0_RP
 
          ! Read the data into appropriate storage arrays
-         READ(24601, *) ! skip the header for x_values list
+         READ(file_unit, *) ! skip the header for x_values list
          DO j = 1,nnodes
-            READ(24601, *) self % x_values(j)
+            READ(file_unit, *) self % x_values(j)
          END DO ! j
 
-         READ(24601, *) ! skip the header for y_values list
+         READ(file_unit, *) ! skip the header for y_values list
          DO k = 1,nnodes
-            READ(24601, *) self % y_values(k)
+            READ(file_unit, *) self % y_values(k)
          END DO ! k
 
-         READ(24601, *) ! skip the header for z_nodes list
+         READ(file_unit, *) ! skip the header for z_nodes list
          DO k = 1,nnodes
             DO j = 1,nnodes
-               READ(24601, *) self % z_values(j, k)
+               READ(file_unit, *) self % z_values(j, k)
             END DO ! j
          END DO ! k
 
          ! Close the file
-         CLOSE(24601)
+         CLOSE(file_unit)
 
          ! Create central derivative approximations for z_x, z_y, and z_xy
          ! Note for convenience the edge cases are kept to be 0.0_RP
