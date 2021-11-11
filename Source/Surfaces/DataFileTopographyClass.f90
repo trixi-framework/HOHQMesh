@@ -41,7 +41,6 @@
 !
 !      Computes the values of z(x,y) using a bicubic interpolation from data
 !      provided in a file.
-!      TODO: Remove legacy bilinear interpolation. Only kept currently for testing.
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -91,7 +90,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-       SUBROUTINE initWithDataFile(self, topographyFile)
+      SUBROUTINE initWithDataFile(self, topographyFile)
          USE ErrorTypesModule
          IMPLICIT NONE
          CLASS(SMDataFileTopography) :: self
@@ -171,12 +170,11 @@
             END DO ! j
          END DO ! k
 
-         RETURN
-       END SUBROUTINE initWithDataFile
+      END SUBROUTINE initWithDataFile
 !
 !////////////////////////////////////////////////////////////////////////
 !
-       SUBROUTINE destructDFTopography(self)
+      SUBROUTINE destructDFTopography(self)
          IMPLICIT NONE
          TYPE(SMDataFileTopography) :: self
 
@@ -185,7 +183,7 @@
          DEALLOCATE( self % x_values, self % y_values, self % z_values)
          DEALLOCATE( self % dzdx, self % dzdy, self % d2zdxy)
 
-       END SUBROUTINE destructDFTopography
+      END SUBROUTINE destructDFTopography
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -205,70 +203,17 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      INTEGER FUNCTION getLeftIndex(values_list, test_point, N) RESULT(idx)
-      ! Naive loop through a set of data in values_list to determine the left index
-      ! of the interval that contains test_point
-      ! ACHTUNG! Assumes that the data in values_list is ordered
-         IMPLICIT NONE
-         INTEGER                    , INTENT(IN) :: N
-         REAL(KIND=RP)              , INTENT(IN) :: test_point
-         REAL(KIND=RP), DIMENSION(N), INTENT(IN) :: values_list
-      ! local variables
-         INTEGER :: j
-
-         DO j = 1,N-1
-            IF ( ( test_point .GE. values_list(j) ) .AND. ( test_point .LE. values_list(j+1) ) ) THEN
-               idx = j
-               EXIT
-            END IF
-         END DO ! j
-      END FUNCTION getLeftIndex
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      FUNCTION pullFourCorners(z_array, x_idx, y_idx, N)  RESULT(corns)
-         ! Extract four corner values (in anti-clockwise orientation)
-         ! ACHTUNG 1! Assumes ordered grid data is provided by the file
-         ! ACHTUNG 2! Assumes the same number of points in each direction for the z values array
-         IMPLICIT NONE
-         INTEGER                       , INTENT(IN) :: N, x_idx, y_idx
-         REAL(KIND=RP), DIMENSION(N, N), INTENT(IN) :: z_array
-         REAL(KIND=RP)                              :: corns(4)
-
-         corns(1) = z_array( x_idx     , y_idx     )
-         corns(2) = z_array( x_idx + 1 , y_idx     )
-         corns(3) = z_array( x_idx + 1 , y_idx + 1 )
-         corns(4) = z_array( x_idx     , y_idx + 1 )
-
-      END FUNCTION pullFourCorners
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      REAL(KIND=RP) FUNCTION evaluateBilinearInterpolant(self, t)  RESULT(z_val)
+      FUNCTION positionOnDFTopographyAt(self, t)  RESULT(x)
          IMPLICIT NONE
          CLASS(SMDataFileTopography) :: self
          REAL(KIND=RP)               :: t(2)
-         ! local variables
-         INTEGER       :: j, k
-         REAL(KIND=RP) :: u, v, z_corners(4)
+         REAL(KIND=RP)               :: x(3)
 
-         ! Get the indexing of the current test point
-         j = getLeftIndex( self % x_values, t(1), self % nnodes )
-         k = getLeftIndex( self % y_values, t(2), self % nnodes )
+          x(1) = t(1)
+          x(2) = t(2)
+          x(3) = evaluateBicubicInterpolant(self, t)
 
-         ! Get the four corners in the correct orientation
-         z_corners = pullFourCorners( self % z_values, j, k, self % nnodes )
-
-         ! Compute the bi-linear interpolation with the auxiliary variables u, v
-         v = ( t(1) - self % x_values(j) ) / ( self % x_values(j+1) - self % x_values(j) )
-         u = ( t(2) - self % y_values(k) ) / ( self % y_values(k+1) - self % y_values(k) )
-
-         z_val =   (1.0_RP - v) * (1.0_RP - u) * z_corners(1) &
-                 +           v  * (1.0_RP - u) * z_corners(2) &
-                 +           v  *           u  * z_corners(3) &
-                 + (1.0_RP - v) *           u  * z_corners(4)
-
-      END FUNCTION evaluateBilinearInterpolant
+      END FUNCTION positionOnDFTopographyAt
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -336,18 +281,42 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION positionOnDFTopographyAt(self, t)  RESULT(x)
-        IMPLICIT NONE
-        CLASS(SMDataFileTopography) :: self
-        REAL(KIND=RP)               :: t(2)
-        REAL(KIND=RP)               :: x(3)
+      INTEGER FUNCTION getLeftIndex(values_list, test_point, N) RESULT(idx)
+         ! Naive loop through a set of data in values_list to determine the left index
+         ! of the interval that contains test_point
+         ! ACHTUNG! Assumes that the data in values_list is ordered
+         IMPLICIT NONE
+         INTEGER                    , INTENT(IN) :: N
+         REAL(KIND=RP)              , INTENT(IN) :: test_point
+         REAL(KIND=RP), DIMENSION(N), INTENT(IN) :: values_list
+         ! local variables
+         INTEGER :: j
 
-         x(1) = t(1)
-         x(2) = t(2)
-         x(3) = evaluateBicubicInterpolant(self, t)
-      !     x(3) = evaluateBilinearInterpolant(self, t)
+         DO j = 1,N-1
+            IF ( ( test_point .GE. values_list(j) ) .AND. ( test_point .LE. values_list(j+1) ) ) THEN
+               idx = j
+               EXIT
+            END IF
+         END DO ! j
+      END FUNCTION getLeftIndex
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION pullFourCorners(z_array, x_idx, y_idx, N)  RESULT(corns)
+         ! Extract four corner values (in anti-clockwise orientation)
+         ! ACHTUNG 1! Assumes ordered grid data is provided by the file
+         ! ACHTUNG 2! Assumes the same number of points in each direction for the z values array
+         IMPLICIT NONE
+         INTEGER                       , INTENT(IN) :: N, x_idx, y_idx
+         REAL(KIND=RP), DIMENSION(N, N), INTENT(IN) :: z_array
+         REAL(KIND=RP)                              :: corns(4)
 
-      END FUNCTION positionOnDFTopographyAt
+         corns(1) = z_array( x_idx     , y_idx     )
+         corns(2) = z_array( x_idx + 1 , y_idx     )
+         corns(3) = z_array( x_idx + 1 , y_idx + 1 )
+         corns(4) = z_array( x_idx     , y_idx + 1 )
+
+      END FUNCTION pullFourCorners
 !
 !////////////////////////////////////////////////////////////////////////
 !
