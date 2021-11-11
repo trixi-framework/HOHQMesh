@@ -569,6 +569,8 @@
                   hex8Mesh % elements(quadElementID,j) % bFaceName(3) = &
                   parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_STARTNAME_KEY,&
                                                            requestedLength = LINE_LENGTH)
+                  ! Turn on boundary interpolant at the extruded bottom !
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(3) = ON 
                END IF 
                IF (j == numberOfLayers)     THEN 
                   hex8Mesh % elements(quadElementID,j) % bFaceName(5) = &
