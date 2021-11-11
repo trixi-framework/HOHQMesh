@@ -84,6 +84,40 @@
          PROCEDURE :: printDescription => printDFDescription
       END TYPE SMDataFileTopography
 !
+!     ----------------------------------------------------------------------------
+!     Inverse matrix necessary to find the 16 coefficients needed
+!     for the bicubic interpolation routine. Details on this matrix can
+!     found here https://www.giassa.net/?page_id=371. Or, in the words of
+!     Numerical Recipes in Fortran 77, the formulas for the bicubic coefficents
+!     "are just a complicated linear transformation [which] having been determined
+!      once in the mists of numerical history, can be tabulated and forgotten."
+!     This is one implementation of such a tabulation using compressed column
+!     storage (CCS) strategy because the matrix is sparse.
+!     ----------------------------------------------------------------------------
+!
+      REAL(KIND=RP), PARAMETER, DIMENSION(100), PRIVATE :: values_weight_Matrix = (/ &
+             1.0_RP, -3.0_RP,  2.0_RP, -3.0_RP,  9.0_RP, -6.0_RP,  2.0_RP, -6.0_RP,  4.0_RP,  3.0_RP, &
+            -9.0_RP,  6.0_RP, -2.0_RP,  6.0_RP, -4.0_RP,  9.0_RP, -6.0_RP, -6.0_RP,  4.0_RP,  3.0_RP, &
+            -2.0_RP, -9.0_RP,  6.0_RP,  6.0_RP, -4.0_RP,  1.0_RP, -3.0_RP,  2.0_RP, -2.0_RP,  6.0_RP, &
+            -4.0_RP,  1.0_RP, -3.0_RP,  2.0_RP, -1.0_RP,  3.0_RP, -2.0_RP,  1.0_RP, -3.0_RP,  2.0_RP, &
+            -3.0_RP,  2.0_RP,  3.0_RP, -2.0_RP,  3.0_RP, -2.0_RP, -6.0_RP,  4.0_RP,  3.0_RP, -2.0_RP, &
+             1.0_RP, -2.0_RP,  1.0_RP, -3.0_RP,  6.0_RP, -3.0_RP,  2.0_RP, -4.0_RP,  2.0_RP,  3.0_RP, &
+            -6.0_RP,  3.0_RP, -2.0_RP,  4.0_RP, -2.0_RP, -3.0_RP,  3.0_RP,  2.0_RP, -2.0_RP, -1.0_RP, &
+             1.0_RP,  3.0_RP, -3.0_RP, -2.0_RP,  2.0_RP,  1.0_RP, -2.0_RP,  1.0_RP, -2.0_RP,  4.0_RP, &
+            -2.0_RP,  1.0_RP, -2.0_RP,  1.0_RP, -1.0_RP,  2.0_RP, -1.0_RP,  1.0_RP, -2.0_RP,  1.0_RP, &
+             1.0_RP, -1.0_RP, -1.0_RP,  1.0_RP, -1.0_RP,  1.0_RP,  2.0_RP, -2.0_RP, -1.0_RP,  1.0_RP /)
+
+      INTEGER, PARAMETER, DIMENSION(100), PRIVATE :: row_index_weight_Matrix = (/ &
+             1, 3 , 4 , 9 , 11, 12, 13, 15, 16, 9 , 11, 12, 13, 15, 16, 11, 12, &
+            15, 16, 3 , 4 , 11, 12, 15, 16, 5 , 7 , 8 , 9 , 11, 12, 13, 15, 16, &
+             9, 11, 12, 13, 15, 16, 11, 12, 15, 16, 7 , 8 , 11, 12, 15, 16, 2 , &
+             3, 4 , 10, 11, 12, 14, 15, 16, 10, 11, 12, 14, 15, 16, 11, 12, 15, &
+            16, 3 ,  4, 11, 12, 15, 16, 6 , 7 , 8 , 10, 11, 12, 14, 15, 16, 10, &
+            11, 12, 14, 15, 16, 11, 12, 15, 16, 7 , 8 , 11, 12, 15, 16 /)
+
+      INTEGER, PARAMETER, DIMENSION(17), PRIVATE :: column_pointers_weight_Matrix = (/ &
+                        1, 10, 16, 20, 26, 35, 41, 45, 51, 60, 66, 70, 76, 85, 91, 95, 101 /)
+!
 !     ========
       CONTAINS
 !     ========
@@ -230,7 +264,6 @@
          REAL(KIND=RP) :: dx, dy, temp
          REAL(KIND=RP), DIMENSION(16) :: work_vec, coeff_vec
          REAL(KIND=RP), DIMENSION(4,4) :: coeffs
-         REAL(KIND=RP), DIMENSION(16,16) :: weight_Matrix
 
          ! Get the indexing of the current test point
          j = getLeftIndex( self % x_values, t(1), self % nnodes )
@@ -250,18 +283,15 @@
 !        Compute the bicubic coefficients
 !        --------------------------------
 !
-         ! Get the pre-computed weigthing matrix for the coefficients
-         weight_Matrix = fillBicubicWeightMatrix()
-
          ! Fill a work vector
          work_vec(1:4)   = z_corners(:)
          work_vec(5:8)   = dz_dx(:) * dx
          work_vec(9:12)  = dz_dy(:) * dy
          work_vec(13:16) = dz_dxy(:) * dx * dy
 
-         ! Matrix multiplication with the known inverse weighting matrix
-         !   TODO: Speedup?! This is a sparse matrix-vector product so could be improved
-         coeff_vec = MATMUL( weight_Matrix, work_vec )
+         ! Sparse matrix multiplication with the known inverse weighting matrix
+         ! pre-computed and stored above
+         coeff_vec = SparseCCS_MxV( work_vec )
 
          ! Store resulting coefficents in a form better for Horner's rule
          coeffs = RESHAPE( coeff_vec, (/4, 4/), ORDER = (/2, 1/) )
@@ -278,6 +308,29 @@
          END DO ! i
 
       END FUNCTION evaluateBicubicInterpolant
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION SparseCCS_MxV(x) RESULT(y)
+      ! Compressed column storage (CCS) version of matrix vector product y = Ax
+      ! The CCS version of this matrix is precomputed and stored above in the
+      ! variables 'values_weight_Matrix', 'row_index_weight_Matrix', and
+      ! 'column_pointers_weight_Matrix' defined above.
+      IMPLICIT NONE
+      REAL(KIND=RP) :: x(16)
+      REAL(KIND=RP) :: y(16)
+      ! local variables
+      INTEGER :: j, k1, k2
+
+      y = 0.0_RP
+      DO j = 1,16
+         k1 = column_pointers_weight_Matrix(j)
+         k2 = column_pointers_weight_Matrix(j + 1) - 1
+         y(row_index_weight_Matrix(k1:k2)) = y(row_index_weight_Matrix(k1:k2)) &
+                                             + values_weight_Matrix(k1:k2) * x(j)
+      END DO ! j
+
+      END FUNCTION SparseCCS_MxV
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -317,139 +370,6 @@
          corns(4) = z_array( x_idx     , y_idx + 1 )
 
       END FUNCTION pullFourCorners
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      FUNCTION fillBicubicWeightMatrix()  RESULT(M)
-         ! Inverse matrix necessary to find the 16 coefficients needed
-         ! for the bicubic interpolation routine. Details on this matrix can
-         ! found here https://www.giassa.net/?page_id=371. Or, in the words of
-         ! Numerical Recipes in Fortran 77, the formulas for the bicubic coefficents
-         ! "are just a complicated linear transformation [which] having been determined
-         !  once in the mists of numerical history, can be tabulated and forgotten."
-         ! This is one implementation of such a tabulation.
-         IMPLICIT NONE
-         REAL(KIND=RP) :: M(16,16)
-
-         M = 0.0_RP
-         ! row 1
-         M(1, 1) =  1.0_RP
-         ! row 2
-         M(2, 9) =  1.0_RP
-         ! row 3
-         M(3, 1) = -3.0_RP
-         M(3, 4) =  3.0_RP
-         M(3, 9) = -2.0_RP
-         M(3,12) = -1.0_RP
-         ! row 4
-         M(4, 1) =  2.0_RP
-         M(4, 4) = -2.0_RP
-         M(4, 9) =  1.0_RP
-         M(4,12) =  1.0_RP
-         ! row 5
-         M(5, 5) =  1.0_RP
-         ! row 6
-         M(6,13) =  1.0_RP
-         ! row 7
-         M(7, 5) = -3.0_RP
-         M(7, 8) =  3.0_RP
-         M(7,13) = -2.0_RP
-         M(7,16) = -1.0_RP
-         ! row 8
-         M(8, 5) =  2.0_RP
-         M(8, 8) = -2.0_RP
-         M(8,13) =  1.0_RP
-         M(8,16) =  1.0_RP
-         ! row 9
-         M(9, 1) = -3.0_RP
-         M(9, 2) =  3.0_RP
-         M(9, 5) = -2.0_RP
-         M(9, 6) = -1.0_RP
-         ! row 10
-         M(10, 9)  = -3.0_RP
-         M(10, 10) =  3.0_RP
-         M(10, 13) = -2.0_RP
-         M(10, 14) = -1.0_RP
-         ! row 11
-         M(11, 1)  =  9.0_RP
-         M(11, 2)  = -9.0_RP
-         M(11, 3)  =  9.0_RP
-         M(11, 4)  = -9.0_RP
-         M(11, 5)  =  6.0_RP
-         M(11, 6)  =  3.0_RP
-         M(11, 7)  = -3.0_RP
-         M(11, 8)  = -6.0_RP
-         M(11, 9)  =  6.0_RP
-         M(11, 10) = -6.0_RP
-         M(11, 11) = -3.0_RP
-         M(11, 12) =  3.0_RP
-         M(11, 13) =  4.0_RP
-         M(11, 14) =  2.0_RP
-         M(11, 15) =  1.0_RP
-         M(11, 16) =  2.0_RP
-         ! row 12
-         M(12, 1)  = -6.0_RP
-         M(12, 2)  =  6.0_RP
-         M(12, 3)  = -6.0_RP
-         M(12, 4)  =  6.0_RP
-         M(12, 5)  = -4.0_RP
-         M(12, 6)  = -2.0_RP
-         M(12, 7)  =  2.0_RP
-         M(12, 8)  =  4.0_RP
-         M(12, 9)  = -3.0_RP
-         M(12, 10) =  3.0_RP
-         M(12, 11) =  3.0_RP
-         M(12, 12) = -3.0_RP
-         M(12, 13) = -2.0_RP
-         M(12, 14) = -1.0_RP
-         M(12, 15) = -1.0_RP
-         M(12, 16) = -2.0_RP
-         ! row 13
-         M(13, 1) =  2.0_RP
-         M(13, 2) = -2.0_RP
-         M(13, 5) =  1.0_RP
-         M(13, 6) =  1.0_RP
-         ! row 14
-         M(14, 9) =  2.0_RP
-         M(14,10) = -2.0_RP
-         M(14,13) =  1.0_RP
-         M(14,14) =  1.0_RP
-         ! row 15
-         M(15, 1)  = -6.0_RP
-         M(15, 2)  =  6.0_RP
-         M(15, 3)  = -6.0_RP
-         M(15, 4)  =  6.0_RP
-         M(15, 5)  = -3.0_RP
-         M(15, 6)  = -3.0_RP
-         M(15, 7)  =  3.0_RP
-         M(15, 8)  =  3.0_RP
-         M(15, 9)  = -4.0_RP
-         M(15, 10) =  4.0_RP
-         M(15, 11) =  2.0_RP
-         M(15, 12) = -2.0_RP
-         M(15, 13) = -2.0_RP
-         M(15, 14) = -2.0_RP
-         M(15, 15) = -1.0_RP
-         M(15, 16) = -1.0_RP
-         ! row 16
-         M(16, 1)  =  4.0_RP
-         M(16, 2)  = -4.0_RP
-         M(16, 3)  =  4.0_RP
-         M(16, 4)  = -4.0_RP
-         M(16, 5)  =  2.0_RP
-         M(16, 6)  =  2.0_RP
-         M(16, 7)  = -2.0_RP
-         M(16, 8)  = -2.0_RP
-         M(16, 9)  =  2.0_RP
-         M(16, 10) = -2.0_RP
-         M(16, 11) = -2.0_RP
-         M(16, 12) =  2.0_RP
-         M(16, 13) =  1.0_RP
-         M(16, 14) =  1.0_RP
-         M(16, 15) =  1.0_RP
-         M(16, 16) =  1.0_RP
-
-      END FUNCTION fillBicubicWeightMatrix
 !
 !////////////////////////////////////////////////////////////////////////
 !
