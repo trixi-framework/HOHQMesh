@@ -569,6 +569,13 @@
                   hex8Mesh % elements(quadElementID,j) % bFaceName(3) = &
                   parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_STARTNAME_KEY,&
                                                            requestedLength = LINE_LENGTH)
+                  ! Turn on boundary interpolant for element sidewalls for 
+                  ! elements that are adjacent to the bottom topography
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(1) = ON 
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(2) = ON 
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(4) = ON 
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(6) = ON 
+                  
                   ! Turn on boundary interpolant at the extruded bottom !
                   hex8Mesh % elements(quadElementID,j) % bFaceFlag(3) = ON 
                END IF 
