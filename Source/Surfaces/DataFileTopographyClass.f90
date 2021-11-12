@@ -307,7 +307,7 @@
          v = ( t(1) - self % x_values(j) ) / dx
          u = ( t(2) - self % y_values(k) ) / dy
          DO i = 4, 1, -1
-            z_val = z_val * v + ( (coeffs(i,4) * u + coeffs(i,3) ) * u + coeffs(i,2) ) * u + coeffs(i,1)
+            z_val = z_val * v + ( ( coeffs(i,4) * u + coeffs(i,3) ) * u + coeffs(i,2) ) * u + coeffs(i,1)
          END DO ! i
 
       END FUNCTION evaluateBicubicInterpolant
@@ -318,7 +318,7 @@
       ! Compressed column storage (CCS) version of matrix vector product y = Ax
       ! The CCS version of this matrix is precomputed and stored above in the
       ! variables 'values_weight_Matrix', 'row_index_weight_Matrix', and
-      ! 'column_pointers_weight_Matrix' defined above.
+      ! 'column_pointers_weight_Matrix'.
       IMPLICIT NONE
       REAL(KIND=RP) :: x(16)
       REAL(KIND=RP) :: y(16)
@@ -363,7 +363,7 @@
          ! ACHTUNG 1! Assumes ordered grid data is provided by the file
          ! ACHTUNG 2! Assumes the same number of points in each direction for the z values array
          IMPLICIT NONE
-         INTEGER                       , INTENT(IN)   :: nx, ny, x_idx, y_idx
+         INTEGER                         , INTENT(IN) :: nx, ny, x_idx, y_idx
          REAL(KIND=RP), DIMENSION(nx, ny), INTENT(IN) :: z_array
          REAL(KIND=RP)                                :: corns(4)
 
