@@ -468,7 +468,7 @@
             CALL GetGridPosition( self % x0, self % dx, i  , j  , xMax )
             hMin = sizeFunctionMinimumOnBox( sizer, xMin, xMax )
             
-            IF ( hMin - MAXVAL(self % dx) < -subdivisionRelTol*MAXVAL(self % dx) )     THEN ! This quad is too big.
+            IF ( hMin - MAXVAL(self % dx(1:2)) < -subdivisionRelTol*MAXVAL(self % dx(1:2)) )     THEN ! This quad is too big.
             
                dx = self % dx/DBLE(refinementType)
                ALLOCATE(childGrid)
