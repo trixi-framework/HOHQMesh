@@ -66,7 +66,8 @@
 !
       TYPE, EXTENDS(SMTopography) :: SMDataFileTopography
          CHARACTER(LEN=STRING_CONSTANT_LENGTH)      :: file_name
-         INTEGER                                    :: nnodes
+         INTEGER                                    :: nx
+         INTEGER                                    :: ny
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: x_values
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: y_values
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: z_values
@@ -130,7 +131,7 @@
          CLASS(SMDataFileTopography) :: self
          CHARACTER(LEN=*)            :: topographyFile
 
-         INTEGER :: nnodes, j, k, file_unit
+         INTEGER :: nx, ny, j, k, file_unit
          REAL(KIND=RP) :: inv_dx, inv_dy
          CHARACTER(LEN=ERROR_MESSAGE_LENGTH) :: msg
          LOGICAL :: a_data_file
@@ -155,14 +156,15 @@
 
          ! Read the number of points available in the bottom topography data
          READ(file_unit, *) ! eat the header
-         READ(file_unit, *) nnodes
-         self % nnodes = nnodes
+         READ(file_unit, *) nx, ny
+         self % nx = nx
+         self % ny = ny
 
          ! Allocate the memory and zero it out
-         ALLOCATE(self % x_values(1:nnodes), self % y_values(1:nnodes))
-         ALLOCATE(self % z_values(1:nnodes, 1:nnodes))
-         ALLOCATE(self % dzdx(1:nnodes, 1:nnodes), self % dzdy(1:nnodes, 1:nnodes))
-         ALLOCATE(self % d2zdxy(1:nnodes, 1:nnodes))
+         ALLOCATE(self % x_values(1:nx), self % y_values(1:ny))
+         ALLOCATE(self % z_values(1:nx, 1:ny))
+         ALLOCATE(self % dzdx(1:nx, 1:ny), self % dzdy(1:nx, 1:ny))
+         ALLOCATE(self % d2zdxy(1:nx, 1:ny))
          self % x_values = 0.0_RP
          self % y_values = 0.0_RP
          self % z_values = 0.0_RP
@@ -172,18 +174,18 @@
 
          ! Read the data into appropriate storage arrays
          READ(file_unit, *) ! skip the header for x_values list
-         DO j = 1,nnodes
+         DO j = 1,nx
             READ(file_unit, *) self % x_values(j)
          END DO ! j
 
          READ(file_unit, *) ! skip the header for y_values list
-         DO k = 1,nnodes
+         DO k = 1,ny
             READ(file_unit, *) self % y_values(k)
          END DO ! k
 
          READ(file_unit, *) ! skip the header for z_nodes list
-         DO k = 1,nnodes
-            DO j = 1,nnodes
+         DO k = 1,ny
+            DO j = 1,nx
                READ(file_unit, *) self % z_values(j, k)
             END DO ! j
          END DO ! k
@@ -193,9 +195,9 @@
 
          ! Create central derivative approximations for z_x, z_y, and z_xy
          ! Note for convenience the edge cases are kept to be 0.0_RP
-         DO k = 2,nnodes-1
+         DO k = 2,ny-1
             inv_dy = 1.0_RP / ( self % y_values(k+1) - self % y_values(k-1) )
-            DO j = 2,nnodes-1
+            DO j = 2,nx-1
                inv_dx = 1.0_RP / ( self % x_values(j+1) - self % x_values(j-1) )
                self % dzdx(j,k)   = inv_dx * ( self % z_values(j+1, k  ) - self%z_values(j-1, k  ) )
                self % dzdy(j,k)   = inv_dy * ( self % z_values(j  , k+1) - self%z_values(j  , k-1) )
@@ -213,7 +215,8 @@
          TYPE(SMDataFileTopography) :: self
 
          self % file_name = "nothing"
-         self % nnodes = -1
+         self % nx = -1
+         self % ny = -1
          DEALLOCATE( self % x_values, self % y_values, self % z_values)
          DEALLOCATE( self % dzdx, self % dzdy, self % d2zdxy)
 
@@ -266,18 +269,18 @@
          REAL(KIND=RP), DIMENSION(4,4) :: coeffs
 
          ! Get the indexing of the current test point
-         j = getLeftIndex( self % x_values, t(1), self % nnodes )
-         k = getLeftIndex( self % y_values, t(2), self % nnodes )
+         j = getLeftIndex( self % x_values, t(1), self % nx )
+         k = getLeftIndex( self % y_values, t(2), self % ny )
 
          ! Get the grid sizes
          dx = self % x_values(j+1) - self % x_values(j)
          dy = self % y_values(k+1) - self % y_values(k)
 
          ! Pull the corner and gradient information in the correct orientation
-         z_corners = pullFourCorners( self % z_values, j, k, self % nnodes )
-         dz_dx  = pullFourCorners( self % dzdx  , j, k, self % nnodes )
-         dz_dy  = pullFourCorners( self % dzdy  , j, k, self % nnodes )
-         dz_dxy = pullFourCorners( self % d2zdxy, j, k, self % nnodes )
+         z_corners = pullFourCorners( self % z_values, j, k, self % nx, self % ny )
+         dz_dx  = pullFourCorners( self % dzdx  , j, k, self % nx, self % ny )
+         dz_dy  = pullFourCorners( self % dzdy  , j, k, self % nx, self % ny )
+         dz_dxy = pullFourCorners( self % d2zdxy, j, k, self % nx, self % ny )
 !
 !        --------------------------------
 !        Compute the bicubic coefficients
@@ -355,14 +358,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION pullFourCorners(z_array, x_idx, y_idx, N)  RESULT(corns)
+      FUNCTION pullFourCorners(z_array, x_idx, y_idx, nx, ny)  RESULT(corns)
          ! Extract four corner values (in anti-clockwise orientation)
          ! ACHTUNG 1! Assumes ordered grid data is provided by the file
          ! ACHTUNG 2! Assumes the same number of points in each direction for the z values array
          IMPLICIT NONE
-         INTEGER                       , INTENT(IN) :: N, x_idx, y_idx
-         REAL(KIND=RP), DIMENSION(N, N), INTENT(IN) :: z_array
-         REAL(KIND=RP)                              :: corns(4)
+         INTEGER                       , INTENT(IN)   :: nx, ny, x_idx, y_idx
+         REAL(KIND=RP), DIMENSION(nx, ny), INTENT(IN) :: z_array
+         REAL(KIND=RP)                                :: corns(4)
 
          corns(1) = z_array( x_idx     , y_idx     )
          corns(2) = z_array( x_idx + 1 , y_idx     )
