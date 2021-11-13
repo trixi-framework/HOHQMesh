@@ -44,7 +44,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      Module SMDataFileTopographyClass
+      Module SMTopographyFromFileClass
 
       USE SMTopographyClass
       USE SMConstants
@@ -64,7 +64,7 @@
 !     Class type definition
 !     ----------------------
 !
-      TYPE, EXTENDS(SMTopography) :: SMDataFileTopography
+      TYPE, EXTENDS(SMTopography) :: SMTopographyFromFile
          CHARACTER(LEN=STRING_CONSTANT_LENGTH)      :: file_name
          INTEGER                                    :: nx
          INTEGER                                    :: ny
@@ -83,7 +83,7 @@
          FINAL     :: destructDFTopography
          PROCEDURE :: heightAt => positionOnDFTopographyAt
          PROCEDURE :: printDescription => printDFDescription
-      END TYPE SMDataFileTopography
+      END TYPE SMTopographyFromFile
 !
 !     ----------------------------------------------------------------------------
 !     Inverse matrix necessary to find the 16 coefficients needed
@@ -128,7 +128,7 @@
       SUBROUTINE initWithDataFile(self, topographyFile)
          USE ErrorTypesModule
          IMPLICIT NONE
-         CLASS(SMDataFileTopography) :: self
+         CLASS(SMTopographyFromFile) :: self
          CHARACTER(LEN=*)            :: topographyFile
 
          INTEGER :: nx, ny, j, k, file_unit
@@ -212,7 +212,7 @@
 !
       SUBROUTINE destructDFTopography(self)
          IMPLICIT NONE
-         TYPE(SMDataFileTopography) :: self
+         TYPE(SMTopographyFromFile) :: self
 
          self % file_name = "nothing"
          self % nx = -1
@@ -226,7 +226,7 @@
 !
       SUBROUTINE releaseDFTopography(self)
          IMPLICIT NONE
-         TYPE (SMDataFileTopography), POINTER :: self
+         TYPE (SMTopographyFromFile), POINTER :: self
          CLASS(FTObject)            , POINTER :: obj
 
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -242,7 +242,7 @@
 !
       FUNCTION positionOnDFTopographyAt(self, t)  RESULT(x)
          IMPLICIT NONE
-         CLASS(SMDataFileTopography) :: self
+         CLASS(SMTopographyFromFile) :: self
          REAL(KIND=RP)               :: t(2)
          REAL(KIND=RP)               :: x(3)
 
@@ -259,7 +259,7 @@
          ! https://www.giassa.net/?page_id=371 that has a very nice explanation of where
          ! the different terms come from.
          IMPLICIT NONE
-         CLASS(SMDataFileTopography) :: self
+         CLASS(SMTopographyFromFile) :: self
          REAL(KIND=RP)               :: t(2)
          ! local variables
          INTEGER       :: i, j, k
@@ -378,7 +378,7 @@
 !
       SUBROUTINE printDFDescription(self, iUnit)
         IMPLICIT NONE
-        CLASS(SMDataFileTopography) :: self
+        CLASS(SMTopographyFromFile) :: self
         INTEGER                     :: iUnit
 
         WRITE(iUnit,*) TRIM(self % file_name)
@@ -402,4 +402,4 @@
 
       END SUBROUTINE addStringToDictionary
 
-      END Module SMDataFileTopographyClass
+      END Module SMTopographyFromFileClass

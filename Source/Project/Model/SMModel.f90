@@ -56,7 +56,7 @@
       USE ErrorTypesModule
       USE SMTopographyClass
       USE SMEquationTopographyClass
-      USE SMDataFileTopographyClass
+      USE SMTopographyFromFileClass
       IMPLICIT NONE
 !
 !     ---------
@@ -741,7 +741,7 @@
          CHARACTER(LEN = EQUATION_STRING_LENGTH)   :: eqn
          CLASS(SMEquationTopography), POINTER      :: topog
          CHARACTER(LEN = DEFAULT_FILE_PATH_LENGTH) :: topog_file
-         CLASS(SMDataFileTopography), POINTER      :: topog_data
+         CLASS(SMTopographyFromFile), POINTER      :: topog_data
 !
 !        ----------
 !        Interfaces
