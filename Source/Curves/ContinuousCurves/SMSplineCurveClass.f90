@@ -67,7 +67,7 @@
          CONTAINS
 !        ========
 !
-         PROCEDURE :: initWithDataFile
+         PROCEDURE :: initWithDataFile => initWithDataFile_SMSplineCurve
          PROCEDURE :: initWithPointsNameAndID
          FINAL     :: destructSplineCurve
          PROCEDURE :: positionAt => positionOnSplineCurveAt
@@ -83,7 +83,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE initWithDataFile( self, datafile, curveName, id )
+      SUBROUTINE initWithDataFile_SMSplineCurve( self, datafile, curveName, id )
          IMPLICIT NONE
 !
 !        ---------
@@ -121,7 +121,7 @@
          DEALLOCATE(x,y,z,t)
 
 
-      END SUBROUTINE initWithDataFile
+      END SUBROUTINE initWithDataFile_SMSplineCurve
 
       SUBROUTINE initWithPointsNameAndID( self, t, x, y, z, curveName, id )  
          USE Geometry
