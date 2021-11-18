@@ -46,6 +46,12 @@
       USE SMConstants
       IMPLICIT NONE
 !
+!     ---------
+!     Constants
+!     ---------
+!
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SPLINE_FILE_KEY = 'file'
+!
 !     ---------------------
 !     Class type definition
 !     ---------------------
@@ -61,6 +67,7 @@
          CONTAINS
 !        ========
 !
+         PROCEDURE :: initWithDataFile
          PROCEDURE :: initWithPointsNameAndID
          FINAL     :: destructSplineCurve
          PROCEDURE :: positionAt => positionOnSplineCurveAt
@@ -76,6 +83,46 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      SUBROUTINE initWithDataFile( self, datafile, curveName, id )
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMSplineCurve)        :: self
+         CHARACTER(LEN=*)            :: datafile
+         CHARACTER(LEN=*)            :: curveName
+         INTEGER                     :: id
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, EXTERNAL                       :: UnusedUnit
+         REAL(KIND=RP), DIMENSION(:), ALLOCATABLE :: x, y, z, t 
+         INTEGER :: N
+         INTEGER :: iUnit
+         INTEGER :: i
+
+         iUnit = UnusedUnit()
+         OPEN( UNIT = iUnit, FILE = dataFile )
+
+  
+         READ(iUnit,*)N
+
+         ALLOCATE( x(1:N), y(1:N), z(1:N), t(1:N) )
+         DO i = 1, N
+            READ(iUnit,*) t(i), x(i), y(i), z(i)
+         ENDDO
+
+         CALL self % initWithPointsNameAndID( t, x, y, z, curveName, id)
+
+         DEALLOCATE(x,y,z,t)
+
+
+      END SUBROUTINE initWithDataFile
+
       SUBROUTINE initWithPointsNameAndID( self, t, x, y, z, curveName, id )  
          USE Geometry
          IMPLICIT NONE  

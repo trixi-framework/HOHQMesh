@@ -42,6 +42,15 @@ Defining a Spline:
         \end{SPLINE_DATA}
 	 \end{SPLINE_CURVE}
 
+Defining a Spline from a File:
+
+	\begin{SPLINE_CURVE}
+	   name = <name>
+	   file = <filename>
+        \end{SPLINE_CURVE}
+
+    
+
 Defining a Straight Line
 
       \begin{END_POINTS_LINE}
