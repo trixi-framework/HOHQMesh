@@ -54,10 +54,32 @@
 
    \begin{OUTER_BOUNDARY}
 
+     \begin{CHAIN}
+
+       name = outer    
+
        \begin{SPLINE_CURVE}
          name = coast
          file = Examples/3D/EastCoastUS/coastline.txt
        \end{SPLINE_CURVE}
+
+       \begin{END_POINTS_LINE}
+          name   = north
+          xStart = [-74.07773877738259,40.0,0.0]
+          xEnd   = [-65.0,40.0,0.0]
+       \end{END_POINTS_LINE}
+
+       \begin{END_POINTS_LINE}
+          name   = east
+          xStart = [-65.0,40.0,0.0]
+          xEnd   = [-65.0,28.0,0.0]
+       \end{END_POINTS_LINE}
+
+       \begin{END_POINTS_LINE}
+          name   = south
+          xStart = [-65.0,28.0,0.0]
+          xEnd   = [-80.57185414257535,28.0,0.0]
+       \end{END_POINTS_LINE}
 
    \end{OUTER_BOUNDARY}
 
