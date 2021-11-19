@@ -394,6 +394,10 @@
               CALL newDict % addObjectForKey(obj,"LIST")
               CALL releaseFTLinkedList(self = newList)
               
+              !FIXME: There are two problems with the following block: 
+              !  (1) The "name" key may not be on the next line (e.g. blank follows)
+              !  (2) The "name" key might follow all of the lists, but needs to be added
+              !      to the newDict rather than to the newList
               IF(objectName == "CHAIN")     THEN ! Read the name of the chain
                  READ(fileUnit,"(A)", END = 1000) line
                  CALL replaceTabs(line)
