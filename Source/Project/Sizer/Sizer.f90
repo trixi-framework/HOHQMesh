@@ -49,6 +49,7 @@
       USE FTLinkedListClass
       USE FTLinkedListIteratorClass
       USE SizerControls
+      USE SMTopographyClass
       
       IMPLICIT NONE
 !
@@ -65,6 +66,7 @@
          CLASS(ChainedSegmentedCurve), POINTER :: outerBoundary           => NULL()
          CLASS(FTLinkedList)         , POINTER :: innerBoundariesList     => NULL()
          CLASS(FTLinkedList)         , POINTER :: interfaceBoundariesList => NULL()
+         CLASS(SMTopography)         , POINTER :: topography              => NULL()
 !
 !        ========
          CONTAINS
@@ -78,6 +80,7 @@
          PROCEDURE :: addBoundaryCurve
          PROCEDURE :: sizeFunctionMinimumOnBox
          PROCEDURE :: setBaseSize
+         PROCEDURE :: setBottomTopography
          
       END TYPE MeshSizer
       
@@ -109,6 +112,7 @@
          self % outerBoundary           => NULL()
          self % innerBoundariesList     => NULL()
          self % interfaceBoundariesList => NULL()
+         self % topography              => NULL()
          
          ALLOCATE(self % controlsList)
          CALL self % controlsList % init()
@@ -139,6 +143,11 @@
          
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             obj => self % outerBoundary
+            CALL release(obj)
+         END IF 
+         
+         IF ( ASSOCIATED(self % topography) )     THEN
+            obj => self % topography
             CALL release(obj)
          END IF 
          
@@ -278,6 +287,18 @@
          
       END SUBROUTINE addBoundaryCurve
 !
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE setBottomTopography(self, topography)
+         IMPLICIT NONE  
+         CLASS(MeshSizer)             :: self
+         CLASS(SMTopography), POINTER :: topography
+
+         self % topography => topography
+         CALL self % topography % retain()
+                   
+      END SUBROUTINE setBottomTopography
+!
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION sizeFunctionMinimumOnBox( sizer, xMin, xMax ) RESULT(hMin)
@@ -319,6 +340,21 @@
                DO i = 0, nX(1)
                   x(1) = xMin(1) + i*dx(1)
                   hMin = MIN( hMin, controlSize(sizer,x) )
+               END DO
+            END DO
+         END IF
+!
+!        -----------------------------------------
+!        Sizes determined by the bottom topography
+!        -----------------------------------------
+!
+         IF ( ASSOCIATED(sizer % topography) )     THEN
+            dX = (xMax - xMin)/nX
+            DO j = 0, nX(2)
+               x(2) = xMin(2) + j*dx(2)
+               DO i = 0, nX(1)
+                  x(1) = xMin(1) + i*dx(1)
+                  hMin = MIN( hMin, 1.0_RP/SQRT(sizer % topography % gaussianCurvatureAt(x)) )
                END DO
             END DO
          END IF 

@@ -70,7 +70,7 @@
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: OUTER_BOUNDARY_BLOCK_KEY       = "OUTER_BOUNDARY"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INNER_BOUNDARIES_BLOCK_KEY     = "INNER_BOUNDARIES"      
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INTERFACE_BOUNDARIES_BLOCK_KEY = "INTERFACE_BOUNDARIES"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
 
 !
 !     ---------------------
@@ -751,6 +751,13 @@
 !        --------------------------------------
 !
          IF ( dict % containsKey(TOPOGRAPHY_EQUATION_KEY) )     THEN
+            IF ( .NOT.dict % containsKey(key = TOPOGRAPHY_EQUATION_KEY) )     THEN
+               CALL ThrowErrorExceptionOfType(poster = "ConstructTopographyFromDict",&
+                                              msg = "TOPOGRAPHY has no eqn key.", &
+                                              typ = FT_ERROR_FATAL)
+               RETURN 
+            END IF 
+             
             eqn = dict % stringValueForKey(key             = TOPOGRAPHY_EQUATION_KEY, &
                                            requestedLength = EQUATION_STRING_LENGTH)
             ALLOCATE(topog)
@@ -761,7 +768,7 @@
          ELSE !TODO TOPOGRAPHY: ADD TEST AND CONSTRUCTION OF ALTERNATE TOPOGRAPHIES HERE
             PRINT *, "Unknown topography definition. Ignoring."
          END IF 
-
+         
       END SUBROUTINE ConstructTopographyFromDict
 !
 !////////////////////////////////////////////////////////////////////////

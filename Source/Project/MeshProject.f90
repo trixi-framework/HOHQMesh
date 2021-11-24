@@ -193,9 +193,9 @@
 !        Local variables
 !        ---------------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)          :: msg
-         CLASS(FTValueDictionary)  , POINTER :: controlDict, modelDict, matBlockdict
-         CLASS(FTObject)           , POINTER :: obj
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
+         CLASS(FTValueDictionary)  , POINTER     :: controlDict, modelDict, matBlockdict, topoDict
+         CLASS(FTObject)           , POINTER     :: obj
 !
 !        ----------
 !        Interfaces
@@ -284,6 +284,20 @@
 !        -----------------
 !
          CALL BuildProject( self, controlDict )
+!
+!        ----------------------------------------------------------------
+!        If there is topography and sizing is requested, add to the sizer
+!        ----------------------------------------------------------------
+!
+         IF ( modelDict % containsKey(TOPOGRAPHY_BLOCK_KEY)) THEN
+            obj => modelDict % objectForKey(TOPOGRAPHY_BLOCK_KEY)
+            topoDict => valueDictionaryFromObject(obj)
+            IF ( topoDict % containsKey(TOPOGRAPHY_SIZING_KEY) )     THEN
+               IF ( topoDict % stringValueForKey(key = TOPOGRAPHY_SIZING_KEY,requestedLength = 6) == "ON" )     THEN
+                  CALL self % sizer % setBottomTopography( self % model % topography )
+               END IF 
+            END IF 
+         END IF 
 
       END SUBROUTINE initWithDictionary
 !

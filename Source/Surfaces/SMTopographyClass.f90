@@ -52,6 +52,7 @@
 !     ---------
 !
       INTEGER, PARAMETER :: SM_SURFACE_NAME_LENGTH = 32
+      CHARACTER(LEN=6), PARAMETER ::TOPOGRAPHY_SIZING_KEY = "sizing"
 !
 !     ---------------------
 !     Base class definition
