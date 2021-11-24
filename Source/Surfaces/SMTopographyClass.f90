@@ -44,6 +44,7 @@
       Module SMTopographyClass
       USE SMConstants
       USE FTObjectClass
+      USE GaussianCurvatureModule
       IMPLICIT NONE 
 !
 !     ---------
@@ -68,6 +69,7 @@
          FINAL                      :: destructBaseTopography
          PROCEDURE                  :: printDescription   => printTopographyDescription
          PROCEDURE                  :: heightAt => heightAtTopography
+         PROCEDURE                  :: gaussianCurvatureAt => gaussianCurvatureBaseAt
       END TYPE SMTopography
 !
 !     -------
@@ -77,6 +79,8 @@
       INTERFACE cast
          MODULE PROCEDURE castToSMTopography
       END INTERFACE cast
+      
+      REAL(KIND=RP), PARAMETER, PRIVATE  :: gc_dx = 1.0d-4, gc_dx2 = 1.0d-8
 !
 !     ========
       CONTAINS
@@ -125,6 +129,42 @@
         REAL(KIND=RP)       :: x(3)
         x = 0.0_RP
      END FUNCTION heightAtTopography
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+     REAL(KIND=RP) FUNCTION gaussianCurvatureBaseAt(self, t)  
+        IMPLICIT NONE  
+        CLASS(SMTopography) :: self
+        REAL(KIND=RP)       :: t(2)
+        REAL(KIND=RP)       :: gradF(2)
+        REAL(KIND=RP)       :: xp(3)  , xm(3)  , yp(3)  , ym(3)  , x(3)
+        REAL(KIND=RP)       :: xpyp(3), xmyp(3), xpym(3), xmym(3)
+        REAL(KIND=RP)       :: hessian(2,2)
+      
+        x  = self % heightAt(t)
+        xp = self % heightAt(t + [gc_dx,0.0_RP])
+        xm = self % heightAt(t - [gc_dx,0.0_RP])
+        yp = self % heightAt(t + [0.0_RP,gc_dx])
+        ym = self % heightAt(t - [0.0_RP,gc_dx])
+      
+        gradF(1) = 0.5_RP*(xp(3) - xm(3))/gc_dx
+        gradF(2) = 0.5_RP*(yp(3) - ym(3))/gc_dx
+         
+        hessian(1,1) = (xp(3) - 2.0_RP*x(3) + xm(3))/gc_dx2
+        hessian(2,2) = (yp(3) - 2.0_RP*x(3) + ym(3))/gc_dx2
+        
+        
+        xpyp = self % heightAt(t + [gc_dx,gc_dx])
+        xmyp = self % heightAt(t + [-gc_dx,gc_dx])
+        xmym = self % heightAt(t - [gc_dx,gc_dx])
+        xpym = self % heightAt(t + [gc_dx,-gc_dx])
+        hessian(1,2) = 0.25_RP*(xpyp(3) - xmyp(3) - xpym(3) + xmym(3))/gc_dx2
+        hessian(2,1) = hessian(1,2)
+        
+        gaussianCurvatureBaseAt = (hessian(1,1)*hessian(2,2) - hessian(1,2)*hessian(2,1)) &
+                                  /(1.0_RP + gradF(1)**2 + gradF(2)**2)**2
+
+     END FUNCTION gaussianCurvatureBaseAt
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
