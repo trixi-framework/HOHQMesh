@@ -164,7 +164,8 @@
         
         gaussianCurvatureBaseAt = (hessian(1,1)*hessian(2,2) - hessian(1,2)*hessian(2,1)) &
                                   /(1.0_RP + gradF(1)**2 + gradF(2)**2)**2
-
+        gaussianCurvatureBaseAt = ABS(gaussianCurvatureBaseAt) !Can be negative
+        
      END FUNCTION gaussianCurvatureBaseAt
 !
 !//////////////////////////////////////////////////////////////////////// 
