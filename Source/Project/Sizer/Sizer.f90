@@ -322,6 +322,7 @@
          REAL(KIND=RP)                    :: cSize, aSize
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
          INTEGER                          :: i,j, nX(3) = [10,10,0]
+         REAL(KIND=RP), PARAMETER         :: SIZE_FACTOR = 0.9_RP
          
          CLASS(FTLinkedListIterator) , POINTER :: iterator            => NULL()
          CLASS(FTObject)             , POINTER :: obj                 => NULL()
@@ -340,7 +341,7 @@
                DO i = 0, nX(1)
                   x(1) = xMin(1) + i*dx(1)
                   hMin = MIN( hMin, controlSize(sizer,x) )
-               END DO
+              END DO
             END DO
          END IF
 !
@@ -350,13 +351,14 @@
 !
          IF ( ASSOCIATED(sizer % topography) )     THEN
             dX = (xMax - xMin)/nX
-            DO j = 0, nX(2)
+            TLoop : DO j = 0, nX(2)
                x(2) = xMin(2) + j*dx(2)
                DO i = 0, nX(1)
                   x(1) = xMin(1) + i*dx(1)
                   hMin = MIN( hMin, 1.0_RP/SQRT(sizer % topography % gaussianCurvatureAt(x)) )
+                  IF(hMin < SIZE_FACTOR*dX(1)) EXIT TLoop
                END DO
-            END DO
+            END DO TLoop
          END IF 
 !
 !        ------------------------------------
