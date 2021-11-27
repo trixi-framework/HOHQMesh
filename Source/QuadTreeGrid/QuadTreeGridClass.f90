@@ -469,6 +469,7 @@
             hMin = sizeFunctionMinimumOnBox( sizer, xMin, xMax )
             
             IF ( hMin - MAXVAL(self % dx) < -subdivisionRelTol*MAXVAL(self % dx) )     THEN ! This quad is too big.
+!            IF ( hMin <= MAXVAL(self % dx) )     THEN ! This quad is too big.
             
                dx = self % dx/DBLE(refinementType)
                ALLOCATE(childGrid)

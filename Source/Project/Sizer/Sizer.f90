@@ -310,15 +310,16 @@
 !        Sizes determined by centers/line controls
 !        -----------------------------------------
 !
-         hMin = HUGE(hMin)
+         hMin = sizer % baseSize !HUGE(hMin)
+         dX = (xMax - xMin)/nX
          
          IF ( ASSOCIATED(sizer % controlsList) )     THEN 
-            dX = (xMax - xMin)/nX
             DO j = 0, nX(2)
                x(2) = xMin(2) + j*dx(2)
                DO i = 0, nX(1)
                   x(1) = xMin(1) + i*dx(1)
                   hMin = MIN( hMin, controlSize(sizer,x) )
+                  IF(hMin < MINVAL(dX))     RETURN 
                END DO
             END DO
          END IF 
@@ -330,14 +331,20 @@
          cSize = TINY(cSize)
          IF( ASSOCIATED(sizer%outerBoundary) )     THEN
             cSize = MAX( cSize, invCurveSizeForBox(sizer % outerBoundary, xMin, xMax ) )
+            hMin = MIN(hMin, 1.0_RP/cSize )
+            IF(hMin < MINVAL(dX))     RETURN 
          END IF
          
          IF ( ASSOCIATED( sizer % innerBoundariesList) )     THEN
             CALL cSizeForCurvesInList(sizer % innerBoundariesList, cSize, xMin, xMax)
+            hMin = MIN(hMin, 1.0_RP/cSize )
+            IF(hMin < MINVAL(dX))     RETURN 
          END IF 
          
          IF( ASSOCIATED(sizer % interfaceBoundariesList) )     THEN
             CALL cSizeForCurvesInList(sizer % interfaceBoundariesList, cSize, xMin, xMax)
+            hMin = MIN(hMin, 1.0_RP/cSize )
+            IF(hMin < MINVAL(dX))     RETURN 
          END IF
          cSize = 1.0_RP/cSize
 !
@@ -356,13 +363,15 @@
                cDim    = MIN(cHeight,cWidth)
                aSize   = cDim/minNumberOfElementsInsideArea
             END IF
+            hMin = MIN(hMin, aSize )
+            IF(hMin < MINVAL(dX))     RETURN 
          END IF
          
          IF ( ASSOCIATED(sizer % interfaceBoundariesList) )     THEN
             ALLOCATE(iterator)
             CALL iterator % initwithFTLinkedList(sizer % interfaceBoundariesList)
             CALL iterator % setToStart
-            DO WHILE (.NOT.iterator % isAtEnd())
+            ILoop: DO WHILE (.NOT.iterator % isAtEnd())
                obj => iterator % object()
                CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
                
@@ -373,10 +382,13 @@
                   cWidth  = Width ( segmentedCurveChain )
                   cDim    = MIN(cHeight,cWidth)
                   aSize   = MIN(cDim/minNumberOfElementsInsideArea,aSize)
+                  
                END IF
-   
+               hMin = MIN(hMin, aSize )
+               IF(hMin < MINVAL(dX))     EXIT ILoop 
+  
                CALL iterator % moveToNext()
-            END DO
+            END DO ILoop
             obj => iterator
             CALL release(obj)
          END IF 
