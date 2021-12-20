@@ -1009,8 +1009,14 @@
       CLASS(FRSegmentedCurve)     , POINTER :: innerSegment, outerSegment
       REAL(KIND=RP)                         :: x(3), y(3), d, outerInvScale, innerInvScale
       REAL(KIND=RP)                         :: nHatInner(3), nHatOuter(3), normalsDot, targetDot
-      REAL(KIND=RP)                         :: vecToTarget(3)
+      REAL(KIND=RP)                         :: vecToTarget(3), s
       LOGICAL                               :: isProperTarget
+      
+      IF ( isOuterBoundary )     THEN
+         s = -1.0_RP 
+      ELSE 
+         s = 1.0_RP 
+      END IF 
 !
 !     -----------------------------
 !     For each segment in the chain
@@ -1026,7 +1032,7 @@
          DO j = 1, outerSegment % COUNT()
             x             = outerSegment % positionAtIndex(j)
             outerInvScale = outerSegment % invScaleAtIndex(j)
-            nHatOuter     = outerSegment % normalAtIndex(j)
+            nHatOuter     = s*outerSegment % normalAtIndex(j)
 !
 !           ----------------------------------
 !           For every other point along itself
@@ -1042,28 +1048,28 @@
                DO i = 1, innerSegment % COUNT()
                   IF(n == l .AND. i == j)     CYCLE 
                   y             = innerSegment % positionAtIndex(i)
-                  innerInvScale = innerSegment % invScaleAtIndex(i)
-                  nHatInner     = innerSegment % normalAtIndex(i)
+                  nHatInner     = s*innerSegment % normalAtIndex(i)
                   vecToTarget   = y - x
+                  d             = sqrt(vecToTarget(1)**2 + vecToTarget(2)**2)
                   
-!
+                  IF ( AlmostEqual(d,0.0_RP) )     CYCLE
+                  vecToTarget   = vecToTarget/d
+                  
                   normalsDot = DOT_PRODUCT(nHatInner,nHatOuter)
                   targetDot  = DOT_PRODUCT(vecToTarget,nHatOuter)
-
-                  
-                  IF ( isOuterBoundary )     THEN
-                     isProperTarget =  normalsDot  < -closeCurveNormalAlignment .AND. targetDot   < -normalTangentMin
-                  ELSE 
-                     isProperTarget =  normalsDot  <  -closeCurveNormalAlignment .AND. targetDot   > normalTangentMin
-                  END IF 
+!
+!                 ---------------------------------------------------------------------------------
+!                 A point is on "the opposite side" if the normals face eachother and if the vector
+!                 to the opposite point is in the (near) direction of the normal
+!                 ---------------------------------------------------------------------------------
+!
+                  isProperTarget =  normalsDot  <  -closeCurveNormalAlignment .AND. targetDot   > closeCurveNormalAlignment
 
                   IF( isProperTarget )     THEN
                      d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
 
                      outerInvScale = MAX(d,outerInvScale)
                      CALL outerSegment % setCurveInvScaleForIndex(outerInvScale,j)
-                     innerInvScale = MAX(d,innerInvScale)
-                     CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,i)
                   END IF
                END DO  
             END DO  
