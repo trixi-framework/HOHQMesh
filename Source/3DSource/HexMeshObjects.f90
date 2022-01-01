@@ -97,6 +97,7 @@
          INTEGER                                    :: numberofLayers, numberOfQuadElements
          TYPE(Node3D)     , DIMENSION(:,:), POINTER :: nodes
          TYPE(Hex8Element), DIMENSION(:,:), POINTER :: elements
+         INTEGER                      , ALLOCATABLE :: locAndLevelForNodeID(:,:)
       END TYPE StructuredHexMesh
 !
 !     ========      
@@ -130,7 +131,7 @@
 !        ---------------
 !
          INTEGER  :: l, m
-         INTEGER  :: elementID
+         INTEGER  :: elementID, numberOfNodes
          
          hexMesh % numberofLayers       = numberOfLayers
          hexMesh % numberOfQuadElements = numberOfQuadElements
@@ -153,7 +154,15 @@
                ALLOCATE(hexMesh % elements(m,l) % x(3,0:N,0:N,0:N) )
             END DO 
          END DO 
-         
+!
+!        ------------
+!        Helper array
+!        ------------
+!
+         numberOfNodes   = numberOf2DNodes*(numberOfLayers + 1)
+         ALLOCATE( hexMesh % locAndLevelForNodeID(2, numberOfNodes) )
+         hexMesh % locAndLevelForNodeID = 0
+
       END SUBROUTINE InitializeStructuredHexMesh
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -180,6 +189,7 @@
          END DO 
          DEALLOCATE(hexMesh % elements)
          DEALLOCATE(hexMesh % nodes)
+         DEALLOCATE(hexMesh % locAndLevelForNodeID)
          
       END SUBROUTINE DestructStructuredHexMesh
       
