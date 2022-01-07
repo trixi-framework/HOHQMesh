@@ -48,14 +48,18 @@
 !
 !-------------------------------------------------------------------
 !> Compute standard mesh quality measures. Optionally write them out
-!! to a file for graphical analysis.
+!! to a file for graphical analysis. Mesh Quality meqasures are 
+!! taken from "The Verdict Library Reference Manual" by Stimpson et al.
 !-------------------------------------------------------------------
+!
+!     Mesh quality is measured for Quad and Hex meshes
 !
       INTEGER, PARAMETER :: QUAD_STATISTICS = 1, HEX_STATISTICS = 2
 !
-!     ------------------
+!     ------------------------------------------------------------------
 !     Statistics storage
-!     ------------------
+!        statsType indicates whether the measures are for Quads or Hexes
+!     ------------------------------------------------------------------
 !
       TYPE MeshStatistics
          INTEGER                                      :: statsType
@@ -72,6 +76,8 @@
       INTERFACE OutputMeshQualityMeasures
          MODULE PROCEDURE :: OutputMeshQualityMeasures2D
       END INTERFACE OutputMeshQualityMeasures
+      
+      PRIVATE :: Cross3D, Dot3D, Norm3D, Normalize3D
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
@@ -143,10 +149,11 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+   INTEGER, PARAMETER :: NUMBER_OF_3D_SHAPE_MEASURES = 6
+
    INTEGER, PARAMETER :: DIAGONAL3D_INDEX = 1, EDGE_RATIO3D_INDEX = 2, &
                          JACOBIAN3D_INDEX = 3, SHAPE3D_INDEX      = 4, &
                          SKEW3D_INDEX     = 5, VOLUME3D_INDEX     = 6
-   INTEGER, PARAMETER :: NUMBER_OF_3D_SHAPE_MEASURES = 6
    
    CHARACTER(LEN=16), DIMENSION(NUMBER_OF_3D_SHAPE_MEASURES) :: &
            shapeMeasureNames3D = [ "Diagonal        ", &
@@ -205,7 +212,7 @@
          DEALLOCATE( STATs % avgValues)
          DEALLOCATE( stats % maxValues)
          DEALLOCATE( stats % minValues)
-         STATs % statsType = UNDEFINED
+         stats % statsType = UNDEFINED
       END SUBROUTINE DestructMeshStatistics
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -265,7 +272,7 @@
          REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
          INTEGER                              :: k, nValues
          
-         CALL ConstructMeshStatistics(stats,statsType = QUAD_STATISTICS)
+         CALL ConstructMeshStatistics(stats, statsType = QUAD_STATISTICS)
          
          elementIterator => mesh % elementsIterator
          CALL elementIterator % setToStart()
@@ -316,7 +323,7 @@
          INTEGER       :: nodeLoc,nodeLev
          REAL(KIND=RP) :: P(3,0:7)
          
-         CALL ConstructMeshStatistics(stats,statsType = HEX_STATISTICS)
+         CALL ConstructMeshStatistics(stats, statsType = HEX_STATISTICS)
          
          nValues = 0
          DO lev = 1, mesh % numberofLayers
