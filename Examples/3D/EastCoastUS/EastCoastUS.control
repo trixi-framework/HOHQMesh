@@ -15,14 +15,26 @@
 % x \in [-82.0, -65.0], y \in [28.0, 41.0]
 
    \begin{BACKGROUND_GRID}
-      background grid size = [1.0,1.0,0.0]
+      background grid size = [1.0,1.0,0.5]
    \end{BACKGROUND_GRID}
+
+   \begin{MESH_PARAMETERS}
+      element type         = hex
+   \end{MESH_PARAMETERS}
 
    \begin{SPRING_SMOOTHER}
       smoothing            = ON
       smoothing type       = LinearSpring
       number of iterations = 40
    \end{SPRING_SMOOTHER}
+
+   \begin{SIMPLE_EXTRUSION}
+      direction          = 3
+      height             = 0.0
+      subdivisions       = 6
+      start surface name = SeaFloor
+      end surface name   = SeaLevel
+   \end{SIMPLE_EXTRUSION}
 
 \end{CONTROL_INPUT}
 
@@ -54,6 +66,10 @@
        \end{END_POINTS_LINE}
 
    \end{OUTER_BOUNDARY}
+
+   \begin{TOPOGRAPHY}
+	data file = Examples/3D/EastCoastUS/east_coast_us.dat
+   \end{TOPOGRAPHY}
 
 \end{MODEL}
 \end{FILE}
