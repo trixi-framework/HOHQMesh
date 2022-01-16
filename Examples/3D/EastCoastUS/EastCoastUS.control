@@ -15,38 +15,14 @@
 % x \in [-82.0, -65.0], y \in [28.0, 41.0]
 
    \begin{BACKGROUND_GRID}
-      background grid size = [1.0,1.0,0.5]
+      background grid size = [1.0,1.0,0.0]
    \end{BACKGROUND_GRID}
-
-   \begin{REFINEMENT_REGIONS}
-
-     \begin{REFINEMENT_LINE}
-	type = smooth
-	x0   = [-80.0,28.0,0.0]
-	x1   = [-74.5,36.0,0.0]
-	h    = 0.25
-	w    = 2.5
-     \end{REFINEMENT_LINE}
-
-   \end{REFINEMENT_REGIONS}
-
-   \begin{MESH_PARAMETERS}
-      element type         = hex
-   \end{MESH_PARAMETERS}
 
    \begin{SPRING_SMOOTHER}
       smoothing            = ON
       smoothing type       = LinearSpring
       number of iterations = 40
    \end{SPRING_SMOOTHER}
-
-   \begin{SIMPLE_EXTRUSION}
-      direction          = 3
-      height             = 0.0
-      subdivisions       = 6
-      start surface name = SeaFloor
-      end surface name   = SeaLevel
-   \end{SIMPLE_EXTRUSION}
 
 \end{CONTROL_INPUT}
 
@@ -59,11 +35,25 @@
          file = Examples/3D/EastCoastUS/coastline.txt
        \end{SPLINE_CURVE}
 
-   \end{OUTER_BOUNDARY}
+       \begin{END_POINTS_LINE}
+          name   = south
+          xStart = [-80.5505056933643,28.0,0.0]
+          xEnd   = [-65.0,28.0,0.0]
+       \end{END_POINTS_LINE}
 
-   \begin{TOPOGRAPHY}
-	data file = Examples/3D/EastCoastUS/east_coast_us.dat
-   \end{TOPOGRAPHY}
+       \begin{END_POINTS_LINE}
+          name   = east
+          xStart = [-65.0,28.0,0.0]
+          xEnd   = [-65.0,40.0,0.0]
+       \end{END_POINTS_LINE}
+
+       \begin{END_POINTS_LINE}
+          name   = north
+          xStart = [-65.0,40.0,0.0]
+          xEnd   = [-74.0932245140996,40.0,0.0]
+       \end{END_POINTS_LINE}
+
+   \end{OUTER_BOUNDARY}
 
 \end{MODEL}
 \end{FILE}
