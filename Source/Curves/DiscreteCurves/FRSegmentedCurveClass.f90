@@ -604,9 +604,15 @@
                                                  t = spline % t(j)) 
                p % invScale = 1.0_RP/s
                norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
+!
+!              --------------------------------------------------------------
+!              The normal direction is in the domain side for interior curves
+!              and to the exterior for the outer boundary curve
+!              --------------------------------------------------------------
+!
                p % nHat(1)  =  xPrime(2)/norm
                p % nHat(2)  = -xPrime(1)/norm
-               p % nHat(3)  = 0.0_RP
+               p % nHat(3)  =  0.0_RP
                
                obj => p
                CALL self % nodeArray % addObject(obj)
