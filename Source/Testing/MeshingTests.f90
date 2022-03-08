@@ -55,17 +55,18 @@
 ! Runs through a sequence of meshes and tests against standard results
 !---------------------------------------------------------------------
 !
-      CHARACTER(LEN=64), DIMENSION(9) :: controlFiles = [                                                          &
-                                                         "Benchmarks/ControlFiles/PillC.control                 ", &
-                                                         "Benchmarks/ControlFiles/SplineGeometry.control        ", &
-                                                         "Benchmarks/ControlFiles/NACA0012.control              ", &
-                                                         "Benchmarks/ControlFiles/HalfCircleArc.control         ", &
-                                                         "Benchmarks/ControlFiles/Circles3.control              ", &
-                                                         "Benchmarks/ControlFiles/AllFeatures.control           ", &
-                                                         "Benchmarks/ControlFiles/Segmented.control             ", &
-                                                         "Benchmarks/ControlFiles/GingerbreadManGeometry.control", &
-                                                         "Benchmarks/ControlFiles/ABAQUS_IceCreamCone.control   "  &
-                                                        ]
+      CHARACTER(LEN=64), DIMENSION(10) :: controlFiles = [                                                          &
+                                                          "Benchmarks/ControlFiles/PillC.control                 ", &
+                                                          "Benchmarks/ControlFiles/SplineGeometry.control        ", &
+                                                          "Benchmarks/ControlFiles/NACA0012.control              ", &
+                                                          "Benchmarks/ControlFiles/HalfCircleArc.control         ", &
+                                                          "Benchmarks/ControlFiles/Circles3.control              ", &
+                                                          "Benchmarks/ControlFiles/AllFeatures.control           ", &
+                                                          "Benchmarks/ControlFiles/Segmented.control             ", &
+                                                          "Benchmarks/ControlFiles/GingerbreadManGeometry.control", &
+                                                          "Benchmarks/ControlFiles/ABAQUS_IceCreamCone.control   ",  &
+                                                          "Benchmarks/ControlFiles/EastCoastUS_2D.control        "  &
+                                                         ]
 !
 !  ========
    CONTAINS
