@@ -1,11 +1,11 @@
 %
-% An example using a bottom topography constructed from a data file
+% An example using a spline curve constructed from a data file
 %
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/2D/EastCoastUS/EastCoastUS.inp
-      plot file name   = Examples/2D/EastCoastUS/EastCoastUS3d.tec
+      plot file name   = Examples/2D/EastCoastUS/EastCoastUS2d.tec
       stats file name  = Examples/2D/EastCoastUS/EastCoastUS.txt
       mesh file format = ISMv2
       polynomial order = 5
@@ -55,10 +55,6 @@
 
 
    \end{OUTER_BOUNDARY}
-
-%   \begin{TOPOGRAPHY}
-%	data file = Examples/3D/EastCoastUS/east_coast_us.dat
-%   \end{TOPOGRAPHY}
 
 \end{MODEL}
 \end{FILE}

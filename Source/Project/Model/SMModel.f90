@@ -821,7 +821,6 @@
                                                         requestedLength = DEFAULT_CHARACTER_LENGTH )
                                                 
             INQUIRE( FILE=TRIM(curveFile), EXIST=curveFileFound )
-            PRINT*, curveFile
 
             IF(.NOT. curveFileFound)     THEN
                CALL ThrowErrorExceptionOfType(poster = "ImportSplineBlock", &
