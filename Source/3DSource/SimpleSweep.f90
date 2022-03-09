@@ -344,6 +344,7 @@
 !        Allocate connections between global ID and local (2D, level) id
 !        ---------------------------------------------------------------
 !
+         IF(ALLOCATED(locAndLevelForNodeID)) DEALLOCATE(locAndLevelForNodeID)
          ALLOCATE( locAndLevelForNodeID(2, numberOfNodes) )
 !
 !        ------------------------------
@@ -419,8 +420,8 @@
                hex8Mesh % nodes(k,j) % x  = extrudedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
                                                                  delta        = z, &
                                                                  pmutation    = pMutation)
-               locAndLevelForNodeID(1,nodeID) = k
-               locAndLevelForNodeID(2,nodeID) = j
+               hex8Mesh % locAndLevelForNodeID(1,nodeID) = k
+               hex8Mesh % locAndLevelForNodeID(2,nodeID) = j
                nodeID = nodeID + 1
             END DO   
             

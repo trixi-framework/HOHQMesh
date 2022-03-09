@@ -1,0 +1,50 @@
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Benchmarks/HalfCircleExtrude.mesh
+      plot file name   = Benchmarks/PlotFiles/Benchmarks/HalfCircleExtrude.tec
+      stats file name  = None
+      test file name   = Benchmarks/BenchmarkData/HalfCircleExtBenchmark.txt
+      mesh file format = ISM
+      polynomial order = 5
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+   
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.75,0.75,0.75]
+   \end{BACKGROUND_GRID}
+
+    \begin{SIMPLE_EXTRUSION}
+      direction          = 1
+      height             = 4.0
+      subdivisions       = 4
+      start surface name = bottom
+      end surface name   = top
+   \end{SIMPLE_EXTRUSION}
+
+    \begin{SPRING_SMOOTHER}
+       smoothing            = ON
+       smoothing type       = LinearAndCrossBarSpring
+       number of iterations = 15
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+     \begin{OUTER_BOUNDARY}
+        \begin{PARAMETRIC_EQUATION_CURVE}
+           name = circle
+           xEqn = x(t) = 4.0*cos(pi*t)
+           yEqn = y(t) = 4.0*sin(pi*t)
+           zEqn = z(t) = 0.0
+        \end{PARAMETRIC_EQUATION_CURVE}
+           \begin{END_POINTS_LINE}
+            name = cut
+            xStart = [-4.0,0.0,0.0]
+            xEnd   = [4.0,0.0,0.0]
+           \end{END_POINTS_LINE}
+     \end{OUTER_BOUNDARY}
+
+\end{MODEL}
+\end{FILE}

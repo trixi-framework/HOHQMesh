@@ -310,7 +310,7 @@
                            N       = project % runParams % polynomialOrder, &
                            rotAxis = rotAxis)
                            
-         ELSE IF(algorithmChoice == SWEEP_ALGORITHM)     THEN 
+         ELSE IF( algorithmChoice == SWEEP_ALGORITHM )     THEN 
          
             CALL ConstructCurveSweeper(self  = sweeper,                      &
                                   sweepCurve = project % model % sweepCurve, &
