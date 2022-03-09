@@ -383,23 +383,5 @@
 
         WRITE(iUnit,*) TRIM(self % file_name)
       END SUBROUTINE printDFDescription
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE addStringToDictionary(key, str, dict)
-         IMPLICIT NONE
-         CHARACTER(LEN=*)    :: str, key
-         CLASS(FTDictionary) :: dict
-
-         CLASS(FTObject)      , POINTER :: obj => NULL()
-         CLASS(FTValue)       , POINTER :: v => NULL()
-
-         ALLOCATE(v)
-         CALL v % initWithValue(str)
-         obj => v
-         CALL dict % addObjectForKey(obj,key)
-         CALL release(obj)
-
-      END SUBROUTINE addStringToDictionary
 
       END Module SMTopographyFromFileClass

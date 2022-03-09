@@ -76,6 +76,8 @@
          PROCEDURE :: heightAt => positionOnPETopographyAt
          PROCEDURE :: printDescription => printPEDescription
       END TYPE SMEquationTopography
+      
+      PRIVATE:: addStringToDictionary
 !
 !     ========
       CONTAINS
