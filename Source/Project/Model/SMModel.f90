@@ -173,7 +173,7 @@
             obj => self % topography
             CALL release(obj)
          END IF 
-         
+
       END SUBROUTINE destructModel
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -755,7 +755,7 @@
                                            requestedLength = EQUATION_STRING_LENGTH)
             ALLOCATE(topog)
             CALL topog % initWithEquation(zEqn = eqn)
-            IF(ReturnOnFatalError())     RETURN 
+            IF(ReturnOnFatalError())     RETURN
             self % topography => topog
             
          ELSE !TODO TOPOGRAPHY: ADD TEST AND CONSTRUCTION OF ALTERNATE TOPOGRAPHIES HERE
@@ -793,6 +793,7 @@
          CLASS(FTObject) , POINTER                  :: obj
          CLASS(FTData)   , POINTER                  :: splineData
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveFile
          CHARACTER(LEN=1), POINTER                  :: encodedData(:)
          REAL(KIND=RP), ALLOCATABLE                 :: decodedArray(:,:)
          CLASS(SMSplineCurve)             , POINTER :: cCurve      => NULL()
@@ -800,6 +801,7 @@
          INTEGER                                    :: numKnots
          
          INTEGER, EXTERNAL :: GetIntValue
+         LOGICAL :: curveFileFound
 !
 !        ------------
 !        Get the data
@@ -813,45 +815,71 @@
                                            message = "spline block has no name. Using default name spline", &
                                            poster = "ImportSplineBlock")
 
-         CALL SetIntegerValueFromDictionary(valueToSet = numKnots,             &
-                                            sourceDict = splineDict,           &
-                                            key = "nKnots",                    &
-                                            errorLevel = FT_ERROR_FATAL,       &
-                                            message = "nKnots keyword not found in spline definition", &
-                                            poster = "ImportSplineBlock")
-         IF(ReturnOnFatalError()) RETURN 
+         IF( splineDict % containsKey(SPLINE_FILE_KEY) )THEN
+
+            curveFile = splineDict % stringValueforKey( key = SPLINE_FILE_KEY, &
+                                                        requestedLength = DEFAULT_CHARACTER_LENGTH )
+                                                
+            INQUIRE( FILE=TRIM(curveFile), EXIST=curveFileFound )
+
+            IF(.NOT. curveFileFound)     THEN
+               CALL ThrowErrorExceptionOfType(poster = "ImportSplineBlock", &
+                                              msg    = "Spline curve file not found",&
+                                              typ    = FT_ERROR_FATAL)
+               RETURN 
+            END IF 
+
+            ALLOCATE(cCurve)
+            CALL cCurve % initWithDataFile( TRIM(curveFile), curveName, self % curveCount + 1 )
+            !Spline curves have no exceptions thrown
+            curvePtr => cCurve
+            CALL chain  % addCurve(curvePtr)
+            obj => cCurve
+            CALL release(obj)
+
 !
+         ELSE
+
+            CALL SetIntegerValueFromDictionary(valueToSet = numKnots,             &
+                                               sourceDict = splineDict,           &
+                                               key = "nKnots",                    &
+                                               errorLevel = FT_ERROR_FATAL,       &
+                                               message = "nKnots keyword not found in spline definition", &
+                                               poster = "ImportSplineBlock")
+            IF(ReturnOnFatalError()) RETURN 
 !        ---------------------
 !        Get the spline points
 !        ---------------------
 !
-         obj         => splineDict % objectForKey(key = "data")
-         splineData  => dataFromObject(obj)
-         encodedData => splineData % storedData()
-
-         IF(.NOT. ASSOCIATED(encodedData))     THEN
-            CALL ThrowErrorExceptionOfType(poster = "ImportSplineBlock", &
-                                           msg    = "Spline does not appear to contain any data",&
-                                           typ    = FT_ERROR_FATAL)
-            RETURN 
-         END IF 
-         
-         CALL DECODE(enc = encodedData, N = 4, M = numKnots, arrayOut = decodedArray)
+            obj         => splineDict % objectForKey(key = "data")
+            splineData  => dataFromObject(obj)
+            encodedData => splineData % storedData()
+   
+            IF(.NOT. ASSOCIATED(encodedData))     THEN
+               CALL ThrowErrorExceptionOfType(poster = "ImportSplineBlock", &
+                                              msg    = "Spline does not appear to contain any data",&
+                                              typ    = FT_ERROR_FATAL)
+               RETURN 
+            END IF 
+            
+            CALL DECODE(enc = encodedData, N = 4, M = numKnots, arrayOut = decodedArray)
 !
 !        ----------------
 !        Create the curve
 !        ----------------
 !
-         ALLOCATE(cCurve)
-         CALL cCurve % initWithPointsNameAndID(decodedArray(1,:), decodedArray(2,:), &
-                                               decodedArray(3,:), decodedArray(4,:), &
-                                               curveName, self % curveCount + 1 )
-         !Spline curves have no exceptions thrown
-         curvePtr => cCurve
-         CALL chain  % addCurve(curvePtr)
-         obj => cCurve
-         CALL release(obj)
-         
+            ALLOCATE(cCurve)
+            CALL cCurve % initWithPointsNameAndID(decodedArray(1,:), decodedArray(2,:), &
+                                                  decodedArray(3,:), decodedArray(4,:), &
+                                                  curveName, self % curveCount + 1 )
+            !Spline curves have no exceptions thrown
+            curvePtr => cCurve
+            CALL chain  % addCurve(curvePtr)
+            obj => cCurve
+            CALL release(obj)
+
+         ENDIF
+
       END SUBROUTINE ImportSplineBlock
 !
 !////////////////////////////////////////////////////////////////////////

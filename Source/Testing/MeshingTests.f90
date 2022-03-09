@@ -55,9 +55,10 @@
 ! Runs through a sequence of meshes and tests against standard results
 !---------------------------------------------------------------------
 !
-      CHARACTER(LEN=64), DIMENSION(9) :: controlFiles = [                                                          &
+      CHARACTER(LEN=64), DIMENSION(10) :: controlFiles = [                                                         &
                                                          "Benchmarks/ControlFiles/PillC.control                 ", &
                                                          "Benchmarks/ControlFiles/SplineGeometry.control        ", &
+                                                         "Benchmarks/ControlFiles/SplineGeometryF.control       ", &
                                                          "Benchmarks/ControlFiles/NACA0012.control              ", &
                                                          "Benchmarks/ControlFiles/HalfCircleArc.control         ", &
                                                          "Benchmarks/ControlFiles/Circles3.control              ", &
