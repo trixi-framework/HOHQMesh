@@ -55,7 +55,7 @@
 ! Runs through a sequence of meshes and tests against standard results
 !---------------------------------------------------------------------
 !
-      CHARACTER(LEN=64), DIMENSION(15) :: controlFiles = [                                                         &
+      CHARACTER(LEN=64), DIMENSION(16) :: controlFiles = [                                                         &
                                                          "Benchmarks/ControlFiles/PillC.control                 ", &
                                                          "Benchmarks/ControlFiles/SplineGeometry.control        ", &
                                                          "Benchmarks/ControlFiles/SplineGeometryF.control       ", &
@@ -69,6 +69,7 @@
                                                          "Benchmarks/ControlFiles/HalfCircle3DRot.control       ", &
                                                          "Benchmarks/ControlFiles/HalfCircleExtrude.control     ", &
                                                          "Benchmarks/ControlFiles/Pond.control                  ", &
+                                                         "Benchmarks/ControlFiles/SeaMount.control              ", &
                                                          "Benchmarks/ControlFiles/BottomFromFile.control        ", &
                                                          "Benchmarks/ControlFiles/ABAQUS_IceCreamCone.control   "  &
                                                         ]
