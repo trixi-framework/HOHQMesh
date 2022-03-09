@@ -6,13 +6,13 @@ procedure:
    is the version of the control file that HOQHMesh will execute for testing.
 2. In this new control file add the keyword "test file name" with an appropriate file path and name corresponding to the test
    to the RUN_PARAMETERS block of the control file. For example, in `NewTestMesh.control`
-   ```bash
+   ```
    test file name = /Benchmarks/BenchmarkData/NewTestMesh.txt
    ```
    will indicate that the benchmark information should be written to the file `NewTestMesh.txt`.
    The file path `/Benchmarks/BenchmarkData` is the expected path for the automated tests.
 3. Generate the benchmark information by adding the `-generateTest` flag, i.e.
-   ```bash
+   ```
    ./HOHQMesh -generateTest -f Benchmarks/ControlFiles/NewTestMesh.control
    ```
    This will write the test benchmark file to the location requested in the previous step.
@@ -20,7 +20,7 @@ procedure:
    Don't forget to change the `DIMENSION` of this list accordingly.
 
 After this procedure, recompile HOHQMesh. To execute the tests locally type
-```bash
+```
 ./HOHQMesh -test -path <pathToBenchmarks>
 ```
 where `<pathToBenchmarks>` is the path to the HOHQMesh directory. If you are inside the HOHQMesh directory, you can also omit the `-path` option, as it defaults to `.`.
