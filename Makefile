@@ -46,6 +46,7 @@ FTStackClass.o \
 FTStringSetClass.o \
 FTValueClass.o \
 FTValueDictionaryClass.o \
+GaussianCurvature.o \
 Geometry.o \
 Geometry3D.o \
 Hash.o \
@@ -304,6 +305,10 @@ FTValueDictionaryClass.o : $(FTOLPATH)/Source/FTObjects/FTValueDictionaryClass.f
 FTValueClass.o \
 FTDictionaryClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(FTOLPATH)/Source/FTObjects/FTValueDictionaryClass.f90
+
+GaussianCurvature.o :$(HOHQMESHPATH)/Source/Surfaces/GaussianCurvature.f90 \
+SMConstants.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/GaussianCurvature.f90
 
 Geometry.o :$(HOHQMESHPATH)/Source/Foundation/Geometry.f90 \
 SMConstants.o \
