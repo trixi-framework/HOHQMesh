@@ -37,7 +37,7 @@ The second algorithm is the `SIMPLE_ROTATION`, which rotates the two dimensional
        subdivisions          = 8
        start surface name    = bottom
        end surface name      = top
-    \end{SIMPLE_EXTRUSION}
+    \end{SIMPLE_ROTATION}
    
 The rotation andle factor is the fraction of pi over which the quad mesh is rotated. An example is shown below of an original two dimensional mesh  
 and its rotation about the x axis (direction = 1) is shown in Fig. 17.
