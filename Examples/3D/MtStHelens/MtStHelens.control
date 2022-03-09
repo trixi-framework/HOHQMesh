@@ -8,7 +8,7 @@
       plot file name   = Examples/3D/MtStHelens/MtStHelens.tec
       stats file name  = Examples/3D/MtStHelens/MtStHelens.txt
       mesh file format = ABAQUS
-      polynomial order = 5
+      polynomial order = 4
       plot file format = sem
    \end{RUN_PARAMETERS}
 
@@ -43,7 +43,7 @@
 \begin{MODEL}
 
 \begin{TOPOGRAPHY}
-	data file = Examples/3D/MtStHelens/sthelens_grid_data.dat
+	data file = Examples/3D/MtStHelens/sthelens_grid_data.txt
 \end{TOPOGRAPHY}
 
 \end{MODEL}
