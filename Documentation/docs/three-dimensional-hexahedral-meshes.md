@@ -98,7 +98,7 @@ The equation for the scaling is scalar `PARAMETRIC_EQUATION` (as opposed to a `P
 <p align = "center"> Fig. 20. Simple Extrusion of a semi-circular mesh with bottom topography</p>
 
 When using the `SIMPLE_EXTRUSION` algorithm, bottom topography can be added as shown below:
-The simplest way is to define the bottom topography with an equation in a `TOPOGRAPHY` block, e.g.
+The simplest way is to define the bottom topography with an equation in a `TOPOGRAPHY` block, e.g.,
 
         \begin{TOPOGRAPHY}
            eqn = h(x,y) = x^2 + y^2
@@ -106,7 +106,13 @@ The simplest way is to define the bottom topography with an equation in a `TOPOG
 
 The height function takes two arguments, which are the physical x-y coordinates, unlike the parametric coordinates that define boundary curves.
 
-Alternatively, the bottom topography data can be read in from a file. From this data a bicubic interpolation is used to compute the bottom topography information.
+Alternatively, the bottom topography data can be read in from a file, e.g,
+
+        \begin{TOPOGRAPHY}
+           data file = path/to/bottom_data.txt
+        \end{TOPOGRAPHY}
+
+From this data a bicubic interpolation is used to compute the bottom topography information.
 Currently this strategy of bottom topography extrusion relies on gridded data. The data file is assumed to come as separate lists of the x coordinate points, the
 y coordinate points, and the z coordinate points where the grid data is ordered slice-by-slice in the y direction. Below a small example is provided to clarify the
 data file format
