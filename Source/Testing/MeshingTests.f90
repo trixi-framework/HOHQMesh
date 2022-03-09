@@ -55,9 +55,10 @@
 ! Runs through a sequence of meshes and tests against standard results
 !---------------------------------------------------------------------
 !
-      CHARACTER(LEN=64), DIMENSION(13) :: controlFiles = [                                                         &
+      CHARACTER(LEN=64), DIMENSION(14) :: controlFiles = [                                                         &
                                                          "Benchmarks/ControlFiles/PillC.control                 ", &
                                                          "Benchmarks/ControlFiles/SplineGeometry.control        ", &
+                                                         "Benchmarks/ControlFiles/SplineGeometryF.control       ", &
                                                          "Benchmarks/ControlFiles/NACA0012.control              ", &
                                                          "Benchmarks/ControlFiles/HalfCircleArc.control         ", &
                                                          "Benchmarks/ControlFiles/Circles3.control              ", &
@@ -261,27 +262,27 @@
                                   actualValue   = currentResults % intValues(j),   &
                                   msg = TRIM(integerNames2D(j)))
             END DO
-   
+
             DO j = 1, SIZE(benchmarkResults % realValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % realValues(j), &
                                   actualValue   = currentResults % realValues(j),   &
                                   tol           = 1.0d-4,                           &
                                   msg = TRIM(realNames2D(j)))
             END DO
-         ELSE 
+         ELSE
             DO j = 1, SIZE(benchmarkResults % intValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % intValues(j), &
                                   actualValue   = currentResults % intValues(j),   &
                                   msg = TRIM(integerNames3D(j)))
             END DO
-   
+
             DO j = 1, SIZE(benchmarkResults % realValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % realValues(j), &
                                   actualValue   = currentResults % realValues(j),   &
                                   tol           = 1.0d-4,                           &
                                   msg = TRIM(realNames3D(j)))
             END DO
-         END IF 
+         END IF
 
       ELSE
          PRINT *, "No benchmark results specified for problem:",  TRIM(controlFileName)
@@ -325,9 +326,9 @@
                 numBadElements = badElements % COUNT()
                 CALL releaseFTMutableObjectArray(badElements)
             END IF
-            
+
             CALL ConstructTestData(tData,testDataType = QUAD_MESH_TEST)
-   
+
             CALL tData % addIntValue(whichValue = TR_NUM_ELEMENTS, &
                                     intValue    = project % mesh % elements % COUNT())
             CALL tData % addIntValue(whichValue = TR_NUM_NODES, &
@@ -336,7 +337,7 @@
                                     intValue    = project % mesh % edges % COUNT())
             CALL tData % addIntValue(whichValue = TR_NUM_BAD_ELEMENTS, &
                                     intValue    = numBadElements)
-   
+
             CALL tData % addRealValue(whichValue = TR_SIGNED_AREA  , realValue = STATs % avgValues(SIGNED_AREA_INDEX))
             CALL tData % addRealValue(whichValue = TR_ASPECT_RATIO , realValue = STATs % avgValues(ASPECT_RATIO_INDEX))
             CALL tData % addRealValue(whichValue = TR_CONDITION    , realValue = STATs % avgValues(CONDITION_INDEX))
@@ -344,12 +345,12 @@
             CALL tData % addRealValue(whichValue = JACOBIAN        , realValue = STATs % avgValues(JACOBIAN_INDEX))
             CALL tData % addRealValue(whichValue = MIN_ANGLE       , realValue = STATs % avgValues(MIN_ANGLE_INDEX))
             CALL tData % addRealValue(whichValue = MAX_ANGLE       , realValue = STATs % avgValues(MAX_ANGLE_INDEX))
-         ELSE 
+         ELSE
             CALL ConstructTestData(tData, testDataType = HEX_MESH_TEST)
-            
+
             numElements = SIZE(project % hexMesh % elements)
             numNodes    = SIZE(project % hexMesh % nodes)
-!            
+!
             CALL tData % addIntValue(whichValue = TR_NUM_ELEMENTS, intValue = numElements)
             CALL tData % addIntValue(whichValue = TR_NUM_NODES   , intValue = numNodes)
 
@@ -359,7 +360,7 @@
             CALL tData % addRealValue(whichValue = TR_SHAPE       , realValue = STATs % avgValues(SHAPE3D_INDEX))
             CALL tData % addRealValue(whichValue = SKEW3D_INDEX   , realValue = STATs % avgValues(SKEW3D_INDEX))
             CALL tData % addRealValue(whichValue = TR_VOLUME      , realValue = STATs % avgValues(VOLUME3D_INDEX))
-         END IF 
+         END IF
 
       END SUBROUTINE GatherTestFileData
 
