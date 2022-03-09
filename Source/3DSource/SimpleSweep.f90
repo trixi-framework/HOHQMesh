@@ -344,6 +344,7 @@
 !        Allocate connections between global ID and local (2D, level) id
 !        ---------------------------------------------------------------
 !
+         IF(ALLOCATED(locAndLevelForNodeID)) DEALLOCATE(locAndLevelForNodeID)
          ALLOCATE( locAndLevelForNodeID(2, numberOfNodes) )
 !
 !        ------------------------------
@@ -419,8 +420,8 @@
                hex8Mesh % nodes(k,j) % x  = extrudedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
                                                                  delta        = z, &
                                                                  pmutation    = pMutation)
-               locAndLevelForNodeID(1,nodeID) = k
-               locAndLevelForNodeID(2,nodeID) = j
+               hex8Mesh % locAndLevelForNodeID(1,nodeID) = k
+               hex8Mesh % locAndLevelForNodeID(2,nodeID) = j
                nodeID = nodeID + 1
             END DO   
             
@@ -569,6 +570,15 @@
                   hex8Mesh % elements(quadElementID,j) % bFaceName(3) = &
                   parametersDictionary % stringValueForKey(key             = SIMPLE_SWEEP_STARTNAME_KEY,&
                                                            requestedLength = LINE_LENGTH)
+                  ! Turn on boundary interpolant for element sidewalls for 
+                  ! elements that are adjacent to the bottom topography
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(1) = ON 
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(2) = ON 
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(4) = ON 
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(6) = ON 
+                  
+                  ! Turn on boundary interpolant at the extruded bottom !
+                  hex8Mesh % elements(quadElementID,j) % bFaceFlag(3) = ON 
                END IF 
                IF (j == numberOfLayers)     THEN 
                   hex8Mesh % elements(quadElementID,j) % bFaceName(5) = &

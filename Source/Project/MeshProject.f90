@@ -170,6 +170,7 @@
 !        ========
 !
          PROCEDURE :: initWithDictionary
+         FINAL     :: DestructMeshProject
       END TYPE MeshProject
 !
 !     ========
@@ -305,7 +306,7 @@
 !
       SUBROUTINE DestructMeshProject(self)
          IMPLICIT NONE
-         CLASS(MeshProject) :: self
+         TYPE(MeshProject) :: self
 
          IF ( ASSOCIATED(self % model) )     THEN
             CALL releaseModel(self % model)

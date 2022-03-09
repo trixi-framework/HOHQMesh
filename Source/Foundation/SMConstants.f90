@@ -43,7 +43,7 @@
 !
 !     MODULE SMConstants
 !
-!!        Defines constants for use by the spectral demonstaration
+!!        Defines constants for use by the spectral demonstration
 !!        routines, including precision definitions. 
 !
 !!    @author David A. Kopriva
@@ -67,6 +67,7 @@
          COMPLEX(KIND=CP)                 :: ImgI =(0.0,1.0)! = SQRT(-1.0_RP)
          
          INTEGER, PARAMETER               :: DEFAULT_CHARACTER_LENGTH = 128
+         INTEGER, PARAMETER               :: DEFAULT_FILE_PATH_LENGTH = 128
          
          REAL(KIND=RP)   :: RADIANS_TO_DEGREES = 180.0_RP/PI
          REAL(KIND=RP)   :: DEGREES_TO_RADIANS = PI/180.0_RP

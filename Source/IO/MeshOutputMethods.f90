@@ -332,7 +332,6 @@
 !
          CLASS(FTObject)    , POINTER         :: obj  => NULL()
          CLASS(SMNode)      , POINTER         :: node => NULL()
-         CLASS(SMEdge)      , POINTER         :: edge => NULL()
          CLASS(SMElement)   , POINTER         :: e    => NULL()
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
 

@@ -61,7 +61,7 @@
 !        ========
 !
          PROCEDURE, PUBLIC :: init       => initLaplaceSmoother
-         PROCEDURE, PUBLIC :: destruct   => destructLaplaceMeshSmoother
+         FINAL             :: destructLaplaceMeshSmoother
          PROCEDURE, PUBLIC :: smoothMesh => laplaceSmoothMesh
          
       END TYPE LaplaceMeshSmoother
@@ -102,7 +102,7 @@
 ! 
       SUBROUTINE destructLaplaceMeshSmoother(self)  
          IMPLICIT NONE  
-         CLASS(LaplaceMeshSmoother) :: self
+         TYPE(LaplaceMeshSmoother) :: self
       END SUBROUTINE destructLaplaceMeshSmoother
 !
 !//////////////////////////////////////////////////////////////////////// 

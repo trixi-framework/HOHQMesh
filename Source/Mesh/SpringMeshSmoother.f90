@@ -72,7 +72,7 @@
 !        ========
 !
          PROCEDURE :: init       => initSmoother
-         PROCEDURE :: destruct   => DestructSpringMeshSmoother
+         FINAL     :: DestructSpringMeshSmoother
          PROCEDURE :: smoothMesh => SpringSmoothMesh
       END TYPE SpringMeshSmoother
 !
@@ -133,7 +133,7 @@
 !
       SUBROUTINE DestructSpringMeshSmoother( self ) 
          IMPLICIT NONE 
-         CLASS(SpringMeshSmoother) :: self
+         TYPE(SpringMeshSmoother) :: self
          IF(self % restLength >= 0.0)     CONTINUE 
          !Do nothing
       END SUBROUTINE DestructSpringMeshSmoother
