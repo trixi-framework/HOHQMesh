@@ -55,7 +55,7 @@
 ! Runs through a sequence of meshes and tests against standard results
 !---------------------------------------------------------------------
 !
-      CHARACTER(LEN=64), DIMENSION(13) :: controlFiles = [                                                         &
+      CHARACTER(LEN=64), DIMENSION(14) :: controlFiles = [                                                         &
                                                          "Benchmarks/ControlFiles/PillC.control                 ", &
                                                          "Benchmarks/ControlFiles/SplineGeometry.control        ", &
                                                          "Benchmarks/ControlFiles/SplineGeometryF.control       ", &
