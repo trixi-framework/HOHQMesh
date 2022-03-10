@@ -117,7 +117,7 @@
             11, 12, 14, 15, 16, 11, 12, 15, 16, 7 , 8 , 11, 12, 15, 16 /)
 
       INTEGER, PARAMETER, DIMENSION(17), PRIVATE :: column_pointers_weight_Matrix = (/ &
-                        1, 10, 16, 20, 26, 35, 41, 45, 51, 60, 66, 70, 76, 85, 91, 95, 101 /)
+             1, 10, 16, 20, 26, 35, 41, 45, 51, 60, 66, 70, 76, 85, 91, 95, 101 /)
 !
 !     ========
       CONTAINS
@@ -299,9 +299,9 @@
          ! Store resulting coefficents in a form better for Horner's rule
          coeffs = RESHAPE( coeff_vec, (/4, 4/), ORDER = (/2, 1/) )
 !
-!        --------------------------------------------------------------------
-!        Compute the bi-cubic interpolation with the auxiliary variables u, v
-!        --------------------------------------------------------------------
+!        -------------------------------------------------------------------
+!        Compute the bicubic interpolation with the auxiliary variables u, v
+!        -------------------------------------------------------------------
 !
          z_val = 0.0_RP
          v = ( t(1) - self % x_values(j) ) / dx
