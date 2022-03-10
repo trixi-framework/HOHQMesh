@@ -527,13 +527,13 @@
 !           -----------------------
 !
             numberOfBadElements = badElements % COUNT()
-            ALLOCATE( shapeMeasures    ( NUMBER_OF_SHAPE_MEASURES, numberOfBadElements ) )
-            ALLOCATE( badElementMeasure( NUMBER_OF_SHAPE_MEASURES, numberOfBadElements ) )
+            ALLOCATE( shapeMeasures    ( NUMBER_OF_2D_SHAPE_MEASURES, numberOfBadElements ) )
+            ALLOCATE( badElementMeasure( NUMBER_OF_2D_SHAPE_MEASURES, numberOfBadElements ) )
             
             DO k = 1, numberOfBadElements
                obj => badElements % objectAtIndex(k)
                CALL cast(obj,e)
-               CALL ComputeElementShapeMeasures( e, shapeMeasures(:,k) )
+               CALL ComputeElementShapeMeasures2D( e, shapeMeasures(:,k) )
                CALL ExtractBadElementInfo( shapeMeasures(:,k), badElementMeasure(:,k) )
             END DO
 !

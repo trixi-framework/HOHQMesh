@@ -56,6 +56,7 @@
       USE ErrorTypesModule
       USE SMTopographyClass
       USE SMEquationTopographyClass
+      USE SMTopographyFromFileClass
       IMPLICIT NONE
 !
 !     ---------
@@ -739,6 +740,8 @@
 !
          CHARACTER(LEN = EQUATION_STRING_LENGTH)   :: eqn
          CLASS(SMEquationTopography), POINTER      :: topog
+         CHARACTER(LEN = DEFAULT_FILE_PATH_LENGTH) :: topog_file
+         CLASS(SMTopographyFromFile), POINTER      :: topog_data
 !
 !        ----------
 !        Interfaces
@@ -757,6 +760,13 @@
             CALL topog % initWithEquation(zEqn = eqn)
             IF(ReturnOnFatalError())     RETURN
             self % topography => topog
+         ELSEIF ( dict % containsKey(TOPOGRAPHY_FROM_FILE_KEY) )     THEN
+            topog_file = dict % stringValueForKey(key             = TOPOGRAPHY_FROM_FILE_KEY, &
+                                                  requestedLength = DEFAULT_FILE_PATH_LENGTH)
+            ALLOCATE(topog_data)
+            CALL topog_data % initWithDataFile(topographyFile = topog_file)
+            IF(ReturnOnFatalError())     RETURN
+            self % topography => topog_data
             
          ELSE !TODO TOPOGRAPHY: ADD TEST AND CONSTRUCTION OF ALTERNATE TOPOGRAPHIES HERE
             PRINT *, "Unknown topography definition. Ignoring."

@@ -75,7 +75,7 @@
          CLASS( MeshProject )  , POINTER                      :: project           ! Input and output. Release when done
          TYPE( MeshStatistics )                 , INTENT(OUT) :: stats             ! Output
          LOGICAL                                , INTENT(IN)  :: test              ! Input
-         LOGICAL                                , INTENT(out) :: didGenerate3DMesh ! Output
+         LOGICAL                                , INTENT(OUT) :: didGenerate3DMesh ! Output
          TYPE (FTValueDictionary), POINTER                    :: projectDict       ! Input
 !
 !        ----
@@ -138,7 +138,9 @@
 !
          IF(.NOT.test)     THEN
             PRINT *, " "
+            PRINT *, "*******************"
             PRINT *, "2D Mesh Statistics:"
+            PRINT *, "*******************"
             PRINT *, "   Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
             PRINT *, "   Number of nodes    = ", project % mesh % nodes    % COUNT()
             PRINT *, "   Number of Edges    = ", project % mesh % edges    % COUNT()
@@ -153,7 +155,7 @@
 
          IF(.NOT.test)     THEN
             WRITE(numb,FMT='(I3)') SIZE(stats % avgValues)
-            namesFmt  = "(" // TRIM(numb) // "A16)"
+            namesFmt  = "(7A16)"
             valuesFmt = "(A16," // TRIM(numb) // "(F16.8))"
 
             PRINT *, " "
@@ -196,12 +198,27 @@
 !              Gather and publish statistics
 !              -----------------------------
 !
+               CALL ComputeMeshQualityStatistics( stats = stats, mesh  = project % hexMesh)
                IF(.NOT.test)     THEN
-                  PRINT *, " "
+                  PRINT *, "*******************"
                   PRINT *, "3D Mesh Statistics:"
+                  PRINT *, "*******************"
                   PRINT *, "    Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
                   PRINT *, "    Number of nodes    = ", SIZE(project % hexMesh % nodes)
                   PRINT *, "    Number of Elements = ", SIZE(project % hexMesh % elements)
+                  PRINT *
+                  
+                  WRITE(numb,FMT='(I3)') SIZE(stats % avgValues)
+                  namesFmt  = "(7A16)"
+                  valuesFmt = "(A16," // TRIM(numb) // "(F16.8))"
+      
+                  PRINT *, "Mesh Quality:"
+                  WRITE(6,namesFmt) "Measure", "Minimum", "Maximum", "Average", "Acceptable Low", "Acceptable High", "Reference"
+                  DO k = 1, SIZE(shapeMeasureNames3D)
+                     WRITE(6,valuesFmt) TRIM(shapeMeasureNames3D(k)), stats % minValues(k), &
+                                             stats % maxValues(k), stats % avgValues(k),&
+                                             acceptableLow3D(k), acceptableHigh3D(k), refValues3D(k)
+                  END DO
                   PRINT *
                END IF
             ELSE

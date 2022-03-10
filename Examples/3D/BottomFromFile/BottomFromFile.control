@@ -1,0 +1,49 @@
+%
+% An example using a bottom topography constructed from a data file
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/3D/BottomFromFile/BottomFromFile.inp
+      plot file name   = Examples/3D/BottomFromFile/BottomFromFile.tec
+      stats file name  = none
+      mesh file format = ABAQUS
+      polynomial order = 4
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+
+   \begin{MESH_PARAMETERS}
+      element type = hex
+   \end{MESH_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+       x0 = [ -3.0, -2.0, 1.0]
+       dx = [ 1.0, 1.0, 1.0]
+       N  = [ 6, 4, 5]
+   \end{BACKGROUND_GRID}
+
+   \begin{SIMPLE_EXTRUSION}
+      direction          = 3
+      height             = 3.0
+      subdivisions       = 6
+      start surface name = Riverbed
+      end surface name   = Top
+   \end{SIMPLE_EXTRUSION}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+   \begin{TOPOGRAPHY}
+      data file = Examples/3D/BottomFromFile/exp_bottom.txt
+   \end{TOPOGRAPHY}
+
+\end{MODEL}
+
+\end{FILE}

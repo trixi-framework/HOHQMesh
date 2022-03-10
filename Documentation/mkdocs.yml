@@ -35,6 +35,7 @@ nav:
     - How HOHQMesh Works: 'how-hohqmesh-works.md'
     - Assumptions and Algorithms: 'assumptions-and-algorithms.md'
     - Building the Documentation: 'building-the-documentation.md'
+    - Adding a New Test: 'adding-a-new-test.md'
     - Releasing a New Version: 'releasing-a-new-version.md'
     - Updating Spack Packages: 'updating-spack-packages.md'
 
