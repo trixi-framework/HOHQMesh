@@ -466,8 +466,8 @@ SizerControls.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Project/MeshProject.f90
 
 MeshQualityAnalysis.o :$(HOHQMESHPATH)/Source/Mesh/MeshQualityAnalysis.f90 \
-SMMeshObjects.o \
-SMMeshClass.o
+SMMeshClass.o \
+HexMeshObjects.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Mesh/MeshQualityAnalysis.f90
 
 MeshSmoother.o :$(HOHQMESHPATH)/Source/Mesh/MeshSmoother.f90 \
