@@ -55,23 +55,7 @@
 ! Runs through a sequence of meshes and tests against standard results
 !---------------------------------------------------------------------
 !
-      CHARACTER(LEN=64), DIMENSION(15) :: controlFiles = [                                                         &
-                                                         "Benchmarks/ControlFiles/PillC.control                 ", &
-                                                         "Benchmarks/ControlFiles/SplineGeometry.control        ", &
-                                                         "Benchmarks/ControlFiles/SplineGeometryF.control       ", &
-                                                         "Benchmarks/ControlFiles/NACA0012.control              ", &
-                                                         "Benchmarks/ControlFiles/HalfCircleArc.control         ", &
-                                                         "Benchmarks/ControlFiles/Circles3.control              ", &
-                                                         "Benchmarks/ControlFiles/AllFeatures.control           ", &
-                                                         "Benchmarks/ControlFiles/Segmented.control             ", &
-                                                         "Benchmarks/ControlFiles/GingerbreadManGeometry.control", &
-                                                         "Benchmarks/ControlFiles/sigmoidScale.control          ", &
-                                                         "Benchmarks/ControlFiles/HalfCircle3DRot.control       ", &
-                                                         "Benchmarks/ControlFiles/HalfCircleExtrude.control     ", &
-                                                         "Benchmarks/ControlFiles/Pond.control                  ", &
-                                                         "Benchmarks/ControlFiles/BottomFromFile.control        ", &
-                                                         "Benchmarks/ControlFiles/ABAQUS_IceCreamCone.control   "  &
-                                                        ]
+      CHARACTER(LEN=64), DIMENSION(:), ALLOCATABLE :: controlFiles
 !
 !  ========
    CONTAINS
@@ -87,7 +71,7 @@
 !     Arguments
 !     ---------
 !
-      CHARACTER(LEN=*) :: pathToTestFiles
+      CHARACTER(LEN=*)     :: pathToTestFiles
       INTEGER, INTENT(OUT) :: numberOfFailedTests
 !
 !     ---------------
@@ -97,9 +81,11 @@
       TYPE(TestSuiteManager)                  :: testSuite
       CHARACTER(LEN=1), POINTER               :: optData(:)
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:)
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath
-      INTEGER                                 :: k
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath, path, str
+      INTEGER                                 :: k, fUnit, nControlFiles
       EXTERNAL                                :: TestCurves
+      LOGICAL                                 :: exst
+      CHARACTER(LEN=ERROR_MESSAGE_LENGTH)     :: msg
 !
 !     ------------------------------------------------------------------------------------
 !     The control files are located in a Benchmarks directory at the end of (if not empty)
@@ -109,15 +95,63 @@
 !
       CALL testSuite % init()
 !
-!     -------------------------------------------
-!     Add tests of basic components to test suite
-!     -------------------------------------------
+!     -------------------
+!     Add hardwired tests
+!     -------------------
 !
       CALL testSuite % addTestSubroutineWithName(TestCurves,"Curve evaluation tests")
 !
-!     ---------------------------------
-!     Add tests of meshes to test suite
-!     ---------------------------------
+!     --------------------------------
+!     Get the list of meshing tests...
+!     --------------------------------
+!
+      path = pathToTestFiles
+      
+      IF ( TRIM(path) == "" )     THEN
+         fullPath =  "BenchMarks/BenchmarkFiles.txt"
+      ELSE
+         CALL ConvertToPath(path)
+         fullPath = TRIM(path) // "BenchMarks/BenchmarkFiles.txt"
+      END IF
+      
+      INQUIRE( FILE = fullPath, EXIST = exst )
+      IF (.NOT.exst) THEN
+         WRITE(msg, *) "Unable to open the list of test files: " // TRIM(ADJUSTL(fullPath))
+         CALL ThrowErrorExceptionOfType(poster = "RunTests",    &
+                                        msg    = msg,           &
+                                        typ    = FT_ERROR_FATAL)
+         RETURN
+      END IF
+      
+      OPEN(NEWUNIT = fUnit, FILE = fullPath)
+!
+!     -------------------------
+!     Count the number of lines
+!     -------------------------
+!
+      nControlFiles = 0
+      
+      DO
+         READ(UNIT = fUnit, FMT = '(A)', END = 1000) str
+         nControlFiles = nControlFiles + 1
+      END DO 
+1000  CONTINUE
+
+      ALLOCATE(controlFiles(nControlFiles))
+      REWIND(fUnit)
+!
+!     ------------------------------
+!     Read in the control file names
+!     ------------------------------
+!
+      DO k = 1, nControlFiles 
+         READ(UNIT = fUnit, FMT = '(A)') str
+         controlFiles(k) = TRIM(str)
+      END DO 
+!
+!     -------------------------------------
+!     Add the tests of meshes to test suite
+!     -------------------------------------
 !
       DO k = 1, SIZE(controlFiles)
 
@@ -143,6 +177,7 @@
 !
       CALL testSuite % performTests(numberOfFailedTests)
       CALL finalizeSharedAssertionsManager
+      DEALLOCATE(controlFiles)
 
    END SUBROUTINE RunTests
 !
