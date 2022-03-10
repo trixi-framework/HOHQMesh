@@ -106,7 +106,7 @@ The simplest way is to define the bottom topography with an equation in a `TOPOG
 
 The height function takes two arguments, which are the physical x-y coordinates, unlike the parametric coordinates that define boundary curves.
 
-Alternatively, the bottom topography data can be read in from a file, e.g,
+Alternatively, the bottom topography data can be read in from a file, e.g.,
 
         \begin{TOPOGRAPHY}
            data file = path/to/bottom_data.txt

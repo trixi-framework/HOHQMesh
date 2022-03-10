@@ -3,7 +3,7 @@ control file that exercises these new routines. Adding a new test is straightfor
 procedure:
 
 1. Create a new control file, e.g., `NewTestMesh.control` and save it in the folder `/Benchmarks/ControlFiles`. This
-   is the version of the control file that HOQHMesh will execute for testing.
+   is the version of the control file that HOHQMesh will execute for testing.
 2. In this new control file add the keyword "test file name" with an appropriate file path and name corresponding to the test
    to the RUN_PARAMETERS block of the control file. For example, in `NewTestMesh.control`
    ```
