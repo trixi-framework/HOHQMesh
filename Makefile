@@ -660,6 +660,7 @@ Geometry.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMSplineCurveClass.f90
 
 SMTopographyClass.o :$(HOHQMESHPATH)/Source/Surfaces/SMTopographyClass.f90 \
+GaussianCurvature.o \
 SMConstants.o \
 FTObjectClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/SMTopographyClass.f90
