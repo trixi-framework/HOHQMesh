@@ -190,6 +190,7 @@ SMTopographyClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/CurveTests.f90
 
 DataFileTopographyClass.o : $(HOHQMESHPATH)/Source/Surfaces/DataFileTopographyClass.f90 \
+FatalErrorException.o \
 FTExceptionClass.o \
 SMConstants.o \
 SMTopographyClass.o \
