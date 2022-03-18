@@ -106,14 +106,14 @@
 !     --------------------------------
 !
       path = pathToTestFiles
-      
+
       IF ( TRIM(path) == "" )     THEN
-         fullPath =  "BenchMarks/BenchmarkFiles.txt"
+         fullPath =  "Benchmarks/BenchmarkFiles.txt"
       ELSE
          CALL ConvertToPath(path)
-         fullPath = TRIM(path) // "BenchMarks/BenchmarkFiles.txt"
+         fullPath = TRIM(path) // "Benchmarks/BenchmarkFiles.txt"
       END IF
-      
+
       INQUIRE( FILE = fullPath, EXIST = exst )
       IF (.NOT.exst) THEN
          WRITE(msg, *) "Unable to open the list of test files: " // TRIM(ADJUSTL(fullPath))
@@ -122,7 +122,7 @@
                                         typ    = FT_ERROR_FATAL)
          RETURN
       END IF
-      
+
       OPEN(NEWUNIT = fUnit, FILE = fullPath)
 !
 !     -------------------------
@@ -130,11 +130,11 @@
 !     -------------------------
 !
       nControlFiles = 0
-      
+
       DO
          READ(UNIT = fUnit, FMT = '(A)', END = 1000) str
          nControlFiles = nControlFiles + 1
-      END DO 
+      END DO
 1000  CONTINUE
 
       ALLOCATE(controlFiles(nControlFiles))
@@ -144,10 +144,10 @@
 !     Read in the control file names
 !     ------------------------------
 !
-      DO k = 1, nControlFiles 
+      DO k = 1, nControlFiles
          READ(UNIT = fUnit, FMT = '(A)') str
          controlFiles(k) = TRIM(str)
-      END DO 
+      END DO
 !
 !     -------------------------------------
 !     Add the tests of meshes to test suite
