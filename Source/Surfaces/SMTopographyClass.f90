@@ -141,7 +141,12 @@
         REAL(KIND=RP)       :: xp(3)  , xm(3)  , yp(3)  , ym(3)  , x(3)
         REAL(KIND=RP)       :: xpyp(3), xmyp(3), xpym(3), xmym(3)
         REAL(KIND=RP)       :: hessian(2,2)
-      
+!
+!       -----------------------------------------------------------------------
+!       Compute Grad and Hessian here directly rather than use the routines
+!       in GaussianCurvature to cut down on the number of function evaluations.
+!       -----------------------------------------------------------------------
+!
         x  = self % heightAt(t)
         xp = self % heightAt(t + [gc_dx,0.0_RP])
         xm = self % heightAt(t - [gc_dx,0.0_RP])
@@ -162,8 +167,7 @@
         hessian(1,2) = 0.25_RP*(xpyp(3) - xmyp(3) - xpym(3) + xmym(3))/gc_dx2
         hessian(2,1) = hessian(1,2)
         
-        gaussianCurvatureBaseAt = (hessian(1,1)*hessian(2,2) - hessian(1,2)*hessian(2,1)) &
-                                  /(1.0_RP + gradF(1)**2 + gradF(2)**2)**2
+        gaussianCurvatureBaseAt = GaussianCurvatureWithDerivs(gradF, hessian)
         gaussianCurvatureBaseAt = ABS(gaussianCurvatureBaseAt) !Can be negative
         
      END FUNCTION gaussianCurvatureBaseAt
