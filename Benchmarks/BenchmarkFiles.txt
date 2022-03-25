@@ -13,3 +13,4 @@ Benchmarks/ControlFiles/HalfCircleExtrude.control
 Benchmarks/ControlFiles/Pond.control                 
 Benchmarks/ControlFiles/BottomFromFile.control       
 Benchmarks/ControlFiles/ABAQUS_IceCreamCone.control
+Benchmarks/ControlFiles/SeaMount.control
