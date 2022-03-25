@@ -16,10 +16,12 @@ procedure:
    ./HOHQMesh -generateTest -f Benchmarks/ControlFiles/NewTestMesh.control
    ```
    This will write the test benchmark file to the location requested in the previous step.
-4. Go to line 58 in `Source/Testing/MeshingTest.f90` and add the new control file path to the list of test cases, e.g.,
-   Don't forget to change the `DIMENSION` of this list accordingly.
+4. Open the file `/Benchmarks/BenchmarkFiles.txt` and add the new control file path to the list of test cases, e.g.,
+   ```
+   Benchmarks/ControlFiles/NewTestMesh.control
+   ```
 
-After this procedure, recompile HOHQMesh. To execute the tests locally type
+To execute the tests locally type
 ```
 ./HOHQMesh -test -path <pathToBenchmarks>
 ```
