@@ -60,6 +60,7 @@
 !     ---------
 !
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: TOPOGRAPHY_FROM_FILE_KEY = "data file"
+      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIZING_KEY               = "sizing"
 !
 !     ----------------------
 !     Class type definition
@@ -87,7 +88,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initWithDataFile(self, topographyFile)
+      SUBROUTINE initWithDataFile(self, topographyFile, sizingIsOn)
          USE ErrorTypesModule
          IMPLICIT NONE
 !
@@ -97,6 +98,7 @@
 !
          CLASS(SMTopographyFromFile) :: self
          CHARACTER(LEN=*)            :: topographyFile
+         LOGICAL                     :: sizingIsOn
 !
 !        ---------------
 !        Local variables
@@ -187,16 +189,20 @@
 !        -------------------------------------------------------------
 !
          NULLIFY( self % curvature)
-         ALLOCATE( self % curvature)
-         DO k = 1,ny
-            DO j = 1,nx
-               z_values(j, k) = GaussianCurvatureBaseAt(self, [x_values(j), y_values(k)])
-            END DO ! j
-         END DO ! k
-         CALL self % curvature % initBiCubicInterpolation(Nx = nx, Ny = ny, &
-                                                          x  = x_values,    &
-                                                          y  = y_values,    &
-                                                          z  = z_values)
+         
+         IF( sizingIsOn)     THEN 
+         
+            ALLOCATE( self % curvature)
+            DO k = 1,ny
+               DO j = 1,nx
+                  z_values(j, k) = GaussianCurvatureBaseAt(self, [x_values(j), y_values(k)])
+               END DO ! j
+            END DO ! k
+            CALL self % curvature % initBiCubicInterpolation(Nx = nx, Ny = ny, &
+                                                             x  = x_values,    &
+                                                             y  = y_values,    &
+                                                             z  = z_values)
+         END IF
         
       END SUBROUTINE initWithDataFile
 !

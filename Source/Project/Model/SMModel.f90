@@ -742,6 +742,8 @@
          CLASS(SMEquationTopography), POINTER      :: topog
          CHARACTER(LEN = DEFAULT_FILE_PATH_LENGTH) :: topog_file
          CLASS(SMTopographyFromFile), POINTER      :: topog_data
+         LOGICAL                                   :: sizingIsON
+         CHARACTER(LEN=3)                          :: sizing
 !
 !        ----------
 !        Interfaces
@@ -767,11 +769,21 @@
             CALL topog % initWithEquation(zEqn = eqn)
             IF(ReturnOnFatalError())     RETURN
             self % topography => topog
+            
          ELSEIF ( dict % containsKey(TOPOGRAPHY_FROM_FILE_KEY) )     THEN
+         
             topog_file = dict % stringValueForKey(key             = TOPOGRAPHY_FROM_FILE_KEY, &
                                                   requestedLength = DEFAULT_FILE_PATH_LENGTH)
+            sizingIsON = .FALSE.
+            IF ( dict % containsKey(key = SIZING_KEY) )     THEN
+               sizing = dict % stringValueForKey(key = SIZING_KEY, requestedLength = 3)
+               IF ( sizing == "ON " )     THEN
+                  sizingIsON = .TRUE. 
+               END IF 
+            END IF 
+            
             ALLOCATE(topog_data)
-            CALL topog_data % initWithDataFile(topographyFile = topog_file)
+            CALL topog_data % initWithDataFile(topog_file, sizingIsON)
             IF(ReturnOnFatalError())     RETURN
             self % topography => topog_data
             
