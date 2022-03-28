@@ -36,7 +36,7 @@
          PROCEDURE :: valueAt => BiCubicInterpolationValue
       END TYPE BiCubicInterpolation
       
-!      PRIVATE :: TestFunction
+      PRIVATE :: TestFunction
 !
 !     ----------------------------------------------------------------------------
 !     Inverse matrix necessary to find the 16 coefficients needed
@@ -397,3 +397,33 @@
       END FUNCTION TestFunction
  
    END Module BiCubicClass
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE TestBiCubicInterpolation  
+         USE BiCubicClass
+         USE TestSuiteManagerClass
+         USE FTAssertions
+         USE SharedExceptionManagerModule
+         IMPLICIT NONE  
+         
+         TYPE(BiCubicInterpolation) :: bQ
+         REAL(KIND=RP)              :: z, x, y
+         INTEGER                    :: k
+         LOGICAL                    :: tst
+         
+         CALL ConstructTestInterpolant(self = bQ, Nx = 10,Ny = 10)
+      
+         DO k = 1, 6 
+           CALL RANDOM_NUMBER(HARVEST = x) 
+           CALL RANDOM_NUMBER(HARVEST = y)
+           x = 1.5_RP*x - 0.75_RP
+           y = 1.5_RP*y - 0.75_RP
+           tst =  interpolantIsWithinTolerance(bQ, x ,y , absTol = 1.0d-4)
+           CALL FTAssert(test = tst,msg = "BiCubic Interpolation is not within tolerance")
+           IF ( .NOT.tst )     THEN
+               PRINT *, x, y, tst 
+            END IF 
+          END DO 
+
+      END SUBROUTINE TestBiCubicInterpolation
