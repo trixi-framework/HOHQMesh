@@ -15,6 +15,7 @@ FFLAGS = -cpp -O
 OBJS = \
 3DMeshController.o \
 Assert.o \
+BiCubicClass.o \
 BoundaryEdgeCleaning.o \
 ChainedSegmentedCurveClass.o \
 CommandLineReader.o \
@@ -121,6 +122,14 @@ Comparisons.o \
 FTOLConstants.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(FTOLPATH)/Source/FTTesting/Assert.f90
 
+BiCubicClass.o : $(HOHQMESHPATH)/Source/Surfaces/BiCubicClass.f90 \
+TestSuiteManagerClass.o \
+FTExceptionClass.o \
+SMConstants.o \
+Assert.o \
+FTObjectClass.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/BiCubicClass.f90
+
 BoundaryEdgeCleaning.o :$(HOHQMESHPATH)/Source/Mesh/BoundaryEdgeCleaning.f90 \
 Connections.o \
 ProgramGlobals.o \
@@ -196,7 +205,8 @@ FTExceptionClass.o \
 SMConstants.o \
 SMTopographyClass.o \
 EquationEvaluatorClass.o \
-ProgramGlobals.o
+ProgramGlobals.o \
+BiCubicClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/DataFileTopographyClass.f90
 
 ElementOperations.o :$(HOHQMESHPATH)/Source/MeshObjects/ElementOperations.f90 \
