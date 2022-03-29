@@ -255,9 +255,6 @@
          REAL(KIND=RP)               :: t(2)
          
          gaussianCurvatureFromInterp = self % curvature % valueAt(t)
-         IF(gaussianCurvatureFromInterp > 2.0)     then
-            gaussianCurvatureFromInterp = 0.0_RP
-         END IF 
          
       END FUNCTION gaussianCurvatureFromInterp
 !
