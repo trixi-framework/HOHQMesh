@@ -153,6 +153,7 @@ data file format
 
 ### Sizing the Mesh along Bottom Topography<a name="SizingTopography"></a>
 ![SeaMountWithSizing](https://user-images.githubusercontent.com/85404032/160676054-d5f12eee-4f2b-4674-8861-1d131e9e8493.png)
+<p align = "center"> Fig. 22. Simple Extrusion of a semi-circular mesh with a bottom topography and local refinement depending on its curvature</p>
 
 Finally, the grid can be sized along the bottom by adding the command
 
@@ -164,7 +165,7 @@ to any TOPOGAPHY block, e.g
 		   data file = path/to/bottom_data.txt
 		   sizing    = ON
 		\end{TOPOGRAPHY}
-  		
-It can also be turned `OFF', or the line deleted, to not size the bottom. 
 
-The sizer will then size the grid along the bottom according to the curvature of the topography. An example is shown in Fig. 21.
+It can also be turned `OFF', or the line deleted, to not size the bottom.
+
+The sizer will then size the grid along the bottom according to the curvature of the topography. An example is shown in Fig. 22.
