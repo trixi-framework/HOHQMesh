@@ -225,13 +225,6 @@ If the SIMPLE_EXTRUSION is used, bottom topography can be optionally added to th
 		eqn = f(x,y) = some function of (x,y) as an equation
 	\end{TOPOGRAPHY}
 
-By default, mesh resolution is not dependent on the shape of the bottom topography. HOHQMesh can be instructed to automatically refine the mesh based on the curvature of topography : 
-
-	\begin{TOPOGRAPHY}
-		eqn = f(x,y) = some function of (x,y) as an equation
-                sizing = ON
-	\end{TOPOGRAPHY}
-
 ## Appendix E: ABAQUS mesh file format<a name="ABAQUS"></a>
 
 The [Abaqus mesh file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm) is common in the finite element community. The ABAQUS mesh file should use the `.inp` extension. The standard Abaqus format includes a list of node data and a list of element connectivity information. In this sense it is similar to the ISM format without high-order boundary information. The standard Abaqus format encodes a straight sided (linear) mesh.
