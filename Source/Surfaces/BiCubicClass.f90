@@ -114,7 +114,6 @@
 !
 !        ---------------------------------------------------------------
 !        Create central derivative approximations for z_x, z_y, and z_xy
-!        Note for convenience the edge cases are kept to be 0.0_RP
 !        ---------------------------------------------------------------
 !
          DO k = 2,ny-1
@@ -127,6 +126,51 @@
                                                        - self % z_values(j-1, k+1) - self % z_values(j+1, k-1))
             END DO ! j
          END DO ! k
+!
+!        -------------------------------------------------------------------------------------
+!        A first order approximation to the derivatives along the boundaries is to simply copy
+!        the values of the next line in to the edges.
+!        -------------------------------------------------------------------------------------
+!
+         DO k = 2, Ny-1 
+         
+            self % dzdx(1,k)   = self % dzdx(2,k)
+            self % dzdy(1,k)   = self % dzdy(2,k)
+            self % d2zdxy(1,k) = self % d2zdxy(2,k)
+            
+            self % dzdx(Nx,k)   = self % dzdx(Nx-1,k)
+            self % dzdy(Nx,k)   = self % dzdy(Nx-1,k)
+            self % d2zdxy(Nx,k) = self % d2zdxy(Nx-1,k)
+
+         END DO 
+         
+         DO j = 2, Nx-1 
+         
+            self % dzdx(j,1)   = self % dzdx(j,2)
+            self % dzdy(j,1)   = self % dzdy(j,2)
+            self % d2zdxy(j,1) = self % d2zdxy(j,2)
+            
+            self % dzdx(j,Ny)   = self % dzdx(j,Ny-1)
+            self % dzdy(j,Ny)   = self % dzdy(j,Ny-1)
+            self % d2zdxy(j,Ny) = self % d2zdxy(j,Ny-1)
+            
+         END DO 
+
+         self % dzdx(1,1)   = self % dzdx(2,2)
+         self % dzdy(1,1)   = self % dzdy(2,2)
+         self % d2zdxy(1,1) = self % d2zdxy(2,2)
+
+         self % dzdx(Nx,1)   = self % dzdx(Nx-1,2)
+         self % dzdy(Nx,1)   = self % dzdy(Nx-1,2)
+         self % d2zdxy(Nx,1) = self % d2zdxy(Nx-1,2)
+
+         self % dzdx(1,Ny)   = self % dzdx(2,Ny-1)
+         self % dzdy(1,Ny)   = self % dzdy(2,Ny-1)
+         self % d2zdxy(1,Ny) = self % d2zdxy(2,Ny-1)
+
+         self % dzdx(Nx,Ny)   = self % dzdx(Nx-1,Ny-1)
+         self % dzdy(Nx,Ny)   = self % dzdy(Nx-1,Ny-1)
+         self % d2zdxy(Nx,Ny) = self % d2zdxy(Nx-1,Ny-1)
          
       END SUBROUTINE initBiCubicInterpolation
  !

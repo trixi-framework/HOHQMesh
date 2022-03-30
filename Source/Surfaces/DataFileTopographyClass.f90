@@ -52,6 +52,8 @@
       USE ProgramGlobals, ONLY: STRING_CONSTANT_LENGTH
       USE EquationEvaluatorClass, ONLY: ERROR_MESSAGE_LENGTH
       USE BiCubicClass
+      USE Geometry
+      USE ErrorTypesModule
 
       IMPLICIT NONE
 !
@@ -70,6 +72,7 @@
          CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: file_name
          TYPE(BiCubicInterpolation)            :: biCubic
          TYPE(BiCubicInterpolation), POINTER   :: curvature
+         REAL(KIND=RP)                         :: box(6) !TOP, LEFT, BOTTOM, RIGHT (2 unused in 2D)
 !
 !        ========
          CONTAINS
@@ -89,7 +92,6 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE initWithDataFile(self, topographyFile, sizingIsOn)
-         USE ErrorTypesModule
          IMPLICIT NONE
 !
 !        ---------
@@ -160,14 +162,28 @@
 !        Read the data into appropriate storage arrays
 !        ---------------------------------------------
 !
+         self % box(BBOX_LEFT)   =  HUGE(1.0_RP)
+         self % box(BBOX_RIGHT)  = -HUGE(1.0_RP)
+         self % box(BBOX_TOP)    = -HUGE(1.0_RP)
+         self % box(BBOX_BOTTOM) =  HUGE(1.0_RP)
+         
          READ(file_unit, *) ! skip the header for x_values list
          DO j = 1,nx
+            
             READ(file_unit, *) x_values(j)
+            
+            self % box(BBOX_LEFT)  = MIN(x_values(j), self % box(BBOX_LEFT))
+            self % box(BBOX_RIGHT) = MAX(x_values(j), self % box(BBOX_RIGHT))
+            
          END DO ! j
 
          READ(file_unit, *) ! skip the header for y_values list
          DO k = 1,ny
             READ(file_unit, *) y_values(k)
+            
+            self % box(BBOX_BOTTOM) = MIN(y_values(k), self % box(BBOX_BOTTOM))
+            self % box(BBOX_TOP)    = MAX(y_values(k), self % box(BBOX_TOP))
+            
          END DO ! k
 
          READ(file_unit, *) ! skip the header for z_nodes list
@@ -183,6 +199,30 @@
                                                         x  = x_values,    &
                                                         y  = y_values,    &
                                                         z  = z_values)
+         
+!
+!        ---------------------------------------------------------------------
+!        It is best not to interpolate outside of the boundaries of the data. 
+!        However, we allow some slop due to approximation and rounding errors.
+!        The amount of slope allowed here is basically arbitrary.
+!        ---------------------------------------------------------------------
+!
+         self % box(BBOX_LEFT)   = self % box(BBOX_LEFT)*  (1.0_RP - SIGN(0.01_RP,self % box(BBOX_LEFT)))
+         self % box(BBOX_RIGHT)  = self % box(BBOX_RIGHT)* (1.0_RP + SIGN(0.01_RP,self % box(BBOX_RIGHT)))
+         self % box(BBOX_TOP)    = self % box(BBOX_TOP)*   (1.0_RP + SIGN(0.01_RP,self % box(BBOX_TOP)))
+         self % box(BBOX_BOTTOM) = self % box(BBOX_BOTTOM)*(1.0_RP - SIGN(0.01_RP,self % box(BBOX_BOTTOM)))
+         IF ( self % box(BBOX_LEFT) == 0.0_RP )     THEN
+            self % box(BBOX_LEFT) = -0.01_RP 
+         END IF
+         IF ( self % box(BBOX_RIGHT) == 0.0_RP )     THEN
+            self % box(BBOX_RIGHT) = 0.01_RP 
+         END IF
+         IF ( self % box(BBOX_TOP) == 0.0_RP )     THEN
+            self % box(BBOX_TOP) = 0.01_RP 
+         END IF
+         IF ( self % box(BBOX_BOTTOM) == 0.0_RP )     THEN
+            self % box(BBOX_BOTTOM) = -0.01_RP 
+         END IF
 !
 !        -------------------------------------------------------------
 !        Compute gaussian curvature for bottom topography size control
@@ -198,12 +238,34 @@
                   z_values(j, k) = GaussianCurvatureBaseAt(self, [x_values(j), y_values(k)])
                END DO ! j
             END DO ! k
+!
+!           ---------------------------------------------------------------
+!           Use zeroth order extrapolation of the curvature to the boundary
+!           ---------------------------------------------------------------
+!
+         
+            DO k = 2, Ny-1 
+               z_values(1,k)   = z_values(2,k)
+               z_values(Nx,k)  = z_values(Nx-1,k)
+            END DO 
+            
+            DO j = 2, Nx-1 
+               z_values(j,1)  = z_values(j,2)
+               z_values(j,Ny) = z_values(j,Ny-1)
+            END DO 
+   
+            z_values(1,1)   = z_values(2,2)
+            z_values(Nx,1)  = z_values(Nx-1,2)
+            z_values(1,Ny)  = z_values(2,Ny-1)
+            z_values(Nx,Ny) = z_values(Nx-1,Ny-1)
+            
             CALL self % curvature % initBiCubicInterpolation(Nx = nx, Ny = ny, &
                                                              x  = x_values,    &
                                                              y  = y_values,    &
                                                              z  = z_values)
          END IF
-        
+            
+       
       END SUBROUTINE initWithDataFile
 !
 !////////////////////////////////////////////////////////////////////////
@@ -237,10 +299,19 @@
 !
       FUNCTION positionOnDFTopographyAt(self, t)  RESULT(x)
          IMPLICIT NONE
-         CLASS(SMTopographyFromFile) :: self
-         REAL(KIND=RP)               :: t(2)
-         REAL(KIND=RP)               :: x(3)
+         CLASS(SMTopographyFromFile)          :: self
+         REAL(KIND=RP)                        :: t(2)
+         REAL(KIND=RP)                        :: x(3)
+         CHARACTER(LEN=ERROR_MESSAGE_LENGTH)  :: msg
 
+         IF ( .NOT. Point_IsInsideBox([t(1),t(2),0.0_RP],self % box) )     THEN
+            WRITE(msg, *)"Interpolation point (", t(1), t(2) ,") outside of: ", self % box(1:4)
+            CALL ThrowErrorExceptionOfType(poster = "positionOnDFTopographyAt", &
+                                           msg    = msg, &
+                                           typ    = FT_ERROR_WARNING)
+            RETURN
+         END IF 
+          
          x(3) = self % biCubic % valueAt(t)
          x(1) = t(1)
          x(2) = t(2)
@@ -253,7 +324,15 @@
          IMPLICIT NONE  
          CLASS(SMTopographyFromFile) :: self
          REAL(KIND=RP)               :: t(2)
+         CHARACTER(LEN=ERROR_MESSAGE_LENGTH)  :: msg
          
+         IF ( .NOT. Point_IsInsideBox([t(1),t(2),0.0_RP],self % box) )     THEN
+            WRITE(msg, *)"Interpolation point ()", t(1), t(2) ,") is outside of data bounding box: ", self % box(1:4)
+            CALL ThrowErrorExceptionOfType(poster = "gaussianCurvatureFromInterp", &
+                                           msg    = msg, &
+                                           typ    = FT_ERROR_WARNING)
+            RETURN
+         END IF 
          gaussianCurvatureFromInterp = self % curvature % valueAt(t)
          
       END FUNCTION gaussianCurvatureFromInterp
