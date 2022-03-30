@@ -140,3 +140,17 @@ data file format
 
 ![MtStHelens](https://user-images.githubusercontent.com/25242486/157440694-b8f1d9d5-adbf-4f5b-9de0-f89f675c584f.png)
 <p align = "center"> Fig. 21. Simple Extrusion of a rectangular mesh with a mountain bottom topography read in from a file</p>
+
+For both cases, specifying topography by an equation or from a data file, automatic curvature based mesh refinement around topographic features can be enabled using the `sizing` parameter in a `TOPOGRAPHY` block, e.g.
+
+        \begin{TOPOGRAPHY}
+           eqn = h(x,y) = x^2 + y^2
+           sizing = ON
+        \end{TOPOGRAPHY}
+
+or
+
+        \begin{TOPOGRAPHY}
+           data file = path/to/bottom_data.txt
+           sizing = ON
+        \end{TOPOGRAPHY}
