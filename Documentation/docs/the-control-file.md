@@ -5,7 +5,7 @@ is shown below. There is also a template control file in the *Examples* director
 
 Just some notes: 
 
-1. Blocks do not have to be specified in any order (e.g. the `MODEL` could come first before the `CONTROL_INPUT`. `INNER_BOUNDARIES` could come before `OUTER_BOUNDARY`. Blocks must be defined withing their appropriate block however, e.g. `OUTER_BOUNDARY` can only be defined in a `MODEL` block.
+1. Blocks do not have to be specified in any order (e.g. the `MODEL` could come first before the `CONTROL_INPUT`. `INNER_BOUNDARIES` could come before `OUTER_BOUNDARY`. Blocks must be defined within their appropriate block however, e.g. `OUTER_BOUNDARY` can only be defined in a `MODEL` block.
 2. Keywords within a block can be specified in any order. The only ordering that is important is that within a `CHAIN`, the curves must be specified in order, counter-clockwise. 
 3. Spaces in keywords **are** significant, but not in any other contexts. For instance equals signs are aligned only for visual formatting.
 4. Blank lines or lines starting with % are ignored.
