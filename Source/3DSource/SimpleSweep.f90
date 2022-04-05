@@ -76,28 +76,15 @@
 ! line extrusion or simple rotation
 !---------------------------------------------------------------
 ! 
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_ALGORITHM_KEY    = "SIMPLE_EXTRUSION"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ALGORITHM_KEY     = "SIMPLE_ROTATION"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_HEIGHT_KEY       = "height"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_SUBDIVISIONS_KEY     = "subdivisions"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_STARTNAME_KEY        = "start surface name"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_ENDNAME_KEY          = "end surface name"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_DIRECTION_KEY        = "direction"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ANGLE_FRAC_KEY    = "rotation angle factor"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_SWEEP_PERIODIC_KEY         = "periodic"
-      CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: SIMPLE_ROTATION_ANGLE_KEY         = "rotation angle"
       
       INTEGER, PARAMETER :: SWEEP_FLOOR = 1, SWEEP_CEILING = 2
-!
-
-      REAL(KIND=RP), ALLOCATABLE :: chebyPoints(:)
 !
 !     ------------------------------------------------------------
 !     Given the global node ID, get the level and 2D node location
 !     in the nodes array
 !     ------------------------------------------------------------
 !
-      INTEGER, ALLOCATABLE :: locAndLevelForNodeID(:,:)
+      INTEGER, ALLOCATABLE, PRIVATE  :: locAndLevelForNodeID(:,:)
       
 !     ========      
       CONTAINS 

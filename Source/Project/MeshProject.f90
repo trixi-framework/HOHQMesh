@@ -56,52 +56,6 @@
       USE Geometry3DModule
       IMPLICIT NONE
 !
-!     ---------
-!     Constants
-!     ---------
-!
-      CHARACTER(LEN=18)         , PARAMETER :: PROJECT_READ_EXCEPTION     = "Project read error"
-
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: RUN_PARAMETERS_KEY         = "RUN_PARAMETERS"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_NAME_KEY         = "mesh file name"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FILE_NAME_KEY         = "plot file name"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: STATS_FILE_NAME_KEY        = "stats file name"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_FORMAT_NAME_KEY  = "mesh file format"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: POLYNOMIAL_ORDER_KEY       = "polynomial order"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FORMAT_KEY            = "plot file format"
-
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_PARAMETERS_KEY         = "MESH_PARAMETERS"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_TYPE_KEY               = "mesh type"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: GRID_SIZE_KEY               = "background grid size"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_GRID_KEY         = "BACKGROUND_GRID"
-
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MATERIAL_BLOCK_KEY          = "MATERIALS"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_MATERIAL_KEY     = "material"
-
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: X_START_NAME_KEY            = "x0"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: X_END_NAME_KEY              = "x1"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: DX_NAME_KEY                 = "dx"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SPACING_NAME_KEY            = "h"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: EXTENT_NAME_KEY             = "w"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: NUM_INTERVALS_NAME_KEY      = "N"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: TYPE_NAME_KEY               = "type"
-
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: REFINEMENT_REGIONS_KEY      = "REFINEMENT_REGIONS"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: REFINEMENT_CENTER_KEY       = "REFINEMENT_CENTER"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: REFINEMENT_LINE_KEY         = "REFINEMENT_LINE"
-
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ELEMENT_TYPE_KEY            = "element type"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_BLOCK_KEY  = "SIMPLE_EXTRUSION"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SIMPLE_ROTATION_BLOCK_KEY   = "SIMPLE_ROTATION"
-
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_BLOCK_KEY   = "SCALE_TRANSFORM"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_SCALE_KEY   = "scale factor"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SCALE_TRANSFORM_ORIGIN_KEY  = "origin"
-
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ROTATION_TRANSFORM_BLOCK_KEY       = "ROTATION_TRANSFORM"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ROTATION_TRANSFORM_TRANSLATION_KEY = "translation"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ROTATION_TRANSFORM_DIRECTION_KEY   = "direction"
-!
 !     ------------------
 !     Private data types
 !     ------------------
@@ -110,9 +64,10 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: MeshFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: plotFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
-         INTEGER                    :: meshFileFormat
-         INTEGER                    :: polynomialOrder
-         INTEGER                    :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: testResultsFileName
+         INTEGER                                 :: meshFileFormat
+         INTEGER                                 :: polynomialOrder
+         INTEGER                                 :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
       END TYPE RunParameters
       PRIVATE :: RunParameters
 
@@ -152,20 +107,23 @@
 !     ------------------------
 !
       TYPE, EXTENDS(FTObject) ::  MeshProject
-         TYPE (SMModel)           , POINTER :: model    => NULL()
-         TYPE (SMMesh)            , POINTER :: mesh     => NULL()
-         TYPE (MeshSizer)         , POINTER :: sizer    => NULL()
-         CLASS(QuadTreeGrid)      , POINTER :: grid     => NULL()
-         CLASS(MeshSmoother)      , POINTER :: smoother => NULL()
-         TYPE(StructuredHexMesh)  , POINTER :: hexMesh  => NULL()
+         TYPE (SMModel)           , POINTER :: model         => NULL()
+         TYPE (SMMesh)            , POINTER :: mesh          => NULL()
+         TYPE (MeshSizer)         , POINTER :: sizer         => NULL()
+         CLASS(QuadTreeGrid)      , POINTER :: grid          => NULL()
+         CLASS(MeshSmoother)      , POINTER :: smoother      => NULL()
+         TYPE(StructuredHexMesh)  , POINTER :: hexMesh       => NULL()
+         TYPE(FTValueDictionary)  , POINTER :: control3DDict => NULL()
          TYPE(RunParameters)                :: runParams
          TYPE(MeshParameters)               :: meshParams
          TYPE(BackgroundGridParameters)     :: backgroundParams
          TYPE(RotationTransform)            :: rotationTransformer
          TYPE(ScaleTransform)               :: scaleTransformer
          CHARACTER(LEN=32)                  :: backgroundMaterialName
-!
-!        ========
+         LOGICAL                            :: shouldGenerate3DMesh
+         LOGICAL                            :: meshIsGenerated
+!         
+!        ========         
          CONTAINS
 !        ========
 !
@@ -209,6 +167,8 @@
 !        ---------------------------
 !
          CALL self % FTObject % init()
+         
+         self % shouldGenerate3DMesh = .FALSE.
 !
 !        ------------------------------------
 !        Get run and model parameters
@@ -280,6 +240,35 @@
             END IF
          END IF
 !
+!        --------------------------------------
+!        Save 3D control dictionaries for later
+!        --------------------------------------
+!
+         IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_ALGORITHM_KEY) .OR. &
+              controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)  .OR. &
+              controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN
+            
+            self % shouldGenerate3DMesh = .TRUE.
+            ALLOCATE(self % control3DDict)
+            CALL self % control3DDict % initWithSize(sze = 4)
+            
+            IF ( controlDict % containsKey(key = SIMPLE_EXTRUSION_ALGORITHM_KEY) )     THEN
+               obj => controlDict % objectForKey(key = SIMPLE_EXTRUSION_ALGORITHM_KEY)
+               CALL self % control3DDict % addObjectForKey(object = obj,key = SIMPLE_EXTRUSION_ALGORITHM_KEY)
+            END IF 
+            
+            IF ( controlDict % containsKey(key = SIMPLE_ROTATION_ALGORITHM_KEY) )     THEN
+               obj => controlDict % objectForKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)
+               CALL self % control3DDict % addObjectForKey(object = obj,key = SIMPLE_ROTATION_ALGORITHM_KEY)
+            END IF 
+            
+            IF ( controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN
+               obj => controlDict % objectForKey(key = SWEEP_CURVE_CONTROL_KEY)
+               CALL self % control3DDict % addObjectForKey(object = obj,key = SWEEP_CURVE_CONTROL_KEY)
+            END IF 
+            
+         END IF 
+!
 !        -----------------
 !        Build the project
 !        -----------------
@@ -315,9 +304,14 @@
          END IF
 
          IF (  ASSOCIATED(self % hexMesh) )     THEN
-            CALL DestructStructuredHexMesh(hexMesh  = self % hexMesh)
-         END IF
-
+            CALL DestructStructuredHexMesh(hexMesh  = self % hexMesh) 
+         END IF  
+         
+         IF (  ASSOCIATED(self % control3DDict) )     THEN
+            CALL releaseFTValueDictionary(self = self % control3DDict) 
+         END IF  
+        
+         
       END SUBROUTINE DestructMeshProject
 !
 !////////////////////////////////////////////////////////////////////////
@@ -351,7 +345,8 @@
 
          IF ( ASSOCIATED( self % mesh) )     THEN
             CALL releaseMesh(self % mesh)
-         END IF
+         END IF 
+         self % meshIsGenerated = .FALSE.
 
       END SUBROUTINE ResetProject
 !@mark -
@@ -392,7 +387,9 @@
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
 
          TYPE(SpringSmootherParameters) :: smootherParams
-
+         
+         self % meshIsGenerated = .FALSE.
+         
          NULLIFY( self % grid )
          NULLIFY( self % sizer )
          CALL ConstructIdentityScaleTransform(self = self % scaleTransformer)
@@ -940,11 +937,12 @@
 !        Example block is:
 !
 !         \begin{RunParameters}
-!            model file name = "model.gm"
-!            mesh file name = "fname.mesh"
-!            stats file name = "fname.txt" (Optional)
+!            model file name  = "model.gm"
+!            mesh file name   = "fname.mesh"
+!            stats file name  = "fname.txt" (Optional)
+!            test file name   = "fname.txt" (Optional)
 !            mesh file format = "Basic", ...
-!            plot file name = "tName.tec"  (Optional)
+!            plot file name   = "tName.tec"  (Optional)
 !            plot file format = "skeleton" OR "sem"
 !         \end{RunParameters}
 !
@@ -1004,7 +1002,13 @@
                                            errorLevel = FT_ERROR_WARNING,       &
                                            message    = msg,                    &
                                            poster     = "SetRunParametersBlock")
-
+         
+         params % testResultsFileName = ""
+         IF( paramsDict % containsKey( TEST_RESULTS_FILE_NAME_KEY) )     THEN
+            params % testResultsFileName = paramsDict % stringValueForKey(key             = TEST_RESULTS_FILE_NAME_KEY, &
+                                                                          requestedLength = DEFAULT_CHARACTER_LENGTH)
+         END IF 
+                                           
          msg = "Unknown mesh file format or mesh file format not set. Set to ISM"
          CALL SetStringValueFromDictionary(valueToSet = fileFormat,                &
                                            sourceDict = paramsDict,                &
@@ -1450,7 +1454,7 @@
 !        ---------
 !
          CLASS(FTValueDictionary), POINTER :: rotationBlockDict
-         TYPE(RotationTransform)             :: rotationTransformer
+         TYPE(RotationTransform)           :: rotationTransformer
 !
 !        ---------------
 !        Local Variables
@@ -1514,7 +1518,10 @@
             END IF
             IF(self % runParams % statsFileName /= "none")      THEN
                self % runParams % statsFileName = TRIM(path) // self % runParams % statsFileName
-            END IF
+            END IF 
+            IF(self % runParams % testResultsFileName /= "")      THEN 
+               self % runParams % testResultsFileName = TRIM(path) // self % runParams % testResultsFileName
+            END IF 
          END IF
 
       END SUBROUTINE AddPathToProjectFiles
