@@ -1,5 +1,5 @@
 # Three Dimensional Hexahedral Meshes
-HOHQMesh can also generate 3D hexahedral meshes by extruding or sweeping a two dimensional mesh. Topography can also be added to the bottom of the domain either through a functional form or from data supplied through a file. Finally, when bottom topography is present, the mesh along the bottom can be sized according to the curvature.
+HOHQMesh can also generate 3D hexahedral meshes by extruding or sweeping a two dimensional mesh. Topography can also be added to the bottom of the domain either through a functional form or from data supplied through a file. Finally, when bottom topography is present, the mesh along the bottom can be sized according to the bottom curvature.
 
 To tell the mesher that you want a hex mesh, you add an algorithm block to the `CONTROL_INPUT` block for how the 3D extrusion will be done. Currently there are three:
 
@@ -43,8 +43,8 @@ The second algorithm is the `SIMPLE_ROTATION`, which rotates the two dimensional
        end surface name      = top
     \end{SIMPLE_ROTATION}
 
-The rotation andle factor is the fraction of pi over which the quad mesh is rotated. An example is shown below of an original two dimensional mesh
-and its rotation about the x axis (direction = 1) is shown in Fig. 17.
+The rotation angle factor is the fraction of pi over which the quad mesh is rotated. An example is shown above in Fig. 17 of an original two dimensional mesh
+and its rotation about the x axis (direction = 1).
 
 ## Sweeping<a name="Sweeping"></a>
 ![Snake](https://user-images.githubusercontent.com/3637659/121807890-588fb980-cc56-11eb-9698-d3efffafed82.png)
@@ -57,12 +57,12 @@ and its rotation about the x axis (direction = 1) is shown in Fig. 17.
 
 There are currently two sweeping algorithms available. The default is a simple rotation algorithm that has no method to counteract twisting of the mesh as it follows the curve. (Think of a roller-coaster that can turn upside down as it follows a curved track.) The default algorithm is exact so will sweep the curve to high order, but will only produce an untwisted mesh if the curve is planar.
 
-The second is a parallel transport algorithm due to Hanson and Ma that keeps arbitrary vector in a particular orientation with respect to its initial direction. The parallel transport approach minimizes the twisting of the hex mesh, but is only second order accurate. [A fourth order algorithm may be implemented in the future.]
+The second is a parallel transport algorithm due to Hanson and Ma that keeps arbitrary vector in a particular orientation with respect to its initial direction. The parallel transport approach minimizes the twisting of the hex mesh, but is only second order accurate. [A fourth order algorithm exists may be implemented in the future.]
 
 To implement sweeping, include a `SWEEP_ALONG_CURVE` block in the `CONTOL_INPUT` block:
 
     \begin{SWEEP_ALONG_CURVE}
-	    algorithm                = Hanson (optional)
+	   algorithm                = Hanson (optional)
        subdivisions per segment = 8
        start surface name       = bottom
        end surface name         = top
