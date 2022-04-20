@@ -218,7 +218,7 @@
 !
          obj         => masterControlDictionary % objectForKey(key = "CONTROL_INPUT")
          IF ( .NOT. ASSOCIATED(obj) )     THEN
-            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
+            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",                            &
                                            msg = "CONTROL_INPUT block is missing from control file", &
                                            typ = FT_ERROR_FATAL)
             RETURN
@@ -228,9 +228,9 @@
          modelDict => NULL()
          obj       => masterControlDictionary % objectForKey(key = "MODEL")
          IF ( .NOT. ASSOCIATED(obj) )     THEN
-            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
-                                           msg = "MODEL block is missing from control file", &
-                                           typ = FT_ERROR_WARNING)
+            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",                                    &
+                  msg = "MODEL block is missing from the control file. A Cartesian mesh will be generated.", &
+                  typ = FT_ERROR_WARNING)
          ELSE
             modelDict   => valueDictionaryFromObject(obj)
          END IF
@@ -241,7 +241,7 @@
 !        --------------------------------------------------------------------
 !
          IF ( .NOT. controlDict % containsKey(key =  BACKGROUND_GRID_KEY) )     THEN
-            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",             &
+            CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",                         &
                                            msg    = "Control file needs a BACKGROUND_GRID block", &
                                            typ    = FT_ERROR_FATAL)
             RETURN
