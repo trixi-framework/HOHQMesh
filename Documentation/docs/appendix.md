@@ -223,7 +223,11 @@ If the SIMPLE_EXTRUSION is used, bottom topography can be optionally added to th
 
 	\begin{TOPOGRAPHY}
 		eqn = f(x,y) = some function of (x,y) as an equation
+		sizing = ON /OR/ OFF
 	\end{TOPOGRAPHY}
+
+
+The `sizing` keyword is optional if no sizing along the topography is desired, or it can be turned `Off` for the same result.
 
 ## Appendix E: ABAQUS mesh file format<a name="ABAQUS"></a>
 

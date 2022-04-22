@@ -176,6 +176,7 @@
 !      the TOPOGRAPHY dictionary contains the keys
 !         TYPE
 !         eqn (for equation defined topography)
+!         sizing
 !         
 !      The SIMPLE_EXTRUSION  block is defined in SimpleSweep.f90
 !      The SIMPLE_ROTATION   block is defined in SimpleSweep.f90

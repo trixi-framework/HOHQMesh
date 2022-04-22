@@ -15,6 +15,7 @@ FFLAGS = -cpp -O
 OBJS = \
 3DMeshController.o \
 Assert.o \
+BiCubicClass.o \
 BoundaryEdgeCleaning.o \
 ChainedSegmentedCurveClass.o \
 CommandLineReader.o \
@@ -46,6 +47,7 @@ FTStackClass.o \
 FTStringSetClass.o \
 FTValueClass.o \
 FTValueDictionaryClass.o \
+GaussianCurvature.o \
 Geometry.o \
 Geometry3D.o \
 Hash.o \
@@ -119,6 +121,14 @@ Assert.o : $(FTOLPATH)/Source/FTTesting/Assert.f90 \
 Comparisons.o \
 FTOLConstants.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(FTOLPATH)/Source/FTTesting/Assert.f90
+
+BiCubicClass.o : $(HOHQMESHPATH)/Source/Surfaces/BiCubicClass.f90 \
+TestSuiteManagerClass.o \
+FTExceptionClass.o \
+SMConstants.o \
+Assert.o \
+FTObjectClass.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/BiCubicClass.f90
 
 BoundaryEdgeCleaning.o :$(HOHQMESHPATH)/Source/Mesh/BoundaryEdgeCleaning.f90 \
 Connections.o \
@@ -195,7 +205,8 @@ FTExceptionClass.o \
 SMConstants.o \
 SMTopographyClass.o \
 EquationEvaluatorClass.o \
-ProgramGlobals.o
+ProgramGlobals.o \
+BiCubicClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/DataFileTopographyClass.f90
 
 ElementOperations.o :$(HOHQMESHPATH)/Source/MeshObjects/ElementOperations.f90 \
@@ -305,6 +316,10 @@ FTValueDictionaryClass.o : $(FTOLPATH)/Source/FTObjects/FTValueDictionaryClass.f
 FTValueClass.o \
 FTDictionaryClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(FTOLPATH)/Source/FTObjects/FTValueDictionaryClass.f90
+
+GaussianCurvature.o :$(HOHQMESHPATH)/Source/Surfaces/GaussianCurvature.f90 \
+SMConstants.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/GaussianCurvature.f90
 
 Geometry.o :$(HOHQMESHPATH)/Source/Foundation/Geometry.f90 \
 SMConstants.o \
@@ -656,6 +671,7 @@ Geometry.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMSplineCurveClass.f90
 
 SMTopographyClass.o :$(HOHQMESHPATH)/Source/Surfaces/SMTopographyClass.f90 \
+GaussianCurvature.o \
 SMConstants.o \
 FTObjectClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/SMTopographyClass.f90

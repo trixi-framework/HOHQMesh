@@ -83,7 +83,8 @@
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:)
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath, path, str
       INTEGER                                 :: k, fUnit, nControlFiles
-      EXTERNAL                                :: TestCurves
+      EXTERNAL                                :: TestCurves, TestGaussianCurvature
+      EXTERNAL                                :: TestBiCubicInterpolation
       LOGICAL                                 :: exst
       CHARACTER(LEN=ERROR_MESSAGE_LENGTH)     :: msg
 !
@@ -100,6 +101,8 @@
 !     -------------------
 !
       CALL testSuite % addTestSubroutineWithName(TestCurves,"Curve evaluation tests")
+      CALL testSuite % addTestSubroutineWithName(TestGaussianCurvature,"Gaussian Curvature evaluation tests")
+      CALL testSuite % addTestSubroutineWithName(TestBiCubicInterpolation,"BiCubic Interpolation tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...

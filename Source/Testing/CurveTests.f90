@@ -196,4 +196,45 @@
                                msg           = "Spline error too large")
          END DO 
          
-      END SUBROUTINE TestCurves
+      END SUBROUTINE TestCurves      
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE TestGaussianCurvature  
+         USE SMConstants
+         USE TestSuiteManagerClass
+         USE FTAssertions
+         USE SharedExceptionManagerModule
+         USE GaussianCurvatureModule 
+         IMPLICIT NONE  
+         
+         REAL(KIND=RP) :: gradF(2), exactGradF(2)
+         REAL(KIND=RP) :: hessF(2,2), exactHess(2,2)
+         REAL(KIND=RP) :: exact, computed, eror
+         
+        CALL ExactAndComputedSphereCurvature(0.5_RP,0.5_RP, exact, computed)
+        CALL FTAssertEqual(expectedValue = exact,    &
+                           actualValue   = computed, &
+                           tol           = 2.0d-8,   &
+                           msg           = "Computed Sphere Curvature error")
+                           
+        CALL ExactAndComputedQuadraticCurvature(0.5_RP,0.5_RP, exact, computed)
+        CALL FTAssertEqual(expectedValue = exact,    &
+                           actualValue   = computed, &
+                           tol           = 1.0d-8,   &
+                           msg           = "Computed Quadratic Curvature error")
+
+        CALL ExactAndComputedQuadraticGradients(x     = 0.5_RP,     y        = 0.5_RP, &
+                                                exact = exactGradF, computed = gradF)
+        CALL FTAssertEqual(expectedValue = 0.0_RP,                        &
+                           actualValue   = MAXVAL(ABS(exactGradF-gradF)), &
+                           tol           = 1.0d-8,                        &
+                           msg           = "Quadratic Gradients error")
+                           
+        CALL ExactAndComputedQuadraticHessian(x = 0.5_RP,y = 0.5_RP,exact = exactHess,computed = hessF)
+        CALL FTAssertEqual(expectedValue = 0.0_RP,                        &
+                           actualValue   = MAXVAL(ABS(exactHess-hessF)), &
+                           tol           = 1.0d-8,                        &
+                           msg           = "Quadratic Hessian error")
+
+      END SUBROUTINE TestGaussianCurvature

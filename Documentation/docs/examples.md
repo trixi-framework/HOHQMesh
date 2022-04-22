@@ -22,7 +22,7 @@ that can (like any of the examples) be modified at will.
 | SplineGeometry  | Free form domain defined as a spline  |:material-check: | :material-close: | :material-close: | :material-close: | :material-check: | :material-close: |:material-close: | :material-close:| :material-close:
 | Square  | Generation of a Cartesian mesh with no model  |:material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:
 
-There are also eight three dimensional examples that illustrate the different extrusion algorithms in the Examples/3D directory
+There are also ten three dimensional examples that illustrate the different extrusion algorithms in the Examples/3D directory
 
 | Name | Description | Algorithm| Topography |
 |------|-------------|----------|------------|
@@ -33,6 +33,6 @@ There are also eight three dimensional examples that illustrate the different ex
 | HalfCircleExtruded  | Extrusion of the 2D HalfCircle| SIMPLE_EXTRUSION | :material-close: |
 | HalfCircleRotated  | Rotation of the 2D half circle about the x-axis| SIMPLE_ROTATION | :material-close: |
 | MtStHelens  | Extrusion of a mountain topography in a rectangle| SIMPLE_EXTRUSION | :material-check:(From file) |
-| Pond  | Extrusion of a circle| SIMPLE_EXTRUSION | :material-check: |
+| Pond  | Extrusion of a circle with topography and sizing| SIMPLE_EXTRUSION | :material-check: |
 | ScaledCylinder  | Sweeping of a circle with scale factor applied| SWEEP\_ALONG_CURVE | :material-close: |
 | Snake  | Sweeping of a circle along multiple axes| SWEEP\_ALONG_CURVE | :material-close: |

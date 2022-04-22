@@ -54,7 +54,7 @@ Truly complex geometries can be meshed, as shown in the following coastline mode
 <p align = "center"> Fig. 7. The Indian Ocean (_Examples/2D/IndianOcean_)</p>
 
 ![Superior](https://user-images.githubusercontent.com/3637659/121807899-65141200-cc56-11eb-990e-4550feb0f90e.png)
-<p align = "center"> Fig. 8. Lake Superior with specral element nodes shown (_Examples/2D/LakeSuperior_)</p>
+<p align = "center"> Fig. 8. Lake Superior with spectral element nodes shown (_Examples/2D/LakeSuperior_)</p>
 
 Finally, hex meshes can also be created by sweeping a quad mesh. The simplest way is to extrude a two-dimensional mesh in one of the coordinate directions. 
 
