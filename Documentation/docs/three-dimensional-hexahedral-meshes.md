@@ -9,7 +9,7 @@ To tell the mesher that you want a hex mesh, you add an algorithm block to the `
 
 When sweeping is used, the profile can be scaled along the sweep.
 
-One unique feature of HOHQMesh is that [bottom topography](#BottomTopography) can be added when simple extrusion is used to generate the 3D mesh. Furthermore, the mesh can be [sized](#SizingTopography) according to the curvature of the bottom topography.
+One unique feature of HOHQMesh is that [bottom topography](#Topography) can be added when simple extrusion is used to generate the 3D mesh. Furthermore, the mesh can be [sized](#SizingTopography) according to the curvature of the bottom topography.
 
 ## Simple Extrusion<a name="Extrusion"></a>
 
@@ -159,7 +159,7 @@ Finally, the grid can be sized along the bottom by adding the command
 
 		sizing = ON
 
-to any TOPOGAPHY block, e.g
+to any TOPOGRAPHY block, e.g
 
 		\begin{TOPOGRAPHY}
 		   data file = path/to/bottom_data.txt
