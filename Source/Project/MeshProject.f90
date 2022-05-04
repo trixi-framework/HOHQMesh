@@ -290,6 +290,7 @@
 !        If there is topography and sizing is requested, add to the sizer
 !        ----------------------------------------------------------------
 !
+         IF(.NOT.ASSOCIATED(modelDict))     RETURN 
          IF ( modelDict % containsKey(TOPOGRAPHY_BLOCK_KEY)) THEN
             obj => modelDict % objectForKey(TOPOGRAPHY_BLOCK_KEY)
             topoDict => valueDictionaryFromObject(obj)
