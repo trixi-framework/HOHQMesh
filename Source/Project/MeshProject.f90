@@ -266,6 +266,14 @@
 !        -----------------------------------------------------------------
 !
          IF ( self % runParams % meshFileFormat == ISM_MM )     THEN
+            IF ( .NOT.ASSOCIATED(modelDict) )     THEN
+               msg = "A model is required to define materials to be used to output in the ISM_MM format"
+               CALL ThrowErrorExceptionOfType(poster = "initWithDictionary", &
+                                              msg    = msg, &
+                                              typ    = FT_ERROR_FATAL)
+               RETURN
+            END IF 
+
             IF ( modelDict % containsKey(key = MATERIAL_BLOCK_KEY) )     THEN
                obj => modelDict % objectForKey(key = MATERIAL_BLOCK_KEY)
                matBlockdict => valueDictionaryFromObject(obj)
