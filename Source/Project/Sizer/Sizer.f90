@@ -81,6 +81,7 @@
          PROCEDURE :: sizeFunctionMinimumOnBox
          PROCEDURE :: setBaseSize
          PROCEDURE :: setBottomTopography
+         PROCEDURE :: sizeRatio
          
       END TYPE MeshSizer
       
@@ -1112,6 +1113,105 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      SUBROUTINE sizeRatio(self, ratio, worstOffenderName)  
+!
+!     ----------------------------------------------------------------------------
+!     Goes through all the model curves and computes the ratio of the 
+!     background grid size to the smallest size inferred by the local 
+!     curvatures. The log_2(Ratio) gives the number of subdivsions that
+!     would be needed (locally) to size the mesh. The routine also
+!     returns the name of the curve with the smallest radius of curvature, so that
+!     can be reported to the user, if desired.
+!     ----------------------------------------------------------------------------
+!      
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(MeshSizer) :: self
+         REAL(KIND=RP)    :: ratio
+         CHARACTER(LEN=*) :: worstOffenderName
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP) :: backgroundGridSize, cSize, tSize
+         
+         backgroundGridSize = self % baseSize
+         cSize              = -TINY(cSize)
+         worstOffenderName  = "none"
+         
+         IF( ASSOCIATED(self % outerBoundary) )     THEN
+            tSize = self % outerBoundary % maxInverseScale()
+            IF ( tSize > cSize )     THEN
+               cSize             = tSize
+               worstOffenderName = self % outerBoundary % curveName 
+            END IF 
+         END IF
+         
+         IF ( ASSOCIATED( self % innerBoundariesList) )     THEN
+            CALL maxInvSizeForCurvesInList(list      = self % innerBoundariesList, &
+                                           cSize     = cSize,                      &
+                                           curveName = worstOffenderName)
+         END IF 
+         
+         IF ( ASSOCIATED( self % interfaceBoundariesList) )     THEN
+            CALL maxInvSizeForCurvesInList(list      = self % interfaceBoundariesList, &
+                                           cSize     = cSize,                      &
+                                           curveName = worstOffenderName)
+         END IF 
+       
+         ratio = backgroundGridSize*cSize
+         
+      END SUBROUTINE sizeRatio
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE maxInvSizeForCurvesInList( list, cSize, curveName )
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTLinkedList), POINTER :: list
+         REAL(KIND=RP)                :: cSize
+         CHARACTER(LEN=*)             :: curveName
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS(FTObject)             , POINTER :: obj => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
+         REAL(KIND=RP)                         :: tSize
+
+         ALLOCATE(iterator)
+         CALL iterator % initWithFTLinkedList(list)
+         CALL iterator % setToStart()
+                  
+         DO WHILE (.NOT.iterator % isAtEnd())
+            obj => iterator % object()
+            CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
+            tSize = segmentedCurveChain % maxInverseScale()
+            IF ( tSize > cSize )     THEN
+               cSize     = tSize 
+               curveName = segmentedCurveChain % curveName
+            END IF 
+
+            CALL iterator % moveToNext()
+         END DO
+         obj => iterator
+         CALL release(obj)
+   
+      END SUBROUTINE maxInvSizeForCurvesInList
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
       SUBROUTINE printSizerDescription(self,iUnit)  
          IMPLICIT NONE  
          CLASS(MeshSizer) :: self
@@ -1123,4 +1223,4 @@
          WRITE(iUnit, *) "xMin = ", self % xMin
          WRITE(iUnit, *) "xMax = ", self % xMax
       END SUBROUTINE printSizerDescription
-      END MODULE MeshSizerClass
+   END MODULE MeshSizerClass

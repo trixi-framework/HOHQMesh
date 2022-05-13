@@ -215,6 +215,7 @@
       IF(PrintMessage) PRINT *, "   Generate quadtree..."
          CALL GenerateGridWithSizerAndType( project % grid, project % sizer, &
                                             project % meshParams % meshType)
+         project % numberOfLevelsUsed = highestLevel
       IF(PrintMessage) PRINT *, "   Quadtree grid generated"
 !
 !     ---------------

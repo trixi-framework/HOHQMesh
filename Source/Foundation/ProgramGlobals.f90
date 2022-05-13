@@ -114,6 +114,7 @@
          REAL(KIND=RP) :: directionPenalty        = 1.0d-4
          REAL(KIND=RP) :: boundingBoxOverlapTol   = 1.0d-5
          LOGICAL       :: boundarySlipping        = .FALSE.
+         INTEGER       :: maxLevelLimit           = 8      ! allow at most maxLevelLimit levels of subdivision
 !
 !        --------------------
 !        For printing history
