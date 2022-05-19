@@ -1120,7 +1120,7 @@
 !     background grid size to the smallest size inferred by the local 
 !     curvatures. The log_2(Ratio) gives the number of subdivsions that
 !     would be needed (locally) to size the mesh. The routine also
-!     returns the name of the curve with the smallest radius of curvature, so that
+!     returns the name of the curve with the smallest implied scale, so that
 !     can be reported to the user, if desired.
 !     ----------------------------------------------------------------------------
 !      
