@@ -41,8 +41,29 @@ Defining a Spline:
 	      .
         \end{SPLINE_DATA}
 	 \end{SPLINE_CURVE}
+In one of the few cases where the order of keywords is important, the `nKnots` definition must precede the `\begin{SPLINE_DATA}` block.
 
-Defining a Straight Line
+Alternatively,
+
+	\begin{SPLINE_CURVE}
+		name = <name>
+		file = <pathToDataFile>
+	\end{SPLINE_CURVE}
+
+The data file will have the number of nodes as the first line, followed by the data, e.g.
+
+		9
+		0.000000000000000 -3.50000000000000  3.50000000000000 0.0
+		3.846153846153846E-002 -3.20000000000000  5.00000000000 0.0
+		7.692307692307693E-002 -2.00000000000000  6.00000000000 0.0
+		0.769230769230769  0.000000000000000 -1.00000000000000 0.0
+		0.807692307692308 -1.00000000000000 -1.00000000000000 0.0
+		0.846153846153846 -2.00000000000000 -0.800000000000000 0.0
+		0.884615384615385 -2.50000000000000  0.000000000000000 0.0
+		0.923076923076923 -3.00000000000000  1.00000000000000 0.0
+		1.00000000000000 -3.50000000000000  3.50000000000000 0.0
+
+Defining a Straight Line:
 
       \begin{END_POINTS_LINE}
 	 	name   = <name>
@@ -50,7 +71,7 @@ Defining a Straight Line
            xEnd   = [x,y,0]
       \end{END_POINTS_LINE}
 
-Defining a Circular Arc
+Defining a Circular Arc:
 
       \begin{CIRCULAR_ARC}
 	 	name 		 = <name>
@@ -61,7 +82,7 @@ Defining a Circular Arc
 		end angle   = Tend
       \end{CIRCULAR_ARC}
 
-Chaining curves
+Chaining curves:
 
 	\begin{CHAIN}
 		name = <Chain Name>
