@@ -4,7 +4,7 @@ At the present time, HOHQMesh is designed to generate quadrilateral meshes in ge
 ![Meshables](https://user-images.githubusercontent.com/3637659/121807852-3302b000-cc56-11eb-93a9-e9c2e1b4ede8.png)
 <p align = "center"> Fig. 13. Meshable regions</p>
 
-The two dimensional domain to be meshed can be bounded by at most one exterior boundary curve (which can be composed of a chain or curves), as in 13(a) and 13(b), above, and any number of interior boundary curves that create holes. For purely external problems, a rectangular outer boundary can be implicitly included, as shown in 13(c).
+The two dimensional domain to be meshed can be bounded by at most one exterior boundary curve (which can be composed of a chain of curves), as in 13(a) and 13(b), above, and any number of interior boundary curves that create holes. For purely external problems, a rectangular outer boundary can be implicitly included, as shown in 13(c).
 
 If no model block is included at all, then a purely Cartesian mesh will be created using parameters set in the control file.
 
