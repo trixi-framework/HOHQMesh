@@ -53,6 +53,8 @@ jobs:
         with:
           update: true
           # install: git base-devel mingw-w64-x86_64-toolchain
+          # Need to use `gcc-fortran` which provides gfortran v11, since the newer mingw toolchain
+          # uses gfortran v12 that causes segfaults, see https://github.com/trixi-framework/HOHQMesh/pull/39
           install: git base-devel gcc-fortran
       - name: Bootstrap
         run: |
