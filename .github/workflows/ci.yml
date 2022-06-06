@@ -52,7 +52,12 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         with:
           update: true
-          install: git base-devel mingw-w64-x86_64-toolchain
+          # install: git base-devel mingw-w64-x86_64-toolchain
+          install: git base-devel
+      - name: Install gfortran-11 on Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          pacman -U https://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-gcc-fortran-11.3.0-1-any.pkg.tar.zst
       - name: Bootstrap
         run: |
           ./Utilities/bootstrap
