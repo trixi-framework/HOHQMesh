@@ -543,6 +543,7 @@
 !           See if first character is a digit
 !           ---------------------------------
 !
+            firstCharacterIsDigit = .false.
             DO m = 1, SIZE(DIGITS) 
                IF( token(1:1) == DIGITS(m) )     THEN
                   firstCharacterIsDigit = .true.
