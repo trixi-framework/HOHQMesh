@@ -11,7 +11,6 @@ Benchmarks/ControlFiles/sigmoidScale.control
 Benchmarks/ControlFiles/HalfCircle3DRot.control      
 Benchmarks/ControlFiles/HalfCircleExtrude.control    
 Benchmarks/ControlFiles/Pond.control                 
-Benchmarks/ControlFiles/BottomFromFile.control       
 Benchmarks/ControlFiles/ABAQUS_IceCreamCone.control
 Benchmarks/ControlFiles/SeaMount.control
 Benchmarks/ControlFiles/SeaMountCubic.control
