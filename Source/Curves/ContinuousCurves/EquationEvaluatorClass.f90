@@ -138,7 +138,7 @@
       END TYPE NumberStack
       
       PRIVATE :: NumberStack
-      PRIVATE :: ConstructNumberStack, DestructNumberStack, NumberStackPush, NumberStackPop, NumberStackPeek
+      PRIVATE :: ConstructNumberStack, DestructNumberStack, NumberStackPush, NumberStackPop !, NumberStackPeek
 !
 !     ----------
 !     Class type
@@ -754,10 +754,10 @@
 !              ---------------------------------------------------
 !
                top = stack % top
-               s   = tokens(t) % token
+               s   = tokens(t) % token(1:1)
                DO m = top, 1, -1
                   CALL TokenStackPeek( stack, tok )
-                  c = tok % token
+                  c = tok % token(1:1)
                   IF( isp(c) < icp(s) ) EXIT
                   CALL TokenStackPop( stack, tok )
                   CALL TokenStackPush( postfixStack, tok )
@@ -1019,17 +1019,17 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE NumberStackPeek( stack, v ) 
-         IMPLICIT NONE 
-         TYPE(NumberStack) :: stack
-         REAL(KIND=EP)     :: v
-         
-         IF( stack % top <= 0 ) THEN
-            PRINT *, "Attempt to peek from empty number stack"
-         ELSE 
-            v = stack % values(stack % top)
-         END IF
-      END SUBROUTINE NumberStackPeek
+!      SUBROUTINE NumberStackPeek( stack, v ) 
+!         IMPLICIT NONE 
+!         TYPE(NumberStack) :: stack
+!         REAL(KIND=EP)     :: v
+!         
+!         IF( stack % top <= 0 ) THEN
+!            PRINT *, "Attempt to peek from empty number stack"
+!         ELSE 
+!            v = stack % values(stack % top)
+!         END IF
+!      END SUBROUTINE NumberStackPeek
 !
 !////////////////////////////////////////////////////////////////////////
 !

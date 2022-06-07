@@ -312,6 +312,12 @@
          ! local variables
          INTEGER :: j
 
+         idx = 1
+         IF ( test_point >= values_list(N) )     THEN
+            idx = N-1
+            RETURN  
+         END IF 
+         
          DO j = 1,N-1
             IF ( ( test_point .GE. values_list(j) ) .AND. ( test_point .LE. values_list(j+1) ) ) THEN
                idx = j
