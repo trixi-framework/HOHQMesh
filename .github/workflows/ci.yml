@@ -23,7 +23,7 @@ on:
 jobs:
   test:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
-    name: ${{ matrix.os }} - ${{ github.event_name }}
+    name: ${{ matrix.os }} - ${{ matrix.compiler }} - ${{ matrix.type }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -32,12 +32,31 @@ jobs:
           - os: ubuntu-latest
             compiler: gfortran-10
             shell: bash
+            type: regular
+          - os: ubuntu-latest
+            compiler: gfortran-10
+            shell: bash
+            type: valgrind
           - os: macos-latest
             compiler: gfortran-10
             shell: bash
+            type: regular
           - os: windows-latest
             compiler: gfortran
             shell: 'msys2 {0}'
+            type: regular
+          - os: ubuntu-22.04
+            compiler: gfortran-11
+            shell: bash
+            type: regular
+          - os: ubuntu-22.04
+            compiler: gfortran-11
+            shell: bash
+            type: valgrind
+          - os: macos-12
+            compiler: gfortran-11
+            shell: bash
+            type: regular
     # Set default shell as suggested here: https://github.community/t/setting-default-shell-or-other-step-metadata-conditionally-in-workflows/154055
     defaults:
       run:
@@ -66,7 +85,7 @@ jobs:
         run: |
           ./HOHQMesh -test
       - name: Run memory checks with Valgrind (only Linux)
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.type == 'valgrind' }}
         run: |
           sudo apt-get install -y valgrind
           valgrind --error-exitcode=1 -s ./HOHQMesh -test
@@ -76,18 +95,18 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         timeout-minutes: 15
       - name: Run tests for coverage
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.type == 'regular' }}
         run: |
           sudo apt-get install -y lcov
           FC=${{ matrix.compiler }} ./Utilities/createcoverage
       - uses: codecov/codecov-action@v1
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.type == 'regular' }}
         with:
           files: ./lcov.info
           flags: unittests
           name: codecov-umbrella
       - name: Coveralls
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.type == 'regular' }}
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
