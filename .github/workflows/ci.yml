@@ -23,40 +23,69 @@ on:
 jobs:
   test:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
-    name: ${{ matrix.os }} - ${{ matrix.compiler }} - ${{ matrix.type }} - ${{ github.event_name }}
+    name: ${{ matrix.os_name }} - ${{ matrix.compiler }} - ${{ matrix.test_type }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          # Linux
           - os: ubuntu-latest
+            os_name: linux
             compiler: gfortran-10
             shell: bash
-            type: regular
+            test_type: regular
+            coverage: true
           - os: ubuntu-latest
+            os_name: linux
             compiler: gfortran-10
             shell: bash
-            type: valgrind
+            test_type: valgrind
+            coverage: false
+          - os: ubuntu-22.04
+            os_name: linux
+            compiler: gfortran-9
+            shell: bash
+            test_type: regular
+            coverage: false
+          - os: ubuntu-22.04
+            os_name: linux
+            compiler: gfortran-9
+            shell: bash
+            test_type: valgrind
+            coverage: false
+          - os: ubuntu-22.04
+            os_name: linux
+            compiler: gfortran-11
+            shell: bash
+            test_type: regular
+            coverage: false
+          - os: ubuntu-22.04
+            os_name: linux
+            compiler: gfortran-11
+            shell: bash
+            test_type: valgrind
+            coverage: false
+          # macOS
           - os: macos-latest
+            os_name: macos
             compiler: gfortran-10
             shell: bash
-            type: regular
+            test_type: regular
+            coverage: false
+          - os: macos-12
+            os_name: macos
+            compiler: gfortran-11
+            shell: bash
+            test_type: regular
+            coverage: false
+          # Windows
           - os: windows-latest
+            os_name: windows
             compiler: gfortran
             shell: 'msys2 {0}'
-            type: regular
-          - os: ubuntu-22.04
-            compiler: gfortran-11
-            shell: bash
-            type: regular
-          - os: ubuntu-22.04
-            compiler: gfortran-11
-            shell: bash
-            type: valgrind
-          - os: macos-12
-            compiler: gfortran-11
-            shell: bash
-            type: regular
+            test_type: regular
+            coverage: false
     # Set default shell as suggested here: https://github.community/t/setting-default-shell-or-other-step-metadata-conditionally-in-workflows/154055
     defaults:
       run:
@@ -65,7 +94,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       # - name: Add msbuild to PATH
-      #   if: ${{ matrix.os == 'windows-latest' }}
+      #   if: ${{ matrix.os_name == 'windows-latest' }}
       #   uses: microsoft/setup-msbuild@v1.0.2
       - uses: msys2/setup-msys2@v2
         if: ${{ matrix.os == 'windows-latest' }}
@@ -85,7 +114,7 @@ jobs:
         run: |
           ./HOHQMesh -test
       - name: Run memory checks with Valgrind (only Linux)
-        if: ${{ matrix.type == 'valgrind' }}
+        if: ${{ matrix.os_name == 'linux' && matrix.test_type == 'valgrind' }}
         run: |
           sudo apt-get install -y valgrind
           valgrind --error-exitcode=1 -s ./HOHQMesh -test
@@ -95,18 +124,18 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         timeout-minutes: 15
       - name: Run tests for coverage
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.type == 'regular' }}
+        if: ${{ matrix.coverage }}
         run: |
           sudo apt-get install -y lcov
           FC=${{ matrix.compiler }} ./Utilities/createcoverage
       - uses: codecov/codecov-action@v1
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.type == 'regular' }}
+        if: ${{ matrix.coverage }}
         with:
           files: ./lcov.info
           flags: unittests
           name: codecov-umbrella
       - name: Coveralls
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.type == 'regular' }}
+        if: ${{ matrix.coverage }}
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
