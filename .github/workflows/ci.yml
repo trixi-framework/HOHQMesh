@@ -30,6 +30,18 @@ jobs:
       matrix:
         include:
           # Linux
+          - os: ubuntu-22.04
+            os_name: linux
+            compiler: gfortran-9
+            shell: bash
+            test_type: regular
+            coverage: false
+          - os: ubuntu-22.04
+            os_name: linux
+            compiler: gfortran-9
+            shell: bash
+            test_type: valgrind
+            coverage: false
           - os: ubuntu-latest
             os_name: linux
             compiler: gfortran-10
@@ -39,18 +51,6 @@ jobs:
           - os: ubuntu-latest
             os_name: linux
             compiler: gfortran-10
-            shell: bash
-            test_type: valgrind
-            coverage: false
-          - os: ubuntu-22.04
-            os_name: linux
-            compiler: gfortran-9
-            shell: bash
-            test_type: regular
-            coverage: false
-          - os: ubuntu-22.04
-            os_name: linux
-            compiler: gfortran-9
             shell: bash
             test_type: valgrind
             coverage: false
