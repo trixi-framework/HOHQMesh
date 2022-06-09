@@ -114,7 +114,7 @@
       INTEGER  :: highestLevel    = 0
       INTEGER  :: globalNodeCount = 0
       INTEGER  :: globalGridCount = 0
-      
+       
       INTEGER                                                :: numberOfGridsAtLevel
       TYPE(NestedQuadTreeGridPtr), DIMENSION(:), ALLOCATABLE :: gridsAtLevel
 !
@@ -445,10 +445,13 @@
       INTEGER                      :: N(3) = 3
       REAL(KIND=RP)                :: hMin, xMin(3), xMax(3), dX(3)
       CLASS(QuadTreeGrid), POINTER :: childGrid
+      CHARACTER(LEN=256)           :: limitMsg
+      CHARACTER(LEN=32)            :: xMinAsString
 !
       N  = refinementType
       nX = self % N(1)
       nY = self % N(2)
+      IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN 
 !
 !     ----------------
 !     Do for each quad
@@ -468,17 +471,31 @@
             CALL GetGridPosition( self % x0, self % dx, i  , j  , xMax )
             hMin = sizeFunctionMinimumOnBox( sizer, xMin, xMax )
             
-            IF ( hMin - MAXVAL(self % dx(1:2)) < -subdivisionRelTol*MAXVAL(self % dx(1:2)) )     THEN ! This quad is too big.
+            IF ( hMin - MAXVAL(self % dx(1:2)) < -subdivisionRelTol*MAXVAL(self % dx(1:2)))     THEN
             
-               dx = self % dx/DBLE(refinementType)
-               ALLOCATE(childGrid)
-               CALL childGrid % initGridWithParameters( dx, xMin, N, self, (/i,j,0/), self % level+1)
-               self % children(i,j) % grid => childGrid
-               CALL SetNeighborPointers( childGrid )
+               IF ( highestLevel < maxLevelLimit )     THEN
                
-               CALL RefineGrid_ToSizeFunction_( childGrid, sizer )
+                  dx = self % dx/DBLE(refinementType)
+                  ALLOCATE(childGrid)
+                  CALL childGrid % initGridWithParameters( dx, xMin, N, self, (/i,j,0/), self % level+1)
+                  self % children(i,j) % grid => childGrid
+                  CALL SetNeighborPointers( childGrid )
+                  
+                  CALL RefineGrid_ToSizeFunction_( childGrid, sizer )
+                  
+                  highestLevel = MAX( highestLevel, self % level+1 )
+                  
+               ELSE 
                
-               highestLevel = MAX( highestLevel, self % level+1 )
+                  WRITE(xMinAsString, '(F7.2,1x,F7.2)') xMin(1), xMin(2)
+                  limitMsg = "Resolution near " // xMinAsString // " needs more subdivisions than the currently allowed. " //&
+                              "To override, rerun with the command line flag '-sLimit'. But think before doing this."
+                                                
+                  CALL ThrowErrorExceptionOfType(poster = "RefineGrid_ToSizeFunction_", &
+                                                 msg    = limitMsg,       &
+                                                 typ    = FT_ERROR_FATAL)
+                  RETURN 
+               END IF 
                
             END IF
             

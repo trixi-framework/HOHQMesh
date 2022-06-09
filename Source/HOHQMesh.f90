@@ -141,10 +141,11 @@
             PRINT *, "*******************"
             PRINT *, "2D Mesh Statistics:"
             PRINT *, "*******************"
-            PRINT *, "   Total time         = ", stopWatch % elapsedTime(TC_SECONDS)
-            PRINT *, "   Number of nodes    = ", project % mesh % nodes    % COUNT()
-            PRINT *, "   Number of Edges    = ", project % mesh % edges    % COUNT()
-            PRINT *, "   Number of Elements = ", project % mesh % elements % COUNT()
+            PRINT *, "   Total time             = ", stopWatch % elapsedTime(TC_SECONDS)
+            PRINT *, "   Number of nodes        = ", project % mesh % nodes    % COUNT()
+            PRINT *, "   Number of Edges        = ", project % mesh % edges    % COUNT()
+            PRINT *, "   Number of Elements     = ", project % mesh % elements % COUNT()
+            PRINT *, "   Number of Subdivisions = ", project % numberOfLevelsUsed
          END IF
 !
 !        ---------------------------------

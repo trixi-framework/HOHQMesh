@@ -86,6 +86,7 @@
          PROCEDURE :: nodeCount         => numberOfNodesInChain
          PROCEDURE :: complete          => completeChainedSegmentedCurve
          PROCEDURE :: positionAtIndex   => positionAtChainIndex
+         PROCEDURE :: maxInverseScale
          PROCEDURE :: segmentedCurveAtIndex
          PROCEDURE :: chainNumberForIndex
          PROCEDURE :: localIndexForChainIndexInCurveNumber
@@ -558,6 +559,28 @@
          self % boundingBox(BBOX_RIGHT)  = xMax
          
       END SUBROUTINE ComputeBoundingBox 
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION maxInverseScale( self )
+         IMPLICIT NONE
+         
+         CLASS(ChainedSegmentedCurve)     :: self
+         
+         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
+         REAL(KIND=RP)                    :: xMin, xMax, yMin, yMax, x(3)
+         INTEGER                          :: j, k
+         
+         maxInverseScale = TINY(maxInverseScale)
+         
+         DO k = 1, self % numberOfCurvesInChain
+            c => self % segmentedCurveAtIndex(k)
+            DO j = 1, c % COUNT()
+               maxInverseScale = MAX(maxInverseScale, c % invScaleAtIndex(j)) 
+            END DO  
+         END DO  
+         
+      END FUNCTION maxInverseScale 
 !
 !////////////////////////////////////////////////////////////////////////
 !
