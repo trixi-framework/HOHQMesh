@@ -110,7 +110,8 @@ jobs:
       - name: Build
         run: |
           make -j 2 FC=${{ matrix.compiler }}
-      - name: Run tests
+      - name: Run regular function tests
+        if: ${{ matrix.test_type == 'regular' }}
         run: |
           ./HOHQMesh -test
       - name: Run memory checks with Valgrind (only Linux)
