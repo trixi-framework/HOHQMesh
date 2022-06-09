@@ -329,6 +329,7 @@
 
       CALL releaseMeshProject(project)
       CALL releaseFTValueDictionary(controlDict)
+      CLOSE(fUnit)
 
 
    END SUBROUTINE testWithControlfile
