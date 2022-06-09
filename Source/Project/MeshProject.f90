@@ -164,6 +164,7 @@
          TYPE(RotationTransform)            :: rotationTransformer
          TYPE(ScaleTransform)               :: scaleTransformer
          CHARACTER(LEN=32)                  :: backgroundMaterialName
+         INTEGER                            :: numberOfLevelsUsed
 !
 !        ========
          CONTAINS
@@ -216,6 +217,8 @@
 !        but a model is optional
 !        ------------------------------------
 !
+         self % numberOfLevelsUsed = 0
+         
          obj         => masterControlDictionary % objectForKey(key = "CONTROL_INPUT")
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",                            &
@@ -413,6 +416,12 @@
          CLASS(FTLinkedListIterator) , POINTER :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
+         
+         CHARACTER(LEN=SEGMENTED_CURVE_NAME_LENGTH) :: tightestCurveName
+         REAL(KIND=RP)                              :: meshRatio
+         INTEGER                                    :: levelsNeeded
+         CHARACTER(LEN=256)                         :: limitMsg
+         CHARACTER(LEN=2)                           :: levelsAsString, maxLevelsAsString, newLevelsAsString
 
          TYPE(SpringSmootherParameters) :: smootherParams
 
@@ -453,6 +462,33 @@
 !
          CALL CheckForBoundaryIntersections(self % sizer) !Development in progress
          IF(catch())     RETURN
+!
+!        --------------------------------------------------------------------------
+!        Before going further, check to see how many subdivisions will be necessary
+!        --------------------------------------------------------------------------
+!
+         CALL self % sizer % sizeRatio(ratio             = meshRatio, &
+                                       worstOffenderName = tightestCurveName)
+         IF ( meshRatio > 0.0_RP )     THEN
+            levelsNeeded = CEILING(LOG(meshRatio)/LOG(2.0_RP))
+            IF ( levelsNeeded > maxLevelLimit )     THEN
+               WRITE(levelsAsString,'(I2)')     levelsNeeded - maxLevelLimit
+               WRITE(maxLevelsAsString, '(I2)') maxLevelLimit
+               WRITE(newLevelsAsString, '(I2)') levelsNeeded
+               
+               limitMsg = "Resolution on curve " // TRIM(tightestCurveName) // " needs " // &
+                           levelsAsString // " subdivision(s) more than the currently allowed " // &
+                           maxLevelsAsString // ". "// &
+                           NEW_LINE(levelsAsString) // &
+                           "To override, rerun with the command line flag '-sLimit " // &
+                           newLevelsAsString // "'. But think before doing this."
+               
+               CALL ThrowErrorExceptionOfType(poster = "BuildProject", &
+                                              msg    = limitMsg,       &
+                                              typ    = FT_ERROR_FATAL)
+               RETURN 
+            END IF             
+         END IF 
 !
 !        ------------------
 !        Construct smoother

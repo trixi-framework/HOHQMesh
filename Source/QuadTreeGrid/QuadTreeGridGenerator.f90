@@ -104,6 +104,7 @@
       CLASS(MeshSizer)             :: sizer
       
       CALL generateNonconformingQuadTree(grid = grid,sizer = sizer)
+      IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN 
       CALL ConstructQuads( grid )
       
       END SUBROUTINE GenerateNCGridWithSizer
@@ -121,6 +122,7 @@
       CLASS(MeshSizer)             :: sizer
       
       CALL generateNonconformingQuadTree(grid = grid,sizer = sizer)
+      IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN 
       CALL DoLevelOperation( grid, REMOVE_HANGING_NODES_OPERATION )
       CALL DeleteDuplicateNodesForGrid( grid )
       CALL ConstructQuadsWithTemplates( grid )
@@ -141,6 +143,7 @@
          INTEGER :: k
       
          CALL RefineGrid_ToSizeFunction_( grid, sizer )
+         IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN 
          CALL DeleteDuplicateNodesForGrid( grid )
          
          IF( refinementType == REFINEMENT_2 )     THEN
