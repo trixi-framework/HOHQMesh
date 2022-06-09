@@ -28,6 +28,11 @@ Benchmarks/MeshFiles/Tests/*
 Benchmarks/PlotFiles/Tests/*
 Benchmarks/StatsFiles/Tests/*
 
+# output mesh and plot files
+*.mesh
+*.inp
+*.tec
+
 # gcov files
 *.gcda
 *.gcno
