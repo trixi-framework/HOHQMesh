@@ -310,6 +310,8 @@
 
             CALL iterator % moveToNext()
          END DO
+         
+         CLOSE(iUnit)
 !
       END SUBROUTINE WriteISMMeshFile
 !

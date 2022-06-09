@@ -65,6 +65,11 @@ jobs:
       - name: Run tests
         run: |
           ./HOHQMesh -test
+      - name: Run memory checks with Valgrind (only Linux)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt-get install -y valgrind
+          valgrind --error-exitcode=1 -s ./HOHQMesh -test
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session for debugging
         if: ${{ matrix.os == 'windows-latest' && github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled && always() }}

@@ -228,7 +228,7 @@
          ! local variables
          INTEGER       :: i, j, k
          REAL(KIND=RP) :: u, v, z_corners(4), dz_dx(4), dz_dy(4), dz_dxy(4)
-         REAL(KIND=RP) :: dx, dy, temp
+         REAL(KIND=RP) :: dx, dy
          REAL(KIND=RP), DIMENSION(16) :: work_vec, coeff_vec
          REAL(KIND=RP), DIMENSION(4,4) :: coeffs
 
@@ -312,6 +312,12 @@
          ! local variables
          INTEGER :: j
 
+         idx = 1
+         IF ( test_point >= values_list(N) )     THEN
+            idx = N-1
+            RETURN  
+         END IF 
+         
          DO j = 1,N-1
             IF ( ( test_point .GE. values_list(j) ) .AND. ( test_point .LE. values_list(j+1) ) ) THEN
                idx = j
@@ -452,7 +458,7 @@
          IMPLICIT NONE  
          
          TYPE(BiCubicInterpolation) :: bQ
-         REAL(KIND=RP)              :: z, x, y
+         REAL(KIND=RP)              :: x, y
          INTEGER                    :: k
          LOGICAL                    :: tst
          

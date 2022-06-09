@@ -210,7 +210,7 @@
          
          REAL(KIND=RP) :: gradF(2), exactGradF(2)
          REAL(KIND=RP) :: hessF(2,2), exactHess(2,2)
-         REAL(KIND=RP) :: exact, computed, eror
+         REAL(KIND=RP) :: exact, computed
          
         CALL ExactAndComputedSphereCurvature(0.5_RP,0.5_RP, exact, computed)
         CALL FTAssertEqual(expectedValue = exact,    &

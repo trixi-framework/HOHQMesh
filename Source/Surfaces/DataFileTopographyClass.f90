@@ -110,7 +110,6 @@
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: y_values
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: z_values
          INTEGER                                    :: nx, ny, j, k, file_unit
-         REAL(KIND=RP)                              :: inv_dx, inv_dy, xx(3)
          CHARACTER(LEN=ERROR_MESSAGE_LENGTH)        :: msg
          LOGICAL                                    :: a_data_file
 !
@@ -326,6 +325,7 @@
          REAL(KIND=RP)               :: t(2)
          CHARACTER(LEN=ERROR_MESSAGE_LENGTH)  :: msg
          
+         gaussianCurvatureFromInterp = 0.0_RP
          IF ( .NOT. Point_IsInsideBox([t(1),t(2),0.0_RP],self % box) )     THEN
             WRITE(msg, *)"Interpolation point ()", t(1), t(2) ,") is outside of data bounding box: ", self % box(1:4)
             CALL ThrowErrorExceptionOfType(poster = "gaussianCurvatureFromInterp", &
