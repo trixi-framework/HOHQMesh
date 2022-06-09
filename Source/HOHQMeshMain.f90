@@ -198,4 +198,8 @@
             path = StringValueForArgument(argument = "-path")
          END IF
 
+         IF ( CommandLineArgumentIsPresent(argument = "-sLimit") )     THEN
+            maxLevelLimit = IntegerValueForArgument(argument = "-sLimit")
+         END IF
+
       END SUBROUTINE ReadCommandLineArguments
