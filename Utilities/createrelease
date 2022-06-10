@@ -21,11 +21,11 @@ echo "OK"
 
 # Ensure that there are no uncommited files/directories *except* the FTOL sources
 printf "Ensure directory is clean and FTObjectLibrary is present... "
-# if [[ "$(git status --ignored --porcelain)" != "!! Contrib/FTObjectLibrary/" ]]; then
-#   echo "ERROR: directory is not clean or missing the FTObjectLibrary directory" >&2
-#   git status --ignored --porcelain
-#   exit 2
-# fi
+if [[ "$(git status --ignored --porcelain | grep -v '.DS_Store')" != "!! Contrib/FTObjectLibrary/" ]]; then
+  echo "ERROR: directory is not clean or missing the FTObjectLibrary directory" >&2
+  git status --ignored --porcelain
+  exit 2
+fi
 echo OK
 
 # Create temporary directory in a portable way
@@ -44,6 +44,11 @@ echo "OK"
 # Delete .git directories
 printf "Delete .git directories for HOQHMesh and FTObjectLibrary... "
 rm -rf "$releasedir/.git" "$releasedir/Contrib/FTObjectLibrary/.git"
+echo "OK"
+
+# Delete .DS_Store files (relevant on macOS only)
+printf "Delete .DS_Store files... "
+find "$releasedir" -name .DS_Store -exec rm {} \;
 echo "OK"
 
 # Create file with version info
