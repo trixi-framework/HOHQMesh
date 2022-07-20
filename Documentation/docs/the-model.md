@@ -183,9 +183,9 @@ Inner boundaries (if any) are defined within the block
 	...
 	\end{INNER_BOUNDARIES}
 
-Within this block one defines as many `CHAIN`s as there are inner boundaries. **Each inner boundary must be defined within a chain. (Even if there is only one curve in the chain.)** The order in which the `CHAIN`s are defined is not important. 
+Within this block one defines as many curves or `CHAIN`s as there are inner boundaries. The order in which the `CHAIN`s or curves are defined is not important. Use a CHAIN if you want to chain multiple curves together to create a single inner boundary. Outside of a chain, a curve will define a single inner boundary by itself. Note that a standalone curve must close on itself. 
 
-As an example, the following defines a model that has a single circular outer boundary and three inner circular boundaries. As usual, indentation is for the reader’s eyes only. Note that *between* the blocks, comments can be inserted starting with “%”.
+As an example, the following defines a model that has a single circular outer boundary and three inner circular boundaries. Two of the curves are defined within a CHAIN (even though there is only a single curve within each). One of them is standalone. Note that *between* the blocks, comments can be inserted starting with “%”. As usual, indentation is for the reader’s eyes only. 
 
 
 	\begin{MODEL}
@@ -212,15 +212,12 @@ As an example, the following defines a model that has a single circular outer bo
 				\end{PARAMETRIC_EQUATION_CURVE}
 			\end{CHAIN}
 
-		   \begin{CHAIN}
-			name = Boundary 2
  			\begin{PARAMETRIC_EQUATION_CURVE}
 				name = Circle2
 				xEqn = f(t) = -5.1 + 1.0*cos(2*pi*t)
 				yEqn = f(t) = 1.0*sin(2*pi*t) - 4.1
 				zEqn = z(t) = 0.0
 			\end{PARAMETRIC_EQUATION_CURVE}
-		   \end{CHAIN}
 
 		   \begin{CHAIN}
 		     name = Boundary 3
