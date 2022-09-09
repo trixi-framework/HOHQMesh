@@ -5,6 +5,7 @@ Benchmarks/ControlFiles/NACA0012.control
 Benchmarks/ControlFiles/HalfCircleArc.control        
 Benchmarks/ControlFiles/Circles3.control             
 Benchmarks/ControlFiles/AllFeatures.control          
+Benchmarks/ControlFiles/IceCreamConeWHole.control          
 Benchmarks/ControlFiles/Segmented.control            
 Benchmarks/ControlFiles/GingerbreadManGeometry.control
 Benchmarks/ControlFiles/sigmoidScale.control         

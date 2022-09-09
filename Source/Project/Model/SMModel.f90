@@ -435,12 +435,12 @@
 !        ---------------
 !
          CLASS(FTLinkedListIterator), POINTER    :: innerBoundariesIterator, listOfCurvesIterator
-         CLASS(FTValueDictionary)   , POINTER    :: chainDict, curveDict
+         CLASS(FTValueDictionary)   , POINTER    :: chainDict, curveDict, ibDict
          CLASS(FTObject)            , POINTER    :: obj
          CLASS(FTLinkedList)        , POINTER    :: listOfCurves
          
          CLASS(SMChainedCurve), POINTER          :: chain => NULL()
-         CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: chainName
+         CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: chainName, ibType
 
          ALLOCATE(innerBoundariesIterator)
          CALL innerBoundariesIterator % initWithFTLinkedList(list = boundariesList)
@@ -450,36 +450,55 @@
          CALL innerBoundariesIterator % setToStart()
          DO WHILE(.NOT. innerBoundariesIterator % isAtEnd())
 !
-!           ------------------------------------
-!           Inner boundaries is a list of chains
-!           ------------------------------------
+!           ----------------------------------------------
+!           Inner boundaries is a list of curves or chains
+!           ----------------------------------------------
 !
-            obj       => innerBoundariesIterator % object()
-            chainDict => valueDictionaryFromObject(obj)
-            chainName = chainDict % stringValueForKey(key = "name", &
-                                                      requestedLength = BLOCK_NAME_STRING_LENGTH)
+            obj    => innerBoundariesIterator % object()
+            ibDict => valueDictionaryFromObject(obj)
+            ibType = ibDict % stringValueForKey(key = "TYPE", &
+                                                requestedLength = BLOCK_NAME_STRING_LENGTH)
+            IF ( ibType /= "CHAIN" )     THEN ! Put the curve into a chain directly
+!
+!              -----------------------------------------------------------------------
+!              The entry should be a single curve. Make the chain name the same as the
+!              curve name
+!              -----------------------------------------------------------------------
+!
+!
+               chainName = ibDict % stringValueForKey(key = "name", &
+                                                     requestedLength = BLOCK_NAME_STRING_LENGTH)
+               ALLOCATE(chain)
+               CALL chain % initChainWithNameAndID(chainName,0)
+               CALL ConstructCurve(self, chain, ibDict )
                
-            ALLOCATE(chain)
-            CALL chain % initChainWithNameAndID(chainName,0)
+            ELSE
+               chainDict => ibDict !This is just an alias
+               chainName = chainDict % stringValueForKey(key = "name", &
+                                                         requestedLength = BLOCK_NAME_STRING_LENGTH)
+               ALLOCATE(chain)
+               CALL chain % initChainWithNameAndID(chainName,0)
 !
-!           -------------------------------
-!           Chains contain a list of curves
-!           -------------------------------
+!              -------------------------------
+!              Chains contain a list of curves
+!              -------------------------------
 !
-            obj          => chainDict % objectForKey(key = "LIST")
-            listOfCurves => linkedListFromObject(obj)
-            CALL listOfCurvesIterator % setLinkedList(list = listOfCurves)
-            CALL listOfCurvesIterator % setToStart()
+               obj          => chainDict % objectForKey(key = "LIST")
+               listOfCurves => linkedListFromObject(obj)
+               CALL listOfCurvesIterator % setLinkedList(list = listOfCurves)
+               CALL listOfCurvesIterator % setToStart()
+               
+               DO WHILE( .NOT. listOfCurvesIterator % isAtEnd())
+                  obj       => listOfCurvesIterator % object()
+                  curveDict => valueDictionaryFromObject(obj)
+                  
+                  CALL ConstructCurve(self, chain, curveDict )
+                  
+                  CALL listOfCurvesIterator % moveToNext()
+               END DO 
+                  
+            END IF 
             
-            DO WHILE( .NOT. listOfCurvesIterator % isAtEnd())
-               obj       => listOfCurvesIterator % object()
-               curveDict => valueDictionaryFromObject(obj)
-               
-               CALL ConstructCurve(self, chain, curveDict )
-               
-               CALL listOfCurvesIterator % moveToNext()
-            END DO 
-               
             IF ( blockType == INNER_BOUNDARY_BLOCK )     THEN
               obj => chain
               CALL self % innerBoundaries % add(obj)
@@ -492,7 +511,7 @@
 !           Finalize the chain
 !           ------------------
 !
-            CALL chain % complete(innerOrOuterCurve = INNER,chainMustClose = .TRUE.)
+            CALL chain % complete(innerOrOuterCurve = INNER, chainMustClose = .TRUE.)
             obj => chain
             CALL release(obj)
 !
@@ -534,9 +553,16 @@
 !        ----------
 !
          LOGICAL, EXTERNAL :: ReturnOnFatalError
-
-         SELECT CASE ( curveDict % stringValueForKey(key = "TYPE", &
-                       requestedLength = BLOCK_NAME_STRING_LENGTH) )
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: curveType
+         
+         curveType = curveDict % stringValueForKey(key = "TYPE", &
+                       requestedLength = BLOCK_NAME_STRING_LENGTH)
+         SELECT CASE (curveType )
          
             CASE("PARAMETRIC_EQUATION_CURVE")
             
@@ -561,7 +587,9 @@
                CALL ImportCircularArcEquationBlock(self = self, chain = chain, arcBlockDict = curveDict)
                
             CASE DEFAULT
-
+               CALL ThrowErrorExceptionOfType(poster = "ConstructCurve",&
+                                              msg    = "Unimplemented curve type "// TRIM(curveType) // " in model", &
+                                              typ    = FT_ERROR_FATAL)
                RETURN
          END SELECT
          
