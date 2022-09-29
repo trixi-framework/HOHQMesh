@@ -274,7 +274,7 @@
          self % distToBoundary  = HUGE(0.0_RP)
          self % bCurveChainID   = UNDEFINED
          self % bCurveSide      = UNDEFINED
-         self % materialID      = 1
+         self % materialID      = BACKGROUND_MATERIAL_ID
          self % nodeType        = UNDEFINED
       END SUBROUTINE initNodeWithLocationAndID
 !
@@ -476,7 +476,7 @@
          END DO
          
          self % remove       = .FALSE.
-         self % materialID   = 1
+         self % materialID   = BACKGROUND_MATERIAL_ID
          self % materialName = "base"
          self % N            = 1
         
@@ -500,11 +500,11 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE destructelement(self) 
+      SUBROUTINE destructElement(self) 
          IMPLICIT NONE  
          TYPE(SMElement) :: self
-         
-      END SUBROUTINE destructelement
+          
+      END SUBROUTINE destructElement
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

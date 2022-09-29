@@ -97,6 +97,12 @@
          INTEGER         , PARAMETER :: STRING_CONSTANT_LENGTH = 64
          CHARACTER(LEN=3), PARAMETER :: NO_BC_STRING           = "---"
 !
+!        ----
+!        Misc
+!        ----
+!
+         INTEGER :: BACKGROUND_MATERIAL_ID = 1
+!
 !        -----------
 !        Preferences
 !        -----------

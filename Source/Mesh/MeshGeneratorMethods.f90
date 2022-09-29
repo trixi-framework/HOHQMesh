@@ -268,8 +268,8 @@
                          + model % numberOfInterfaceCurves
       IF( numberOfBoundaries > 0 )     THEN
          ALLOCATE( aPointInsideTheCurve(3,numberOfBoundaries) )
-         ALLOCATE( curveTypeForID(numberOfBoundaries) )
-         CALL flagBoundaryTypes
+         ALLOCATE( mesh % curveTypeForID(numberOfBoundaries) )
+         CALL flagBoundaryTypes(mesh % curveTypeForID)
       END IF
 
       CALL MarkExteriorElements ( mesh, project % backgroundParams )
@@ -398,7 +398,6 @@
       CALL mesh % renumberAllLists()
       
       IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
-      IF(ALLOCATED(curveTypeForID))       DEALLOCATE(curveTypeForID)
       
       IF(PrintMessage) PRINT *, "   Nodes and elements generated"
 
@@ -858,7 +857,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE flagBoundaryTypes
+      SUBROUTINE flagBoundaryTypes(curveTypeForID)
 !
 !     ------------------------------------------------------------------------
 !     Assign a boundary type (EXTERIOR, INTERIOR, INTERFACE) according to the 
@@ -866,6 +865,7 @@
 !     ------------------------------------------------------------------------
 !
          IMPLICIT NONE
+         INTEGER, DIMENSION(:) :: curveTypeForID
          INTEGER :: k
          
          IF(ASSOCIATED( outerBoundaryCurve ))     THEN
@@ -1265,12 +1265,12 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedList)        , POINTER :: elements   => NULL()
-         CLASS(SMElement)           , POINTER :: e          => NULL()
-         CLASS(SegmentedCurveArray) , POINTER :: curveArray => NULL()
-         CLASS(SMNode)              , POINTER :: node       => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: iterator   => NULL()
-         CLASS(FTObject)            , POINTER :: obj        => NULL()
+         CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
+         CLASS(SMElement)           , POINTER :: e               => NULL()
+         CLASS(SegmentedCurveArray) , POINTER :: curveArray      => NULL()
+         CLASS(SMNode)              , POINTER :: node            => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj             => NULL()
          
          INTEGER                              :: k, l, j, m, mSteps
          REAL(KIND=RP)                        :: w
@@ -1278,67 +1278,82 @@
          REAL(KIND=RP)                        :: x1(3), x2(3) !, xRight, yTop, xLeft, yBottom
          REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
          LOGICAL                              :: isInterfaceElement
-         INTEGER                              :: numInside, numOutside, side(4)
+         INTEGER                              :: numInside, numOutside, location(4)
          
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
          elements => mesh % elements
-         iterator => mesh % elementsIterator
+         elementIterator => mesh % elementsIterator
 !
 !        --------------------------------------
 !        Mark elements and nodes for each curve
 !        --------------------------------------
 !
          DO l = 1, SIZE(interfaceCurves)
-            curveArray => interfaceCurves(l)%curveArray
+            curveArray => interfaceCurves(l) % curveArray
             
-            CALL iterator % setToStart()
+            CALL elementIterator % setToStart()
 !
 !           -------------------------
 !           Loop through each element
 !           -------------------------
 !
-            DO WHILE ( .NOT.iterator % isAtEnd() )
-               obj => iterator % object()
+            DO WHILE ( .NOT.elementIterator % isAtEnd() )
+               obj => elementIterator % object()
                CALL cast(obj,e)
                isInterfaceElement = .false.
                
                IF( .NOT.e % remove )     THEN
 !
-!                 -------------------------------------------------------
-!                 Remove elements that have both inside and outside nodes
-!                 -------------------------------------------------------
+!                 -----------------------------------------------------
+!                 Mark elements that have both inside and outside nodes
+!                 -----------------------------------------------------
 !
                   numInside  = 0
                   numOutside = 0
+                  location   = UNDEFINED
                   DO k = 1, 4
                      obj => e % nodes % objectAtIndex(k)
                      CALL cast(obj,node)
                      
                      w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
                      IF ( ABS(w) > 0.6_RP ) THEN
-                        side(k)                       = INSIDE
+                        location(k)                   = INSIDE
                         numInside                     = numInside + 1
                         aPointInsidetheCurve(:,curveArray % id) = node % x
                       ELSE IF ( abs(w) <= EPSILON(w) ) THEN
-                        side(k)                       = OUTSIDE
+                        location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
                       END IF
                   END DO
 !
-!                 ----------------------------------------------------
-!                 Those that do straddle the curve and must be removed
+!                 -----------------------------------------
+!                 Set the material ID as the inner curve ID
+!                 -----------------------------------------
+!
+                  IF ( numOutside == 0 )     THEN
+                     e % materialID  = curveArray % id
+                     DO k = 1,4
+                        obj => e % nodes % objectAtIndex(k)
+                        CALL cast(obj,node)
+                        node % materialID = e % materialID
+                     END DO
+                 END IF 
+!
+!                 -------------------------------------------------------
+!                 Those that do straddle the curve are interface elements
 !                 Otherwise, check if the element is too small and do
 !                 an interpolation to see if a point is inside.
-!                 ----------------------------------------------------
+!                 -------------------------------------------------------
 !
                   IF ( numInside > 0 .AND. numOutside > 0 )     THEN
                      isInterfaceElement = .TRUE.
                      DO k = 1,4
                         obj => e % nodes % objectAtIndex(k)
                         CALL cast(obj,node)
-                        node % bCurveSide = side(k)
+                        node % bCurveSide = location(k) ! INSIDE or OUTSIDE
                      END DO
+                     
                   ELSE
 !
 !                    ------------------------------------
@@ -1403,7 +1418,6 @@
                         
                      END DO !Loop over segments
                   END IF
-                  
                END IF !(.NOT.e%remove)
 !
 !              --------------------------------------------
@@ -1433,8 +1447,8 @@
                   END DO
                END IF
                
-               CALL iterator % moveToNext()
-            END DO !WHILE ( .NOT.iterator % isAtEnd )
+               CALL elementIterator % moveToNext()
+            END DO !WHILE ( .NOT.elementIterator % isAtEnd )
             
          END DO !l = 1, SIZE(interfaceCurves)
          

@@ -138,22 +138,6 @@
          !Do nothing
       END SUBROUTINE DestructSpringMeshSmoother
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-!      SUBROUTINE releaseSpringMeshSmoother(self)  
-!         IMPLICIT NONE
-!         CLASS(SpringMeshSmoother) , POINTER :: self
-!         CLASS(FTObject), POINTER :: obj
-!         
-!         IF(.NOT. ASSOCIATED(self)) RETURN
-!         
-!         obj => self
-!         CALL releaseFTObject(self = obj)
-!         IF ( .NOT. ASSOCIATED(obj) )     THEN
-!            self => NULL() 
-!         END IF      
-!      END SUBROUTINE releaseSpringMeshSmoother
-!
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE SpringSmoothMesh( self, mesh, model, errorCode )
@@ -198,11 +182,11 @@
             CALL mesh % nodesIterator % moveToNext()
          END DO
          CALL SetNodeActiveStatus( mesh, model, errorCode )
-!!
-!!        ------------------------
-!!        Do spring-mass smoothing
-!!        ------------------------
-!!
+!
+!        ------------------------
+!        Do spring-mass smoothing
+!        ------------------------
+!
          DO k = 1, self % numSmoothingSteps
             nodeAcceleration = 0.0_RP
             CALL AccumulateAcceleration( self, mesh )

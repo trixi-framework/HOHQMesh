@@ -235,11 +235,11 @@
 !        Find the interface edge
 !        -----------------------
 !
-         id   = e%id
+         id   = e % id
          side = 0
          DO k = 1, 4
-            edge => edgesForElements(k,id)%edge 
-            IF ( edge%edgeType == ON_INTERFACE )     THEN
+            edge => edgesForElements(k,id) % edge 
+            IF ( edge % edgeType == ON_INTERFACE )     THEN
                side = k
                EXIT  
             END IF 
@@ -256,32 +256,32 @@
             nodes(k) % node => node
          END DO  
 !
-!        ----------------------------------------------------------
-!        Find the edges on either side These edges will be split in
+!        -----------------------------------------------------------
+!        Find the edges on either side. These edges will be split in
 !        half. Create two new nodes at the centers of these edges.
 !        Since the new nodes will be shared, we store a pointer to
 !        them on the edge. If the pointer is already set, it means
 !        that we don't have to compute it again.
-!        ----------------------------------------------------------
+!        -----------------------------------------------------------
 !
          sideP =  Loop(side+1,4)
          edge  => edgesForElements(sideP,id) % edge
          IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-            newNodePtr1 % node =>  edge % auxiliaryNode
+            newNodePtr1 % node =>  edge % auxiliaryNode !Weak reference
          ELSE 
             x     =  0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
             CALL constructNewNode(mesh,x,edge,node)
-            newNodePtr1 % node => node
+            newNodePtr1 % node => node !Weak reference
          END IF 
         
          sideM =  Loop(side-1,4)
          edge  => edgesForElements(sideM,id) % edge
          IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-            newNodePtr2 % node =>  edge % auxiliaryNode
+            newNodePtr2 % node =>  edge % auxiliaryNode !Weak reference
          ELSE 
             x     =  0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
             CALL constructNewNode(mesh,x,edge,node)
-            newNodePtr2 % node => node
+            newNodePtr2 % node => node !Weak reference
          END IF 
 !
 !        ---------------------------------------------

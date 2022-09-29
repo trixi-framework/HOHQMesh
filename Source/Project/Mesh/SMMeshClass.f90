@@ -69,10 +69,11 @@
 !        Data
 !        ----
 !
-         INTEGER                      :: polynomialOrder
-         CLASS(FTLinkedList), POINTER :: nodes    => NULL()
-         CLASS(FTLinkedList), POINTER :: elements => NULL()
-         CLASS(FTLinkedList), POINTER :: edges    => NULL()
+         INTEGER                              :: polynomialOrder
+         CLASS(FTLinkedList), POINTER         :: nodes    => NULL()
+         CLASS(FTLinkedList), POINTER         :: elements => NULL()
+         CLASS(FTLinkedList), POINTER         :: edges    => NULL()
+         INTEGER, DIMENSION(:)  , ALLOCATABLE :: curveTypeForID
 !
 !        ---------
 !        Iterators
@@ -126,7 +127,6 @@
 !     ------------------------------------------
 !
       REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: aPointInsideTheCurve
-      INTEGER      , DIMENSION(:)  , ALLOCATABLE :: curveTypeForID
 !
 !     ---------------------------------
 !     Arrays for keeping track of edges
@@ -188,7 +188,7 @@
          CALL releaseFTLinkedList(self % elements)
          CALL releaseFTLinkedList(self % edges)
          
-         IF(ALLOCATED(curveTypeForID))       DEALLOCATE(curveTypeForID)
+         IF(ALLOCATED(self % curveTypeForID))DEALLOCATE(self % curveTypeForID)
          IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
          
          CALL destroyEdgeArrays(self)
