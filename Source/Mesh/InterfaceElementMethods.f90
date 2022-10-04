@@ -39,6 +39,36 @@
 !      Created: May 16, 2013 11:17 AM 
 !      By: David Kopriva  
 !
+!Interface boundary steps
+!
+!GenerateQuadMeshFromGrid
+!  MarkInterfaceElements
+!    For each curve
+!      For each element
+!        Use winding fn to mark 4 corners as inside or outside
+!        Mark as interface element if element straddles interface curve
+!        Mark each node bCurveSide as INSIDE or OUTSIDE
+!        Set node bCurveChainID to the curve ID
+!  CollectBoundaryEdges
+!    For each edge in the mesh
+!      If both nodes on edge are associated with a curve &
+!      If that curve is an interface curve &
+!      If BOTH nodes are INSIDE the curve
+!        Mark edges as ON_INTERFACE
+!  LocateEdgeImagesOnBoundaries
+!    For each boundary curve
+!        If first edge node of first edges bCurveSide /= INSIDE isInnerBoundaryCurve = .FALSE. ELSE
+!  isInnerBoundaryCurve = .TRUE. ??? Why is this ??? (isInnerBoundaryCurve determines /pm on nHat)
+!  AssociateBoundaryEdgesToCurve
+!    For each node in edges list for this boundary curve
+!      find t value for closest point on the curve and the distToBoundary
+!    
+!   CleanUpBoundaryCurves
+!     For each interface boundary edge list
+!        MoveInterfaceNodesToBoundary
+!          For each edge in boundary edge list
+!            For both nodes on edge, set x value to curve location for t
+!
 !////////////////////////////////////////////////////////////////////////
 !
       Module InterfaceElementMethods 
@@ -85,7 +115,7 @@
          CLASS(FTLinkedList)        , POINTER :: newElementsList => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
          CLASS(SMNode)              , POINTER :: node            => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: interfaceElementIterator => NULL()
          INTEGER                              :: interfaceNodeCount, k
          INTEGER                              :: boundaryNodeNumber, oppositeNodeNumber
          
@@ -106,14 +136,14 @@
 !        split according to its shape
 !        -----------------------------------------------
 !
-         ALLOCATE(elementIterator)
-         CALL elementIterator % initWithFTLinkedList(interfaceElements)
-         CALL elementIterator % setToStart()
-         DO WHILE ( .NOT.elementIterator % isAtEnd() )
-            obj => elementIterator % object()
+         ALLOCATE(interfaceElementIterator)
+         CALL interfaceElementIterator % initWithFTLinkedList(interfaceElements)
+         CALL interfaceElementIterator % setToStart()
+         DO WHILE ( .NOT.interfaceElementIterator % isAtEnd() )
+            obj => interfaceElementIterator % object()
             CALL cast(obj,e)
             IF ( e % remove )     THEN
-               CALL elementIterator % moveToNext()
+               CALL interfaceElementIterator % moveToNext()
                CYCLE !in case elements are doubled up
             END IF
 !
@@ -184,7 +214,7 @@
                   PRINT *, "For some reason an interface element has no interface nodes!"
             END SELECT 
             
-            CALL elementIterator % moveToNext()
+            CALL interfaceElementIterator % moveToNext()
          END DO
 !
 !        -------------------------------------------------
@@ -193,13 +223,13 @@
 !        -------------------------------------------------
 !
          CALL mesh % elements % addObjectsFromList(newElementsList)
-         CALL releaseFTLinkedList(newElementsList)
-         CALL releaseFTLinkedListIterator(elementIterator)
-
          CALL DoLazyDelete( mesh )
+         
          CALL mesh % renumberAllLists()
          CALL mesh % syncEdges()
          CALL deallocateElementToEdgeConnections()
+         CALL releaseFTLinkedListIterator(interfaceElementIterator)
+         CALL releaseFTLinkedList(newElementsList)
 
       END SUBROUTINE SplitInterfaceElements
 !
@@ -310,12 +340,12 @@
 !              Top side
 !              --------
 !
-               elementNodes(1) = newNodePtr1 
-               elementNodes(2) = newNodePtr2 
+               elementNodes(1) % node => newNodePtr1 % node
+               elementNodes(2) % node => newNodePtr2 % node
                elementNodes(3) % node => nodes(3) % node
                elementNodes(4) % node => nodes(4) % node
                
-               CALL constructNewElement(mesh,elementNodes,newElementsList,e)
+               CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
 !
 !              -----------
 !              Bottom side
@@ -326,7 +356,7 @@
                elementNodes(2) % node => nodes(2) % node
                elementNodes(4) % node => newNodePtr1 % node
                
-               CALL constructNewElement(mesh,elementNodes,newElementsList,e)
+               CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
 !
 !           -----------
             CASE( 2,4 ) 
@@ -341,7 +371,7 @@
                elementNodes(3) % node => newNodePtr2 % node
                elementNodes(4) % node => nodes(4) % node
                
-               CALL constructNewElement(mesh,elementNodes,newElementsList,e)
+               CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
 !
 !              ----------
 !              Right side
@@ -352,7 +382,7 @@
                elementNodes(3) % node => nodes(3) % node
                elementNodes(4) % node => newNodePtr2 % node
                
-               CALL constructNewElement(mesh,elementNodes,newElementsList,e)
+               CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
             CASE DEFAULT 
          END SELECT 
 
@@ -584,27 +614,6 @@
          CALL releaseSMElement(eNew)
            
       END SUBROUTINE CreateAndAddElement
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE constructNewElement(mesh,elementNodes,newElementsList,e)
-         IMPLICIT NONE  
-         TYPE (SMMesh)      , POINTER :: mesh
-         CLASS(SMElement)   , POINTER :: e, eNew => NULL()
-         CLASS(FtLinkedList), POINTER :: newElementsList
-         TYPE(SMNodePtr)              :: elementNodes(4)
-         CLASS(FTObject)    , POINTER :: obj => NULL()
-         
-         ALLOCATE(eNew)
-         CALL eNew % initWithNodesIDandType(elementNodes, mesh % newElementID(), QUAD)
-         eNew % materialID   =  e % materialID
-         eNew % materialName =  e % materialName
-         
-         obj => eNew
-         CALL newElementsList % add(obj)
-         CALL releaseSMElement(eNew)
-         
-      END SUBROUTINE constructNewElement
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

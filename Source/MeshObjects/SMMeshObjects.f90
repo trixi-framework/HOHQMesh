@@ -472,7 +472,7 @@
 
          DO j = 1, eType 
             obj => nodes(j) % node
-            CALL   self  % nodes % addObject(obj)
+            CALL   self % nodes % addObject(obj)
          END DO
          
          self % remove       = .FALSE.

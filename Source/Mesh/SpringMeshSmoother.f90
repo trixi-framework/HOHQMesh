@@ -166,13 +166,13 @@
 !        Allocate temporary memory
 !        -------------------------
 !
+         CALL renumberObjects(mesh,NODES) ! To guarantee sync.
          N = mesh % nodes % COUNT() 
          ALLOCATE( nodeAcceleration(3,N) )
          ALLOCATE( nodeVelocity(3,N) )
          
-         nodeVelocity    = 0.0_RP
-         
-         CALL renumberObjects(mesh,NODES) ! To guarantee sync.
+         nodeVelocity     = 0.0_RP
+         nodeAcceleration = 0.0_RP
          
          CALL mesh % nodesIterator % setToStart()
          DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
