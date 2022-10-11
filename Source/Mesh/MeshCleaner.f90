@@ -603,8 +603,7 @@
 !
             CALL UnmarkNodesNearBoundaries( mesh % nodesIterator )
             CALL CleanUpBoundaryElements( mesh, model, errorCode )
-         END IF
-         
+         END IF        
          
       END SUBROUTINE PerformFinalMeshCleanup
 !
@@ -792,7 +791,7 @@
 !
 !                    ------------------------------------------------
 !                    Find the elements associated with this node that
-!                    ave only one node on the boundary
+!                    have only one node on the boundary
 !                    ------------------------------------------------
 !
                         DO j = 1, numElementsForNode( meshNode % id )
@@ -839,7 +838,7 @@
 !        --------
 !
          CALL mesh % destroyEdgeArrays()
-         CALL deallocateNodeToElementConnections
+         CALL deallocateNodeToElementConnections()
 
       END SUBROUTINE CleanUpBoundaryElements
 !

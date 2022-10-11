@@ -194,9 +194,9 @@
       CLASS(FTobject)    , POINTER :: obj  => NULL()
       INTEGER                      :: k
 !
-!     --------------------------------
-!     Clear out old values old present
-!     --------------------------------
+!     -------------------------------
+!     Clear out old values if present
+!     -------------------------------
 !
       IF ( ASSOCIATED(boundaryEdgesArray) )     THEN
          CALL releaseFTMutableObjectArray(self = boundaryEdgesArray)
