@@ -128,11 +128,11 @@ If there are still questions, the source code for writing the mesh files can be 
 As a concrete example, we present the mesh file for a circular domain with five elements, shown in Fig. 8.15 of the book Implementing Spectral Methods, reproduced below. 
 
 ![HexElement](SEMPoisson2DMesh.png)
-<p align = "center"> Fig. 3 The Quad mesh for a circle for whose mesh file is shown below.</p>
+<p align = "center"> Fig. 3. The Quad mesh for a circle for whose mesh file is shown below.</p>
 
 The mesh has five elements with eight corner nodes. The outer boundary (called "outer") is eighth order, so it has nine points defined for each curve.
 
-	 8 5 8 								   <- #Nodes #Elements Polynomial Order
+	 8 5 8 								       <- #Nodes #Elements Polynomial Order
 	0.7000000000000000 -0.7000000000000000 0.0 <- Node 1 corner node location
 	1.4142135623730951 -1.4142135623730949 0.0 
 	0.7000000000000000 0.7000000000000000 0.0 
