@@ -1,16 +1,16 @@
 # The ISM Mesh File Formats
 
-The ISM format was developed for the book "Impementing Spectral Methods:Slgorithms for Schientists and Engineers" by David A. Kopriva and it supplies all the information needed to define high order curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-2 and ISM-MM added to include edge information, and to handle multiple materials.
+The ISM format was developed for the book "Impementing Spectral Methods: Algorithms for Scientists and Engineers" by David A. Kopriva and it supplies all the information needed to define high order curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-2 and ISM-MM added to include edge information, and to handle multiple materials.
 
 The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 1 below,
 
 ![QuadElement](ElementToplogy.png)
-<p align = "center"> Fig. 1. The Quad element definition with corners (circles) and sides (squares) ordered.</p>
+<p align = "center"> Fig. 13. The Quad element definition with corners (circles) and sides (squares) ordered.</p>
 
 Hex elements are defined in a standard finite element topology,
 
 ![HexElement](HexElement.png)
-<p align = "center"> Fig. 2. The Hex element definition with corners (circles) and faces (squares), ordered.</p>
+<p align = "center"> Fig. 13. The Hex element definition with corners (circles) and faces (squares), ordered.</p>
 
 
 ## ISM
@@ -47,10 +47,10 @@ The list of elements is an ordered list of element blocks,
 	
 Each element block includes enough information to define a spectral element. Each block has
 
-	node IDs of the four/eight corners
-	Boundary flags for the sides/faces (0 = straight/flat, 1 = curved)
+	node IDs of the four corners
+	Boundary flags for the sides/faces (0 = straight side, 1 = curved)
 	Interpolation values for the curved sides
-	Boundary names for sides/faces
+	boundary names for sides/faces
 
 The node IDs are the IDs (as determined by their location in the list) of the nodes defined in the Node block. 
 
@@ -60,7 +60,7 @@ The boundary flags are defined similarly,
 
 	bf1 bf2 bf3 bf4 [b5 b6]
 	
-where the boundary numbering is defined counter-clockwise for Quad elements as defined in the book "Implementing Spectral Methods", and are defined as for standard Hex finite elements for Hex elements.
+where the boundary numbering is defined counter-clockwise for Quad elements as defined in the book "Implementing Spectral Methods", and are defined as for standard Hex elements.
 
 Finally, for each element boundary curve (or boundary face) for which the boundary flag = 1, a list of nodal values (x,y,z) is specified in order. The knots are assumed defined at the reversed Chebyshev Gauss-Lobatto points, -cos(j \pi /N). For Quad elements the boundary curve blocks are the nodal values
 
@@ -79,55 +79,26 @@ The last line of the element block lists names of the physical boundaries associ
 
 Interior (element-to-element) boundaries are denoted by --- (three dashes).
 
-### Algorithm
-
 An algorithm for reading a quad mesh can therefore be written as
 
 	Read nNodes nElements pOrder
-	For n = 1 to nNodes
-		Read x[n] y[n] z[n]
+	For i = 1 to nNodes
+		Read x[i] y[i] z[i]
 	End
-	For n = 1 to nElements
-		Read (nodeID[k,n], k = 1,...,4)
-		Read (bFlag[k,n], k = 1,...,4)
+	For i = 1 to nElements
+		Read (nodeID[k,i], k = 1,...,4)
+		Read (bFlag[k,i], k = 1,...,4)
 		For k = 1 to 4
 			If bFlag(k) = 1 then
-				For i = 0 to pOrder
-					Read x[i,k,n] y[i,k,n] z[i,k,n]
+				For j = 1, pOrder
+					Read x(j,k,i) y(j,k,i) z(j,k,i)
 				End
 			End
 		End 
 		Read (bName[k,i], k = 1,...,4)
 	End
 
-The Hex element block is similar, except that the faces are defined with nodes at the two-dimensional tensor-product of the Chebyshev Gauss-Lobatto points. 
-
-	Read nNodes nElements pOrder
-	For n = 1 to nNodes
-		Read x[n] y[n] z[n]
-	End
-	For n = 1 to nElements
-		Read (nodeID[k,n], k = 1,...,8)
-		Read (bFlag[k,n], k = 1,...,6)
-		For k = 1 to 6
-			If bFlag(k) = 1 then
-				For j = 0 to pOrder
-					For i = 0 to pOrder
-					   Read x[i,j,k,n] y[i,j,k,n] z[i,j,k,n]
-					End
-				End
-			End
-		End 
-		Read (bName[k,i], k = 1,...,6)
-	End
-
-### Example
-As a concrete example, we present the mesh file for a circular domain with five elemnents, shown in Fig. 8.15 of the book Implementing Spectral Methods, reproduced below. 
-
-![HexElement](SEMPoisson2DMesh.png)
-<p align = "center"> Fig. 3 The Quad mesh for a circle for whose mesh file is shown below.</p>
-
-The mesh has five elements with eight nodes. The outer boundary, called "outer" is of eight order, so has nine points defined for each curve.
+As a concrete example, we present the mesh file for a circular domain with five elements, shown in Fig. 8.15 of the book "Implementing Spectral Methods". The mesh has five elements with eight nodes. The outer boundary (called "outer") is of eighth order, so it has nine points defined for each curve.
 
 	 8 5 8
 	0.7000000000000000 -0.7000000000000000 
