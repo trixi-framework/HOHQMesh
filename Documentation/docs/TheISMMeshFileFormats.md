@@ -60,7 +60,7 @@ The boundary flags are defined similarly,
 
 	bf1 bf2 bf3 bf4 [b5 b6]
 	
-where the boundary numbering is defined counter-clockwise for Quad elements as defined in the book "Implementing Spectral Methods", and are defined as for standard Hex elements.
+where the boundary numbering is defined counter-clockwise for Quad elements as defined in the book "Implementing Spectral Methods", and are defined as for standard Hex finite elements for Hex elements.
 
 Finally, for each element boundary curve (or boundary face) for which the boundary flag = 1, a list of nodal values (x,y,z) is specified in order. The knots are assumed defined at the reversed Chebyshev Gauss-Lobatto points, -cos(j \pi /N). For Quad elements the boundary curve blocks are the nodal values
 
