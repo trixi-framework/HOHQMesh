@@ -1,6 +1,6 @@
 # The ISM Mesh File Formats
 
-The ISM format was developed for the book "Impementing Spectral Methods:Slgorithms for Schientists and Engineers" by David A. Kopriva and it supplies all the information needed to define high order curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-2 and ISM-MM added to include edge information, and to handle multiple materials.
+The ISM format was developed for the book "Impementing Spectral Methods: Algorithms for Scientists and Engineers" by David A. Kopriva and it supplies all the information needed to define high order curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-2 and ISM-MM added to include edge information, and to handle multiple materials.
 
 The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 1 below,
 
@@ -122,12 +122,12 @@ The Hex element block is similar, except that the faces are defined with nodes a
 	End
 
 ### Example
-As a concrete example, we present the mesh file for a circular domain with five elemnents, shown in Fig. 8.15 of the book Implementing Spectral Methods, reproduced below. 
+As a concrete example, we present the mesh file for a circular domain with five elements, shown in Fig. 8.15 of the book Implementing Spectral Methods, reproduced below. 
 
 ![HexElement](SEMPoisson2DMesh.png)
 <p align = "center"> Fig. 3 The Quad mesh for a circle for whose mesh file is shown below.</p>
 
-The mesh has five elements with eight nodes. The outer boundary, called "outer" is of eight order, so has nine points defined for each curve.
+The mesh has five elements with eight nodes. The outer boundary (called "outer") is eighth order, so it has nine points defined for each curve.
 
 	 8 5 8
 	0.7000000000000000 -0.7000000000000000 
