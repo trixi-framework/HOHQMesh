@@ -5,27 +5,27 @@ The ISM format was developed for the book "Impementing Spectral Methods: Algorit
 The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 1 below,
 
 ![QuadElement](ElementToplogy.png)
-<p align = "center"> Fig. 1. The Quad element definition with corners (circles) and sides (squares) ordered.</p>
+<p align = "center"> Fig. 1. The Quad element definition with corner nodes (circles) and sides (squares)  in their standard ordering.</p>
 
 Hex elements are defined in a standard finite element topology,
 
 ![HexElement](HexElement.png)
-<p align = "center"> Fig. 2. The Hex element definition with corners (circles) and faces (squares), ordered.</p>
+<p align = "center"> Fig. 2. The Hex element definition with corner nodes (circles) and faces (squares), in their standard ordering.</p>
 
 
 ## ISM
 
-The ISM format includes node and element connectivity, with additional edge interpolation data to define high order boundary information. It can define either 2D quad elements or 3D Hex elements, however at the present time there is no header to define what the element type is, which is inferred from the number of nodes that define the corners.
+The ISM format includes (corner) nodes and element connectivity, with additional edge interpolation data to define high order boundary information. It can define either 2D quad elements or 3D Hex elements, however at the present time there is no header to define what the element type is. Rather, that is inferred from the number of nodes that define the corners.
 
-The top level view of the ISM file format is:
+The top level view of the ISM file format is
 
 	Header
 	List of Nodes
 	List of Elements
 	
-The header specifies the size of the mesh and the order of the polynomial that is used to define boundary curves
+The header specifies the size of the mesh and the order of the polynomial that is used to define boundary curves.
 
-	#nodes  #elements  polynomial Order
+	#nodes  #elements  polynomialOrder
 	
 The list of nodes includes the (x,y,z) locations of the #nodes nodes in an ordered list
 
@@ -38,12 +38,12 @@ The list of nodes includes the (x,y,z) locations of the #nodes nodes in an order
 
 The list of elements is an ordered list of element blocks,
 
-	e1
-	e2
+	elementBlock1
+	elementBlock2
 	.
 	.
 	.
-	eN
+	elementBlockN
 	
 Each element block includes enough information to define a spectral element. Each block has
 
@@ -52,7 +52,7 @@ Each element block includes enough information to define a spectral element. Eac
 	Interpolation values for the curved sides
 	Boundary names for sides/faces
 
-The node IDs are the IDs (as determined by their location in the list) of the nodes defined in the Node block. 
+The node IDs are the IDs (as determined by their location in the node list) of the nodes defined in the Node block. Additional values used for Hex elements are shown in square brackets.
 
 	node1 node2 node3 node4 [node5 node6 node7 node8]
 
@@ -60,24 +60,24 @@ The boundary flags are defined similarly,
 
 	bf1 bf2 bf3 bf4 [b5 b6]
 	
-where the boundary numbering is defined counter-clockwise for Quad elements as defined in the book "Implementing Spectral Methods", and are defined as for standard Hex finite elements for Hex elements.
+where the boundary numbering is defined in Figs. 1 and 2 above.
 
-Finally, for each element boundary curve (or boundary face) for which the boundary flag = 1, a list of nodal values (x,y,z) is specified in order. The knots are assumed defined at the reversed Chebyshev Gauss-Lobatto points, -cos(j \pi /N). For Quad elements the boundary curve blocks are the nodal values
+For each element boundary curve (or boundary face) for which the boundary flag = 1, a list of nodal values (x,y,z) is specified in order. The knots are assumed defined at the reversed Chebyshev Gauss-Lobatto points, $t_j = -cos(j \pi /N)$. For Quad elements the boundary curve blocks are the nodal values
 
 	x1,y1,z1
 	x2,y2,z2
 	.
 	.
 	.
-	xO,yO,zO
+	xN,yN,zN
 	
-For Hex elements, each block defines a surface patch.
+For Hex elements, each block defines a surface patch, see below.
 
 The last line of the element block lists names of the physical boundaries associated with a side/face. 
 
 	name1 name2 name3 name4 [name5 name6]
 
-Interior (element-to-element) boundaries are denoted by --- (three dashes).
+Interior (element-to-element) boundaries are denoted by --- (three dashes) to indicate no name.
 
 ### Algorithm
 
@@ -97,8 +97,9 @@ An algorithm for reading a quad mesh can therefore be written as
 				End
 			End
 		End 
-		Read (bName[k,i], k = 1,...,4)
+		Read (bName[k,n], k = 1,...,4)
 	End
+In this case, the index $i$ corresponds to the first coordinate direction and $j$ the second along the face.
 
 The Hex element block is similar, except that the faces are defined with nodes at the two-dimensional tensor-product of the Chebyshev Gauss-Lobatto points. 
 
@@ -118,8 +119,10 @@ The Hex element block is similar, except that the faces are defined with nodes a
 				End
 			End
 		End 
-		Read (bName[k,i], k = 1,...,6)
+		Read (bName[k,n], k = 1,...,6)
 	End
+
+If there are still questions, the source code for writing the mesh files can be found in `WriteISMMeshFile` in the file `MeshOutputMethods.f90` and `WriteISMHexMeshFile` in the file `Mesh3DOutputMethods.f90`.
 
 ### Example
 As a concrete example, we present the mesh file for a circular domain with five elements, shown in Fig. 8.15 of the book Implementing Spectral Methods, reproduced below. 
@@ -127,64 +130,64 @@ As a concrete example, we present the mesh file for a circular domain with five 
 ![HexElement](SEMPoisson2DMesh.png)
 <p align = "center"> Fig. 3 The Quad mesh for a circle for whose mesh file is shown below.</p>
 
-The mesh has five elements with eight nodes. The outer boundary (called "outer") is eighth order, so it has nine points defined for each curve.
+The mesh has five elements with eight corner nodes. The outer boundary (called "outer") is eighth order, so it has nine points defined for each curve.
 
-	 8 5 8
-	0.7000000000000000 -0.7000000000000000 
-	1.4142135623730951 -1.4142135623730949 
-	0.7000000000000000 0.7000000000000000 
-	1.4142135623730951 1.4142135623730949 
-	-0.7000000000000000 0.7000000000000000 
-	-1.4142135623730949 1.4142135623730951
-	-1.4142135623730954 -1.4142135623730949 
-	-0.7000000000000000 -0.7000000000000000 
-	1 2 4 3
-	0 1 0 0
-	1.4142135623730951 -1.4142135623730949
-	1.4961851763911174 -1.3271887273283636
-	1.6994209839390670 -1.0544990845645972
-	1.9103423681217324 -0.5921081291107658
-	2.0000000000000000 0.0000000000000000
-	1.9103423681217324 0.5921081291107657
-	1.6994209839390670 1.0544990845645972
-	1.4961851763911171 1.3271887273283638
-	1.4142135623730951 1.4142135623730949
-	--- outer --- ---
-	5 3 4 6 
+	 8 5 8 								   <- #Nodes #Elements Polynomial Order
+	0.7000000000000000 -0.7000000000000000 0.0 <- Node 1 corner node location
+	1.4142135623730951 -1.4142135623730949 0.0 
+	0.7000000000000000 0.7000000000000000 0.0 
+	1.4142135623730951 1.4142135623730949 0.0 
+	-0.7000000000000000 0.7000000000000000 0.0 
+	-1.4142135623730949 1.4142135623730951 0.0
+	-1.4142135623730954 -1.4142135623730949 0.0 
+	-0.7000000000000000 -0.7000000000000000 0.0 <- Node 8 corner node location
+	1 2 4 3									    <- First element block, node IDs
+	0 1 0 0									    <- Side 2 is curved, others are straight
+	1.4142135623730951 -1.4142135623730949 0.0  <- Start of interpolant nodes for side 2
+	1.4961851763911174 -1.3271887273283636 0.0
+	1.6994209839390670 -1.0544990845645972 0.0
+	1.9103423681217324 -0.5921081291107658 0.0
+	2.0000000000000000 0.0000000000000000 0.0
+	1.9103423681217324 0.5921081291107657 0.0
+	1.6994209839390670 1.0544990845645972 0.0
+	1.4961851763911171 1.3271887273283638 0.0
+	1.4142135623730951 1.4142135623730949 0.0 <- End of interpolation nodes for side 2
+	--- outer --- ---					      <- Side 2 is named outer, others are interior sides
+	5 3 4 6 							      <- Start of Element 2 block
 	0 0 1 0
-	-1.4142135623730949 1.4142135623730951
-	-1.3271887273283636 1.4961851763911174
-	-1.0544990845645970 1.6994209839390670
-	-0.5921081291107656 1.9103423681217324
-	0.0000000000000000 2.0000000000000000
-	0.5921081291107658 1.9103423681217324
-	1.0544990845645974 1.6994209839390668
-	1.3271887273283638 1.4961851763911169
-	1.4142135623730951 1.4142135623730949
+	-1.4142135623730949 1.4142135623730951 0.0
+	-1.3271887273283636 1.4961851763911174 0.0
+	-1.0544990845645970 1.6994209839390670 0.0
+	-0.5921081291107656 1.9103423681217324 0.0
+	0.0000000000000000 2.0000000000000000 0.0
+	0.5921081291107658 1.9103423681217324 0.0
+	1.0544990845645974 1.6994209839390668 0.0
+	1.3271887273283638 1.4961851763911169 0.0
+	1.4142135623730951 1.4142135623730949 0.0
 	--- outer --- ---
 	7 8 5 6 
 	0 0 0 1
-	-1.4142135623730954 -1.4142135623730949
-	-1.4961851763911174 -1.3271887273283636
-	-1.6994209839390670 -1.0544990845645970
-	-1.9103423681217326 -0.5921081291107655
-	-2.0000000000000000 0.0000000000000000
-	-1.9103423681217324 0.5921081291107659
-	-1.6994209839390668 1.0544990845645974
-	-1.4961851763911169 1.3271887273283638
-	-1.4142135623730949 1.4142135623730951
+	-1.4142135623730954 -1.4142135623730949 0.0
+	-1.4961851763911174 -1.3271887273283636 0.0
+	-1.6994209839390670 -1.0544990845645970 0.0
+	-1.9103423681217326 -0.5921081291107655 0.0
+	-2.0000000000000000 0.0000000000000000 0.0
+	-1.9103423681217324 0.5921081291107659 0.0
+	-1.6994209839390668 1.0544990845645974 0.0
+	-1.4961851763911169 1.3271887273283638 0.0
+	-1.4142135623730949 1.4142135623730951 0.0
 	--- --- --- outer
 	7 2 1 8 
 	1 0 0 0
-	-1.4142135623730954 -1.4142135623730949
-	-1.3271887273283640 -1.4961851763911169
-	-1.0544990845645983 -1.6994209839390662
-	-0.5921081291107669 -1.9103423681217322
-	0.0000000000000000 -2.0000000000000000
-	0.5921081291107663 -1.9103423681217322
-	1.0544990845645961 -1.6994209839390677
-	1.3271887273283627 -1.4961851763911180
-	1.4142135623730949 -1.4142135623730954
+	-1.4142135623730954 -1.4142135623730949 0.0
+	-1.3271887273283640 -1.4961851763911169 0.0
+	-1.0544990845645983 -1.6994209839390662 0.0
+	-0.5921081291107669 -1.9103423681217322 0.0
+	0.0000000000000000 -2.0000000000000000 0.0
+	0.5921081291107663 -1.9103423681217322 0.0
+	1.0544990845645961 -1.6994209839390677 0.0
+	1.3271887273283627 -1.4961851763911180 0.0
+	1.4142135623730949 -1.4142135623730954 0.0
 	8 1 3 5 
-	0 0 0 0
+	0 0 0 0									<- Interior box, no curve values follow
 	--- --- --- ---
