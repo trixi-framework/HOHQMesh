@@ -171,7 +171,6 @@
          PROCEDURE :: initWithNodesAndID => initEdgeWithNodesAndID
          FINAL     :: destructEdge
          PROCEDURE :: printDescription   => printEdgeDescription
-         PROCEDURE :: addAuxiliaryNode
       END TYPE SMEdge
       
       TYPE SMEdgePtr
@@ -580,16 +579,6 @@
          self % auxiliaryNode => NULL()
 
       END SUBROUTINE initEdgeWithNodesAndID
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE addAuxiliaryNode(self,node)  
-         IMPLICIT NONE
-         CLASS(SMEdge)          :: self
-         CLASS(SMNode), POINTER :: node
-         self % auxiliaryNode => node
-         CALL node % retain()
-      END SUBROUTINE addAuxiliaryNode
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
