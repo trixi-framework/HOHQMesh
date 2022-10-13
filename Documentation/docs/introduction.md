@@ -43,7 +43,7 @@ This makes it possible to mesh airfoil type geometries.
 <p align = "center"> Fig. 4. Mesh of a NACA0012 airfoil (<em>Examples/2D/NACA0012</em>)</p>
 
 ![KT3Element](https://user-images.githubusercontent.com/3637659/121807848-2da56580-cc56-11eb-9f0a-1a078cc3e612.png)
-<p align = "center"> Fig. 5. Mesh for a three element Karman-Treffiz airfoil (<em>Examples/2D/KT3Element</em>)</p>
+<p align = "center"> Fig. 5. Mesh for a three element Karman-Trefftz airfoil (<em>Examples/2D/KT3Element</em>)</p>
 
 Local refinement can be added manually, either at a point or along a line.
 ![AllFeatures](https://user-images.githubusercontent.com/3637659/121807794-f3d45f00-cc55-11eb-9284-af5f4eed2c87.png)
