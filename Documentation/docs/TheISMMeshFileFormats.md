@@ -7,12 +7,12 @@ and ISM-MM added to include edge information and to handle multiple materials, r
 
 The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 24 below.
 
-![QuadElement](ElementToplogy.png)
+![QuadElement](https://user-images.githubusercontent.com/25242486/195528246-aebbff54-8654-4aa9-8327-3259a11f2957.png)
 <p align = "center"> Fig. 24. The Quad element definition with corner nodes (circles) and sides (squares)  in their standard ordering.</p>
 
 Hex elements are defined in a standard finite element topology.
 
-![HexElement](HexElement.png)
+![HexElement](https://user-images.githubusercontent.com/25242486/195528290-fe4ce34a-f1ee-4c8e-855d-4a93f88ec5c7.png)
 <p align = "center"> Fig. 25. The Hex element definition with corner nodes (circles) and faces (squares), in their standard ordering.</p>
 
 
@@ -130,7 +130,7 @@ If there are still questions, the source code for writing the mesh files can be 
 ### Example
 As a concrete example, we present the mesh file for a circular domain with five elements, shown in Fig. 8.15 of the book "Implementing Spectral Methods", reproduced below.
 
-![HexElement](SEMPoisson2DMesh.png)
+![HexElement](https://user-images.githubusercontent.com/25242486/195528317-bb536e54-66df-4f9a-9417-819a09a25bc6.png)
 <p align = "center"> Fig. 26. The Quad mesh for a circle for whose mesh file is shown below.</p>
 
 The mesh has five elements with eight corner nodes. The outer boundary (called "outer") is eighth order, so it has nine points defined for each curve.
