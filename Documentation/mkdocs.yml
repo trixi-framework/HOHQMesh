@@ -28,7 +28,7 @@ nav:
     - The Control Input: 'the-control-input.md'
     - Three Dimensional Hexahedral Meshes: 'three-dimensional-hexahedral-meshes.md'
     - The Control File: 'the-control-file.md'
-    - The HOHQMesh Mesh file formats: 'TheISMMeshFileFormats.md'
+    - The HOHQMesh Mesh File Formats: 'TheISMMeshFileFormats.md'
     - Pre-made Examples: 'examples.md'
     - Compiling and Running HOHQMesh: 'compiling-and-running-hohqmesh.md'
     - Appendix: 'appendix.md'
