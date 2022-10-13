@@ -71,7 +71,7 @@ Just leave out any of the optional parameters if you want the default values to 
 
 ## Refinement Regions<a name="RefinementRegions"></a>
 ![Refinements](https://user-images.githubusercontent.com/3637659/121807868-46ae1680-cc56-11eb-8941-c9ad8d259da2.png)
-<p align = "center"> Fig. 15. Two refinement centers and a refinement line</p>
+<p align = "center"> Fig. 16. Two refinement centers and a refinement line</p>
 
 Manual scaling of the mesh size can be performed by including any combination of
 
@@ -101,7 +101,7 @@ The mesh can also be refined along a line using a `REFINEMENT_LINE`. Like the ce
 		w    = 0.5
 	\end{REFINEMENT_LINE}
 
-Here, *x0* and *x1* are the starting and ending points of the line, *h* is the desired mesh size and *w* tells how far out from the line the refinement extends. An example of center and line refinements can be seen in Fig. 15.
+Here, *x0* and *x1* are the starting and ending points of the line, *h* is the desired mesh size and *w* tells how far out from the line the refinement extends. An example of center and line refinements can be seen in Fig. 16.
 ### Refinement Region Definition<a name="RefinementDefinition"></a>
 
 Refinement regions are defined within a `REFINEMENT_REGIONS` block, e.g.

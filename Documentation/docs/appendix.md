@@ -1,7 +1,7 @@
 # Appendix
 
 ## Appendix A: Additions for ISM-v2<a name="ISMv-2"></a>
-The ISM-v2 adds edge information to the mesh file.
+The ISM-v2 adds edge information to the ISM mesh file.
 
 The first line of the mesh file will state that fact, that is, if the first line is ISM-V2 then it will have the edge information.
 
@@ -17,7 +17,8 @@ The edges are read immediately after the nodes. For each edge the following are 
 
 	start node ID, end node ID, element ID on left, element ID on right, side of left element, side of right element
 
-These are the quantities that are computed in Alg. 148 of "Implementing Spectral Methods". If the edge is a boundary edge, then the second side element will be ID = 0 and the side of that element will be 0. If the sides have indices that increase in opposite directions, then the last column in the data will be negative.￼
+These are the quantities that are computed in Alg. 148 of "Implementing Spectral Methods". If the edge is a boundary edge, then the second side element will be ID = 0 and the side of that element will be 0. If the sides have indices that increase in opposite directions, then the last column in the data will be negative.
+
 ## Appendix B: Summary of Boundary Curve Definitions<a name="BCSummary"></a>
 
 Defining a parametric equation:

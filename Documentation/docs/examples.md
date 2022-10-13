@@ -1,6 +1,6 @@
 # Examples
 
-HOHQMesh comes with 12 example control, mesh, and plot files for two-dimensional meshes found in the Examples/2D directory. These examples illustrate the use of the the control and model features, and the resulting meshes and plot files.
+HOHQMesh comes with 12 example control, mesh, and plot files for two-dimensional meshes found in the *Examples/2D* directory. These examples illustrate the use of the the control and model features, and the resulting meshes and plot files.
 
 Also included in the Examples directory is a control template: ControlTemplate.control,
 that can (like any of the examples) be modified at will.
@@ -22,7 +22,7 @@ that can (like any of the examples) be modified at will.
 | SplineGeometry  | Free form domain defined as a spline  |:material-check: | :material-close: | :material-close: | :material-close: | :material-check: | :material-close: |:material-close: | :material-close:| :material-close:
 | Square  | Generation of a Cartesian mesh with no model  |:material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:
 
-There are also ten three dimensional examples that illustrate the different extrusion algorithms in the Examples/3D directory
+There are also ten three dimensional examples that illustrate the different extrusion algorithms in the *Examples/3D* directory
 
 | Name | Description | Algorithm| Topography |
 |------|-------------|----------|------------|

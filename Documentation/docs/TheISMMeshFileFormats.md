@@ -1,16 +1,19 @@
 # The ISM Mesh File Formats
 
-The ISM format was developed for the book "Impementing Spectral Methods: Algorithms for Scientists and Engineers" by David A. Kopriva and it supplies all the information needed to define high order curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-2 and ISM-MM added to include edge information, and to handle multiple materials.
+The ISM format was developed for the book "Implementing Spectral Methods: Algorithms for Scientists
+and Engineers" by David A. Kopriva and it supplies all the information needed to define high order
+curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-v2
+and ISM-MM added to include edge information, and to handle multiple materials.
 
-The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 1 below,
+The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 24 below,
 
 ![QuadElement](ElementToplogy.png)
-<p align = "center"> Fig. 1. The Quad element definition with corner nodes (circles) and sides (squares)  in their standard ordering.</p>
+<p align = "center"> Fig. 24. The Quad element definition with corner nodes (circles) and sides (squares)  in their standard ordering.</p>
 
 Hex elements are defined in a standard finite element topology,
 
 ![HexElement](HexElement.png)
-<p align = "center"> Fig. 2. The Hex element definition with corner nodes (circles) and faces (squares), in their standard ordering.</p>
+<p align = "center"> Fig. 25. The Hex element definition with corner nodes (circles) and faces (squares), in their standard ordering.</p>
 
 
 ## ISM
@@ -22,11 +25,11 @@ The top level view of the ISM file format is
 	Header
 	List of Nodes
 	List of Elements
-	
+
 The header specifies the size of the mesh and the order of the polynomial that is used to define boundary curves.
 
 	#nodes  #elements  polynomialOrder
-	
+
 The list of nodes includes the (x,y,z) locations of the #nodes nodes in an ordered list
 
 	x1 y1 z1
@@ -44,7 +47,7 @@ The list of elements is an ordered list of element blocks,
 	.
 	.
 	elementBlockN
-	
+
 Each element block includes enough information to define a spectral element. Each block has
 
 	node IDs of the four/eight corners
@@ -59,7 +62,7 @@ The node IDs are the IDs (as determined by their location in the node list) of t
 The boundary flags are defined similarly,
 
 	bf1 bf2 bf3 bf4 [b5 b6]
-	
+
 where the boundary numbering is defined in Figs. 1 and 2 above.
 
 For each element boundary curve (or boundary face) for which the boundary flag = 1, a list of nodal values (x,y,z) is specified in order. The knots are assumed defined at the reversed Chebyshev Gauss-Lobatto points, $t_j = -cos(j \pi /N)$. For Quad elements the boundary curve blocks are the nodal values
@@ -70,10 +73,10 @@ For each element boundary curve (or boundary face) for which the boundary flag =
 	.
 	.
 	xN,yN,zN
-	
+
 For Hex elements, each block defines a surface patch, see below.
 
-The last line of the element block lists names of the physical boundaries associated with a side/face. 
+The last line of the element block lists names of the physical boundaries associated with a side/face.
 
 	name1 name2 name3 name4 [name5 name6]
 
@@ -96,12 +99,12 @@ An algorithm for reading a quad mesh can therefore be written as
 					Read x[i,k,n] y[i,k,n] z[i,k,n]
 				End
 			End
-		End 
+		End
 		Read (bName[k,n], k = 1,...,4)
 	End
 In this case, the index $i$ corresponds to the first coordinate direction and $j$ the second along the face.
 
-The Hex element block is similar, except that the faces are defined with nodes at the two-dimensional tensor-product of the Chebyshev Gauss-Lobatto points. 
+The Hex element block is similar, except that the faces are defined with nodes at the two-dimensional tensor-product of the Chebyshev Gauss-Lobatto points.
 
 	Read nNodes nElements pOrder
 	For n = 1 to nNodes
@@ -118,28 +121,28 @@ The Hex element block is similar, except that the faces are defined with nodes a
 					End
 				End
 			End
-		End 
+		End
 		Read (bName[k,n], k = 1,...,6)
 	End
 
 If there are still questions, the source code for writing the mesh files can be found in `WriteISMMeshFile` in the file `MeshOutputMethods.f90` and `WriteISMHexMeshFile` in the file `Mesh3DOutputMethods.f90`.
 
 ### Example
-As a concrete example, we present the mesh file for a circular domain with five elements, shown in Fig. 8.15 of the book Implementing Spectral Methods, reproduced below. 
+As a concrete example, we present the mesh file for a circular domain with five elements, shown in Fig. 8.15 of the book "Implementing Spectral Methods", reproduced below.
 
 ![HexElement](SEMPoisson2DMesh.png)
-<p align = "center"> Fig. 3. The Quad mesh for a circle for whose mesh file is shown below.</p>
+<p align = "center"> Fig. 26. The Quad mesh for a circle for whose mesh file is shown below.</p>
 
 The mesh has five elements with eight corner nodes. The outer boundary (called "outer") is eighth order, so it has nine points defined for each curve.
 
 	 8 5 8 								       <- #Nodes #Elements Polynomial Order
 	0.7000000000000000 -0.7000000000000000 0.0 <- Node 1 corner node location
-	1.4142135623730951 -1.4142135623730949 0.0 
-	0.7000000000000000 0.7000000000000000 0.0 
-	1.4142135623730951 1.4142135623730949 0.0 
-	-0.7000000000000000 0.7000000000000000 0.0 
+	1.4142135623730951 -1.4142135623730949 0.0
+	0.7000000000000000 0.7000000000000000 0.0
+	1.4142135623730951 1.4142135623730949 0.0
+	-0.7000000000000000 0.7000000000000000 0.0
 	-1.4142135623730949 1.4142135623730951 0.0
-	-1.4142135623730954 -1.4142135623730949 0.0 
+	-1.4142135623730954 -1.4142135623730949 0.0
 	-0.7000000000000000 -0.7000000000000000 0.0 <- Node 8 corner node location
 	1 2 4 3									    <- First element block, node IDs
 	0 1 0 0									    <- Side 2 is curved, others are straight
@@ -165,7 +168,7 @@ The mesh has five elements with eight corner nodes. The outer boundary (called "
 	1.3271887273283638 1.4961851763911169 0.0
 	1.4142135623730951 1.4142135623730949 0.0
 	--- outer --- ---
-	7 8 5 6 
+	7 8 5 6
 	0 0 0 1
 	-1.4142135623730954 -1.4142135623730949 0.0
 	-1.4961851763911174 -1.3271887273283636 0.0
@@ -177,7 +180,7 @@ The mesh has five elements with eight corner nodes. The outer boundary (called "
 	-1.4961851763911169 1.3271887273283638 0.0
 	-1.4142135623730949 1.4142135623730951 0.0
 	--- --- --- outer
-	7 2 1 8 
+	7 2 1 8
 	1 0 0 0
 	-1.4142135623730954 -1.4142135623730949 0.0
 	-1.3271887273283640 -1.4961851763911169 0.0
@@ -188,6 +191,6 @@ The mesh has five elements with eight corner nodes. The outer boundary (called "
 	1.0544990845645961 -1.6994209839390677 0.0
 	1.3271887273283627 -1.4961851763911180 0.0
 	1.4142135623730949 -1.4142135623730954 0.0
-	8 1 3 5 
+	8 1 3 5
 	0 0 0 0									<- Interior box, no curve values follow
 	--- --- --- ---
