@@ -3,14 +3,14 @@
 The ISM format was developed for the book "Implementing Spectral Methods: Algorithms for Scientists
 and Engineers" by David A. Kopriva and it supplies all the information needed to define high order
 curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-v2
-and ISM-MM added to include edge information, and to handle multiple materials.
+and ISM-MM added to include edge information and to handle multiple materials, respectively.
 
-The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 24 below,
+The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 24 below.
 
 ![QuadElement](ElementToplogy.png)
 <p align = "center"> Fig. 24. The Quad element definition with corner nodes (circles) and sides (squares)  in their standard ordering.</p>
 
-Hex elements are defined in a standard finite element topology,
+Hex elements are defined in a standard finite element topology.
 
 ![HexElement](HexElement.png)
 <p align = "center"> Fig. 25. The Hex element definition with corner nodes (circles) and faces (squares), in their standard ordering.</p>
@@ -18,7 +18,7 @@ Hex elements are defined in a standard finite element topology,
 
 ## ISM
 
-The ISM format includes (corner) nodes and element connectivity, with additional edge interpolation data to define high order boundary information. It can define either 2D quad elements or 3D Hex elements, however at the present time there is no header to define what the element type is. Rather, that is inferred from the number of nodes that define the corners.
+The ISM format includes (corner) nodes and element connectivity, with additional edge interpolation data to define high order boundary information. It can define either 2D Quad elements or 3D Hex elements, however at the present time there is no header to define what the element type is. Rather, that is inferred from the number of nodes that define the corners.
 
 The top level view of the ISM file format is
 
@@ -63,9 +63,9 @@ The boundary flags are defined similarly,
 
 	bf1 bf2 bf3 bf4 [b5 b6]
 
-where the boundary numbering is defined in Figs. 1 and 2 above.
+where the boundary numbering is defined in Figs. 24 and 25 above.
 
-For each element boundary curve (or boundary face) for which the boundary flag = 1, a list of nodal values (x,y,z) is specified in order. The knots are assumed defined at the reversed Chebyshev Gauss-Lobatto points, $t_j = -cos(j \pi /N)$. For Quad elements the boundary curve blocks are the nodal values
+For each element boundary curve (or boundary face) for which the boundary flag = 1, a list of nodal values (x,y,z) is specified in order. The knots are assumed defined at the reversed Chebyshev Gauss-Lobatto points, $t_j = -\cos(j \pi /N)$. For Quad elements the boundary curve blocks are the nodal values
 
 	x1,y1,z1
 	x2,y2,z2
