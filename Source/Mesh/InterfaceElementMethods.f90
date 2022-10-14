@@ -223,11 +223,6 @@
 !        -------------------------------------------------
 !
          CALL mesh % elements % addObjectsFromList(newElementsList)
-         CALL DoLazyDelete( mesh )
-         
-         CALL mesh % renumberAllLists()
-         CALL mesh % syncEdges()
-         CALL deallocateElementToEdgeConnections()
          CALL releaseFTLinkedListIterator(interfaceElementIterator)
          CALL releaseFTLinkedList(newElementsList)
 

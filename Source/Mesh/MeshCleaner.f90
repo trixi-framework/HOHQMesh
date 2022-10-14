@@ -837,6 +837,10 @@
 !        Clean up
 !        --------
 !
+         CALL DoLazyDelete( mesh )
+            
+         CALL mesh % renumberAllLists()
+         CALL mesh % syncEdges()
          CALL mesh % destroyEdgeArrays()
          CALL deallocateNodeToElementConnections()
 
