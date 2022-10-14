@@ -5,6 +5,7 @@ The ISM format was developed for the book "Implementing Spectral Methods: Algori
 and Engineers" by David A. Kopriva and it supplies all the information needed to define high order
 curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-v2
 and ISM-MM added to include edge information and to handle multiple materials, respectively. The [Abaqus mesh file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm) is common in the finite element community.
+
 ## ISM
 
 The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 24 below.
@@ -19,7 +20,7 @@ Hex elements are defined in a standard finite element topology.
 
 
 
-The ISM format includes (corner) nodes and element connectivity, with additional edge interpolation data to define high order boundary information. It can define either 2D Quad elements or 3D Hex elements, however at the present time there is no header to define what the element type is. Rather, that is inferred from the number of nodes that define the corners.
+The ISM format includes (corner) nodes and element connectivity, with additional edge interpolation data to define high order boundary information. It can define either 2D Quad elements or 3D Hex elements; however, at the present time, there is no header to define the element type. Rather, that information is inferred from the number of nodes that define the corners.
 
 The top level view of the ISM file format is
 
@@ -196,7 +197,7 @@ The mesh has five elements with eight corner nodes. The outer boundary (called "
 	0 0 0 0									<- Interior box, no curve values follow
 	--- --- --- ---
 
-##Additions for ISM-v2<a name="ISMv-2"></a>
+## Additions for ISM-v2<a name="ISMv-2"></a>
 The ISM-v2 adds edge information to the ISM mesh file.
 
 The first line of the mesh file will state that fact, that is, if the first line is ISM-V2 then it will have the edge information.
@@ -215,7 +216,7 @@ The edges are read immediately after the nodes. For each edge the following are 
 
 These are the quantities that are computed in Alg. 148 of "Implementing Spectral Methods". If the edge is a boundary edge, then the second side element will be ID = 0 and the side of that element will be 0. If the sides have indices that increase in opposite directions, then the last column in the data will be negative.
 
-##ABAQUS mesh file format<a name="ABAQUS"></a>
+## ABAQUS mesh file format<a name="ABAQUS"></a>
 
 The [Abaqus mesh file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm) is common in the finite element community. The ABAQUS mesh file should use the `.inp` extension. The standard Abaqus format includes a list of node data and a list of element connectivity information. In this sense it is similar to the ISM format without high-order boundary information. The standard Abaqus format encodes a straight sided (linear) mesh.
 
