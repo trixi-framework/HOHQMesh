@@ -472,7 +472,9 @@
             obj       => iterator % object()
             
             CALL cast(obj,node)
-            IF ( node % activeStatus == REMOVE )     THEN
+            IF ( node % activeStatus == REMOVE .OR. node % refCount() == 1 )     THEN
+            ! Note that if refCount = 1 then this is the only place a node is referenced is in the 
+            ! node list. It should be removed since it is not used elsewhere.
                takeStep = .FALSE.
                CALL iterator % removeCurrentRecord()
             END IF
@@ -580,7 +582,26 @@
 !        Local varaiables
 !        ----------------
 !
-         IF(ASSOCIATED(boundaryEdgesArray)) CALL releaseFTMutableObjectArray(boundaryEdgesArray)
+         INTEGER :: k, numBoundaries
+         
+         IF(ASSOCIATED(boundaryEdgesArray)) THEN 
+!
+!           --------------------------------------------------------------------
+!           I'm manually releasing the linked lists in the array, which
+!           seems to avoid a memory problem that happened when they are
+!           (or should be) automatically deleted in the destructor for 
+!           the MutableObjectArray class. The operation is essentially identical
+!           (though a bit less efficient) than the destructor, so it's not clear
+!           where the problem is/was.
+!           --------------------------------------------------------------------
+!
+            numBoundaries = boundaryEdgesArray % COUNT()
+            DO k = 1, numBoundaries
+               CALL boundaryEdgesArray % removeObjectAtIndex(indx = k)
+            END DO
+            CALL releaseFTMutableObjectArray(boundaryEdgesArray)
+         END IF 
+         
          IF ( .NOT. ASSOCIATED(boundaryEdgesArray) )     THEN
             IF(ALLOCATED(boundaryEdgesType)) DEALLOCATE(boundaryEdgesType)
          END IF 
