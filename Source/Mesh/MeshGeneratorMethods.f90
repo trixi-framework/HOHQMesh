@@ -121,6 +121,15 @@
          INTEGER                     :: errorCode
 !
          IF(PrintMessage) PRINT *, "Generate 2D mesh..."
+!
+!        --------------------------------------------------------------
+!        Determining exterior quads requires a curve defined in terms
+!        of an array. Convert and temporarily save the boundary curves.
+!        ConvertBoundaryCurvesToArrays allocates and fills temporaries
+!        in the baseMethods module.
+!        --------------------------------------------------------------
+!
+!         CALL generateTemporaryBoundaryArrays( project % sizer )
          
          errorCode = A_OK_ERROR_CODE
          CALL GenerateQuadMeshFromGrid( project, errorCode )
@@ -171,7 +180,13 @@
 !        -----------------------------------------
 !
          CALL CompleteElementConstruction(project)
-         
+!
+!        -------------------------------------
+!        We no longer need the boundary arrays
+!        -------------------------------------
+!
+!         CALL destroyTemporaryBoundaryArrays
+
       END SUBROUTINE GenerateAQuadMesh
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -207,6 +222,9 @@
       INTEGER                      :: numberOfBoundaries,numBoundaryEdgeLists
       INTEGER                      :: j
       INTEGER                      :: idOfOuterBoundary
+      
+      TYPE (FTLinkedListIterator), POINTER :: iterator
+      CLASS(SMChainedCurve)      , POINTER :: chain
 !
 !     ---------------------
 !     Generate the quadtree
@@ -225,12 +243,33 @@
 !
       ALLOCATE( project % mesh )
       CALL project % mesh % init( )
-      project % mesh % polynomialOrder =  project % runParams % polynomialOrder
       
       mesh  => project % mesh
       model => project % model
       grid  => project % grid
       sizer => project % sizer
+!
+!     ---------------------------------------------------------
+!     Save the polynomial order and the curve names to the mesh
+!     ---------------------------------------------------------
+!
+      mesh % polynomialOrder =  project % runParams % polynomialOrder
+      numberOfBoundaries = model % numberOfInnerCurves + model % numberOfOuterCurves &
+                         + model % numberOfInterfaceCurves
+      IF ( model % numberOfInterfaceCurves > 0 )     THEN
+            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(numberOfBoundaries))
+            mesh % materialNameForID = "base"
+            iterator => model % interfaceBoundariesIterator
+            CALL iterator % setToStart()
+            DO WHILE( .NOT.iterator % isAtEnd() )
+               obj => iterator % object()
+               CALL castToSMChainedCurve(obj,chain)
+               
+               mesh % materialNameForID(chain % id()) = chain % curveName()
+               
+               CALL iterator % moveToNext()
+            END DO 
+      END IF 
 !
 !     -------------------------------------
 !     Create the nodes, elements, and edges
@@ -264,8 +303,6 @@
 !     then remove.
 !     --------------------------------------------
 !
-      numberOfBoundaries = model % numberOfInnerCurves + model % numberOfOuterCurves &
-                         + model % numberOfInterfaceCurves
       IF( numberOfBoundaries > 0 )     THEN
          ALLOCATE( aPointInsideTheCurve(3,numberOfBoundaries) )
          ALLOCATE( mesh % curveTypeForID(numberOfBoundaries) )
@@ -380,6 +417,15 @@
          CALL cast(obj,list)
          CALL GenerateBoundaryElements( mesh, model, list ) 
       END DO
+!
+!     ----------------------------------------------------------
+!     If this is a multi-material mesh, then set each element's 
+!     materialID and materialName
+!     ----------------------------------------------------------
+!
+      IF ( project % runParams % meshFileFormat == ISM_MM)     THEN
+         CALL SetMaterialProperties(mesh = project % mesh) 
+      END IF 
 !
 !     -------------------------------------
 !     We no longer need the boundary arrays
@@ -1333,6 +1379,7 @@
 !
                   IF ( numOutside == 0 )     THEN
                      e % materialID  = curveArray % id
+                     e % materialName = mesh % materialNameForID(curveArray % id)
                      DO k = 1,4
                         obj => e % nodes % objectAtIndex(k)
                         CALL cast(obj,node)
@@ -1348,6 +1395,8 @@
 !
                   IF ( numInside > 0 .AND. numOutside > 0 )     THEN
                      isInterfaceElement = .TRUE.
+                     e % materialID  = curveArray % id
+                     e % materialName = mesh % materialNameForID(curveArray % id)
                      DO k = 1,4
                         obj => e % nodes % objectAtIndex(k)
                         CALL cast(obj,node)
@@ -1453,6 +1502,104 @@
          END DO !l = 1, SIZE(interfaceCurves)
          
       END SUBROUTINE MarkInterfaceElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SetMaterialProperties( mesh )
+!
+!     ------------------------------------------------------------------
+!     This procedure is intended to be called after any topology/element
+!     modifications are done. This means the procedure assumes that all
+!     elements have nodes either finside, outside or on any interface
+!     curves. 
+!     ------------------------------------------------------------------
+!
+      USE Geometry
+      IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMMesh)                 , POINTER :: mesh
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
+         CLASS(SMElement)           , POINTER :: e               => NULL()
+         CLASS(SegmentedCurveArray) , POINTER :: curveArray      => NULL()
+         CLASS(SMNode)              , POINTER :: node            => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj             => NULL()
+         
+         INTEGER                              :: k, l
+         INTEGER                              :: w
+         INTEGER                              :: numInside, numOutside, location(4)
+         
+         IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
+!
+         elements => mesh % elements
+         elementIterator => mesh % elementsIterator
+!
+         DO l = 1, SIZE(interfaceCurves)
+            curveArray => interfaceCurves(l) % curveArray
+            
+            CALL elementIterator % setToStart()
+!
+!           -------------------------
+!           Loop through each element
+!           -------------------------
+!
+            DO WHILE ( .NOT.elementIterator % isAtEnd() )
+               obj => elementIterator % object()
+               CALL cast(obj,e)
+!
+!              -----------------------------------------------------
+!              Mark elements that have only inside or boundary nodes
+!              -----------------------------------------------------
+!
+               IF(.NOT.e % remove)     THEN 
+                  numInside  = 0
+                  numOutside = 0
+                  location   = UNDEFINED
+                  DO k = 1, 4
+                     obj => e % nodes % objectAtIndex(k)
+                     CALL cast(obj,node)
+                     
+                     w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
+                     IF ( ABS(w) >= 1 ) THEN
+                        location(k)                   = INSIDE
+                        numInside                     = numInside + 1
+                        aPointInsidetheCurve(:,curveArray % id) = node % x
+                      ELSE IF ( abs(w) == 0 ) THEN
+                        location(k)                   = OUTSIDE
+                        numOutside                    = numOutside + 1
+                      END IF
+                  END DO
+!
+!                 -----------------------------------------
+!                 Set the material ID as the inner curve ID
+!                 -----------------------------------------
+!
+                  IF ( numInside >= 2 )     THEN
+                     e % materialID  = curveArray % id
+                     e % materialName = mesh % materialNameForID(curveArray % id)
+                     DO k = 1,4
+                        obj => e % nodes % objectAtIndex(k)
+                        CALL cast(obj,node)
+                        node % materialID = e % materialID
+                     END DO
+                  END IF 
+               END IF 
+               
+               CALL elementIterator % moveToNext()
+            END DO !WHILE ( .NOT.elementIterator % isAtEnd )
+            
+         END DO !l = 1, SIZE(interfaceCurves)
+         
+      END SUBROUTINE SetMaterialProperties
 !
 !////////////////////////////////////////////////////////////////////////
 !
