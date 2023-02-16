@@ -63,14 +63,10 @@
 !        ---------------
 !
          INTEGER                  :: k
-         CLASS(FTobject), POINTER :: obj  => NULL()
-         CLASS(SMNode)  , POINTER :: node => NULL()
          
          localID = NONE
-         DO k = 1, e % nodes % COUNT()
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj,node)
-            IF ( node % id == nodeID )     THEN
+         DO k = 1, e % eType
+            IF ( e % nodes(k) % node % id == nodeID )     THEN
                localID = k
                RETURN
             END IF
@@ -97,27 +93,15 @@
          REAL(KIND=RP), DIMENSION(3) :: P1, P2, P3     ! Location of the four corners
          REAL(KIND=RP), DIMENSION(3) :: L1, L2         ! The two edge vectors
          REAL(KIND=RP)               :: LNorm1, Lnorm2 ! lengths of the edge vectors
-!         REAL(KIND=RP), EXTERNAL     :: Norm2
-         
-         CLASS(FTObject), POINTER :: obj  => NULL()
-         CLASS(SMNode)  , POINTER :: node => NULL()
 !
 !        -------------------------------------------------------------
 !        Grab the two sides. They are ordered counter-clockwise, so to
 !        compute the interior angle, reverse the order.
 !        -------------------------------------------------------------
 !
-         obj => e % nodes % objectAtIndex(k)
-         CALL cast(obj,node)
-         P1(:) = node % x
-         
-         obj => e % nodes % objectAtIndex(sourceNodeLocalID(1,k))
-         CALL cast(obj,node)
-         P2(:) = node % x
-         
-         obj => e % nodes % objectAtIndex(sourceNodeLocalID(2,k))
-         CALL cast(obj,node)
-         P3(:) = node % x
+         P1(:) = e % nodes(k) % node % x
+         P2(:) = e % nodes(sourceNodeLocalID(1,k)) % node % x
+         P3(:) = e % nodes(sourceNodeLocalID(2,k)) % node % x
 !
 !        ----------------------------
 !        Compute lengths of the sides

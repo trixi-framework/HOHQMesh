@@ -985,10 +985,10 @@
                removedHere = .false.
                
                DO k = 1, 4
-                  obj => e % nodes % objectAtIndex(k)
-                  CALL cast(obj,node)
+!                  obj => e % nodes % objectAtIndex(k)
+!                  CALL cast(obj,node)
                   
-                  w = ACWindingFunction( node % x, outerBoundaryCurve % x, &
+                  w = ACWindingFunction( e % nodes(k) % node % x, outerBoundaryCurve % x, &
                                          outerBoundaryCurve % nSegments )
                   IF ( abs(w) == 0 ) THEN
                      e % remove    = .true.
@@ -1004,8 +1004,9 @@
 !
                IF( e % remove .AND. removedHere )     THEN
                   DO k = 1, 4
-                     obj => e % nodes % objectAtIndex(k)
-                     CALL cast(obj,node)
+!                     obj => e % nodes % objectAtIndex(k)
+!                     CALL cast(obj,node)
+                     node => e % nodes(k) % node
                      node % bCurveChainID = outerBoundaryCurve % id
                      node % bCurveSide    = INSIDE
                   END DO
@@ -1015,8 +1016,9 @@
 !                 Any node in this element is inside, so mark one
 !                 -----------------------------------------------
 !
-                  obj => e % nodes % objectAtIndex(1)
-                  CALL cast(obj,node)
+!                  obj => e % nodes % objectAtIndex(1)
+!                  CALL cast(obj,node)
+                  node => e % nodes(1) % node
                   aPointInsidetheCurve(:,outerBoundaryCurve % id) = node % x
                END IF
                
@@ -1037,10 +1039,14 @@
                removedHere = .false.
                
                DO k = 1, 4
-                  obj => e % nodes % objectAtIndex(edgeMap(1,k))
-                  CALL cast(obj,node1)
-                  obj => e % nodes % objectAtIndex(edgeMap(2,k))
-                  CALL cast(obj,node2)
+!                  obj => e % nodes % objectAtIndex(edgeMap(1,k))
+!                  CALL cast(obj,node1)
+!                  obj => e % nodes % objectAtIndex(edgeMap(2,k))
+!                  CALL cast(obj,node2)
+                  node1 => e % nodes(edgeMap(1,k)) % node
+!                  CALL cast(obj,node1)
+                  node2 => e % nodes(edgeMap(2,k)) % node
+!                  CALL cast(obj,node2)
                   
                   x1    = node1 % x
                   x2    = node2 % x
@@ -1132,8 +1138,10 @@
                      
                         DO k = 1, 4
                            
-                          obj => e % nodes % objectAtIndex(k)
-                          CALL cast(obj,node)
+!                          obj => e % nodes % objectAtIndex(k)
+!                          CALL cast(obj,node)
+                          node => e % nodes(k) % node
+!                          CALL cast(obj,node)
                           w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments )
                           IF ( ABS(w) >= 1 ) THEN
                              aPointInsidetheCurve(:,curveArray % id) = node % x
@@ -1154,9 +1162,9 @@
                         IF( .NOT.e % remove )     THEN
                         
                            DO k = 1, 4 
-                              obj => e % nodes % objectAtIndex(k)
-                              CALL cast(obj,node)
-                              nodes(:,k) = node % x
+!                              obj => e % nodes % objectAtIndex(k)
+!                              CALL cast(obj,node)
+                              nodes(:,k) = e % nodes(k) % node % x
                            END DO
 !
 !                          --------------------------
@@ -1223,8 +1231,9 @@
 !
                         IF ( e % remove .AND. removedHere )     THEN
                           DO k = 1, 4 
-                              obj => e % nodes % objectAtIndex(k)
-                              CALL cast(obj,node)
+!                              obj => e % nodes % objectAtIndex(k)
+!                              CALL cast(obj,node)
+                              node => e % nodes(k) % node
                               node % bCurveChainID = curveArray % id
                               node % bCurveSide    = OUTSIDE
                           END DO
@@ -1271,25 +1280,25 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
-         CLASS(SMElement)           , POINTER :: e               => NULL()
-         CLASS(SMNode)              , POINTER :: node            => NULL()
+!         CLASS(SMElement)           , POINTER :: e               => NULL()
+!         CLASS(SMNode)              , POINTER :: node            => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
-         CLASS(FTObject)            , POINTER :: obj             => NULL()
-         INTEGER                              :: k
+!         CLASS(FTObject)            , POINTER :: obj             => NULL()
+!         INTEGER                              :: k
 !
          elements        => mesh % elements
          elementIterator => mesh % elementsIterator
          
          CALL elementIterator % setToStart()
          DO WHILE(.NOT.elementIterator % isAtEnd())
-            obj => elementIterator % object()
-            CALL cast(obj,e)
+!            obj => elementIterator % object()
+!            CALL cast(obj,e)
             
-            DO k = 1, 4 
-               obj => e % nodes % objectAtIndex(k)
-               CALL cast(obj,node)
-               
-            END DO
+!            DO k = 1, 4 
+!               obj => e % nodes % objectAtIndex(k)
+!               CALL cast(obj,node)
+!               
+!            END DO
             CALL elementIterator % moveToNext()
          END DO 
 
@@ -1359,9 +1368,9 @@
                   numOutside = 0
                   location   = UNDEFINED
                   DO k = 1, 4
-                     obj => e % nodes % objectAtIndex(k)
-                     CALL cast(obj,node)
-                     
+!                     obj => e % nodes % objectAtIndex(k)
+!                     CALL cast(obj,node)
+                     node => e % nodes(k) % node
                      w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
                      IF ( ABS(w) > 0.6_RP ) THEN
                         location(k)                   = INSIDE
@@ -1381,9 +1390,9 @@
                      e % materialID  = curveArray % id
                      e % materialName = mesh % materialNameForID(curveArray % id)
                      DO k = 1,4
-                        obj => e % nodes % objectAtIndex(k)
-                        CALL cast(obj,node)
-                        node % materialID = e % materialID
+!                        obj => e % nodes % objectAtIndex(k)
+!                        CALL cast(obj,node)
+                        e % nodes(k) % node % materialID = e % materialID
                      END DO
                  END IF 
 !
@@ -1398,9 +1407,9 @@
                      e % materialID  = curveArray % id
                      e % materialName = mesh % materialNameForID(curveArray % id)
                      DO k = 1,4
-                        obj => e % nodes % objectAtIndex(k)
-                        CALL cast(obj,node)
-                        node % bCurveSide = location(k) ! INSIDE or OUTSIDE
+!                        obj => e % nodes % objectAtIndex(k)
+!                        CALL cast(obj,node)
+                        e % nodes(k) % node % bCurveSide = location(k) ! INSIDE or OUTSIDE
                      END DO
                      
                   ELSE
@@ -1410,9 +1419,9 @@
 !                    ------------------------------------
 !
                      DO k = 1, 4 
-                        obj => e % nodes % objectAtIndex(k)
-                        CALL cast(obj,node)
-                        nodes(:,k) = node % x
+!                        obj => e % nodes % objectAtIndex(k)
+!                        CALL cast(obj,node)
+                        nodes(:,k) = e % nodes(k) % node % x
                      END DO
 !
 !                    --------------------------
@@ -1475,8 +1484,9 @@
 !
                IF ( isInterfaceElement )     THEN                        
                   DO k = 1, 4 
-                     obj => e % nodes % objectAtIndex(k)
-                     CALL cast(obj,node)
+!                     obj => e % nodes % objectAtIndex(k)
+!                     CALL cast(obj,node)
+                     node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
 !
 !                    ------------------------------------------------------------------
@@ -1565,8 +1575,9 @@
                   numOutside = 0
                   location   = UNDEFINED
                   DO k = 1, 4
-                     obj => e % nodes % objectAtIndex(k)
-                     CALL cast(obj,node)
+!                     obj => e % nodes % objectAtIndex(k)
+!                     CALL cast(obj,node)
+                     node => e % nodes(k) % node
                      
                      w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
                      IF ( ABS(w) >= 1 ) THEN
@@ -1587,8 +1598,9 @@
                      e % materialID  = curveArray % id
                      e % materialName = mesh % materialNameForID(curveArray % id)
                      DO k = 1,4
-                        obj => e % nodes % objectAtIndex(k)
-                        CALL cast(obj,node)
+!                        obj => e % nodes % objectAtIndex(k)
+!                        CALL cast(obj,node)
+                        node => e % nodes(k) % node
                         node % materialID = e % materialID
                      END DO
                   END IF 
@@ -1979,7 +1991,6 @@
          CLASS(SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
          CLASS(SMCurve)       , POINTER :: c     => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
-         CLASS(FTObject)      , POINTER :: obj   => NULL()
          
          REAL(KIND=RP)            :: tStart(4), tEnd(4), t_j, deltaT
          INTEGER                  :: curveId(4)
@@ -1992,8 +2003,7 @@
 !        -----
 !
          DO k = 1, 4 
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj,node1)
+            node1 => e % nodes(k) % node
             e % boundaryInfo % nodeIDs(k) = node1 % id
          END DO
 !
@@ -2005,10 +2015,8 @@
          e % boundaryInfo%bCurveFlag = OFF
          
          DO k = 1, 4 
-            obj => e % nodes % objectAtIndex(edgeMap(1,k))
-            CALL cast(obj,node1) 
-            obj => e % nodes % objectAtIndex(edgeMap(2,k))
-            CALL cast(obj,node2)
+            node1 => e % nodes(edgeMap(1,k)) % node
+            node2 => e % nodes(edgeMap(2,k)) % node
 !
 !           ---------------------------------------------------------------------------
 !           See if this edge is on a boundary. One of the two nodes should be
@@ -2083,10 +2091,12 @@
                 END DO
              ELSE ! Use a straight line between end nodes
              
-               obj => e % nodes % objectAtIndex(edgeMap(1,k))
-               CALL cast(obj,node1) 
-               obj => e % nodes % objectAtIndex(edgeMap(2,k))
-               CALL cast(obj,node2)
+!               obj => e % nodes % objectAtIndex(edgeMap(1,k))
+!               CALL cast(obj,node1) 
+!               obj => e % nodes % objectAtIndex(edgeMap(2,k))
+!               CALL cast(obj,node2)
+               node1 => e % nodes(edgeMap(1,k)) % node
+               node2 => e % nodes(edgeMap(2,k)) % node
                
                DO j = 0, N 
                   t_j = (1.0_RP - COS(j*PI/N))/2.0_RP

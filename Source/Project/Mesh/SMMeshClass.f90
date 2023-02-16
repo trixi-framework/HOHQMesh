@@ -283,7 +283,7 @@
          CLASS(SMEdge)   , POINTER  :: edge => NULL()
          CLASS(FTObject) , POINTER  :: obj => NULL()
          CLASS(SMElement), POINTER  :: element => NULL()
-         CLASS(SMNode)   , POINTER  :: node => NULL(), startNode => NULL(), endNode => NULL()
+         CLASS(SMNode)   , POINTER  :: startNode => NULL(), endNode => NULL()
          
          INTEGER                    :: nNodes
          INTEGER                    :: nodeIDs(4), endNodes(2)
@@ -305,9 +305,7 @@
 !           -------------------
 !
             DO k = 1, 4
-               obj => element % nodes % objectAtIndex(k)
-               CALL cast(obj,node)
-               nodeIDs(k) =  node % id
+               nodeIDs(k) =  element % nodes(k) % node % id
             END DO  
 !
 !           ---------------------------------------
@@ -336,10 +334,12 @@
 !                 of edges and to the hash table
 !                 ------------------------------------------------
 !
-                  obj => element % nodes % objectAtIndex(edgeMap(1,k))
-                  CALL cast(obj,startNode)
-                  obj => element % nodes % objectAtIndex(edgeMap(2,k))
-                  CALL cast(obj,endNode)
+!                  obj => element % nodes % objectAtIndex(edgeMap(1,k))
+!                  CALL cast(obj,startNode)
+!                  obj => element % nodes % objectAtIndex(edgeMap(2,k))
+!                  CALL cast(obj,endNode)
+                  startNode => element % nodes(edgeMap(1,k)) % node
+                  endNode => element % nodes(edgeMap(2,k)) % node
                   
                   ALLOCATE(edge)
                   edgeID = self % newEdgeID()
@@ -425,9 +425,9 @@
                CALL iterator % removeCurrentRecord()
             ELSE
                DO k = 1, 4
-                  obj => e % nodes % objectAtIndex(k)
-                  CALL cast(obj,node)
-                  node % activeStatus = NONE 
+                  e % nodes(k) % node % activeStatus = NONE 
+!                  CALL cast(obj,node)
+!                  node % activeStatus = NONE 
                END DO
                takeStep  =  .TRUE.
             END IF

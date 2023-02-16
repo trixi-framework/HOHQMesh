@@ -126,14 +126,14 @@
 !        Data
 !        ----
 !
-         INTEGER                     :: eType   ! = QUAD or HEX
-         LOGICAL                     :: remove
-         INTEGER                     :: N
-         INTEGER                     :: materialID
-         CHARACTER(LEN=32)           :: materialName
-         TYPE (FTMutableObjectArray) :: nodes
-         TYPE(ElementBoundaryInfo)   :: boundaryInfo
-         REAL(KIND=RP), ALLOCATABLE  :: xPatch(:,:,:)
+         INTEGER                      :: eType   ! = QUAD or HEX
+         LOGICAL                      :: remove
+         INTEGER                      :: N
+         INTEGER                      :: materialID
+         CHARACTER(LEN=32)            :: materialName
+         TYPE(SMNodePtr), ALLOCATABLE :: nodes(:)
+         TYPE(ElementBoundaryInfo)    :: boundaryInfo
+         REAL(KIND=RP), ALLOCATABLE   :: xPatch(:,:,:)
 !
 !        ========
          CONTAINS
@@ -461,17 +461,16 @@
 !        ---------------
 !
          INTEGER                  :: j
-         CLASS(fTObject), POINTER :: obj => NULL()
 
          CALL self % FTObject % init()
-         CALL self % nodes    % initWithSize(eType)
+         ALLOCATE( self % nodes(eType))
          
          self % id    = id
          self % eType = eType
 
          DO j = 1, eType 
-            obj => nodes(j) % node
-            CALL   self % nodes % addObject(obj)
+            self % nodes(j) % node => nodes(j) % node
+            CALL nodes(j) % node % retain()
          END DO
          
          self % remove       = .FALSE.
@@ -502,6 +501,12 @@
       SUBROUTINE destructElement(self) 
          IMPLICIT NONE  
          TYPE(SMElement) :: self
+         INTEGER         :: j
+         
+         DO j = 1, self % eType 
+            CALL releaseSMNode(self = self % nodes(j) % node) 
+         END DO 
+         DEALLOCATE( self % nodes)
           
       END SUBROUTINE destructElement
 !
@@ -521,9 +526,12 @@
 !        Local variables
 !        ---------------
 !
+         INTEGER :: j
          
          WRITE(iUnit,*) "Element with ID = ", self % id
-         CALL self % nodes % printDescription(iUnit)
+         DO j = 1, self % eType 
+            CALL printNodeDescription(self = self % nodes(j) % node,iUnit = iUnit)
+         END DO 
          IF(self % refCount() == 0) WRITE(iUnit,*) "%%%% Unreferenced Element %%% "
          
       END SUBROUTINE printElementDescription

@@ -80,6 +80,8 @@
 
          TYPE(testData)              :: tData
          INTEGER                     :: numberOfFailedTests = 0
+
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
 !
 !        ***********************************************
 !                             Start
@@ -107,6 +109,12 @@
 
             CALL WritePlotFile(project, didGenerate3DMesh)
             CALL WriteMeshFile(project, didGenerate3DMesh)
+            str = project % runParams % statsFileName
+            CALL toLower(str)
+            IF ( str /= "none" )     THEN
+               CALL Write2DMeshStatistics(mesh          = project % mesh, &
+                                          statsFileName = project % runParams % statsFileName)
+            END IF
 
             IF ( generateTest )     THEN
                obj             => projectDict % objectForKey(key = "CONTROL_INPUT")

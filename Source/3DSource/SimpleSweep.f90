@@ -546,8 +546,9 @@
 !                 Bottom of hex
 !                 -------------
 !
-                  obj => currentQuadElement % nodes % objectAtIndex(k)
-                  CALL cast(obj,node)
+!                  obj => currentQuadElement % nodes % objectAtIndex(k)
+!                  CALL cast(obj,node)
+                  node => currentQuadElement % nodes(k) % node
                   node2DID = node % id
                   nodeID   = hex8Mesh % nodes(node2DID,j-1) % globalID
                   hex8Mesh % elements(quadElementID,j) % nodeIDs(k) = nodeID

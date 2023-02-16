@@ -82,6 +82,8 @@
          
          valenceHasChanged       = .false.
          diamondsHaveBeenRemoved = .false.
+         numberOfValenceChanges  = 0
+         numberOfDiamondsRemoved = 0
 !
 !        ------------------------------------
 !        Reduce valence at high valence nodes
@@ -145,7 +147,6 @@
          INTEGER     , DIMENSION(:), ALLOCATABLE :: localNumElementsForNode
 
          numberOfValenceChanges = 0
-
 !
 !        -------------------------------------------------------------
 !        Make current connections and keep a copy of the
@@ -268,7 +269,7 @@
          INTEGER, DIMENSION(4)       :: diagonalMap = [3,4,1,2]
          REAL(KIND=RP)               :: x1(3), x2(3), x(3)
          
-         CLASS(SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL()
+         CLASS(SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
          CLASS(SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
          CLASS(SMEdge)     , POINTER :: edge => NULL()
          CLASS(FTObject)   , POINTER :: obj => NULL()
@@ -338,10 +339,9 @@
 !        --------------------------------------------------------
 !
          IF( cnt /= 2 )     THEN
-            obj => eTarget % nodes % objectAtIndex(localIDForTarget)
-            CALL cast(obj,node)
-               WRITE(msg,*) "Bad element topology for node at ", node % x, ". Aborting cleanup."
-               CALL ThrowErrorExceptionOfType("CleanUp7ValenceNode_InMesh",msg,FT_ERROR_WARNING)
+            WRITE(msg,*) "Bad element topology for node at ", &
+                           eTarget % nodes(localIDForTarget) % node % x, ". Aborting cleanup."
+            CALL ThrowErrorExceptionOfType("CleanUp7ValenceNode_InMesh",msg,FT_ERROR_WARNING)
             CALL deallocateNodeToEdgeConnections()
             CALL deallocateNodeToElementConnections()
             RETURN
@@ -372,9 +372,8 @@
             IF(cnt == 2) EXIT
          END DO
          IF( cnt /= 2 )     THEN
-            obj => eTarget % nodes % objectAtIndex(localIDForTarget)
-            CALL cast(obj,node)
-            PRINT *, "Bad element topology in CleanUp7ValenceNode_InMesh for node at ", node % x
+            PRINT *, "Bad element topology in CleanUp7ValenceNode_InMesh for node at ", &
+                     eTarget % nodes(localIDForTarget) % node % x
             CALL deallocateNodeToEdgeConnections()
             CALL deallocateNodeToElementConnections()
             RETURN
@@ -384,35 +383,37 @@
 !        Create a new node inside the target element      
 !        -------------------------------------------
 !
-         obj => eTarget % nodes % objectAtIndex(localIDForTarget)
-         CALL cast(obj,node)
+         node => eTarget % nodes(localIDForTarget) % node
          
          nodeForThisID => node ! save pointer before overwriting
          
-         x1 = node % x
-         
-         obj => eTarget % nodes % objectAtIndex(diagonalMap(localIDForTarget))
-         CALL cast(obj,node)
-         x2 = node % x
+         x1 = node % x       
+         x2 = eTarget % nodes(diagonalMap(localIDForTarget)) % node % x
          x  = 0.5_RP*(x1 + x2)
          
-         ALLOCATE(node)
-         CALL node % initWithLocationAndID(x,mesh % newNodeID())
-         obj               => node
+         ALLOCATE(newNode)
+         CALL newNode % initWithLocationAndID(x,mesh % newNodeID())
+         obj               => newNode
          CALL mesh % nodes % add(obj)
-         CALL releaseSMNode(node)
+         CALL releaseSMNode(newNode)
 !
 !        --------------------------------------------
 !        Change the corners to point to this new node
 !        --------------------------------------------
 !
-         CALL eTarget % nodes % replaceObjectAtIndexWithObject(localIDForTarget,obj)
+         CALL releaseSMNode(eTarget % nodes(localIDForTarget) % node)
+         eTarget % nodes(localIDForTarget) % node => newNode
+         CALL newNode % retain()
          
          localID = ElementLocalNodeIDForNodeID( id, eNeighbors(1) % element )
-         CALL eNeighbors(1) % element % nodes % replaceObjectAtIndexWithObject(localID,obj)
+         CALL releaseSMNode(eNeighbors(1) % element % nodes(localID) % node)
+         eNeighbors(1) % element % nodes(localID) % node => newNode
+         CALL newNode % retain()
 
          localID = ElementLocalNodeIDForNodeID( id, eNeighbors(2) % element )
-         CALL eNeighbors(2) % element % nodes % replaceObjectAtIndexWithObject(localID,obj)
+         CALL releaseSMNode(eNeighbors(2) % element % nodes(localID) % node)
+         eNeighbors(2) % element % nodes(localID) % node => newNode
+         CALL newNode % retain()
 !
 !        --------------------
 !        Create a new element
@@ -426,7 +427,7 @@
             elementNodes(2) % node => newEdgePointers(1) % edge % nodes(1) % node
          END IF
          
-         elementNodes(3) % node => node
+         elementNodes(3) % node => newNode
 
          IF ( newEdgePointers(2) % edge % nodes(1) % node % id == id )     THEN
             elementNodes(4) % node => newEdgePointers(2) % edge % nodes(2) % node
@@ -622,18 +623,17 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTObject), POINTER :: obj2 => NULL(), obj4 => NULL()      
+         TYPE(SMNode), POINTER :: nptr2 => NULL(), nptr4 => NULL()
+!
+!        ------------------------------------------------------------
+!        To make a left handed element right handed, swap nodes 2 & 4
+!        ------------------------------------------------------------
+!
+         nptr2 => e % nodes(2) % node
+         nptr4 => e % nodes(4) % node
          
-         obj2 => e % nodes % objectAtIndex(2)
-         obj4 => e % nodes % objectAtIndex(4)
-         CALL obj2 % retain()
-         CALL obj4 % retain()
-         
-         CALL e % nodes % replaceObjectAtIndexWithObject(2,obj4)
-         CALL e % nodes % replaceObjectAtIndexWithObject(4,obj2)
-         
-         CALL releaseFTObject(obj2)
-         CALL releaseFTObject(obj4)
+         e % nodes(2) % node => nptr4
+         e % nodes(4) % node => nptr2
          
       END SUBROUTINE MakeElement_RightHanded
 !
@@ -798,8 +798,10 @@
                            e         => elementsForNodes(j,meshNode % id) % element
                            nodecount = 0
                            DO k = 1, 4
-                              obj => e % nodes % objectAtIndex(k)
-                              CALL cast(obj,elementNode)
+!                              obj => e % nodes % objectAtIndex(k)
+                              elementNode => e % nodes(k) % node
+
+!                              CALL cast(obj,elementNode)
                               IF ( elementNode % distToBoundary == 0.0_RP )     THEN
                                  nodeCount = nodeCount + 1 
                               END IF
@@ -897,8 +899,9 @@
                END DO
                IF(badNodeLocalID < 0) CYCLE !Bail on this one
                
-               obj => e % nodes % objectAtIndex(badNodeLocalID)
-               CALL cast(obj,node)
+!               obj => e % nodes % objectAtIndex(badNodeLocalID)
+!               CALL cast(obj,node)
+               node => e % nodes(badNodeLocalID) % node
                badNodeID = node % id
 !
 !              -------------------------------------------
@@ -923,8 +926,9 @@
 !
                   j = -1
                   DO j = 1,4
-                     obj => eNbr % nodes % objectAtIndex(j)
-                     CALL cast(obj,node)
+!                     obj => eNbr % nodes % objectAtIndex(j)
+!                     CALL cast(obj,node)
+                     node => eNbr % nodes(j) % node
                      IF( node % id == badNodeID )     THEN
                         nbrNodeLocalID = j
                         EXIT
@@ -947,8 +951,11 @@
 !                 Make the swap
 !                 -------------
 !
-                  obj => eNbr % nodes % objectAtIndex(nbrNodeLocalID)
-                  CALL e % nodes % replaceObjectAtIndexWithObject(badNodeLocalID, obj)
+!                  obj => eNbr % nodes % objectAtIndex(nbrNodeLocalID)
+!                  CALL e % nodes % replaceObjectAtIndexWithObject(badNodeLocalID, obj)
+                  CALL releaseSMNode(e % nodes(badNodeLocalID) % node)
+                  e % nodes(badNodeLocalID) % node => eNbr % nodes(nbrNodeLocalID) % node
+                  CALL e % nodes(badNodeLocalID) % node % retain()
                   eNbr % remove = .true.
                   numberOfChevrons = numberOfChevrons + 1
                   
@@ -992,7 +999,6 @@
 !
          INTEGER, PARAMETER               :: CBE_ON_BOUNDARY = 1, CBE_OFF_BOUNDARY = 0
          CLASS(SMNode)  , POINTER         :: sourceNode => NULL(), node => NULL()
-         CLASS(FTObject), POINTER         :: obj => NULL()
          TYPE(SMNodePtr)                  :: elementNodes(4)  !Temp container for this procedure
          INTEGER                          :: boundaryNodeCount
          INTEGER                          :: k, m, j
@@ -1017,10 +1023,9 @@
          boundaryNodeCount = 0
          mark              = CBE_OFF_BOUNDARY
          DO k = 1, 4
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj, node)
-            elementNodes(k) % node => node
-            IF ( node % bCurveID > UNDEFINED .AND. node % distToBoundary == 0.0_RP )     THEN
+            elementNodes(k) % node => e % nodes(k) % node
+            IF ( e % nodes(k) % node % bCurveID > UNDEFINED .AND. &
+                 e % nodes(k) % node % distToBoundary == 0.0_RP )     THEN
                boundaryNodeCount = boundaryNodeCount + 1
                mark(k) = CBE_ON_BOUNDARY 
             END IF
@@ -1161,9 +1166,9 @@
          INTEGER                   :: k, j, id, idNbr, localIds(2)
          LOGICAL                   :: hasA3ValenceNode, isDiamond
          REAL(KIND=RP)             :: x(3), corners(3,4)
-         CLASS(SMElement), POINTER :: eNbr => NULL()
-         CLASS(FTObject) , POINTER :: obj => NULL()
-         CLASS(SMNode)   , POINTER :: node => NULL()
+         CLASS(SMElement), POINTER :: eNbr    => NULL()
+         CLASS(FTObject) , POINTER :: obj     => NULL()
+         CLASS(SMNode)   , POINTER :: newNode => NULL()
          TYPE(SMNodePtr)           :: elementNodes(4)  !Temp container for this procedure
 !
 !        --------------------------------------------
@@ -1172,10 +1177,8 @@
 !
          hasA3ValenceNode = .false.
          DO k = 1,4
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj, node)
-            elementNodes(k) % node => node
-            id          = node  % id
+            elementNodes(k) % node => e % nodes(k) % node
+            id                      = e % nodes(k) % node  % id
             valences(k) = numElementsForNode(id)
             IF(valences(k) == 3) hasA3ValenceNode = .true.
          END DO
@@ -1219,11 +1222,11 @@
             corners(:,k) = elementNodes(k) % node % x
          END DO
          CALL ComputeCentroid(corners,x)
-         ALLOCATE(node)
-         CALL node % initWithLocationAndID(x,mesh % newNodeID())
-         obj => node
+         ALLOCATE(newNode)
+         CALL newNode % initWithLocationAndID(x,mesh % newNodeID())
+         obj => newNode
          CALL mesh % nodes % add(obj)
-         CALL releaseSMNode(node)
+         CALL releaseSMNode(newNode)
 !
 !        ----------------------------------------------
 !        Find the elements that share the two nodes,
@@ -1247,7 +1250,9 @@
 !              Release and repoint
 !              -------------------
 !
-               CALL eNbr % nodes % replaceObjectAtIndexWithObject(idNbr,obj)
+               CALL releaseSMNode( eNbr % nodes(idNbr) % node)
+               eNbr % nodes(idNbr) % node => newNode
+               CALL newNode % retain()
             END DO
          END DO
 !

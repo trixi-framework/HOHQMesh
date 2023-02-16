@@ -155,8 +155,9 @@
             boundaryNodeNumber = 0
             oppositeNodeNumber = 0
             DO k = 1, 4
-               obj => e % nodes % objectAtIndex(k)
-               CALL cast(obj,node)
+               node => e % nodes(k) % node
+!               obj => e % nodes % objectAtIndex(k)
+!               CALL cast(obj,node)
                IF ( node % distToBoundary == 0.0_RP )     THEN
                   interfaceNodeCount = interfaceNodeCount + 1
 !
@@ -249,7 +250,7 @@
          TYPE(SMNodePtr)               :: newNodePtr1, newNodePtr2
          CLASS(SMEdge)   , POINTER     :: edge => NULL()
          CLASS(SMNode)   , POINTER     :: swapNodePtr => NULL(), node => NULL()
-         CLASS(FTObject), POINTER      :: obj => NULL()
+!         CLASS(FTObject), POINTER      :: obj => NULL()
          
          INTEGER                       :: side, id, k
          INTEGER                       :: sideP, sideM
@@ -276,9 +277,9 @@
 !        ----------------------------------------------------
 !
          DO k = 1,4
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj,node)
-            nodes(k) % node => node
+!            obj => e % nodes % objectAtIndex(k)
+!            CALL cast(obj,node)
+            nodes(k) % node => e % nodes(k) % node
          END DO  
 !
 !        -----------------------------------------------------------
@@ -418,9 +419,9 @@
 !        ----------------------------------------------------
 !
          DO k = 1,4
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj,node)
-            nodes(k) % node => node
+!            obj => e % nodes % objectAtIndex(k)
+!            CALL cast(obj,node)
+            nodes(k) % node => e % nodes(k) % node
          END DO  
 !
 !        -----------------------------------------------------------
