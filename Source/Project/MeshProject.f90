@@ -461,7 +461,7 @@
 !        -------------------------------------------------------
 !
          CALL CheckForBoundaryIntersections(self % sizer) !Development in progress
-         IF(catch())     RETURN
+         IF(catch(FATAL_ERROR_EXCEPTION))     RETURN
 !
 !        --------------------------------------------------------------------------
 !        Before going further, check to see how many subdivisions will be necessary
