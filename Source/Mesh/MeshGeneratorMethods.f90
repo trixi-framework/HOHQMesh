@@ -107,6 +107,7 @@
         END IF 
         
       END SUBROUTINE GenerateQuadMesh
+!
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE GenerateAQuadMesh(project, errorCode)  
@@ -1361,18 +1362,6 @@
                       END IF
                   END DO
 !
-!                 -----------------------------------------
-!                 Set the material ID as the inner curve ID
-!                 -----------------------------------------
-!
-                  IF ( numOutside == 0 )     THEN
-                     e % materialID  = curveArray % id
-                     e % materialName = mesh % materialNameForID(curveArray % id)
-                     DO k = 1,4
-                        e % nodes(k) % node % materialID = e % materialID
-                     END DO
-                 END IF 
-!
 !                 -------------------------------------------------------
 !                 Those that do straddle the curve are interface elements
 !                 Otherwise, check if the element is too small and do
@@ -1381,8 +1370,6 @@
 !
                   IF ( numInside > 0 .AND. numOutside > 0 )     THEN
                      isInterfaceElement = .TRUE.
-                     e % materialID  = curveArray % id
-                     e % materialName = mesh % materialNameForID(curveArray % id)
                      DO k = 1,4
                         e % nodes(k) % node % bCurveSide = location(k) ! INSIDE or OUTSIDE
                      END DO
