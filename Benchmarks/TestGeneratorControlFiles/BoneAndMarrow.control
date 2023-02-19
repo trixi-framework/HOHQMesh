@@ -1,0 +1,98 @@
+%
+% ------------------------------------------------------------------
+% Control file for two materials embedded in a background material.
+% ------------------------------------------------------------------
+%
+% -------------
+% Control Block
+% -------------
+%
+\begin{CONTROL_INPUT}
+%
+%  Plot and stats file names can be "none" if no output
+%  is desired. 
+%
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/BoneAndMarrow.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/BoneAndMarrow.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/BoneAndMarrow.txt
+      test file name   = Benchmarks/BenchmarkData/BoneAndMarrow.txt
+      mesh file format = ISM-MM
+      polynomial order = 5
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+
+   \begin{MESH_PARAMETERS}
+      element type = quad
+   \end{MESH_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [1.0,1.0,0.0]
+   \end{BACKGROUND_GRID}
+%
+%  Spring smoother parameters are pretty standard after lots
+%  of trials.
+%
+   \begin{SPRING_SMOOTHER}
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+%
+% -----------
+% Model Block
+% -----------
+%
+\begin{MODEL}
+   
+   \begin{MATERIALS}
+      background Material name = Muscle
+   \end{MATERIALS}
+%
+%   If an outer boundary is not specified, then it is assumed to be a box
+%   the outer boundary is implicitly a CHAIN. There is only one. Curves
+%   implemented are SPLINE_CURVE, END_POINTS_LINE, PARAMETRIC_EQUATION_CURVE
+%
+    \begin{OUTER_BOUNDARY}
+
+       \begin{PARAMETRIC_EQUATION_CURVE}
+          name = outer
+          xEqn = x(t) = 14.0*cos(2*pi*t)
+          yEqn = y(t) = 14.0*sin(2*pi*t)
+          zEqn = z(t) = 0.0
+       \end{PARAMETRIC_EQUATION_CURVE}
+
+     \end{OUTER_BOUNDARY}
+
+%
+%   There are an arbitrary number of inner boundaries. 
+%   Each is a chain of curves, even if there is only 
+%   one curve in the chain.
+%
+    \begin{INTERFACE_BOUNDARIES}
+
+       \begin{CHAIN}
+          name = Bone
+          \begin{PARAMETRIC_EQUATION_CURVE}
+             name = Circle1
+             xEqn = f(t) = 6.5*cos(2*pi*t) - 0.5
+             yEqn = f(t) = 6.5*sin(2*pi*t)
+             zEqn = z(t) = 0.0
+          \end{PARAMETRIC_EQUATION_CURVE}
+       \end{CHAIN}
+      
+       \begin{CHAIN}
+          name = Marrow
+          \begin{PARAMETRIC_EQUATION_CURVE}
+             name = Circle2
+             xEqn = f(t) = -1.0 + 1.5*cos(2*pi*t)
+             yEqn = f(t) = 1.5*sin(2*pi*t)
+             zEqn = z(t) = 0.0
+          \end{PARAMETRIC_EQUATION_CURVE}
+       \end{CHAIN}
+
+    \end{INTERFACE_BOUNDARIES}
+
+\end{MODEL}
+\end{FILE}
