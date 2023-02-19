@@ -125,6 +125,9 @@
 !
 !     ------------------------------------------
 !     Convenience arrays for dealing with curves
+!     aPointInsideTheCurve is no longer actually
+!     used, and its purpose is lost in time. It
+!     contains a point (1:3,i) inside curve i. 
 !     ------------------------------------------
 !
       REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: aPointInsideTheCurve

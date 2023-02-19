@@ -186,8 +186,8 @@
 !     materialID and materialName
 !     ----------------------------------------------------------
 !
-      IF ( ASSOCIATED( interfaceCurves ))     THEN
-!      IF ( project % runParams % meshFileFormat == ISM_MM)     THEN
+      IF ( ASSOCIATED(interfaceCurves) .AND. &
+           project % runParams % meshFileFormat == ISM_MM)     THEN
          CALL SetMaterialProperties(mesh = project % mesh) 
       END IF 
 !
@@ -198,12 +198,6 @@
       CALL destroyTemporaryBoundaryArrays
       
       IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
-!
-!        -------------------------------------
-!        We no longer need the boundary arrays
-!        -------------------------------------
-!
-!         CALL destroyTemporaryBoundaryArrays
 
       END SUBROUTINE GenerateAQuadMesh
 !
