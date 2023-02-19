@@ -181,6 +181,24 @@
 !
          CALL CompleteElementConstruction(project)
 !
+!     ----------------------------------------------------------
+!     If this is a multi-material mesh, then set each element's 
+!     materialID and materialName
+!     ----------------------------------------------------------
+!
+      IF ( ASSOCIATED( interfaceCurves ))     THEN
+!      IF ( project % runParams % meshFileFormat == ISM_MM)     THEN
+         CALL SetMaterialProperties(mesh = project % mesh) 
+      END IF 
+!
+!     -------------------------------------
+!     We no longer need the boundary arrays
+!     -------------------------------------
+!
+      CALL destroyTemporaryBoundaryArrays
+      
+      IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
+!
 !        -------------------------------------
 !        We no longer need the boundary arrays
 !        -------------------------------------
@@ -249,16 +267,21 @@
       grid  => project % grid
       sizer => project % sizer
 !
-!     ---------------------------------------------------------
-!     Save the polynomial order and the curve names to the mesh
-!     ---------------------------------------------------------
+!     ----------------------------------------------------------
+!     Save the polynomial order and the curve names to the mesh.
+!     Material names are associated with the bounding interface
+!     curves.  
+!     ----------------------------------------------------------
 !
       mesh % polynomialOrder =  project % runParams % polynomialOrder
       numberOfBoundaries = model % numberOfInnerCurves + model % numberOfOuterCurves &
                          + model % numberOfInterfaceCurves
+                         
       IF ( model % numberOfInterfaceCurves > 0 )     THEN
+      
             ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(numberOfBoundaries))
             mesh % materialNameForID = "base"
+            
             iterator => model % interfaceBoundariesIterator
             CALL iterator % setToStart()
             DO WHILE( .NOT.iterator % isAtEnd() )
@@ -418,21 +441,6 @@
          CALL GenerateBoundaryElements( mesh, model, list ) 
       END DO
 !
-!     ----------------------------------------------------------
-!     If this is a multi-material mesh, then set each element's 
-!     materialID and materialName
-!     ----------------------------------------------------------
-!
-      IF ( project % runParams % meshFileFormat == ISM_MM)     THEN
-         CALL SetMaterialProperties(mesh = project % mesh) 
-      END IF 
-!
-!     -------------------------------------
-!     We no longer need the boundary arrays
-!     -------------------------------------
-!
-      CALL destroyTemporaryBoundaryArrays
-!
 !     -------------------------------
 !     The edges are no longer in sync
 !     -------------------------------
@@ -442,8 +450,6 @@
       CALL unmarkNodesNearBoundaries( mesh % nodesIterator )
       CALL mesh % syncEdges()
       CALL mesh % renumberAllLists()
-      
-      IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
       
       IF(PrintMessage) PRINT *, "   Nodes and elements generated"
 
@@ -985,8 +991,6 @@
                removedHere = .false.
                
                DO k = 1, 4
-!                  obj => e % nodes % objectAtIndex(k)
-!                  CALL cast(obj,node)
                   
                   w = ACWindingFunction( e % nodes(k) % node % x, outerBoundaryCurve % x, &
                                          outerBoundaryCurve % nSegments )
@@ -1004,8 +1008,6 @@
 !
                IF( e % remove .AND. removedHere )     THEN
                   DO k = 1, 4
-!                     obj => e % nodes % objectAtIndex(k)
-!                     CALL cast(obj,node)
                      node => e % nodes(k) % node
                      node % bCurveChainID = outerBoundaryCurve % id
                      node % bCurveSide    = INSIDE
@@ -1016,8 +1018,6 @@
 !                 Any node in this element is inside, so mark one
 !                 -----------------------------------------------
 !
-!                  obj => e % nodes % objectAtIndex(1)
-!                  CALL cast(obj,node)
                   node => e % nodes(1) % node
                   aPointInsidetheCurve(:,outerBoundaryCurve % id) = node % x
                END IF
@@ -1039,14 +1039,8 @@
                removedHere = .false.
                
                DO k = 1, 4
-!                  obj => e % nodes % objectAtIndex(edgeMap(1,k))
-!                  CALL cast(obj,node1)
-!                  obj => e % nodes % objectAtIndex(edgeMap(2,k))
-!                  CALL cast(obj,node2)
                   node1 => e % nodes(edgeMap(1,k)) % node
-!                  CALL cast(obj,node1)
                   node2 => e % nodes(edgeMap(2,k)) % node
-!                  CALL cast(obj,node2)
                   
                   x1    = node1 % x
                   x2    = node2 % x
@@ -1138,10 +1132,7 @@
                      
                         DO k = 1, 4
                            
-!                          obj => e % nodes % objectAtIndex(k)
-!                          CALL cast(obj,node)
                           node => e % nodes(k) % node
-!                          CALL cast(obj,node)
                           w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments )
                           IF ( ABS(w) >= 1 ) THEN
                              aPointInsidetheCurve(:,curveArray % id) = node % x
@@ -1162,8 +1153,6 @@
                         IF( .NOT.e % remove )     THEN
                         
                            DO k = 1, 4 
-!                              obj => e % nodes % objectAtIndex(k)
-!                              CALL cast(obj,node)
                               nodes(:,k) = e % nodes(k) % node % x
                            END DO
 !
@@ -1231,8 +1220,6 @@
 !
                         IF ( e % remove .AND. removedHere )     THEN
                           DO k = 1, 4 
-!                              obj => e % nodes % objectAtIndex(k)
-!                              CALL cast(obj,node)
                               node => e % nodes(k) % node
                               node % bCurveChainID = curveArray % id
                               node % bCurveSide    = OUTSIDE
@@ -1263,7 +1250,7 @@
       SUBROUTINE MarkFloaters( mesh )
 !
 !        ------------------------------------------------------------------
-!        A floater is an element that is not attached to any other element,
+!        TODO: A floater is an element that is not attached to any other element,
 !        which happens occasionally during the marking process
 !        ------------------------------------------------------------------
 !
@@ -1337,7 +1324,7 @@
          
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
-         elements => mesh % elements
+         elements        => mesh % elements
          elementIterator => mesh % elementsIterator
 !
 !        --------------------------------------
@@ -1368,8 +1355,6 @@
                   numOutside = 0
                   location   = UNDEFINED
                   DO k = 1, 4
-!                     obj => e % nodes % objectAtIndex(k)
-!                     CALL cast(obj,node)
                      node => e % nodes(k) % node
                      w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
                      IF ( ABS(w) > 0.6_RP ) THEN
@@ -1390,8 +1375,6 @@
                      e % materialID  = curveArray % id
                      e % materialName = mesh % materialNameForID(curveArray % id)
                      DO k = 1,4
-!                        obj => e % nodes % objectAtIndex(k)
-!                        CALL cast(obj,node)
                         e % nodes(k) % node % materialID = e % materialID
                      END DO
                  END IF 
@@ -1407,8 +1390,6 @@
                      e % materialID  = curveArray % id
                      e % materialName = mesh % materialNameForID(curveArray % id)
                      DO k = 1,4
-!                        obj => e % nodes % objectAtIndex(k)
-!                        CALL cast(obj,node)
                         e % nodes(k) % node % bCurveSide = location(k) ! INSIDE or OUTSIDE
                      END DO
                      
@@ -1419,8 +1400,6 @@
 !                    ------------------------------------
 !
                      DO k = 1, 4 
-!                        obj => e % nodes % objectAtIndex(k)
-!                        CALL cast(obj,node)
                         nodes(:,k) = e % nodes(k) % node % x
                      END DO
 !
@@ -1484,8 +1463,6 @@
 !
                IF ( isInterfaceElement )     THEN                        
                   DO k = 1, 4 
-!                     obj => e % nodes % objectAtIndex(k)
-!                     CALL cast(obj,node)
                      node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
 !
@@ -1517,12 +1494,12 @@
 !
       SUBROUTINE SetMaterialProperties( mesh )
 !
-!     ------------------------------------------------------------------
+!     ---------------------------------------------------------------------
 !     This procedure is intended to be called after any topology/element
 !     modifications are done. This means the procedure assumes that all
-!     elements have nodes either finside, outside or on any interface
-!     curves. 
-!     ------------------------------------------------------------------
+!     elements have nodes either inside, outside or on any interface
+!     curves. the temporary interfaceCurves curves array must be available.
+!     ---------------------------------------------------------------------
 !
       USE Geometry
       IMPLICIT NONE
@@ -1531,7 +1508,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE (SMMesh)                 , POINTER :: mesh
+         TYPE (SMMesh)              , POINTER :: mesh
 !
 !        ---------------
 !        Local variables
@@ -1574,20 +1551,19 @@
                   numInside  = 0
                   numOutside = 0
                   location   = UNDEFINED
+                  
                   DO k = 1, 4
-!                     obj => e % nodes % objectAtIndex(k)
-!                     CALL cast(obj,node)
                      node => e % nodes(k) % node
                      
                      w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
-                     IF ( ABS(w) >= 1 ) THEN
+                     IF ( abs(w) == 0 ) THEN
+                        location(k)                   = OUTSIDE
+                        numOutside                    = numOutside + 1
+                     ELSE
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
                         aPointInsidetheCurve(:,curveArray % id) = node % x
-                      ELSE IF ( abs(w) == 0 ) THEN
-                        location(k)                   = OUTSIDE
-                        numOutside                    = numOutside + 1
-                      END IF
+                     END IF
                   END DO
 !
 !                 -----------------------------------------
@@ -1595,11 +1571,10 @@
 !                 -----------------------------------------
 !
                   IF ( numInside >= 2 )     THEN
-                     e % materialID  = curveArray % id
+                     e % materialID   = curveArray % id
                      e % materialName = mesh % materialNameForID(curveArray % id)
+
                      DO k = 1,4
-!                        obj => e % nodes % objectAtIndex(k)
-!                        CALL cast(obj,node)
                         node => e % nodes(k) % node
                         node % materialID = e % materialID
                      END DO

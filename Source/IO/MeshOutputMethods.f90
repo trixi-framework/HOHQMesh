@@ -111,8 +111,6 @@
             obj => mesh % elementsIterator % object()
             CALL castToSMelement(obj,e)
             DO j = 1, 4
-!               obj => e % nodes % objectAtIndex(j)
-!               CALL castToSMNode(obj, node)
                ids(j) = e % nodes(j) % node % id
             END DO
             WRITE( iUnit, *) (ids(j), j = 1, 4)
