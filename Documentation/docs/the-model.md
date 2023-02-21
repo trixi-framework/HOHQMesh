@@ -1,10 +1,10 @@
 # The Model
-At the present time, HOHQMesh is designed to generate quadrilateral meshes in general two dimensional geometries like those shown below in Fig. 13, and extrusions thereof to get three dimensional hex meshes.
+At the present time, HOHQMesh is designed to generate quadrilateral meshes in general two dimensional geometries like those shown below in Fig. 14, and extrusions thereof to get three dimensional hex meshes.
 
 ![Meshables](https://user-images.githubusercontent.com/3637659/121807852-3302b000-cc56-11eb-93a9-e9c2e1b4ede8.png)
-<p align = "center"> Fig. 13. Meshable regions</p>
+<p align = "center"> Fig. 14. Meshable regions</p>
 
-The two dimensional domain to be meshed can be bounded by at most one exterior boundary curve (which can be composed of a chain of curves), as in 13(a) and 13(b), above, and any number of interior boundary curves that create holes. For purely external problems, a rectangular outer boundary can be implicitly included, as shown in 13(c).
+The two dimensional domain to be meshed can be bounded by at most one exterior boundary curve (which can be composed of a chain of curves), as in 14(a) and 14(b), above, and any number of interior boundary curves that create holes. For purely external problems, a rectangular outer boundary can be implicitly included, as shown in 14(c).
 
 If no model block is included at all, then a purely Cartesian mesh will be created using parameters set in the control file.
 
@@ -12,30 +12,30 @@ If no model block is included at all, then a purely Cartesian mesh will be creat
 ## Boundary Curves<a name="BoundaryCurves"></a>
 
 ![AllFeatures](https://user-images.githubusercontent.com/3637659/121807794-f3d45f00-cc55-11eb-9284-af5f4eed2c87.png)
-<p align = "center"> Fig. 14. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, and circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve (Examples/2D/AllFeatures).</p>
+<p align = "center"> Fig. 15. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, and circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve (<em>Examples/2D/AllFeatures</em>).</p>
 
-Boundaries are constructed as closed chains of parametrized curves, with the parameter in the interval [0,1], oriented counter-clockwise. The chains can have one or more segments as seen in Fig. 13. In Fig. 13a the outer boundary is constructed from six curves, whereas in Fig. 13b it is bounded by a single one. The inner boundaries in Fig. 13a are a single circle and a square constructed by a chain of four lines. In Fig. 14, the outer triangle is constructed as a chain of straight lines defined as `END_POINTS_LINE`s.
+Boundaries are constructed as closed chains of parametrized curves, with the parameter in the interval [0,1], oriented counter-clockwise. The chains can have one or more segments as seen in Fig. 14. In Fig. 14a the outer boundary is constructed from six curves, whereas in Fig. 14b it is bounded by a single one. The inner boundaries in Fig. 14a are a single circle and a square constructed by a chain of four lines. In Fig. 15, the outer triangle is constructed as a chain of straight lines defined as `END_POINTS_LINE`s.
 
-A curve is defined by a block 
+A curve is defined by a block
 
 	\begin{curve_type}
 		...
 	\end{curve_type}
 
-It is given a name so that boundary conditions can be applied segment-by-segment to a chain. 
+It is given a name so that boundary conditions can be applied segment-by-segment to a chain.
 
 Currently there are four types of curves that can be defined:
 
-*  Curves defined by equation components. 
-*  Cubic spline interpolants of a set of nodal points. 
+*  Curves defined by equation components.
+*  Cubic spline interpolants of a set of nodal points.
 *  Straight lines between two points.
-*  Circular arcs. 
+*  Circular arcs.
 
-Fig. 14 is an example that uses all four curve-type definitions (Examples/2D/AllFeatures).
+Fig. 15 is an example that uses all four curve-type definitions (<em>Examples/2D/AllFeatures</em>).
 
 The architecture is designed for developers to easily add curve definitions in the future by creating subclasses of the SMCurveClass.
 
-### The Parametric Equation Curve Definition.<a name="ParametricEqn"></a> 
+### The Parametric Equation Curve Definition.<a name="ParametricEqn"></a>
 
 Curves can be defined by strings that define the equations for the (x,y,z) components of the curve using the `PARAMETRIC_EQUATION_CURVE` type. An example block for this kind of curve is
 
@@ -119,11 +119,11 @@ The final type of curve defines a circular arc. The angles can be defined either
 
 ## Boundary Chains<a name="Chains"></a>
 
-To allow complex boundary curves and to allow different portions of a boundary to have different boundary conditions applied, curves can be chained together into a closed curve. A chain is defined by curves specified (in order) within a 
+To allow complex boundary curves and to allow different portions of a boundary to have different boundary conditions applied, curves can be chained together into a closed curve. A chain is defined by curves specified (in order) within a
 
 	\begin{CHAIN}
 	...
-	\end{CHAIN} 
+	\end{CHAIN}
 
 block. Any number of curves can be chained together. The chain itself is also given a name. An example of a chain that defines the boundary of a unit square is
 
@@ -161,7 +161,7 @@ block. Any number of curves can be chained together. The chain itself is also gi
 Again, the indentation is for readability only, as is the line spacing between the blocks. (Blank lines and lines starting with “%” are ignored.) Also remember that the chain is defined counter-clockwise, and the curves within the chain must be ordered and oriented properly. Chains cannot be chained together.
 
 ## The Model Definition<a name="TheModel"></a>
-The model (there is at most one) defines the region that is to be meshed. It is marked by 
+The model (there is at most one) defines the region that is to be meshed. It is marked by
 
 	\begin{MODEL}
 	...
@@ -183,9 +183,9 @@ Inner boundaries (if any) are defined within the block
 	...
 	\end{INNER_BOUNDARIES}
 
-Within this block one defines as many curves or `CHAIN`s as there are inner boundaries. The order in which the `CHAIN`s or curves are defined is not important. Use a CHAIN if you want to chain multiple curves together to create a single inner boundary. Outside of a chain, a curve will define a single inner boundary by itself. Note that a standalone curve must close on itself. 
+Within this block one defines as many curves or `CHAIN`s as there are inner boundaries. The order in which the `CHAIN`s or curves are defined is not important. Use a CHAIN if you want to chain multiple curves together to create a single inner boundary. Outside of a chain, a curve will define a single inner boundary by itself. Note that a standalone curve must close on itself.
 
-As an example, the following defines a model that has a single circular outer boundary and three inner circular boundaries. Two of the curves are defined within a CHAIN (even though there is only a single curve within each). One of them is standalone. Note that *between* the blocks, comments can be inserted starting with “%”. As usual, indentation is for the reader’s eyes only. 
+As an example, the following defines a model that has a single circular outer boundary and three inner circular boundaries. Two of the curves are defined within a CHAIN (even though there is only a single curve within each). One of them is standalone. Note that *between* the blocks, comments can be inserted starting with “%”. As usual, indentation is for the reader’s eyes only.
 
 
 	\begin{MODEL}
@@ -200,7 +200,7 @@ As an example, the following defines a model that has a single circular outer bo
 	%
 	%	Inner boundaries, if any, are any number of chains
 	%	of curves. Each inner boundary is defined within a CHAIN.
-	% 
+	%
 		\begin{INNER_BOUNDARIES}
 			\begin{CHAIN}
 				name = Boundary 1

@@ -66,16 +66,34 @@ jobs:
             shell: bash
             test_type: valgrind
             coverage: false
+          - os: ubuntu-latest
+            os_name: linux
+            compiler: gfortran-12
+            shell: bash
+            test_type: regular
+            coverage: false
+          - os: ubuntu-latest
+            os_name: linux
+            compiler: gfortran-12
+            shell: bash
+            test_type: valgrind
+            coverage: false
           # macOS
-          - os: macos-latest
+          - os: macos-11
             os_name: macos
             compiler: gfortran-10
             shell: bash
             test_type: regular
             coverage: false
-          - os: macos-12
+          - os: macos-latest
             os_name: macos
             compiler: gfortran-11
+            shell: bash
+            test_type: regular
+            coverage: false
+          - os: macos-latest
+            os_name: macos
+            compiler: gfortran-12
             shell: bash
             test_type: regular
             coverage: false

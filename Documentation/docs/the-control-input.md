@@ -25,7 +25,7 @@ The RUN_PARAMETERS block is:
 
 The names can be anything, since they are simply text files. However the “.tec” extension on the plot file will help VisIt/Paraview know how to read it. If you don’t want a file created, simply choose the name to be *none*.
 
-In the current version of  HOHQMesh, there are three mesh file formats, “ISM” which stands for “Implementing Spectral Methods” . This is the file format described in the book by David A. Kopriva. The other available formats are “ISM-v2”, which provides the edge information needed by the approximations so that the edge generation algorithms in the appendix of the book are not needed, and "ABAQUS", which provides the corner nodes and element connectivity data in the specific [Abaqus file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm). See the corresponding sections in the Appendix of this manual on ISM-v2 and ABAQUS for a description of the additional information they provide. In the future, other file formats may be implemented, too. Finally, high order boundary information is conveyed by outputting an interpolant of the specified order. That information can be viewed using the “sem” plot file format.
+In the current version of  HOHQMesh, there are three mesh file formats, “ISM” which stands for “Implementing Spectral Methods” . This is the file format described in the book by David A. Kopriva. The other available formats are “ISM-v2”, which provides the edge information needed by the approximations so that the edge generation algorithms in the appendix of the book are not needed, and "ABAQUS", which provides the corner nodes and element connectivity data in the specific [Abaqus file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm). See the corresponding sections in the "HOHQMesh Mesh File Formats" section of this manual on ISM-v2 and ABAQUS for a description of the additional information they provide. In the future, other file formats may be implemented, too. Finally, high order boundary information is conveyed by outputting an interpolant of the specified order. That information can be viewed using the “sem” plot file format.
 
 ## The Background Grid<a name="BackgroundGrid"></a>
 
@@ -71,7 +71,7 @@ Just leave out any of the optional parameters if you want the default values to 
 
 ## Refinement Regions<a name="RefinementRegions"></a>
 ![Refinements](https://user-images.githubusercontent.com/3637659/121807868-46ae1680-cc56-11eb-8941-c9ad8d259da2.png)
-<p align = "center"> Fig. 15. Two refinement centers and a refinement line</p>
+<p align = "center"> Fig. 16. Two refinement centers and a refinement line</p>
 
 Manual scaling of the mesh size can be performed by including any combination of
 
@@ -101,7 +101,7 @@ The mesh can also be refined along a line using a `REFINEMENT_LINE`. Like the ce
 		w    = 0.5
 	\end{REFINEMENT_LINE}
 
-Here, *x0* and *x1* are the starting and ending points of the line, *h* is the desired mesh size and *w* tells how far out from the line the refinement extends. An example of center and line refinements can be seen in Fig. 15.
+Here, *x0* and *x1* are the starting and ending points of the line, *h* is the desired mesh size and *w* tells how far out from the line the refinement extends. An example of center and line refinements can be seen in Fig. 16.
 ### Refinement Region Definition<a name="RefinementDefinition"></a>
 
 Refinement regions are defined within a `REFINEMENT_REGIONS` block, e.g.
