@@ -18,14 +18,14 @@ The RUN_PARAMETERS block is:
 		mesh file name   = MeshFileName.mesh
 		plot file name   = PlotName.tec
 		stats file name  = StatsName.txt
-		mesh file format = ISM *OR* ISM-v2 *OR* ABAQUS
+		mesh file format = ISM *OR* ISM-v2 *OR* ISM-MM *OR* ABAQUS
 		polynomial order = 6
 		plot file format = skeleton *OR* sem
 	\end{RUN_PARAMETERS}
 
 The names can be anything, since they are simply text files. However the “.tec” extension on the plot file will help VisIt/Paraview know how to read it. If you don’t want a file created, simply choose the name to be *none*.
 
-In the current version of  HOHQMesh, there are three mesh file formats, “ISM” which stands for “Implementing Spectral Methods” . This is the file format described in the book by David A. Kopriva. The other available formats are “ISM-v2”, which provides the edge information needed by the approximations so that the edge generation algorithms in the appendix of the book are not needed, and "ABAQUS", which provides the corner nodes and element connectivity data in the specific [Abaqus file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm). See the corresponding sections in the "HOHQMesh Mesh File Formats" section of this manual on ISM-v2 and ABAQUS for a description of the additional information they provide. In the future, other file formats may be implemented, too. Finally, high order boundary information is conveyed by outputting an interpolant of the specified order. That information can be viewed using the “sem” plot file format.
+In the current version of  HOHQMesh, there are four mesh file formats, “ISM” which stands for “Implementing Spectral Methods” . This is the file format described in the book by David A. Kopriva. The other available formats are “ISM-v2”, which provides the edge information needed by the approximations so that the edge generation algorithms in the appendix of the book are not needed, "ISM-MM", which associates a material name with an element, and "ABAQUS", which provides the corner nodes and element connectivity data in the specific [Abaqus file format](https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm). See the corresponding sections in the "HOHQMesh Mesh File Formats" section of this manual for a description of the information they each provide. In the future, other file formats may be implemented, too. Finally, high order boundary information is conveyed by outputting an interpolant of the specified order. That information can be viewed using the “sem” plot file format.
 
 ## The Background Grid<a name="BackgroundGrid"></a>
 
@@ -126,3 +126,13 @@ Refinement regions are defined within a `REFINEMENT_REGIONS` block, e.g.
 	\end{REFINEMENT_REGIONS}
 
 The ordering of the blocks within the `REFINEMENT_REGIONS` block is arbitrary.
+
+### Base Material Definition<a name="BaseMaterialDefinition"></a>
+
+If the ISM-MM mesh file format is requested to produce multiple material meshes, the material name for a given region is given by the name of the curve bounding it, except for the outermost region. For the outermost region it is necessary to set the background material name in a `MATERIALS` block, e.g.
+
+	\begin{MATERIALS}
+      background Material name = Muscle
+	\end{MATERIALS}
+
+If the ISM-MM format is requested and a background material name is not supplied, a warning is posted and the background name 'base' is used.

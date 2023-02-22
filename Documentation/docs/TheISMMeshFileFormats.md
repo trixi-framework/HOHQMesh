@@ -1,6 +1,6 @@
 # The HOHQMesh Mesh File Formats
 
-HOHQMesh currently can write in three mesh file formats, ISM, ISM-v2, and Abaqus.
+HOHQMesh currently can write in four mesh file formats, ISM, ISM-v2, ISM-MM, and Abaqus.
 The ISM format was developed for the book "Implementing Spectral Methods: Algorithms for Scientists
 and Engineers" by David A. Kopriva and it supplies all the information needed to define high order
 curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-v2
@@ -28,7 +28,7 @@ The top level view of the ISM file format is
 	List of Nodes
 	List of Elements
 
-The header specifies the size of the mesh and the order of the polynomial that is used to define boundary curves.
+The header consists of one line if the format is ISM, two lines for the others. The first line for all but the ISM format include the mesh format type. The other line of the header specifies the size of the mesh and the order of the polynomial that is used to define boundary curves.
 
 	#nodes  #elements  polynomialOrder
 
@@ -52,14 +52,14 @@ The list of elements is an ordered list of element blocks,
 
 Each element block includes enough information to define a spectral element. Each block has
 
-	node IDs of the four/eight corners
+	node IDs of the four/eight corners [+ material name, if ISM-MM]
 	Boundary flags for the sides/faces (0 = straight/flat, 1 = curved)
 	Interpolation values for the curved sides
 	Boundary names for sides/faces
 
 The node IDs are the IDs (as determined by their location in the node list) of the nodes defined in the Node block. Additional values used for Hex elements are shown in square brackets.
 
-	node1 node2 node3 node4 [node5 node6 node7 node8]
+	node1 node2 node3 node4 [node5 node6 node7 node8] [materialName]
 
 The boundary flags are defined similarly,
 
@@ -93,7 +93,7 @@ An algorithm for reading a quad mesh can therefore be written as
 		Read x[n] y[n] z[n]
 	End
 	For n = 1 to nElements
-		Read (nodeID[k,n], k = 1,...,4)
+		Read (nodeID[k,n], k = 1,...,4) [,materialName]
 		Read (bFlag[k,n], k = 1,...,4)
 		For k = 1 to 4
 			If bFlag(k) = 1 then
@@ -113,7 +113,7 @@ The Hex element block is similar, except that the faces are defined with nodes a
 		Read x[n] y[n] z[n]
 	End
 	For n = 1 to nElements
-		Read (nodeID[k,n], k = 1,...,8)
+		Read (nodeID[k,n], k = 1,...,8), [materialName]
 		Read (bFlag[k,n], k = 1,...,6)
 		For k = 1 to 6
 			If bFlag(k) = 1 then
@@ -197,8 +197,8 @@ The mesh has five elements with eight corner nodes. The outer boundary (called "
 	0 0 0 0									<- Interior box, no curve values follow
 	--- --- --- ---
 
-## Additions for ISM-v2<a name="ISMv-2"></a>
-The ISM-v2 adds edge information to the ISM mesh file.
+## Additions for ISM-v2 and ISM-MM<a name="ISMv-2"></a>
+The ISM-v2 and ISM-MM formats adds edge information to the ISM mesh file.
 
 The first line of the mesh file will state that fact, that is, if the first line is ISM-V2 then it will have the edge information.
 
