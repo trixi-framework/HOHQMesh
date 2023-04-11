@@ -56,7 +56,7 @@ Truly complex geometries can be meshed, as shown in the following coastline mode
 ![Superior](https://user-images.githubusercontent.com/3637659/121807899-65141200-cc56-11eb-990e-4550feb0f90e.png)
 <p align = "center"> Fig. 8. Lake Superior with spectral element nodes shown (<em>Examples/2D/LakeSuperior</em>)</p>
 
-In some applications, such as if there are regions in which the material properties change abruptly, one may want to include interior interface curves to ensure that element boundaries fall along those curves. Fig. 9 shows a circular domain with two interior circular domains that are separated by interaface curves.
+In some applications, such as if there are regions in which the material properties change abruptly, one may want to include interior interface curves to ensure that element boundaries fall along those curves. Fig. 9 shows a circular domain with two interior circular domains that are separated by interface curves.
 
 ![B&M](../Figures/BoneAndMarrow.png)
 <p align = "center"> Fig. 9. Mesh with interior interfaces bounded by circles.</p>
