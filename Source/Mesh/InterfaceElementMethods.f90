@@ -603,7 +603,6 @@
          ALLOCATE(eNew)
          CALL eNew % initWithNodesIDAndType(elementNodes, elementID, QUAD)
          eNew % materialID   =  e % materialID
-         eNew % materialName =  e % materialName
          
          obj => eNew
          CALL newElementsList % add(obj)

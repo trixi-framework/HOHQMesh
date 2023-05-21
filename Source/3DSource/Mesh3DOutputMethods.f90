@@ -147,7 +147,8 @@
                DO k = 0, N
                   DO j = 0, N
                      DO i = 0, N
-                        WRITE(iUnit,*) (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3)
+                        WRITE(iUnit,*) (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3), &
+                                        hex8Mesh % elements(m,l) % materialID
                      END DO
                   END DO
                END DO
@@ -158,17 +159,18 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE WriteISMHexMeshFile( mesh, fName, N, version )
+      SUBROUTINE WriteISMHexMeshFile( mesh, fName, N, version, materialNameForID )
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         TYPE( StructuredHexMesh )          :: mesh
-         CHARACTER(LEN=*)                   :: fName
-         INTEGER                            :: N ! The polynomial order of the boundaries.
-         INTEGER                            :: version !version number of the ISM format.
+         TYPE( StructuredHexMesh ) :: mesh
+         CHARACTER(LEN=*)          :: fName
+         INTEGER                   :: N ! The polynomial order of the boundaries.
+         INTEGER                   :: version !version number of the ISM format.
+         CHARACTER(LEN=*)          :: materialNameForID(:)
 !
 !        ---------------
 !        Local Variables
@@ -249,7 +251,8 @@
                eID = mesh % elements(k,j) % globalID
 
                IF ( version == ISM_MM )     THEN
-                  WRITE( iUnit, *) mesh % elements(k,j) % nodeIDs, TRIM(mesh % elements(k,j) % materialName)
+                  WRITE( iUnit, *) mesh % elements(k,j) % nodeIDs, &
+                                   TRIM(materialNameForID(mesh % elements(k,j) % materialID))
                ELSE
                   WRITE( iUnit, *) mesh % elements(k,j) % nodeIDs
                END IF

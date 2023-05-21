@@ -289,7 +289,7 @@
             CALL cast(obj,e)
 
             IF ( version == ISM_MM )     THEN
-               WRITE( iUnit, *) e % boundaryInfo % nodeIDs, TRIM(e % materialName)
+               WRITE( iUnit, *) e % boundaryInfo % nodeIDs, TRIM(mesh % materialNameForID(e % materialID))
             ELSE
                WRITE( iUnit, *) e % boundaryInfo % nodeIDs
             END IF

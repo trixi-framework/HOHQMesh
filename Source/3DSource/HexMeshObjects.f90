@@ -87,7 +87,6 @@
           INTEGER, DIMENSION(8)           :: nodeIDs
           INTEGER, DIMENSION(6)           :: faceID
           INTEGER                         :: materialID
-          CHARACTER(LEN=32)               :: materialName
           INTEGER, DIMENSION(6)           :: bFaceFlag     ! = ON or OFF. On if there is an interpolant associated with the face.
           CHARACTER(LEN=32), DIMENSION(6) :: bFaceName     ! The boundary face name for each face. Will be "---" for internal faces.
           REAL(KIND=RP)    , POINTER      :: x (:,:,:,:)   ! Nodal values of chebyshev interpolant for the volume.

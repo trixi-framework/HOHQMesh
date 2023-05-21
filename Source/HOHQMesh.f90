@@ -368,9 +368,10 @@
             ELSE
                IF ( didGenerate3DMesh )     THEN
                   CALL WriteISMHexMeshFile(mesh    = project % hexMesh,&
-                                           fName   = project % runParams % MeshFileName,&
-                                           N       = project % runParams % polynomialOrder,&
-                                           version = project % runParams % meshFileFormat)
+                                           fName   = project % runParams % MeshFileName,    &
+                                           N       = project % runParams % polynomialOrder, &
+                                           version = project % runParams % meshFileFormat , &
+                                           materialNameForID = project % mesh % materialNameForID)
                ELSE
                   CALL WriteISMMeshFile( project % mesh, project % runParams % MeshFileName, &
                                          project % runParams % polynomialOrder, &

@@ -130,7 +130,6 @@
          LOGICAL                      :: remove
          INTEGER                      :: N
          INTEGER                      :: materialID
-         CHARACTER(LEN=32)            :: materialName
          TYPE(SMNodePtr), ALLOCATABLE :: nodes(:)
          TYPE(ElementBoundaryInfo)    :: boundaryInfo
          REAL(KIND=RP), ALLOCATABLE   :: xPatch(:,:,:)
@@ -475,7 +474,6 @@
          
          self % remove       = .FALSE.
          self % materialID   = BACKGROUND_MATERIAL_ID
-         self % materialName = "base"
          self % N            = 1
         
       END SUBROUTINE initElementWithNodesIDAndType

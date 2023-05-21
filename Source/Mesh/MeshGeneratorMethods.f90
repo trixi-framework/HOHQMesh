@@ -275,7 +275,7 @@
       IF ( model % numberOfInterfaceCurves > 0 )     THEN
       
             ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(numberOfBoundaries))
-            mesh % materialNameForID = "base"
+            mesh % materialNameForID = project % backgroundMaterialName
             
             iterator => model % interfaceBoundariesIterator
             CALL iterator % setToStart()
@@ -1553,7 +1553,6 @@
 !
                   IF ( numInside >= 2 )     THEN
                      e % materialID   = curveArray % id
-                     e % materialName = mesh % materialNameForID(curveArray % id)
 
                      DO k = 1,4
                         node => e % nodes(k) % node
