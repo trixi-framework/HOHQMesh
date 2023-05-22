@@ -443,8 +443,6 @@
 !        ------------------
 !
          DO k = 1, 4 
-!            obj => e % nodes % objectAtIndex(k)
-!            CALL cast(obj,node)
             P(:,k) = e % nodes(k) % node % x
          END DO
 !
@@ -604,8 +602,6 @@
 !        ------------------
 !
          DO k = 1, 4 
-!            obj => e % nodes % objectAtIndex(k)
-!            CALL cast(obj,node)
             P(:,k) = e % nodes(k) % node % x
          END DO
 !
@@ -774,8 +770,6 @@
          WRITE( fUnit, *) "Element ", e % id
          
          DO k = 1,4 
-!            obj => e % nodes % objectAtIndex(k)
-!            CALL cast(obj,node)
             WRITE( fUnit, *) "      ", e % nodes(k) % node % x
          END DO
          

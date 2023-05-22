@@ -132,7 +132,7 @@ The ordering of the blocks within the `REFINEMENT_REGIONS` block is arbitrary.
 If the ISM-MM mesh file format is requested to produce multiple material meshes, the material name for a given region is given by the name of the curve bounding it, except for the outermost region. For the outermost region it is necessary to set the background material name in a `MATERIALS` block, e.g.
 
 	\begin{MATERIALS}
-      background Material name = Muscle
+      background material name = Muscle
 	\end{MATERIALS}
 
 If the ISM-MM format is requested and a background material name is not supplied, a warning is posted and the background name 'base' is used.

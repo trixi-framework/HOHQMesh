@@ -1277,8 +1277,6 @@
 !            CALL cast(obj,e)
             
 !            DO k = 1, 4 
-!               obj => e % nodes % objectAtIndex(k)
-!               CALL cast(obj,node)
 !               
 !            END DO
             CALL elementIterator % moveToNext()
@@ -2046,10 +2044,6 @@
                 END DO
              ELSE ! Use a straight line between end nodes
              
-!               obj => e % nodes % objectAtIndex(edgeMap(1,k))
-!               CALL cast(obj,node1) 
-!               obj => e % nodes % objectAtIndex(edgeMap(2,k))
-!               CALL cast(obj,node2)
                node1 => e % nodes(edgeMap(1,k)) % node
                node2 => e % nodes(edgeMap(2,k)) % node
                

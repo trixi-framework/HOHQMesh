@@ -156,8 +156,6 @@
             oppositeNodeNumber = 0
             DO k = 1, 4
                node => e % nodes(k) % node
-!               obj => e % nodes % objectAtIndex(k)
-!               CALL cast(obj,node)
                IF ( node % distToBoundary == 0.0_RP )     THEN
                   interfaceNodeCount = interfaceNodeCount + 1
 !
@@ -277,8 +275,6 @@
 !        ----------------------------------------------------
 !
          DO k = 1,4
-!            obj => e % nodes % objectAtIndex(k)
-!            CALL cast(obj,node)
             nodes(k) % node => e % nodes(k) % node
          END DO  
 !
@@ -419,8 +415,6 @@
 !        ----------------------------------------------------
 !
          DO k = 1,4
-!            obj => e % nodes % objectAtIndex(k)
-!            CALL cast(obj,node)
             nodes(k) % node => e % nodes(k) % node
          END DO  
 !

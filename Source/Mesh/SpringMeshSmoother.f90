@@ -348,16 +348,12 @@
             obj => iterator % object()
             CALL cast(obj,e)
             DO k = 1, 4 
-!               obj => e % nodes % objectAtIndex(k)
-!               CALL cast(obj,node1)
                node1 => e % nodes(k) % node
                IF( HasFixedPosition( node1 ) )     CYCLE ! Is on boundary. 
                nID = node1 % id
                cK  = k + 2
                IF( cK > 4 ) cK = cK - 4
                
-!               obj => e % nodes % objectAtIndex(cK)
-!               CALL cast(obj,node2)
                node2 => e % nodes(cK) % node
                x1 = node1 % x
                x2 = node2 % x

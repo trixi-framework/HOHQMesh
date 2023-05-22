@@ -196,7 +196,7 @@ Interior interface boundary curves are defined inside the `INTERFACE_BOUNDARIES`
 	...
 	\end{INTERFACE_BOUNDARIES}
 	
-Interface boundaries, unlike interior boundaries, do not create holes in model domain or the mesh. _Interface boundaries that are contained (embedded) in other interface boundaries must be defined within the block in order from outer to inner to properly define the material names_. The ordering of interface boundaries that are not embedded in another is not important. (Additions to HOQMesh to remove this restriction will require code to determine whether or not a given curve is embedded within another, and has not yet been implemented. HOQMesh essentially uses a painters algorithm to specify the material names.) If interface curves are not being used to delineate material boundaries (i.e. for mesh alignment alone and not with the ISM-MM mesh file format), then the ordering is unimportant.
+Interface boundaries, unlike interior boundaries, do not create holes in model domain or the mesh. _Interface boundaries that are contained (embedded) in other interface boundaries must be defined within the block in order from outer to inner to properly define the material names_. The ordering of interface boundaries that are not embedded in another is not important. (Additions to HOHQMesh to remove this restriction will require code to determine whether or not a given curve is embedded within another, and has not yet been implemented. HOHQMesh essentially uses a painters algorithm to specify the material names.) If interface curves are not being used to delineate material boundaries (i.e. for mesh alignment alone and not with the ISM-MM mesh file format), then the ordering is unimportant.
 
 ###Example
 

@@ -798,10 +798,8 @@
                            e         => elementsForNodes(j,meshNode % id) % element
                            nodecount = 0
                            DO k = 1, 4
-!                              obj => e % nodes % objectAtIndex(k)
                               elementNode => e % nodes(k) % node
 
-!                              CALL cast(obj,elementNode)
                               IF ( elementNode % distToBoundary == 0.0_RP )     THEN
                                  nodeCount = nodeCount + 1 
                               END IF
@@ -899,8 +897,6 @@
                END DO
                IF(badNodeLocalID < 0) CYCLE !Bail on this one
                
-!               obj => e % nodes % objectAtIndex(badNodeLocalID)
-!               CALL cast(obj,node)
                node => e % nodes(badNodeLocalID) % node
                badNodeID = node % id
 !
@@ -1138,7 +1134,7 @@
 !            END DO
 !            IF(failed) THEN
 !               nodeCopy(k) % activeStatus = INACTIVE
-!               obj => e % nodes % objectAtIndex(k)
+!               obj => e % nodes % objectAtIndex(k) !Supersceeded with new data structure
 !               CALL cast(obj,node)
 !               CALL copyOfNodeType(nodeCopy(k),node)
 !            END IF 

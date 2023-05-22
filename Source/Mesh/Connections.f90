@@ -183,8 +183,6 @@
             CALL cast(obj,e)
             DO k = 1, 4 
                node => e % nodes(k) % node
-!               obj  => e % nodes % objectAtIndex(k)
-!               CALL cast(obj,node)
                
                id   = node % id
                numElementsForNode(id) = numElementsForNode(id) + 1

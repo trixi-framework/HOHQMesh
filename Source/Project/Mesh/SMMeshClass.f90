@@ -337,10 +337,6 @@
 !                 of edges and to the hash table
 !                 ------------------------------------------------
 !
-!                  obj => element % nodes % objectAtIndex(edgeMap(1,k))
-!                  CALL cast(obj,startNode)
-!                  obj => element % nodes % objectAtIndex(edgeMap(2,k))
-!                  CALL cast(obj,endNode)
                   startNode => element % nodes(edgeMap(1,k)) % node
                   endNode => element % nodes(edgeMap(2,k)) % node
                   
@@ -429,8 +425,6 @@
             ELSE
                DO k = 1, 4
                   e % nodes(k) % node % activeStatus = NONE 
-!                  CALL cast(obj,node)
-!                  node % activeStatus = NONE 
                END DO
                takeStep  =  .TRUE.
             END IF
