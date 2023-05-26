@@ -93,7 +93,7 @@ An algorithm for reading a quad mesh can therefore be written as
 		Read x[n] y[n] z[n]
 	End
 	For n = 1 to nElements
-		Read (nodeID[k,n], k = 1,...,4) [,materialName]
+		Read (nodeID[k,n], k = 1,...,4), [materialName]
 		Read (bFlag[k,n], k = 1,...,4)
 		For k = 1 to 4
 			If bFlag(k) = 1 then
