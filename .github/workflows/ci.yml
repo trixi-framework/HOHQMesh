@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       debug_enabled:
-        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'     
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
 
@@ -110,7 +110,7 @@ jobs:
         shell: ${{ matrix.shell }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       # - name: Add msbuild to PATH
       #   if: ${{ matrix.os_name == 'windows-latest' }}
       #   uses: microsoft/setup-msbuild@v1.0.2
@@ -147,7 +147,7 @@ jobs:
         run: |
           sudo apt-get install -y lcov
           FC=${{ matrix.compiler }} ./Utilities/createcoverage
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v3
         if: ${{ matrix.coverage }}
         with:
           files: ./lcov.info
