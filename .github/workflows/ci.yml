@@ -147,7 +147,7 @@ jobs:
         run: |
           sudo apt-get install -y lcov
           FC=${{ matrix.compiler }} ./Utilities/createcoverage
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v3
         if: ${{ matrix.coverage }}
         with:
           files: ./lcov.info
