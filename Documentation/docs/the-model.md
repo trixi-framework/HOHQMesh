@@ -13,7 +13,7 @@ As an example, the model in Fig. 16 has one outer boundary - the outer triangle 
 ![AllFeatures](https://user-images.githubusercontent.com/3637659/121807794-f3d45f00-cc55-11eb-9284-af5f4eed2c87.png)
 <p align = "center"> Fig. 16. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, and circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve (<em>Examples/2D/AllFeatures</em>).</p>
 
-![B&M](../Figures/BoneAndMarrow.png)
+![B&M](https://user-images.githubusercontent.com/25242486/241190479-ba50d797-3bd9-41b1-bc38-03fc86f8c3da.png)
 <p align = "center"> Fig. 17. Mesh with interior interfaces bounded by circles.</p>
 
 ## Boundary Curves<a name="BoundaryCurves"></a>
@@ -195,7 +195,7 @@ Interior interface boundary curves are defined inside the `INTERFACE_BOUNDARIES`
 	\begin{INTERFACE_BOUNDARIES}
 	...
 	\end{INTERFACE_BOUNDARIES}
-	
+
 Interface boundaries, unlike interior boundaries, do not create holes in model domain or the mesh. _Interface boundaries that are contained (embedded) in other interface boundaries must be defined within the block in order from outer to inner to properly define the material names_. The ordering of interface boundaries that are not embedded in another is not important. (Additions to HOHQMesh to remove this restriction will require code to determine whether or not a given curve is embedded within another, and has not yet been implemented. HOHQMesh essentially uses a painters algorithm to specify the material names.) If interface curves are not being used to delineate material boundaries (i.e. for mesh alignment alone and not with the ISM-MM mesh file format), then the ordering is unimportant.
 
 ###Example

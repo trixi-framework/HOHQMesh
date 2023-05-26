@@ -58,7 +58,7 @@ Truly complex geometries can be meshed, as shown in the following coastline mode
 
 In some applications, such as if there are regions in which the material properties change abruptly, one may want to include interior interface curves to ensure that element boundaries fall along those curves. Fig. 9 shows a circular domain with two interior circular domains that are separated by interface curves.
 
-![B&M](../Figures/BoneAndMarrow.png)
+![B&M](https://user-images.githubusercontent.com/25242486/241190479-ba50d797-3bd9-41b1-bc38-03fc86f8c3da.png)
 <p align = "center"> Fig. 9. Mesh with interior interfaces bounded by circles.</p>
 
 
