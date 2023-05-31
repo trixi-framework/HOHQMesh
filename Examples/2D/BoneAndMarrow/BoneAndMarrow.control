@@ -13,9 +13,9 @@
 %  is desired. 
 %
    \begin{RUN_PARAMETERS}
-      mesh file name   = Examples/2D/MeshFiles/BoneAndMarrow.mesh
-      plot file name   = Examples/2D/PlotFiles/BoneAndMarrow.tec
-      stats file name  = Examples/2D/Statistics/BoneAndMarrow.txt
+      mesh file name   = Examples/2D/BoneAndMarrow/BoneAndMarrow.mesh
+      plot file name   = Examples/2D/BoneAndMarrow/BoneAndMarrow.tec
+      stats file name  = Examples/2D/BoneAndMarrow/BoneAndMarrow.txt
       mesh file format = ISM-MM
       polynomial order = 5
       plot file format = skeleton
