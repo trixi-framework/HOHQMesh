@@ -115,11 +115,7 @@
          IF ( shouldGenerate3D )     THEN
             obj            => projectDict % objectForKey(key = "MODEL")
             modelDict      => valueDictionaryFromObject(obj)
-            IF ( ASSOCIATED(modelDict) )     THEN
-               CALL modelDict % retain()
-            END IF
             CALL Check3DMeshParametersIntegrity(controlDict, modelDict)
-            CALL releaseFTValueDictionary(modelDict)
          END IF
          CALL trapExceptions !Abort on fatal exceptions
 !

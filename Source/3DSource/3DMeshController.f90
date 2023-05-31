@@ -165,8 +165,14 @@
             obj             => controlDict % objectForKey(key = SWEEP_CURVE_CONTROL_KEY)
             generatorDict   => valueDictionaryFromObject(obj) 
             algorithmChoice = SWEEP_ALGORITHM
-            CALL CheckCurveSweepBlock(controlDict = generatorDict, &
-                                      modelDict   = modelDict)            
+            IF ( .NOT. ASSOCIATED(modelDict) )     THEN
+               CALL ThrowErrorExceptionOfType(poster = "Check3DMeshParametersIntegrity", &
+                                              msg    = "A model block and sweep curve is required for sweeping", &
+                                              typ    = FT_ERROR_FATAL) 
+            ELSE
+               CALL CheckCurveSweepBlock(controlDict = generatorDict, &
+                                         modelDict   = modelDict)            
+            END IF
          ELSE
             CALL ThrowErrorExceptionOfType(poster = "generate3DMesh", &
                                            msg = "No generator for 3D mesh found in control file", &
