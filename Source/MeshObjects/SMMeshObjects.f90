@@ -126,14 +126,13 @@
 !        Data
 !        ----
 !
-         INTEGER                     :: eType   ! = QUAD or HEX
-         LOGICAL                     :: remove
-         INTEGER                     :: N
-         INTEGER                     :: materialID
-         CHARACTER(LEN=32)           :: materialName
-         TYPE (FTMutableObjectArray) :: nodes
-         TYPE(ElementBoundaryInfo)   :: boundaryInfo
-         REAL(KIND=RP), ALLOCATABLE  :: xPatch(:,:,:)
+         INTEGER                      :: eType   ! = QUAD or HEX
+         LOGICAL                      :: remove
+         INTEGER                      :: N
+         INTEGER                      :: materialID
+         TYPE(SMNodePtr), ALLOCATABLE :: nodes(:)
+         TYPE(ElementBoundaryInfo)    :: boundaryInfo
+         REAL(KIND=RP), ALLOCATABLE   :: xPatch(:,:,:)
 !
 !        ========
          CONTAINS
@@ -171,7 +170,6 @@
          PROCEDURE :: initWithNodesAndID => initEdgeWithNodesAndID
          FINAL     :: destructEdge
          PROCEDURE :: printDescription   => printEdgeDescription
-         PROCEDURE :: addAuxiliaryNode
       END TYPE SMEdge
       
       TYPE SMEdgePtr
@@ -274,7 +272,7 @@
          self % distToBoundary  = HUGE(0.0_RP)
          self % bCurveChainID   = UNDEFINED
          self % bCurveSide      = UNDEFINED
-         self % materialID      = 1
+         self % materialID      = BACKGROUND_MATERIAL_ID
          self % nodeType        = UNDEFINED
       END SUBROUTINE initNodeWithLocationAndID
 !
@@ -462,22 +460,20 @@
 !        ---------------
 !
          INTEGER                  :: j
-         CLASS(fTObject), POINTER :: obj => NULL()
 
          CALL self % FTObject % init()
-         CALL self % nodes    % initWithSize(eType)
+         ALLOCATE( self % nodes(eType))
          
          self % id    = id
          self % eType = eType
 
          DO j = 1, eType 
-            obj => nodes(j) % node
-            CALL   self  % nodes % addObject(obj)
+            self % nodes(j) % node => nodes(j) % node
+            CALL nodes(j) % node % retain()
          END DO
          
          self % remove       = .FALSE.
-         self % materialID   = 1
-         self % materialName = "base"
+         self % materialID   = BACKGROUND_MATERIAL_ID
          self % N            = 1
         
       END SUBROUTINE initElementWithNodesIDAndType
@@ -500,11 +496,17 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE destructelement(self) 
+      SUBROUTINE destructElement(self) 
          IMPLICIT NONE  
          TYPE(SMElement) :: self
+         INTEGER         :: j
          
-      END SUBROUTINE destructelement
+         DO j = 1, self % eType 
+            CALL releaseSMNode(self = self % nodes(j) % node) 
+         END DO 
+         DEALLOCATE( self % nodes)
+          
+      END SUBROUTINE destructElement
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -522,9 +524,12 @@
 !        Local variables
 !        ---------------
 !
+         INTEGER :: j
          
          WRITE(iUnit,*) "Element with ID = ", self % id
-         CALL self % nodes % printDescription(iUnit)
+         DO j = 1, self % eType 
+            CALL printNodeDescription(self = self % nodes(j) % node,iUnit = iUnit)
+         END DO 
          IF(self % refCount() == 0) WRITE(iUnit,*) "%%%% Unreferenced Element %%% "
          
       END SUBROUTINE printElementDescription
@@ -580,16 +585,6 @@
          self % auxiliaryNode => NULL()
 
       END SUBROUTINE initEdgeWithNodesAndID
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE addAuxiliaryNode(self,node)  
-         IMPLICIT NONE
-         CLASS(SMEdge)          :: self
-         CLASS(SMNode), POINTER :: node
-         self % auxiliaryNode => node
-         CALL node % retain()
-      END SUBROUTINE addAuxiliaryNode
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

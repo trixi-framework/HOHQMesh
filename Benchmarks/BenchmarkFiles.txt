@@ -17,3 +17,4 @@ Benchmarks/ControlFiles/ABAQUS_IceCreamCone.control
 Benchmarks/ControlFiles/SeaMount.control
 Benchmarks/ControlFiles/SeaMountCubic.control
 Benchmarks/ControlFiles/Box3D.control
+Benchmarks/ControlFiles/BoneAndMarrow.control

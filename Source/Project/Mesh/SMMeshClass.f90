@@ -69,10 +69,12 @@
 !        Data
 !        ----
 !
-         INTEGER                      :: polynomialOrder
-         CLASS(FTLinkedList), POINTER :: nodes    => NULL()
-         CLASS(FTLinkedList), POINTER :: elements => NULL()
-         CLASS(FTLinkedList), POINTER :: edges    => NULL()
+         INTEGER                                     :: polynomialOrder
+         CLASS(FTLinkedList), POINTER                :: nodes    => NULL()
+         CLASS(FTLinkedList), POINTER                :: elements => NULL()
+         CLASS(FTLinkedList), POINTER                :: edges    => NULL()
+         INTEGER, DIMENSION(:)         , ALLOCATABLE :: curveTypeForID
+         CHARACTER(LEN=:), DIMENSION(:), ALLOCATABLE :: materialNameForID
 !
 !        ---------
 !        Iterators
@@ -123,10 +125,12 @@
 !
 !     ------------------------------------------
 !     Convenience arrays for dealing with curves
+!     aPointInsideTheCurve is no longer actually
+!     used, and its purpose is lost in time. It
+!     contains a point (1:3,i) inside curve i. 
 !     ------------------------------------------
 !
       REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: aPointInsideTheCurve
-      INTEGER      , DIMENSION(:)  , ALLOCATABLE :: curveTypeForID
 !
 !     ---------------------------------
 !     Arrays for keeping track of edges
@@ -188,8 +192,9 @@
          CALL releaseFTLinkedList(self % elements)
          CALL releaseFTLinkedList(self % edges)
          
-         IF(ALLOCATED(curveTypeForID))       DEALLOCATE(curveTypeForID)
-         IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
+         IF(ALLOCATED(self % curveTypeForID))    DEALLOCATE(self % curveTypeForID)
+         IF(ALLOCATED(aPointInsideTheCurve))     DEALLOCATE(aPointInsideTheCurve)
+         IF(ALLOCATED(self % materialNameForID)) DEALLOCATE(self % materialNameForID)
          
          CALL destroyEdgeArrays(self)
          
@@ -281,7 +286,7 @@
          CLASS(SMEdge)   , POINTER  :: edge => NULL()
          CLASS(FTObject) , POINTER  :: obj => NULL()
          CLASS(SMElement), POINTER  :: element => NULL()
-         CLASS(SMNode)   , POINTER  :: node => NULL(), startNode => NULL(), endNode => NULL()
+         CLASS(SMNode)   , POINTER  :: startNode => NULL(), endNode => NULL()
          
          INTEGER                    :: nNodes
          INTEGER                    :: nodeIDs(4), endNodes(2)
@@ -303,9 +308,7 @@
 !           -------------------
 !
             DO k = 1, 4
-               obj => element % nodes % objectAtIndex(k)
-               CALL cast(obj,node)
-               nodeIDs(k) =  node % id
+               nodeIDs(k) =  element % nodes(k) % node % id
             END DO  
 !
 !           ---------------------------------------
@@ -334,10 +337,8 @@
 !                 of edges and to the hash table
 !                 ------------------------------------------------
 !
-                  obj => element % nodes % objectAtIndex(edgeMap(1,k))
-                  CALL cast(obj,startNode)
-                  obj => element % nodes % objectAtIndex(edgeMap(2,k))
-                  CALL cast(obj,endNode)
+                  startNode => element % nodes(edgeMap(1,k)) % node
+                  endNode => element % nodes(edgeMap(2,k)) % node
                   
                   ALLOCATE(edge)
                   edgeID = self % newEdgeID()
@@ -423,9 +424,7 @@
                CALL iterator % removeCurrentRecord()
             ELSE
                DO k = 1, 4
-                  obj => e % nodes % objectAtIndex(k)
-                  CALL cast(obj,node)
-                  node % activeStatus = NONE 
+                  e % nodes(k) % node % activeStatus = NONE 
                END DO
                takeStep  =  .TRUE.
             END IF
@@ -472,7 +471,9 @@
             obj       => iterator % object()
             
             CALL cast(obj,node)
-            IF ( node % activeStatus == REMOVE )     THEN
+            IF ( node % activeStatus == REMOVE .OR. node % refCount() == 1 )     THEN
+            ! Note that if refCount = 1 then this is the only place a node is referenced is in the 
+            ! node list. It should be removed since it is not used elsewhere.
                takeStep = .FALSE.
                CALL iterator % removeCurrentRecord()
             END IF
@@ -580,7 +581,26 @@
 !        Local varaiables
 !        ----------------
 !
-         IF(ASSOCIATED(boundaryEdgesArray)) CALL releaseFTMutableObjectArray(boundaryEdgesArray)
+         INTEGER :: k, numBoundaries
+         
+         IF(ASSOCIATED(boundaryEdgesArray)) THEN 
+!
+!           --------------------------------------------------------------------
+!           I'm manually releasing the linked lists in the array, which
+!           seems to avoid a memory problem that happened when they are
+!           (or should be) automatically deleted in the destructor for 
+!           the MutableObjectArray class. The operation is essentially identical
+!           (though a bit less efficient) than the destructor, so it's not clear
+!           where the problem is/was.
+!           --------------------------------------------------------------------
+!
+            numBoundaries = boundaryEdgesArray % COUNT()
+            DO k = 1, numBoundaries
+               CALL boundaryEdgesArray % removeObjectAtIndex(indx = k)
+            END DO
+            CALL releaseFTMutableObjectArray(boundaryEdgesArray)
+         END IF 
+         
          IF ( .NOT. ASSOCIATED(boundaryEdgesArray) )     THEN
             IF(ALLOCATED(boundaryEdgesType)) DEALLOCATE(boundaryEdgesType)
          END IF 

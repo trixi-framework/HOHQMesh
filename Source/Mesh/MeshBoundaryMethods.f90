@@ -194,9 +194,9 @@
       CLASS(FTobject)    , POINTER :: obj  => NULL()
       INTEGER                      :: k
 !
-!     --------------------------------
-!     Clear out old values old present
-!     --------------------------------
+!     -------------------------------
+!     Clear out old values if present
+!     -------------------------------
 !
       IF ( ASSOCIATED(boundaryEdgesArray) )     THEN
          CALL releaseFTMutableObjectArray(self = boundaryEdgesArray)
@@ -323,7 +323,7 @@
 !        Gather interior interface edges
 !        -------------------------------
 !
-        CALL iterator % setToStart()
+         CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL cast(obj,edge)
@@ -331,41 +331,30 @@
             curveID   = edge % nodes(1) % node % bCurveChainID
             curveSide = edge % nodes(1) % node % bCurveSide
             
-            IF(edge % edgeType == ON_BOUNDARY)     THEN
+            IF(edge % edgeType == ON_BOUNDARY .OR. curveID <= NONE)     THEN
                CALL iterator % moveToNext()
                CYCLE 
             END IF
-!
-!           -------------------------------------------------------------
-!           Both nodes on the edge must have an associated curve ID, plus
-!           the edge will have two associated elements
-!           -------------------------------------------------------------
-!
-            IF( ASSOCIATED(edge % elements(2) % element) .AND.         &
-                edge % nodes(1) % node % bCurveChainID > UNDEFINED .AND. &
-                edge % nodes(2) % node % bCurveChainID > UNDEFINED )   THEN 
-                 
-                IF( curveTypeForID(curveID) == INTERIOR_INTERFACE )       THEN
-!
-!                 --------------------------------------------------
-!                 However, the nodes of the edge must both be inside
-!                 for us to be interested in it
-!                 --------------------------------------------------
-!
-                  IF ( edge % nodes(1) % node % bCurveSide == INSIDE .AND. &
-                       edge % nodes(2) % node % bCurveSide == INSIDE )    THEN
-                       
-                     edge % edgeType = ON_INTERFACE
-                     obj => boundaryEdgesArray % objectAtIndex(curveID)
-                     CALL cast(obj,edgeList)
-                     obj => edge
-                     CALL edgeList % add(obj)
-                     boundaryEdgesType(curveID) = INTERFACE_EDGES
-                  END IF 
-               END IF 
-               
-            END IF
             
+           IF( mesh % curveTypeForID(curveID) == INTERIOR_INTERFACE )       THEN
+!
+!              --------------------------------------------------
+!              However, the nodes of the edge must both be inside
+!              for us to be interested in it
+!              --------------------------------------------------
+!
+               IF ( edge % nodes(1) % node % bCurveSide == INSIDE .AND. &
+                    edge % nodes(2) % node % bCurveSide == INSIDE )    THEN
+                    
+                  edge % edgeType = ON_INTERFACE
+                  obj => boundaryEdgesArray % objectAtIndex(curveID)
+                  edgeList => linkedListFromObject(obj)
+                  obj => edge
+                  CALL edgeList % add(obj)
+                  boundaryEdgesType(curveID) = INTERFACE_EDGES
+               END IF 
+           END IF 
+!
             CALL iterator % movetoNext()
          END DO
          

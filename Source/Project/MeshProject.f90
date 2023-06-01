@@ -76,7 +76,7 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_GRID_KEY         = "BACKGROUND_GRID"
 
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MATERIAL_BLOCK_KEY          = "MATERIALS"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_MATERIAL_KEY     = "material"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_MATERIAL_KEY     = "background material name"
 
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: X_START_NAME_KEY            = "x0"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: X_END_NAME_KEY              = "x1"
@@ -280,8 +280,16 @@
             IF ( modelDict % containsKey(key = MATERIAL_BLOCK_KEY) )     THEN
                obj => modelDict % objectForKey(key = MATERIAL_BLOCK_KEY)
                matBlockdict => valueDictionaryFromObject(obj)
-               self % backgroundMaterialName = matBlockdict % stringValueForKey(key = BACKGROUND_MATERIAL_KEY,&
-                                                                                requestedLength = DEFAULT_CHARACTER_LENGTH)
+               IF ( matBlockdict % containsKey(key = BACKGROUND_MATERIAL_KEY) )     THEN
+                  self % backgroundMaterialName = matBlockdict % stringValueForKey(key = BACKGROUND_MATERIAL_KEY,&
+                                                  requestedLength = DEFAULT_CHARACTER_LENGTH)
+               ELSE 
+                  msg = "Background material name not found in control file. Using default name = 'base'"
+                  CALL ThrowErrorExceptionOfType(poster = "initWithDictionary", &
+                                                 msg    = msg, &
+                                                 typ    = FT_ERROR_WARNING)
+                  self % backgroundMaterialName = "base"
+               END IF 
             ELSE
                msg = "Background material block not found in control file. Using default name = 'base'"
                CALL ThrowErrorExceptionOfType(poster = "initWithDictionary", &
@@ -461,7 +469,7 @@
 !        -------------------------------------------------------
 !
          CALL CheckForBoundaryIntersections(self % sizer) !Development in progress
-         IF(catch())     RETURN
+         IF(catch(FATAL_ERROR_EXCEPTION))     RETURN
 !
 !        --------------------------------------------------------------------------
 !        Before going further, check to see how many subdivisions will be necessary

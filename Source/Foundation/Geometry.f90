@@ -270,7 +270,7 @@
       FUNCTION ACWindingFunction( p, curvePoints, N ) RESULT(w)
 !
 !     ---------------------------------------------------------------------
-!>     Find if the the point p(2) is inside of a closed curve discretized by
+!>     Find if the the point p(3) is inside of a closed curve discretized by
 !!     curvePoints. Closed means that curvePoints(:,N+1) = curvePoints(:,0).
 !!     Computes a constant factor (2\Pi) times the winding function using an
 !!     axis crossing method. This version sets winding function = 0 if the
