@@ -111,9 +111,7 @@
             obj => mesh % elementsIterator % object()
             CALL castToSMelement(obj,e)
             DO j = 1, 4
-               obj => e % nodes % objectAtIndex(j)
-               CALL castToSMNode(obj, node)
-               ids(j) = node % id
+               ids(j) = e % nodes(j) % node % id
             END DO
             WRITE( iUnit, *) (ids(j), j = 1, 4)
             CALL mesh % elementsIterator % moveToNext()
@@ -291,7 +289,7 @@
             CALL cast(obj,e)
 
             IF ( version == ISM_MM )     THEN
-               WRITE( iUnit, *) e % boundaryInfo % nodeIDs, TRIM(e % materialName)
+               WRITE( iUnit, *) e % boundaryInfo % nodeIDs, TRIM(mesh % materialNameForID(e % materialID))
             ELSE
                WRITE( iUnit, *) e % boundaryInfo % nodeIDs
             END IF

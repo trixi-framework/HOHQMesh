@@ -306,7 +306,7 @@
          INTEGER                           :: iStat
          TYPE (FTException)      , POINTER :: exception
 
-         IF(catch()) RETURN  
+         IF(catch(FATAL_ERROR_EXCEPTION)) RETURN  
          
          DO
            READ(fileUnit,"(A)", IOSTAT = iStat, END = 1000) line
@@ -316,7 +316,7 @@
             
             IF ( INDEX(STRING = line, SUBSTRING = "begin{") > 0)     THEN !Start reading a block
                CALL startNewCollectionInCollection(fileUnit,line,collection)
-               IF(catch()) EXIT 
+               IF(catch(FATAL_ERROR_EXCEPTION)) EXIT 
                
             ELSE IF (INDEX(STRING = line, SUBSTRING = "end{") > 0)     THEN
                IF(INDEX(STRING = line, SUBSTRING = "end{FILE}") > 0)   RETURN 
@@ -339,7 +339,7 @@
                               blockDict = dict, &
                               firstLine = line,    &
                               blockName = objectName)
-               IF(catch()) EXIT 
+               IF(catch(FATAL_ERROR_EXCEPTION)) EXIT 
                RETURN 
             END IF
          END DO

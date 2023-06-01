@@ -546,8 +546,7 @@
 !                 Bottom of hex
 !                 -------------
 !
-                  obj => currentQuadElement % nodes % objectAtIndex(k)
-                  CALL cast(obj,node)
+                  node => currentQuadElement % nodes(k) % node
                   node2DID = node % id
                   nodeID   = hex8Mesh % nodes(node2DID,j-1) % globalID
                   hex8Mesh % elements(quadElementID,j) % nodeIDs(k) = nodeID
@@ -599,8 +598,18 @@
                   END IF 
                   hex8Mesh % elements(quadElementID,j) % bFaceName(flagMap(k)) &
                                       = currentQuadElement % boundaryInfo % bCurveName(k)
-               END DO 
-               
+               END DO
+!
+!              ----------------------------
+!              Extrude the material ID, too
+!              ----------------------------
+!
+               hex8Mesh % elements(quadElementID,j) % materialID = currentQuadElement % materialID
+!
+!              ---------
+!              Finish up
+!              ---------
+!
                quadElementID  = quadElementID + 1
                elementID      = elementID + 1
                

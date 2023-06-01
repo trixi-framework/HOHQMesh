@@ -412,10 +412,7 @@
 !        ---------------
 !        Local variables
 !        ---------------
-!
-         CLASS(FTObject), POINTER :: obj => NULL()
-         CLASS(SMNode)  , POINTER :: node => NULL()
-         
+!         
          REAL(KIND=RP) :: P(3,4)         ! Location of the four corners
          REAL(KIND=RP) :: L(3,4)         ! Sequential edge vectors
          REAL(KIND=RP) :: LNorm(4)       ! lengths of the edge vectors
@@ -446,9 +443,7 @@
 !        ------------------
 !
          DO k = 1, 4 
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj,node)
-            P(:,k) = node % x
+            P(:,k) = e % nodes(k) % node % x
          END DO
 !
 !        ----------------------------
@@ -584,10 +579,7 @@
 !        ---------------
 !        Local variables
 !        ---------------
-!
-         CLASS(FTObject), POINTER :: obj  => NULL()
-         CLASS(SMNode)  , POINTER :: node => NULL()
-         
+!         
          REAL(KIND=RP) :: P(3,4)         ! Location of the four corners
          REAL(KIND=RP) :: L(3,4)         ! Sequential edge vectors
          REAL(KIND=RP) :: LNorm(4)       ! lengths of the edge vectors
@@ -610,9 +602,7 @@
 !        ------------------
 !
          DO k = 1, 4 
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj,node)
-            P(:,k) = node % x
+            P(:,k) = e % nodes(k) % node % x
          END DO
 !
 !        ----------------------------
@@ -773,8 +763,6 @@
          INTEGER                  :: k
          REAL(KIND=RP)            :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
          LOGICAL                  :: info(NUMBER_OF_2D_SHAPE_MEASURES)
-         CLASS(FTObject), POINTER :: obj => NULL()
-         CLASS(SMNode)  , POINTER :: node => NULL()
          
          CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
          CALL ExtractBadElementInfo( shapeMeasures, info )
@@ -782,9 +770,7 @@
          WRITE( fUnit, *) "Element ", e % id
          
          DO k = 1,4 
-            obj => e % nodes % objectAtIndex(k)
-            CALL cast(obj,node)
-            WRITE( fUnit, *) "      ", node % x
+            WRITE( fUnit, *) "      ", e % nodes(k) % node % x
          END DO
          
          WRITE( fUnit, *) "Problems:"
