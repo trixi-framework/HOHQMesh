@@ -7,8 +7,8 @@
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
-      mesh file name   = Examples/3D/BoxRotated/Box3D.mesh
-      plot file name   = Examples/3D/BoxRotated/Box3D.tec
+      mesh file name   = Examples/3D/BoxRotated/Box3DRot.mesh
+      plot file name   = Examples/3D/BoxRotated/Box3DRot.tec
       stats file name  = none
       mesh file format = ISM
       polynomial order = 4
