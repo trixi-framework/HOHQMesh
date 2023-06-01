@@ -568,7 +568,6 @@
          CLASS(ChainedSegmentedCurve)     :: self
          
          CLASS(FRSegmentedCurve), POINTER :: c => NULL()
-         REAL(KIND=RP)                    :: xMin, xMax, yMin, yMax, x(3)
          INTEGER                          :: j, k
          
          maxInverseScale = TINY(maxInverseScale)
