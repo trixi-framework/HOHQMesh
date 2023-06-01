@@ -115,9 +115,7 @@
          IF ( shouldGenerate3D )     THEN
             obj            => projectDict % objectForKey(key = "MODEL")
             modelDict      => valueDictionaryFromObject(obj)
-            CALL modelDict % retain()
             CALL Check3DMeshParametersIntegrity(controlDict, modelDict)
-            CALL releaseFTValueDictionary(modelDict)
          END IF
          CALL trapExceptions !Abort on fatal exceptions
 !
@@ -208,11 +206,11 @@
                   PRINT *, "    Number of nodes    = ", SIZE(project % hexMesh % nodes)
                   PRINT *, "    Number of Elements = ", SIZE(project % hexMesh % elements)
                   PRINT *
-                  
+
                   WRITE(numb,FMT='(I3)') SIZE(stats % avgValues)
                   namesFmt  = "(7A16)"
                   valuesFmt = "(A16," // TRIM(numb) // "(F16.8))"
-      
+
                   PRINT *, "Mesh Quality:"
                   WRITE(6,namesFmt) "Measure", "Minimum", "Maximum", "Average", "Acceptable Low", "Acceptable High", "Reference"
                   DO k = 1, SIZE(shapeMeasureNames3D)
