@@ -113,7 +113,7 @@ The Hex element block is similar, except that the faces are defined with nodes a
 		Read x[n] y[n] z[n]
 	End
 	For n = 1 to nElements
-		Read (nodeID[k,n], k = 1,...,8) [,materialName]
+		Read (nodeID[k,n], k = 1,...,8), [materialName]
 		Read (bFlag[k,n], k = 1,...,6)
 		For k = 1 to 6
 			If bFlag(k) = 1 then
