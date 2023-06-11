@@ -84,6 +84,7 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE initWithDataFile_SMSplineCurve( self, datafile, curveName, id )
+         USE SharedExceptionManagerModule
          IMPLICIT NONE
 !
 !        ---------
@@ -99,17 +100,25 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER, EXTERNAL                       :: UnusedUnit
+         INTEGER, EXTERNAL                        :: UnusedUnit
          REAL(KIND=RP), DIMENSION(:), ALLOCATABLE :: x, y, z, t 
-         INTEGER :: N
-         INTEGER :: iUnit
-         INTEGER :: i
+         INTEGER                                  :: N
+         INTEGER                                  :: iUnit
+         INTEGER                                  :: i
+         TYPE(FTException), POINTER               :: exception
 
          iUnit = UnusedUnit()
          OPEN( UNIT = iUnit, FILE = dataFile )
 
   
          READ(iUnit,*)N
+         IF ( N < 4 )     THEN
+            ALLOCATE(exception)
+            CALL exception % initFatalException(msg = "A spline curve must ave at least 4 points")
+            CALL throw(exception)
+            CALL releaseFTException(exception)
+            RETURN
+         END IF 
 
          ALLOCATE( x(1:N), y(1:N), z(1:N), t(1:N) )
          DO i = 1, N
@@ -124,6 +133,7 @@
       END SUBROUTINE initWithDataFile_SMSplineCurve
 
       SUBROUTINE initWithPointsNameAndID( self, t, x, y, z, curveName, id )  
+         USE SharedExceptionManagerModule
          USE Geometry
          IMPLICIT NONE  
 !
@@ -140,16 +150,30 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER       :: N, nDim
-         REAL(KIND=RP) :: xx(2,SIZE(x))
-         INTEGER       :: circ, j
+         INTEGER                     :: N, nDim
+         REAL(KIND=RP)               :: xx(2,SIZE(x))
+         INTEGER                     :: circ, j
+         TYPE(FTException), POINTER  :: exception
+!
+!        ---------------
+!        Check integrity
+!        ---------------
+!
+         N       = SIZE(x)
+         
+         IF ( N < 4 )     THEN
+            ALLOCATE(exception)
+            CALL exception % initFatalException(msg = "A spline curve must ave at least 4 points")
+            CALL throw(exception)
+            CALL releaseFTException(exception)
+            RETURN
+         END IF 
 !
 !        -----------------------------
 !        Check orientation of the data
 !        -----------------------------
 !
-         N       = SIZE(x)
-         IF(AlmostEqual(x(1),x(N)) .AND. &
+        IF(AlmostEqual(x(1),x(N)) .AND. &
             AlmostEqual(y(1),y(N)))     THEN 
             xx(1,:) = x
             xx(2,:) = y

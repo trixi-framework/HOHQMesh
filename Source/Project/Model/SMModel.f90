@@ -888,7 +888,8 @@
 
             ALLOCATE(cCurve)
             CALL cCurve % initWithDataFile( TRIM(curveFile), curveName, self % curveCount + 1 )
-            !Spline curves have no exceptions thrown
+            IF(ReturnOnFatalError()) RETURN 
+            
             curvePtr => cCurve
             CALL chain  % addCurve(curvePtr)
             obj => cCurve
