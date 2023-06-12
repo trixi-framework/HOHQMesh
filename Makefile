@@ -249,6 +249,7 @@ FTLinkedListClass.o \
 SizerControls.o \
 ProgramGlobals.o \
 Geometry.o \
+SMSplineCurveClass.o \
 ObjectArrayAdditions.o \
 FTLinkedListClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/DiscreteCurves/FRSegmentedCurveClass.f90
@@ -665,6 +666,7 @@ SMConstants.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Project/Model/SMModel.f90
 
 SMSplineCurveClass.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMSplineCurveClass.f90 \
+FTExceptionClass.o \
 SMCurveClass.o \
 SMConstants.o \
 Geometry.o
