@@ -2,33 +2,33 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
@@ -36,8 +36,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      Filename.f
-!      Created: 2010-08-27 12:14:31 -0400 
-!      By: David Kopriva  
+!      Created: 2010-08-27 12:14:31 -0400
+!      By: David Kopriva
 !
 ! /////////////////////////////////////////////////////////////////////
 !
@@ -49,13 +49,13 @@
 !
      character(*), intent(in out) :: str
      integer :: i
- 
+
      do i = 1, len(str)
        select case(str(i:i))
          case("A":"Z")
            str(i:i) = achar(iachar(str(i:i))+32)
        end select
-     end do  
+     end do
    END SUBROUTINE toLower
 !
 !///////////////////////////////////////////////////////////////////////
@@ -66,9 +66,9 @@
 !     ----------------------------------------------------------------
 !
       FUNCTION GetRealValue( inputLine )
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          USE SMConstants
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
          CHARACTER(len = *) :: inputLine
          REAL( KIND=RP )    :: value, GetRealValue
@@ -80,8 +80,8 @@
          IF ( k /=0 )     THEN
             WRITE(stderr,*)  "Bad real value in input line:"
             WRITE(stderr,*)  TRIM(inputLine)
-            ERROR STOP "Input file synax error"
-         END IF 
+            ERROR STOP "Input file syntax error"
+         END IF
          GetRealValue = value
 !
       END FUNCTION GetRealValue
@@ -95,12 +95,12 @@
 !
       FUNCTION GetRealArray( inputLine ) RESULT(x)
          USE SMConstants
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
 !
          REAL(KIND=RP), DIMENSION(3) :: x
          INTEGER                     :: k
-         
+
          CHARACTER ( LEN = * ) :: inputLine
          INTEGER               :: cStart, cEnd
 !
@@ -111,8 +111,8 @@
             WRITE(stderr,*)  "Bad real array syntax in input line:"
             WRITE(stderr,*)  TRIM(inputLine)
             WRITE(stderr,*)  "Syntax is: [real,real,real]"
-            ERROR STOP "Input file synax error"
-         END IF 
+            ERROR STOP "Input file syntax error"
+         END IF
 !
       END FUNCTION GetRealArray
 !
@@ -124,7 +124,7 @@
 !     ----------------------------------------------------------------
 !
       INTEGER FUNCTION GetIntValue( inputLine )
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
 !
          CHARACTER ( LEN = * ) :: inputLine
@@ -137,8 +137,8 @@
          IF ( k /=0 )     THEN
             WRITE(stderr,*) "Bad integer value in input line:"
             WRITE(stderr,*) TRIM(inputLine)
-            ERROR STOP "Input file synax error"
-         END IF 
+            ERROR STOP "Input file syntax error"
+         END IF
          GetIntValue = VALUE
 !
       END FUNCTION GetIntValue
@@ -151,11 +151,11 @@
 !     ----------------------------------------------------------------
 !
       FUNCTION GetIntArray( inputLine ) RESULT(N)
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
 !
          INTEGER, DIMENSION(3) :: N
-         
+
          CHARACTER ( LEN = * ) :: inputLine
          INTEGER               :: cStart, cEnd, k
 !
@@ -166,8 +166,8 @@
             WRITE(stderr,*)  "Bad integer array value in input line:"
             WRITE(stderr,*)  TRIM(inputLine)
             WRITE(stderr,*)  "Syntax is: [integer,integer,integer]"
-            ERROR STOP "Input file synax error"
-         END IF 
+            ERROR STOP "Input file syntax error"
+         END IF
 !
       END FUNCTION GetIntArray
 !
@@ -198,7 +198,7 @@
 !     ----------------------------------------------------------------
 !
       LOGICAL FUNCTION GetLogicalValue( inputLine )
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
 !
          CHARACTER ( LEN = * ) :: inputLine
@@ -212,8 +212,8 @@
          IF ( k /=0 )     THEN
             WRITE(stderr,*)  "Bad logical value in input line:"
             WRITE(stderr,*)  TRIM(inputLine)
-            ERROR STOP "Input file synax error"
-         END IF 
+            ERROR STOP "Input file syntax error"
+         END IF
 !
       END FUNCTION GetLogicalValue
 !
@@ -232,13 +232,13 @@
          IMPLICIT NONE
          INTEGER :: j
          LOGICAL :: unitIsOpened, unitDoesExist
-         
+
          UnusedUnit = 0
          DO j = 1, 99
            INQUIRE( UNIT = j, OPENED = unitIsOpened, EXIST = unitDoesExist )
            IF ( .NOT.unitIsOpened ) EXIT
          END DO
-         
+
          IF (  j <= 99 .AND. unitDoesExist )     THEN
             UnusedUnit = j
          ELSE
@@ -258,32 +258,32 @@
          IMPLICIT NONE
          INTEGER, EXTERNAL  :: UnusedUnit
          CHARACTER(LEN=132) :: inputLine
-         
+
          fUnit = UnusedUnit( )
          OPEN(UNIT=fUnit, STATUS="scratch")
-         
+
          DO
            READ ( 5, FMT = '(a132)', END = 1000 ) inputLine
            IF( INDEX(inputline, "\end{FILE}") /= 0 )     EXIT
            WRITE( fUnit,  FMT = '(a132)' ) inputLine
          END DO
- 1000 CONTINUE 
+ 1000 CONTINUE
       rewind(fUnit)
       END FUNCTION StdInFileUnitCopy
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE ConvertToPath(str)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ConvertToPath(str)
+         IMPLICIT NONE
          CHARACTER(LEN=*) :: str
          INTEGER          :: lc
-         
+
          lc = LEN_TRIM(str)
          IF ( str(lc:lc) == "/" )     THEN
             str = str(1:lc)
          ELSE
-            str = str(1:lc) // "/"  
-         END IF 
-          
+            str = str(1:lc) // "/"
+         END IF
+
       END SUBROUTINE ConvertToPath
-      
+

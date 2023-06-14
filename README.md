@@ -26,7 +26,7 @@ the sources and compile HOHQMesh yourself.
 
 
 ### Install with Spack
-You can install HOHQMesh using the [Spack package manager](https://spack.io). 
+You can install HOHQMesh using the [Spack package manager](https://spack.io).
 To install the HOHQMesh with Spack,
 ```
 git clone https://github.com/spack/spack.git ~/spack
@@ -61,7 +61,7 @@ Enter the HOHQMesh directory and execute
 make
 ```
 This will build HOHQMesh using the `gfortran` compiler by default.
-The compiler choice can be overriden by passing `FC=<pathToCompiler>` to
+The compiler choice can be overridden by passing `FC=<pathToCompiler>` to
 `make`.
 You can further pass the `-jN` option to `make` (with `N` being a non-negative
 integer), which will use `N` parallel processes.

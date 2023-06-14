@@ -2,33 +2,33 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
@@ -36,8 +36,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      SweeperClass.f90
-!      Created: April 10, 2020 at 12:57 PM 
-!      By: David Kopriva  
+!      Created: April 10, 2020 at 12:57 PM
+!      By: David Kopriva
 !
 !      Class for sweeping a 2D mesh into hexahedra by following a curve.
 !
@@ -62,7 +62,7 @@
          USE Geometry3DModule
          USE Frenet
          IMPLICIT NONE
-         
+
          TYPE CurveSweeper
             CLASS(SMChainedCurve), POINTER :: sweepCurve
             CLASS(SMChainedCurve), POINTER :: scaleCurve
@@ -78,56 +78,56 @@
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_STARTNAME_KEY        = "start surface name"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_ENDNAME_KEY          = "end surface name"
          CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CURVE_SWEEP_ALGORITHM_KEY        = "algorithm"
-         
+
          REAL(KIND=RP), PARAMETER, PRIVATE :: ZERO_ROTATION_TOLERANCE = 1.0d-4
          INTEGER      , PARAMETER, PRIVATE :: CS_DEFAULT = 0, CS_HANSON = 1
-! 
+!
 !        ========
-         CONTAINS  
+         CONTAINS
 !        ========
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-         SUBROUTINE ConstructCurveSweeper(self, sweepCurve, scaleCurve, sweepAlgorithm)  
-            IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+         SUBROUTINE ConstructCurveSweeper(self, sweepCurve, scaleCurve, sweepAlgorithm)
+            IMPLICIT NONE
             TYPE( CurveSweeper)            :: self
             CLASS(SMChainedCurve), POINTER :: sweepCurve
             CLASS(SMChainedCurve), POINTER :: scaleCurve
             CHARACTER(LEN=*)               :: sweepAlgorithm
-            
+
             self % sweepCurve => sweepCurve
             IF(ASSOCIATED(sweepCurve)) CALL self % sweepCurve % retain()
-            
+
             self % scaleCurve => scaleCurve
             IF(ASSOCIATED(scaleCurve))   CALL self % scaleCurve % retain()
-            
+
             CALL ConstructIdentityScaleTransform   (self = self % scaleTransformer)
             CALL ConstructIdentityRotationTransform(self = self % RotationTransformer)
-            
+
             SELECT CASE ( sweepAlgorithm )
-               CASE( "Hanson", "hanson" ) 
-                  self % sweepAlgorithm = CS_HANSON 
-               CASE DEFAULT 
+               CASE( "Hanson", "hanson" )
+                  self % sweepAlgorithm = CS_HANSON
+               CASE DEFAULT
                   self % sweepAlgorithm = CS_DEFAULT
-            END SELECT 
-              
+            END SELECT
+
          END SUBROUTINE ConstructCurveSweeper
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
          SUBROUTINE destructCurveSweeper(self)
-            IMPLICIT NONE  
+            IMPLICIT NONE
             TYPE( CurveSweeper)         :: self
-            
+
             IF(ASSOCIATED(self % sweepCurve)) CALL releaseChainedCurve(self = self % sweepCurve)
             IF(ASSOCIATED(self % scaleCurve)) CALL releaseChainedCurve(self = self % scaleCurve)
-            
+
          END SUBROUTINE destructCurveSweeper
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-         SUBROUTINE CheckCurveSweepBlock(controlDict, modelDict)  
-            IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+         SUBROUTINE CheckCurveSweepBlock(controlDict, modelDict)
+            IMPLICIT NONE
 !
 !              ---------
 !              Arguments
@@ -152,7 +152,7 @@
                   CALL ThrowErrorExceptionOfType(poster = "CheckCurveSweepBlock", &
                                                  msg    = "key " // TRIM(SWEEP_CURVE_BLOCK_KEY) // &
                                                           " not found in model for sweeping", &
-                                                 typ    = FT_ERROR_FATAL) 
+                                                 typ    = FT_ERROR_FATAL)
                END IF
 !
 !              ------------
@@ -163,7 +163,7 @@
                   CALL ThrowErrorExceptionOfType(poster = "CheckCurveSweepBlock", &
                                                  msg    = "key " // TRIM(CURVE_SWEEP_SUBDIVISIONS_KEY) // &
                                                           " not found in sweep block", &
-                                                 typ    = FT_ERROR_FATAL) 
+                                                 typ    = FT_ERROR_FATAL)
                END IF
 !
 !              -------------------
@@ -174,7 +174,7 @@
                   CALL ThrowErrorExceptionOfType(poster = "CheckCurveSweepBlock", &
                                                  msg    = "key " // TRIM(CURVE_SWEEP_STARTNAME_KEY) // &
                                                            " not found in sweep block", &
-                                                 typ    = FT_ERROR_FATAL) 
+                                                 typ    = FT_ERROR_FATAL)
                END IF
 !
 !              ----------------
@@ -185,12 +185,12 @@
                   CALL ThrowErrorExceptionOfType(poster = "CheckCurveSweepBlock", &
                                                  msg = "key " // TRIM(CURVE_SWEEP_ENDNAME_KEY) // &
                                                  " not found in sweep block", &
-                                                 typ = FT_ERROR_FATAL) 
+                                                 typ = FT_ERROR_FATAL)
                END IF
             END SUBROUTINE CheckCurveSweepBlock
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
             SUBROUTINE rotateCylinder(self, mesh, dt, N)
 !
 !           -----------------------------------------------------------------
@@ -222,13 +222,13 @@
                REAL(KIND=RP) :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
 !
 !              -----------------------------------------------------
-!              Transform the nodes. Each level is dt higher than the 
+!              Transform the nodes. Each level is dt higher than the
 !              previous.
 !              -----------------------------------------------------
 !
                t         = 0.0_RP
                direction = self % sweepCurve % tangentAt(t)
-               
+
                CALL ConstructRotationTransform(self           = self % RotationTransformer, &
                                                rotationPoint  = zero,                       &
                                                startDirection = zHat,                       &
@@ -246,10 +246,10 @@
                      p0    = mesh % nodes(m,l) % x
                      p0(3) = 0.0_RP ! Move back to original z plane
                      p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
-                     
+
                      mesh % nodes(m,l) % x = p1 + r
                   END DO
-                 
+
                END DO
 !
 !              ------------------------------------------------------
@@ -263,7 +263,7 @@
 !              For each element level
 !              ----------------------
 !
-               DO l = 1, mesh % numberOfLayers 
+               DO l = 1, mesh % numberOfLayers
                   t0 = (l-1)*dt
 !
 !                 ---------------------------
@@ -277,7 +277,7 @@
 !                    -------------------------------------------------------------------------
 !
                      DO k = 0, N
-                     
+
                         t = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
                         r = t*direction
 !
@@ -289,24 +289,24 @@
 !                      Apply rotation and translation
 !                      ------------------------------
 !
-                       DO j = 0, N 
-                           DO i = 0, N 
+                       DO j = 0, N
+                           DO i = 0, N
                               p0    = mesh % elements(m,l) % x(:,i,j,k)
                               p0(3) = 0.0_RP ! Move point back to original z-plane
                               p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
-                              
-                              mesh % elements(m,l) % x(:,i,j,k) = p1 + r
-                           END DO 
-                        END DO 
 
-                     END DO 
-                  END DO 
+                              mesh % elements(m,l) % x(:,i,j,k) = p1 + r
+                           END DO
+                        END DO
+
+                     END DO
+                  END DO
                END DO
-              
+
             END SUBROUTINE rotateCylinder
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
             SUBROUTINE applySweepTransform(self, mesh, dt, N)
 !
 !           --------------------------------------------------
@@ -329,11 +329,11 @@
 !              ---------------------
 !
                SELECT CASE ( self % sweepAlgorithm )
-                  CASE( CS_HANSON ) 
+                  CASE( CS_HANSON )
                      CALL applyHansonSweepTransform(self = self,mesh = mesh,dt = dt,N = N)
-                  CASE DEFAULT 
+                  CASE DEFAULT
                      CALL applyDefaultSweepTransform(self = self,mesh = mesh,dt = dt,N = N)
-               END SELECT 
+               END SELECT
 !
 !              ----------------
 !              Scale the result
@@ -341,17 +341,17 @@
 !
                IF ( ASSOCIATED( self % scaleCurve) )     THEN
                   CALL applyScaling(self = self, mesh = mesh, dt = dt, N = N)
-               END IF 
+               END IF
 
                END SUBROUTINE applySweepTransform
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
             SUBROUTINE applyDefaultSweepTransform(self, mesh, dt, N)
 !
 !           --------------------------------------------------------------------
 !           Basic sweeping along a curve. Does not correct for rotation, so best
-!           for curves that reamin in a plane. 
+!           for curves that reamin in a plane.
 !           --------------------------------------------------------------------
 !
                USE Frenet
@@ -383,14 +383,14 @@
 !              --------------------------------------------------------
 !
                isDegenerate = .TRUE.
-               
+
                DO l = 0, mesh % numberofLayers
                  t = l*dt
                  CALL ComputeFrenetFrame(frame        = refFrame,          &
                                          t            = t,                 &
                                          curve        = self % sweepCurve, &
                                          isDegenerate = isDegenerate)
-                   IF(.NOT.isDegenerate)   EXIT 
+                   IF(.NOT.isDegenerate)   EXIT
                END DO
 !
 !              -------------------------------------------------------
@@ -405,14 +405,14 @@
                refDirection = self % sweepCurve % tangentAt(0.0_RP)
 !
 !              -----------------------------------------------------
-!              Transform the nodes. Each level is dt higher than the 
+!              Transform the nodes. Each level is dt higher than the
 !              previous.
 !              -----------------------------------------------------
 !
                prevFrame    = refFrame
-               
+
                DO l = 0, mesh % numberofLayers ! level in the hex mesh
-               
+
                   t = l*dt
                   r = self % sweepCurve % positionAt(t)
 !
@@ -424,18 +424,18 @@
                                             curve    = self % sweepCurve,&
                                             frame    = frame,            &
                                             refFrame = prevFrame)
-              
+
                   CALL ConstructRotationTransform(self           = self % rotationTransformer, &
                                                   rotationPoint  = zero, &
                                                   startDirection = refDirection, &
                                                   newDirection   = frame % tangent)
                   prevFrame = frame
-                  
+
                   DO m = 1, SIZE(mesh % nodes,1) ! Nodes in the quad mesh
                      p0    = mesh % nodes(m,l) % x - t*refDirection
                      p1    = PerformRotationTransform(x              = p0 , &
                                                       transformation = self % RotationTransformer)
-                     
+
                      mesh % nodes(m,l) % x = p1 + r
                   END DO
 !
@@ -449,15 +449,15 @@
                                                   origin = r,                       &
                                                   normal = direction,               &
                                                   factor = f(1))
-                                                  
+
                      DO m = 1, SIZE(mesh % nodes,1)
                         p0 = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
                                                         transformation = self % scaleTransformer)
                         mesh % nodes(m,l) % x = p0
                       END DO
-                      
-                  END IF 
-                 
+
+                  END IF
+
                END DO
 !
 !              ------------------------------------------------------
@@ -473,7 +473,7 @@
 !
                prevFrame = refFrame
 
-               DO l = 1, mesh % numberOfLayers 
+               DO l = 1, mesh % numberOfLayers
                   t0 = (l-1)*dt
 !
 !                 ---------------------------
@@ -488,10 +488,10 @@
 !                    -------------------------------------------------------------------------
 !
                      DO k = 0, N
-                     
+
                         t = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
                         r         = self % sweepCurve % positionAt(t)
-                        
+
                         CALL ComputeParallelFrame(t        = t,                &
                                                   curve    = self % sweepCurve,&
                                                   frame    = frame,            &
@@ -510,47 +510,47 @@
 !                      Apply rotation and translation
 !                      ------------------------------
 !
-                       DO j = 0, N 
-                           DO i = 0, N 
+                       DO j = 0, N
+                           DO i = 0, N
                               p0    = mesh % elements(m,l) % x(:,i,j,k) - t*refDirection
                               p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
-                              
+
                               mesh % elements(m,l) % x(:,i,j,k) = p1 + r
-                           END DO 
-                        END DO 
+                           END DO
+                        END DO
 !
 !                       -------------
 !                       Apply scaling
 !                       -------------
 !
                         IF ( ASSOCIATED( self % scaleCurve) )     THEN
-                        
+
                           f = self % scaleCurve % positionAt(t)
                           CALL ConstructScaleTransform(self   = self % scaleTransformer, &
                                                        origin = r,                       &
                                                        normal = direction,               &
                                                        factor = f(1))
-                           DO j = 0, N 
-                              DO i = 0, N 
+                           DO j = 0, N
+                              DO i = 0, N
                                  p0 = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
                                                                  transformation = self % scaleTransformer)
                                  mesh % elements(m,l) % x(:,i,j,k) = p0
-                              END DO 
-                           END DO 
-                        END IF 
+                              END DO
+                           END DO
+                        END IF
 
-                     END DO 
-                  END DO 
+                     END DO
+                  END DO
                END DO
-              
+
             END SUBROUTINE applyDefaultSweepTransform
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
             SUBROUTINE applyHansonSweepTransform(self, mesh, dt, N)
 !
 !           -------------------------------------------------------------------------------
-!           Applies Hanson and Ma's algorthm to use parallel transport
+!           Applies Hanson and Ma's algorithm to use parallel transport
 !           to sweep a curve. This algorithm is general, but is only second order accurate.
 !           -------------------------------------------------------------------------------
 !
@@ -596,7 +596,7 @@
                END DO
 !
 !              ---------------------------------------------------------
-!              The reference frame is the first frame of the sweep curve 
+!              The reference frame is the first frame of the sweep curve
 !              ---------------------------------------------------------
 !
                CALL ComputeFrenetFrame(frame        = refFrame,          &
@@ -611,7 +611,7 @@
 !              -------------------------------------------------
 !
                DO l = 1, mesh % numberofLayers ! level in the hex mesh
-               
+
                   t   = l*dt
                   tm  = (l-1)*dt
                   r   = self % sweepCurve % positionAt(t)
@@ -626,7 +626,7 @@
                                             curve    = self % sweepCurve, &
                                             frame    = frame,             &
                                             refFrame = prevFrame)
-                                            
+
                   CALL ConstructHansonRotation(rotationTransformer = self % rotationTransformer, &
                                                    T0                  = prevFrame % tangent,        &
                                                    T1                  = frame % tangent)
@@ -640,10 +640,10 @@
                      p0    = mesh % nodes(m,l-1) % x - rm
                      p1    = PerformRotationTransform(x              = p0 , &
                                                       transformation = self % RotationTransformer)
-                     
+
                      mesh % nodes(m,l) % x = p1 + r
                   END DO
-                  
+
                END DO
 !
 !              ------------------------------------------------------
@@ -660,7 +660,7 @@
 !              For each element level
 !              ----------------------
 !
-               DO l = 1, mesh % numberOfLayers 
+               DO l = 1, mesh % numberOfLayers
                   t0 = (l-1)*dt
 !
 !                 -------------------------
@@ -669,21 +669,21 @@
 !
                   IF ( l == 1 )     THEN
 !
-!                    -----------------------------------------------------------
-!                    On the first plane, just move into position since roatation
+!                    ----------------------------------------------------------
+!                    On the first plane, just move into position since rotation
 !                    was done on the whole cylinder
-!                    -----------------------------------------------------------
+!                    ----------------------------------------------------------
 !
                       r = self % sweepCurve % positionAt(t0)
-                      
+
                       DO m = 1, mesh % numberOfQuadElements
-                         DO j = 0, N 
-                             DO i = 0, N 
+                         DO j = 0, N
+                             DO i = 0, N
                                 mesh % elements(m,l) % x(:,i,j,0) = mesh % elements(m,l) % x(:,i,j,0) + r
-                             END DO 
-                         END DO 
-                      END DO 
-                  ELSE 
+                             END DO
+                         END DO
+                      END DO
+                  ELSE
 !
 !                    -----------------------------------------------------------
 !                    On succeeding planes, copy top of previous one to bottom of
@@ -691,14 +691,14 @@
 !                    -----------------------------------------------------------
 !
                       DO m = 1, mesh % numberOfQuadElements
-                         DO j = 0, N 
-                             DO i = 0, N 
+                         DO j = 0, N
+                             DO i = 0, N
                                 mesh % elements(m,l) % x(:,i,j,0) = mesh % elements(m,l-1) % x(:,i,j,N)
-                             END DO 
-                         END DO 
-                      END DO 
-                  END IF 
-                  
+                             END DO
+                         END DO
+                      END DO
+                  END IF
+
                   DO k = 1, N
                      t  = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
                      tm = t0 + dt*0.5_RP*(1.0_RP - COS((k-1)*PI/N))
@@ -713,7 +713,7 @@
                                                curve    = self % sweepCurve, &
                                                frame    = frame,             &
                                                refFrame = prevFrame)
-                                               
+
                      CALL ConstructHansonRotation(rotationTransformer = self % rotationTransformer, &
                                                       T0                  = prevFrame % tangent,        &
                                                       T1                  = frame % tangent)
@@ -724,29 +724,29 @@
 !                    ---------------------------------------------------------------------
 !
                      DO m = 1, mesh % numberOfQuadElements    ! element on original quad mesh
-                        mesh % elements(m,l) % bFaceFlag = ON                     
+                        mesh % elements(m,l) % bFaceFlag = ON
 !
 !                       ------------------------------
 !                       Apply rotation and translation
 !                       ------------------------------
 !
-                        DO j = 0, N 
-                           DO i = 0, N 
+                        DO j = 0, N
+                           DO i = 0, N
                               p0    = mesh % elements(m,l) % x(:,i,j,k-1) - rm
                               p1    = PerformRotationTransform(x = p0 ,transformation = self % RotationTransformer)
-                              
+
                               mesh % elements(m,l) % x(:,i,j,k) = p1 + r
-                           END DO 
-                        END DO 
-                        
+                           END DO
+                        END DO
+
                      END DO
-                  END DO 
-               END DO 
-              
+                  END DO
+               END DO
+
             END SUBROUTINE applyHansonSweepTransform
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
          SUBROUTINE ConstructHansonRotation( rotationTransformer, T0, T1 )
             IMPLICIT NONE
 !
@@ -777,13 +777,13 @@
 !
             CALL Cross3D(u = T0,v = T1,cross = B)
             CALL Norm3D(u = B,norm = Bnorm)
-            
-            IF(Bnorm < ZERO_ROTATION_TOLERANCE) RETURN 
-            
+
+            IF(Bnorm < ZERO_ROTATION_TOLERANCE) RETURN
+
             B = B/Bnorm
-            
+
             CALL Dot3D(u = T0,v = T1,dot = cosTheta)
-            
+
             theta    =  ACOS(cosTheta)
             sinTheta =  SIN(theta)
 
@@ -799,13 +799,13 @@
                                                   R        = R)
             rotationTransformer % rotMatrix          = R
             rotationTransformer % isIdentityRotation = .FALSE.
-                                                        
+
          END SUBROUTINE ConstructHansonRotation
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-         SUBROUTINE applyScaling(self, mesh, dt, N)  
-            IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+         SUBROUTINE applyScaling(self, mesh, dt, N)
+            IMPLICIT NONE
 !
 !           ---------
 !           Arguments
@@ -829,11 +829,11 @@
 !           ---------------
 !
             DO l = 0, mesh % numberofLayers
-            
+
                t   = l*dt
                r         = self % sweepCurve % positionAt(t)
                direction = self % sweepCurve % tangentAt(t)
-               
+
                CALL scaleNodes(self      = self,       &
                                mesh      = mesh,       &
                                t         = t,          &
@@ -847,13 +847,13 @@
 !           -----------------------
 !
             DO l = 1, mesh % numberofLayers
-            
+
                t0   = (l-1)*dt
                DO k = 0, N
                   t         = t0 + dt*0.5_RP*(1.0_RP - COS(k*PI/N))
                   r         = self % sweepCurve % positionAt(t)
                   direction = self % sweepCurve % tangentAt(t)
-                 
+
                   CALL scaleInternalDOFs(self      = self,       &
                                          mesh      = mesh,       &
                                          t         = t,          &
@@ -862,14 +862,14 @@
                                          r         = r,          &
                                          direction = direction,  &
                                          N         = N)
-               END DO 
-            END DO 
-            
+               END DO
+            END DO
+
          END SUBROUTINE applyScaling
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-         SUBROUTINE scaleNodes(self, mesh, t, level, r, direction)  
+!////////////////////////////////////////////////////////////////////////
+!
+         SUBROUTINE scaleNodes(self, mesh, t, level, r, direction)
          IMPLICIT NONE
 !
 !        ---------
@@ -889,24 +889,24 @@
 !
          REAL(KIND=RP) :: f(3), p0(3)
          INTEGER       :: m
-         
+
          f = self % scaleCurve % positionAt(t)
          CALL ConstructScaleTransform(self   = self % scaleTransformer, &
                                       origin = r,                       &
                                       normal = direction,               &
                                       factor = f(1))
-                                      
+
          DO m = 1, SIZE(mesh % nodes,1)
             p0 = PerformScaleTransformation(x              = mesh % nodes(m,level) % x, &
                                             transformation = self % scaleTransformer)
             mesh % nodes(m,level) % x = p0
           END DO
-                      
+
          END SUBROUTINE scaleNodes
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-         SUBROUTINE scaleInternalDOFs(self, mesh, t, level, glLevel, r, direction, N)  
+!////////////////////////////////////////////////////////////////////////
+!
+         SUBROUTINE scaleInternalDOFs(self, mesh, t, level, glLevel, r, direction, N)
          IMPLICIT NONE
 !
 !        ---------
@@ -926,24 +926,24 @@
 !
          REAL(KIND=RP) :: f(3), p0(3)
          INTEGER       :: m, i, j
-         
+
          f = self % scaleCurve % positionAt(t)
          CALL ConstructScaleTransform(self   = self % scaleTransformer, &
                                       origin = r,                       &
                                       normal = direction,               &
                                       factor = f(1))
-                                      
+
          DO m = 1, mesh % numberOfQuadElements
-            DO j = 0, N 
-               DO i = 0, N 
+            DO j = 0, N
+               DO i = 0, N
                   p0 = PerformScaleTransformation(x              =  mesh % elements(m,level) % x(:,i,j,glLevel), &
                                                   transformation = self % scaleTransformer)
                    mesh % elements(m,level) % x(:,i,j,glLevel) = p0
-               END DO 
-            END DO 
-            
+               END DO
+            END DO
+
          END DO
-                      
+
          END SUBROUTINE scaleInternalDOFs
-         
+
        END Module CurveSweepClass

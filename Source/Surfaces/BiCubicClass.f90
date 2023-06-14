@@ -2,16 +2,16 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      BiCubicClass.f90
-!      Created: March 26, 2022 at 9:43 AM 
-!      By: David Kopriva  
+!      Created: March 26, 2022 at 9:43 AM
+!      By: David Kopriva
 !      From: SMTopographyFromFileClass by Andrew Winters
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   Module BiCubicClass 
+   Module BiCubicClass
       USE FTObjectClass
       USE SMConstants
-      IMPLICIT NONE  
+      IMPLICIT NONE
 !
 !     ----------------
 !     Class definition
@@ -35,14 +35,14 @@
          FINAL     :: destructBiCubicInterpolation
          PROCEDURE :: valueAt => BiCubicInterpolationValue
       END TYPE BiCubicInterpolation
-      
+
       PRIVATE :: TestFunction
 !
 !     ----------------------------------------------------------------------------
 !     Inverse matrix necessary to find the 16 coefficients needed
 !     for the bicubic interpolation routine. Details on this matrix can
 !     found here https://www.giassa.net/?page_id=371. Or, in the words of
-!     Numerical Recipes in Fortran 77, the formulas for the bicubic coefficents
+!     Numerical Recipes in Fortran 77, the formulas for the bicubic coefficients
 !     "are just a complicated linear transformation [which] having been determined
 !      once in the mists of numerical history, can be tabulated and forgotten."
 !     This is one implementation of such a tabulation using compressed column
@@ -74,10 +74,10 @@
 !  ========
    CONTAINS
 !  ========
-   
+
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE initBiCubicInterpolation(self, Nx, Ny, x, y, z)
          IMPLICIT NONE
 !
@@ -97,14 +97,14 @@
          REAL(KIND=RP) :: inv_dx, inv_dy
 !
          CALL self % FTObject % init()
-         
+
          self % nx = Nx; self % ny = Ny
-         
+
          ALLOCATE(self % x_values(1:nx), self % y_values(1:ny))
          ALLOCATE(self % z_values(1:nx, 1:ny))
          ALLOCATE(self % dzdx(1:nx, 1:ny), self % dzdy(1:nx, 1:ny))
          ALLOCATE(self % d2zdxy(1:nx, 1:ny))
-         
+
          self % x_values = x
          self % y_values = y
          self % z_values = z
@@ -132,29 +132,29 @@
 !        the values of the next line in to the edges.
 !        -------------------------------------------------------------------------------------
 !
-         DO k = 2, Ny-1 
-         
+         DO k = 2, Ny-1
+
             self % dzdx(1,k)   = self % dzdx(2,k)
             self % dzdy(1,k)   = self % dzdy(2,k)
             self % d2zdxy(1,k) = self % d2zdxy(2,k)
-            
+
             self % dzdx(Nx,k)   = self % dzdx(Nx-1,k)
             self % dzdy(Nx,k)   = self % dzdy(Nx-1,k)
             self % d2zdxy(Nx,k) = self % d2zdxy(Nx-1,k)
 
-         END DO 
-         
-         DO j = 2, Nx-1 
-         
+         END DO
+
+         DO j = 2, Nx-1
+
             self % dzdx(j,1)   = self % dzdx(j,2)
             self % dzdy(j,1)   = self % dzdy(j,2)
             self % d2zdxy(j,1) = self % d2zdxy(j,2)
-            
+
             self % dzdx(j,Ny)   = self % dzdx(j,Ny-1)
             self % dzdy(j,Ny)   = self % dzdy(j,Ny-1)
             self % d2zdxy(j,Ny) = self % d2zdxy(j,Ny-1)
-            
-         END DO 
+
+         END DO
 
          self % dzdx(1,1)   = self % dzdx(2,2)
          self % dzdy(1,1)   = self % dzdy(2,2)
@@ -171,7 +171,7 @@
          self % dzdx(Nx,Ny)   = self % dzdx(Nx-1,Ny-1)
          self % dzdy(Nx,Ny)   = self % dzdy(Nx-1,Ny-1)
          self % d2zdxy(Nx,Ny) = self % d2zdxy(Nx-1,Ny-1)
-         
+
       END SUBROUTINE initBiCubicInterpolation
  !
 !////////////////////////////////////////////////////////////////////////
@@ -201,7 +201,7 @@
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             self => NULL()
          END IF
-         
+
       END SUBROUTINE releaseBiCubicInterpolation
  !
 !////////////////////////////////////////////////////////////////////////
@@ -260,7 +260,7 @@
          ! pre-computed and stored above
          coeff_vec = SparseCCS_MxV( work_vec )
 
-         ! Store resulting coefficents in a form better for Horner's rule
+         ! Store resulting coefficients in a form better for Horner's rule
          coeffs = RESHAPE( coeff_vec, (/4, 4/), ORDER = (/2, 1/) )
 !
 !        -------------------------------------------------------------------
@@ -315,9 +315,9 @@
          idx = 1
          IF ( test_point >= values_list(N) )     THEN
             idx = N-1
-            RETURN  
-         END IF 
-         
+            RETURN
+         END IF
+
          DO j = 1,N-1
             IF ( ( test_point .GE. values_list(j) ) .AND. ( test_point .LE. values_list(j+1) ) ) THEN
                idx = j
@@ -344,19 +344,19 @@
 
       END FUNCTION pullFourCorners
 !
-!//////////////////////////////////////////////////////////////////////// 
+!////////////////////////////////////////////////////////////////////////
 !
 !     TESTING FUNCTIONS FOLLOW
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE ConstructTestInterpolant(self, Nx, Ny)
 !
 !     --------------------------------------------------------------------
 !     Construct an interpolant using the stest function at Nx,Ny uniformly
 !     spaced points. Returns an interpolant with reference count 1.
 !     --------------------------------------------------------------------
-!      
+!
          IMPLICIT NONE
 !
 !        ---------
@@ -373,33 +373,33 @@
          INTEGER :: i, j
          REAL(KIND=RP) :: x(Nx), y(Ny), z(Nx,Ny)
          REAL(KIND=RP) :: dx, dy
-         
+
          dx = 2.0_RP/(Nx-1)
          dy = 2.0_RP/(Ny-1)
-         
+
          DO i = 1, Nx
-            x(i) = -1.0_RP + dx*(i-1) 
-         END DO 
+            x(i) = -1.0_RP + dx*(i-1)
+         END DO
          DO j = 1, Ny
-            y(j) = -1.0_RP + dy*(j-1) 
-         END DO 
-         
-         DO j = 1, Ny 
-            DO i = 1, Nx 
-               z(i,j) = TestFunction(x(i),y(j)) 
-            END DO 
-         END DO 
-         
+            y(j) = -1.0_RP + dy*(j-1)
+         END DO
+
+         DO j = 1, Ny
+            DO i = 1, Nx
+               z(i,j) = TestFunction(x(i),y(j))
+            END DO
+         END DO
+
          CALL initBiCubicInterpolation(self,Nx,Ny,x,y,z)
-                     
+
       END SUBROUTINE ConstructTestInterpolant
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       LOGICAL FUNCTION interpolantIsWithinTolerance(self, x, y, absTol)
 !
 !     -----------------------------------------------------------------------
-!     Returns .true. if the interpolant is correctly evaluated to within the 
+!     Returns .true. if the interpolant is correctly evaluated to within the
 !     given absolute tolerance, .false. otherwise.
 !     -----------------------------------------------------------------------
 !
@@ -416,64 +416,64 @@
 !        Local variables
 !        ---------------
 !
-         REAL(KIND=RP) :: zInterp, zExact, eror
-         
+         REAL(KIND=RP) :: zInterp, zExact, error
+
          zInterp = evaluateBicubicInterpolant(self,t = [x,y])
          zExact  = TestFunction(x,y)
-         eror = ABS(zInterp - zExact)
-         
-         IF ( eror <= absTol )     THEN
-            interpolantIsWithinTolerance = .TRUE. 
-         ELSE 
-            interpolantIsWithinTolerance = .FALSE. 
-         END IF 
-         
+         error = ABS(zInterp - zExact)
+
+         IF ( error <= absTol )     THEN
+            interpolantIsWithinTolerance = .TRUE.
+         ELSE
+            interpolantIsWithinTolerance = .FALSE.
+         END IF
+
       END FUNCTION interpolantIsWithinTolerance
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION TestFunction(x,y)  RESULT(z)
 !
 !     --------------------------------------------------------------
 !     A parabolic function for which the interpolant should be exact
-!     In this class, the first derivatives are approximated by 
+!     In this class, the first derivatives are approximated by
 !     second order finite differences, so only a quadratic is exact.
 !     --------------------------------------------------------------
 !
-         IMPLICIT NONE  
+         IMPLICIT NONE
          REAL(KIND=RP) :: x, y, z
-         
+
          z = x**2 + y**2
       END FUNCTION TestFunction
- 
+
    END Module BiCubicClass
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE TestBiCubicInterpolation  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE TestBiCubicInterpolation
          USE BiCubicClass
          USE TestSuiteManagerClass
          USE FTAssertions
          USE SharedExceptionManagerModule
-         IMPLICIT NONE  
-         
+         IMPLICIT NONE
+
          TYPE(BiCubicInterpolation) :: bQ
          REAL(KIND=RP)              :: x, y
          INTEGER                    :: k
          LOGICAL                    :: tst
-         
+
          CALL ConstructTestInterpolant(self = bQ, Nx = 10,Ny = 10)
-      
-         DO k = 1, 6 
-           CALL RANDOM_NUMBER(HARVEST = x) 
+
+         DO k = 1, 6
+           CALL RANDOM_NUMBER(HARVEST = x)
            CALL RANDOM_NUMBER(HARVEST = y)
            x = 1.5_RP*x - 0.75_RP
            y = 1.5_RP*y - 0.75_RP
            tst =  interpolantIsWithinTolerance(bQ, x ,y , absTol = 1.0d-4)
            CALL FTAssert(test = tst,msg = "BiCubic Interpolation is not within tolerance")
            IF ( .NOT.tst )     THEN
-               PRINT *, x, y, tst 
-            END IF 
-          END DO 
+               PRINT *, x, y, tst
+            END IF
+          END DO
 
       END SUBROUTINE TestBiCubicInterpolation
