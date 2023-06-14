@@ -114,7 +114,7 @@
          READ(iUnit,*)N
          IF ( N < 4 )     THEN
             ALLOCATE(exception)
-            CALL exception % initFatalException(msg = "A spline curve must ave at least 4 points")
+            CALL exception % initFatalException(msg = "A spline curve must have at least 4 points")
             CALL throw(exception)
             CALL releaseFTException(exception)
             RETURN
@@ -163,7 +163,7 @@
          
          IF ( N < 4 )     THEN
             ALLOCATE(exception)
-            CALL exception % initFatalException(msg = "A spline curve must ave at least 4 points")
+            CALL exception % initFatalException(msg = "A spline curve must have at least 4 points")
             CALL throw(exception)
             CALL releaseFTException(exception)
             RETURN
@@ -377,9 +377,9 @@
          beta(1)  =  beta(1)*h(1)**2/(x(4) - x(1))
          beta(n)  = -beta(n)*h(n-1)**2/(x(n) - x(n-3))
 !
-!        ------
+!        ------------------
 !        Solver: FMM pg. 75
-!        ------
+!        ------------------
 !
          DO i = 2, n 
             alpha(i) = alpha(i) - h(i-1)**2/alpha(i-1)

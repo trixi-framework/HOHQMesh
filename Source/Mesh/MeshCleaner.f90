@@ -979,7 +979,6 @@
       SUBROUTINE CleanUpBoundaryElement( e, model )
          USE SMModelClass
          USE ErrorTypesModule
-         USE fMinModule
          IMPLICIT NONE 
 !
 !        ---------

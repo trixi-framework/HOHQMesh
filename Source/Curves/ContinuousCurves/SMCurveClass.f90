@@ -91,8 +91,6 @@
 !
       REAL(KIND=RP) :: xTarget(3)
       PRIVATE       :: xTarget
-
-      PRIVATE :: fmin
       
       REAL(KIND=RP), PARAMETER, PRIVATE :: dt = 1.0d-5
 !
@@ -404,10 +402,33 @@
          d = (x(1)-xTarget(1))**2 + (x(2)-xTarget(2))**2
       END FUNCTION ObjectiveFunction
 !
+!////////////////////////////////////////////////////////////////////////
+!
+      DOUBLE PRECISION FUNCTION distanceSquared(x,c,p,nHat)
+         IMPLICIT NONE
+         DOUBLE PRECISION :: x, p(3), z(3), nHat(3)
+         CLASS(SMCurve)   :: c
+         
+         z               = c % positionAt(x)
+         distanceSquared = DistanceSquaredBetweenPoints(z,p,nHat)
+      END FUNCTION distanceSquared
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      DOUBLE PRECISION FUNCTION DistanceSquaredBetweenPoints(z,p,nHat)
+         USE ProgramGlobals, ONLY: directionPenalty
+         IMPLICIT NONE
+         DOUBLE PRECISION ::  p(3), z(3), nHat(3)
+         
+         DistanceSquaredBetweenPoints = (z(1) - p(1))**2 + (z(2) - p(2))**2 &
+                           - MIN((z(1)-p(1))*nHat(1) + (z(2) - p(2))*nHat(2),0.0d0)/directionPenalty
+      END FUNCTION DistanceSquaredBetweenPoints
+!
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      double precision function fmin(self,ax,bx,tol)
+      double precision function fminFMM(self, ax, bx, tol, pnt, nHat )
       double precision ax,bx,tol
+      REAL(KIND=RP), OPTIONAL :: pnt(3), nHat(3)
 !
 !      an approximation  x  to the point where  f  attains a minimum  on
 !  the interval  (ax,bx)  is determined.
@@ -467,7 +488,12 @@
       w=v
       x=v
       e=0.0d0
-      fx=ObjectiveFunction(self,x)!f(x)
+      IF ( PRESENT(pnt) )     THEN
+         fx = distanceSquared(x,self,pnt,nHat) 
+      ELSE 
+         fx = ObjectiveFunction(self,x)
+      END IF 
+!      fx=ObjectiveFunction(self,x)!f(x)
       fv=fx
       fw=fx
       tol3=tol/3.0d0
@@ -531,7 +557,13 @@
       u=x+tol1
       go to 120
   110 u=x-tol1
-  120 fu=ObjectiveFunction(self,u)!f(u)
+  120 CONTINUE 
+           IF ( PRESENT(pnt) )     THEN
+            fu = distanceSquared(u,self,pnt,nHat) 
+         ELSE 
+            fu = ObjectiveFunction(self,u)!f(u)
+         END IF 
+!fu=ObjectiveFunction(self,u)!f(u)
 !
 !  update  a, b, v, w, and x
 !
@@ -565,8 +597,148 @@
 !
 !  end of main loop
 !
-  190 fmin=x
+  190 fminFMM=x
       return
-      END FUNCTION fmin
+      END FUNCTION fminFMM
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   FUNCTION fMin(self, aIn, bIn, tol, pnt, nHat ) RESULT(z)
+      IMPLICIT NONE
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      CLASS(SMCurve)          :: self
+      REAL(KIND=RP)           :: aIn, bIN, tol
+      REAL(KIND=RP)           :: z
+      REAL(KIND=RP), OPTIONAL :: pnt(3), nHat(3)
+!
+!     ---------------
+!     local Variables
+!     ---------------
+!
+      REAL(KIND=RP) :: a, b, c, d, e, m, p, q, r, t2, u, v, w, fu, fv, fw, fx, t, x
+      REAL(KIND=RP) :: t3, eps
+!
+!     -----
+!     Setup
+!     -----
+!
+      eps = EPSILON(1.0_RP)
+      t3  = tol/3.0_RP
+      eps = SQRT(eps)
+      
+      c  = 0.5_RP*(3.0_RP - SQRT(5.0_RP))
+      a  = aIn
+      b  = bIn
+      x  = a + c*(b-a)   ; v = x  ; w = x   ; e = 0.0_RP; d = 0.0_RP
+      
+      IF ( PRESENT(pnt) )     THEN
+         fx = distanceSquared(x,self,pnt,nHat) 
+      ELSE 
+         fx = ObjectiveFunction(self,x)
+      END IF 
+      fv = fx; fw = fx
+!
+!     ---------
+!     Main loop
+!     ---------
+!
+      DO
+         m  = 0.5_RP*(a + b)
+         t  = eps*ABS(x) + t3
+         t2 = 2.0_RP*t
+         
+         IF ( ABS(x-m) <= t2 - 0.5_RP*(b-a) )     EXIT
+         
+         p = 0.0_RP; q = 0.0_RP; r = 0.0_RP
+         
+         IF ( ABS(e) > t )     THEN !Fit parabola
+            r = (x - w)*(fx - fv)
+            q = (x - v)*(fx - fw)
+            p = (x - v)*q - (x - w)*r
+            q = 2.0_RP*(q - r)
+            IF ( q > 0 )     THEN
+               p = -p 
+            ELSE 
+               q = -q 
+            END IF
+            r = e
+            e = d
+         END IF
+         
+         IF ( ABS(p) < ABS(0.5_RP*q*r) .AND. &
+              p < q*(a - x)            .AND. &
+              p < q*(b - x) )                    THEN !Parabolic interpolation step
+              
+            d = p/q
+            u = x + d
+            
+            IF ( u - a < t2 .OR. b - u < t2 )     THEN
+               IF ( x < m )     THEN
+                  d = t 
+               ELSE 
+                  d = -t 
+               END IF 
+            END IF 
+            
+         ELSE ! Golden section step
+         
+            IF ( x < m )     THEN
+               e = b - x 
+            ELSE 
+               e = a - x 
+            END IF 
+            d = c*e  
+         END IF 
+         
+         IF ( ABS(d) >= t )     THEN
+            u = x + d 
+         ELSE IF (d > 0.0_RP)    THEN 
+            u = x + t
+         ELSE 
+            u = x - t
+         END IF
+         
+         IF ( PRESENT(pnt) )     THEN
+            fu = distanceSquared(u,self,pnt,nHat) 
+         ELSE 
+            fu = ObjectiveFunction(self,u)!f(u)
+         END IF 
+         
+         IF ( fu <= fx )     THEN
+            IF ( u < x )     THEN
+               b = x 
+            ELSE 
+               a = x 
+            END IF 
+            v = w; fv = fw; w = x; fw = fx; x = u; fx = fu
+         ELSE
+            IF ( u < x )     THEN
+               a = u 
+            ELSE 
+               b = u 
+            END IF 
+            IF ( fu <= fw .OR. w == x )     THEN
+               v  = w
+               fv = fw
+               w  = u
+               fw = fu 
+            ELSE IF(fu <= fv .OR. v == x .OR. v == w)     THEN 
+               v = u; fv = fu 
+            END IF 
+              
+         END IF 
+      END DO
+!
+!     ------------------
+!     RETURN the result 
+!     ------------------
+!
+      z = x
+      
+   END FUNCTION fMin
      
      END Module SMCurveClass

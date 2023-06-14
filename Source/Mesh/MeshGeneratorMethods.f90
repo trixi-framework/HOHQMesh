@@ -553,7 +553,6 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE GenerateBoundaryElements( mesh, model, list ) 
-         USE fMinModule
          USE MeshOutputMethods, ONLY: WriteSkeletonToTecplot
          USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
          IMPLICIT NONE
@@ -704,7 +703,7 @@
                   tEnd   = 1.0_RP
                   cStart => model % curveWithID(nodeArray(k) % node % bCurveID, chain)
 
-                  t      = fMin( tStart, tEnd, cStart, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
+                  t      = fMin( cStart, tStart, tEnd, minimizationTolerance, p, (/0.0_RP, 0.0_RP, 0.0_RP/) )
                   
                   ALLOCATE(node)
                   CALL initBoundaryNode( cStart, chain, t, bCurveSide, mesh % newNodeID(), node )
@@ -754,7 +753,7 @@
                   cEnd   => model % curveWithID(nextNode % bCurveID, chain)
                   tStart = 0.0_RP
                   tEnd   = nextNode % whereOnBoundary ! No further than the next node along the chain
-                  t      = fMin( tStart, tEnd, cEnd, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
+                  t      = fMin( cEnd, tStart, tEnd, minimizationTolerance, p, (/0.0_RP, 0.0_RP, 0.0_RP/) )
                   
                   ALLOCATE(node)
                   CALL initBoundaryNode( cEnd, chain, t, bCurveSide, mesh % newNodeID(), node )

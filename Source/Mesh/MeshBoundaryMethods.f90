@@ -45,7 +45,6 @@
    USE MeshSizerClass
    USE SMMeshClass
    USE ConectionsModule
-   USE fMinModule
    IMPLICIT NONE
 !
 !-------------------------------------------------------------------
@@ -846,7 +845,6 @@
 !     ---------------------------------------------------------------------
 !
          USE ProgramGlobals, ONLY :edgeLengthFactor
-         USE fMinModule    , ONLY : DistanceSquaredBetweenPoints
          USE Geometry
          IMPLICIT NONE
 !
