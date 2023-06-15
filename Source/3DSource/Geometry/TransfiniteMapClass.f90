@@ -19,17 +19,6 @@
 ! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
 ! SOFTWARE.
-! 
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
 !
