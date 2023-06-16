@@ -321,7 +321,7 @@
 !
 !     -------------------------------------------------------------------
 !     For derivations, see COMPUTER METHODS FOR MATHEMATICAL COMPUTATIONS
-!     by Forysyth, Malcom & Molder, Prentice-Hall 1977.
+!     by Forsythe, Malcolm & Moler, Prentice-Hall 1977.
 !     -------------------------------------------------------------------
 !
          IMPLICIT NONE
@@ -412,7 +412,7 @@
 !
 !     -------------------------------------------------------------------
 !     For derivations, see COMPUTER METHODS FOR MATHEMATICAL COMPUTATIONS
-!     by Forysyth, Malcom & Molder, Prentice-Hall 1977.
+!     by Forsythe, Malcolm & Moler, Prentice-Hall 1977.
 !     -------------------------------------------------------------------
 !
          IMPLICIT NONE
