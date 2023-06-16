@@ -218,7 +218,7 @@
 !        ------------------------------------
 !
          self % numberOfLevelsUsed = 0
-         
+
          obj         => masterControlDictionary % objectForKey(key = "CONTROL_INPUT")
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",                            &
@@ -275,7 +275,7 @@
                                               msg    = msg, &
                                               typ    = FT_ERROR_FATAL)
                RETURN
-            END IF 
+            END IF
 
             IF ( modelDict % containsKey(key = MATERIAL_BLOCK_KEY) )     THEN
                obj => modelDict % objectForKey(key = MATERIAL_BLOCK_KEY)
@@ -283,13 +283,13 @@
                IF ( matBlockdict % containsKey(key = BACKGROUND_MATERIAL_KEY) )     THEN
                   self % backgroundMaterialName = matBlockdict % stringValueForKey(key = BACKGROUND_MATERIAL_KEY,&
                                                   requestedLength = DEFAULT_CHARACTER_LENGTH)
-               ELSE 
+               ELSE
                   msg = "Background material name not found in control file. Using default name = 'base'"
                   CALL ThrowErrorExceptionOfType(poster = "initWithDictionary", &
                                                  msg    = msg, &
                                                  typ    = FT_ERROR_WARNING)
                   self % backgroundMaterialName = "base"
-               END IF 
+               END IF
             ELSE
                msg = "Background material block not found in control file. Using default name = 'base'"
                CALL ThrowErrorExceptionOfType(poster = "initWithDictionary", &
@@ -309,16 +309,16 @@
 !        If there is topography and sizing is requested, add to the sizer
 !        ----------------------------------------------------------------
 !
-         IF(.NOT.ASSOCIATED(modelDict))     RETURN 
+         IF(.NOT.ASSOCIATED(modelDict))     RETURN
          IF ( modelDict % containsKey(TOPOGRAPHY_BLOCK_KEY)) THEN
             obj => modelDict % objectForKey(TOPOGRAPHY_BLOCK_KEY)
             topoDict => valueDictionaryFromObject(obj)
             IF ( topoDict % containsKey(TOPOGRAPHY_SIZING_KEY) )     THEN
                IF ( topoDict % stringValueForKey(key = TOPOGRAPHY_SIZING_KEY,requestedLength = 6) == "ON" )     THEN
                   CALL self % sizer % setBottomTopography( self % model % topography )
-               END IF 
-            END IF 
-         END IF 
+               END IF
+            END IF
+         END IF
 
       END SUBROUTINE initWithDictionary
 !
@@ -424,7 +424,7 @@
          CLASS(FTLinkedListIterator) , POINTER :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
-         
+
          CHARACTER(LEN=SEGMENTED_CURVE_NAME_LENGTH) :: tightestCurveName
          REAL(KIND=RP)                              :: meshRatio
          INTEGER                                    :: levelsNeeded
@@ -483,20 +483,20 @@
                WRITE(levelsAsString,'(I2)')     levelsNeeded - maxLevelLimit
                WRITE(maxLevelsAsString, '(I2)') maxLevelLimit
                WRITE(newLevelsAsString, '(I2)') levelsNeeded
-               
+
                limitMsg = "Resolution on curve " // TRIM(tightestCurveName) // " needs " // &
                            levelsAsString // " subdivision(s) more than the currently allowed " // &
                            maxLevelsAsString // ". "// &
                            NEW_LINE(levelsAsString) // &
                            "To override, rerun with the command line flag '-sLimit " // &
                            newLevelsAsString // "'. But think before doing this."
-               
+
                CALL ThrowErrorExceptionOfType(poster = "BuildProject", &
                                               msg    = limitMsg,       &
                                               typ    = FT_ERROR_FATAL)
-               RETURN 
-            END IF             
-         END IF 
+               RETURN
+            END IF
+         END IF
 !
 !        ------------------
 !        Construct smoother
@@ -556,7 +556,7 @@
 !
 !-------------------------------------------------------------------------------
 !     Construct the Background Grid and initialize Sizer
-!     The backgound grid size can eigher be specified or inferred
+!     The background grid size can either be specified or inferred
 !     from the model depending on if the background grid block is
 !     present or not.
 !-------------------------------------------------------------------------------
@@ -1129,9 +1129,9 @@
 !
 !        Example block is:
 !
-!         \begin{MeshParameters}
+!         \begin{MESH_PARAMETERS}
 !            element type = quad OR hex
-!         \end{MeshParameters}
+!         \end{MESH_PARAMETERS}
 !
          IMPLICIT NONE
 !
@@ -1169,17 +1169,17 @@
 !
 !        Example block is:
 !
-!         \begin{BACKROUND_GRID}
+!         \begin{BACKGROUND_GRID}
 !            x0 = [-15.0, -15.0, 0.0]
 !            dx = [1.0, 1.0, 0.0]
 !            N  = [10,10, 0]
-!         \end{BACKROUND_GRID}
+!         \end{BACKGROUND_GRID}
 !
 !         OR
 !
-!         \begin{BACKROUND_GRID}
+!         \begin{BACKGROUND_GRID}
 !            background grid size = [1.0, 1.0, 1.0]
-!         \end{BACKROUND_GRID}
+!         \end{BACKGROUND_GRID}
 !
 !
          IMPLICIT NONE

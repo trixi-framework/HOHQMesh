@@ -2,33 +2,33 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
@@ -36,9 +36,9 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      EquationEvaluatorClass.f95
-!      Created: 2010-08-22 11:44:57 -0400 
+!      Created: 2010-08-22 11:44:57 -0400
 !      Modified: 9/17/20, 3:24 PM : Enable multiple arguments
-!      By: David Kopriva  
+!      By: David Kopriva
 !
 !        *Creation*
 !
@@ -58,7 +58,7 @@
 !
 !        *Evaluating*
 !
-!           x = EvaluateEquation_At_( equationInstance, t ) 
+!           x = EvaluateEquation_At_( equationInstance, t )
 !
 !        *Evaluating multidimensional*
 !
@@ -66,8 +66,8 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      Module EquationEvaluatorClass 
-      IMPLICIT NONE 
+      Module EquationEvaluatorClass
+      IMPLICIT NONE
 !
 !     ---------
 !     Precision
@@ -123,20 +123,20 @@
          CHARACTER(LEN=TOKEN_LENGTH) :: token
          INTEGER                     :: tokenType
       END TYPE Token
-      
+
       TYPE TokenStack
          TYPE(Token), DIMENSION(:), POINTER :: tokens  => NULL()
          INTEGER                            :: top
       END TYPE TokenStack
-      
+
       PRIVATE :: TokenStack
       PRIVATE :: ConstructTokenStack, DestructTokenStack, TokenStackPush, TokenStackPop, TokenStackPeek
-      
+
       TYPE NumberStack
          REAL(KIND=EP), DIMENSION(:), POINTER :: values  => NULL()
          INTEGER                              :: top
       END TYPE NumberStack
-      
+
       PRIVATE :: NumberStack
       PRIVATE :: ConstructNumberStack, DestructNumberStack, NumberStackPush, NumberStackPop !, NumberStackPeek
 !
@@ -158,17 +158,17 @@
       INTEGER, PARAMETER                 , PUBLIC  :: ERROR_MESSAGE_LENGTH = 256
       LOGICAL                            , PRIVATE :: success
       CHARACTER(LEN=ERROR_MESSAGE_LENGTH), PRIVATE :: EQNErrorMessage
-      
+
       INTERFACE ErrorMessageString
          MODULE PROCEDURE EQNErrorMessageString
       END INTERFACE ErrorMessageString
       PRIVATE :: EQNErrorMessageString
-      
+
       INTERFACE StatusOK
          MODULE PROCEDURE StatusOfEQN
       END INTERFACE StatusOK
       PRIVATE :: StatusOfEQN
-      
+
       INTERFACE EvaluateEquation_At_
          MODULE PROCEDURE EvaluateEquationAtS
          MODULE PROCEDURE EvaluateEquation_At_V
@@ -198,46 +198,46 @@
          CHARACTER(LEN=VARIABLE_NAME_LENGTH)   :: variableNames(EEC_MAX_NUMBER_OF_VARIABLES)
          INTEGER                               :: tCount, tPFCount, indx
          INTEGER                               :: t, nVars
-         
+
          CHARACTER(LEN=TOKEN_LENGTH), DIMENSION(EQUATION_STRING_LENGTH/2) :: components
          INTEGER                    , DIMENSION(EQUATION_STRING_LENGTH/2) :: classification
          TYPE(Token)                , DIMENSION(EQUATION_STRING_LENGTH/2) :: postFixArray
          TYPE(Token)                , DIMENSION(:)          , ALLOCATABLE :: tokens
-         
-         
+
+
          EQNErrorMessage  = " "
          self % equation = eqn
-         
+
          IF( FindExpression( eqn, formulaInInfix, variableNames, nVars ) )     THEN
-            
+
             IF ( nVars == EEC_TOO_MANY_ARGUMENTS )     THEN
                indx = INDEX(STRING = eqn, SUBSTRING = '=')
                IF ( indx > 0 )     THEN
                   EQNErrorMessage = "Syntax Error: Too many independent variables: "// eqn(1:indx-1)
-               ELSE 
+               ELSE
                   EQNErrorMessage = "Syntax Error: Too many independent variables: "
-               END IF 
-               success = .FALSE. 
-               RETURN 
-            END IF 
-             
+               END IF
+               success = .FALSE.
+               RETURN
+            END IF
+
             self % variableNames     = variableNames
-            self % numberOfVariables = nVars 
-            
+            self % numberOfVariables = nVars
+
             CALL GetComponents     ( formulaInInfix, components, tCount )
             CALL ClassifyComponents( components, classification, variableNames, tCount )
-            
+
             ALLOCATE(tokens(tCount))
-            DO t = 1, tCount 
+            DO t = 1, tCount
                tokens(t) % token     = components(t)
                tokens(t) % tokenType = classification(t)
             END DO
-            
+
             postFixArray % tokenType = TYPE_NONE
             CALL ConvertToPostfix( tokens, postFixArray, tPFCount )
             ALLOCATE(self % postfix(tPFCount))
             self % postfix = postFixArray(1:tPFCount)
-                        
+
             IF( FinalSyntaxCheckOK( self ) )     THEN
                success = .true.
             ELSE
@@ -246,13 +246,13 @@
          ELSE
             success = .false.
          END IF
-         
+
       END SUBROUTINE ConstructEquationEvaluator
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE DestructEquationEvaluator( self ) 
-         IMPLICIT NONE 
+      SUBROUTINE DestructEquationEvaluator( self )
+         IMPLICIT NONE
          TYPE(EquationEvaluator) :: self
          IF( ASSOCIATED(self % postfix) ) DEALLOCATE(self % postfix)
       END SUBROUTINE
@@ -260,7 +260,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION EQNErrorMessageString( self ) RESULT(s)
-         IMPLICIT NONE 
+         IMPLICIT NONE
          TYPE( EquationEvaluator )           :: self
          CHARACTER(LEN=ERROR_MESSAGE_LENGTH) :: s
          s = EQNErrorMessage
@@ -269,16 +269,16 @@
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION StatusOfEQN( self ) RESULT(s)
-         IMPLICIT NONE 
+         IMPLICIT NONE
          TYPE( EquationEvaluator )  :: self
          LOGICAL                    :: s
          s = success
       END FUNCTION StatusOfEQN
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION EvaluateEquationAtS( self, x ) RESULT(y)
-      IMPLICIT NONE  
+      IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -289,7 +289,7 @@
          REAL(KIND=EP)           :: xArray(EEC_MAX_NUMBER_OF_VARIABLES)
          xArray(1) = x
          y = EvaluateEquation_At_V( self, xArray )
-         
+
       END FUNCTION EvaluateEquationAtS
 !
 !////////////////////////////////////////////////////////////////////////
@@ -312,14 +312,14 @@
          TYPE(Token)       :: t
          TYPE(NumberStack) :: stack
          REAL(KIND=EP)     :: v, a, b, c
-         
+
          N = SIZE(self % postfix)
          CALL ConstructNumberStack( stack, N )
-         
-         DO k = 1, N 
+
+         DO k = 1, N
             t = self % postfix(k)
             SELECT CASE ( t % tokenType )
-            
+
                CASE( TYPE_NUMBER )
                   IF( t % token == "pi" .OR. t % token == "PI" )     THEN
                      v = PI
@@ -349,19 +349,19 @@
                      CASE DEFAULT
                   END SELECT
                   CALL NumberStackPush( stack, c )
-               
+
                CASE ( TYPE_FUNCTION )
                   CALL NumberStackPop( stack, a )
                   CALL FunOfx( t % token, a, b )
                   CALL NumberStackPush( stack, b )
-                  
+
                CASE (TYPE_MONO_OPERATOR )
                  IF( t % token == "-" )     THEN
                     CALL NumberStackPop( stack, a )
                     a = -a
                     CALL NumberStackPush( stack, a )
                  END IF
-                 
+
                CASE DEFAULT ! is a variable
                   CALL NumberStackPush( stack, x(t % tokenType - TYPE_VARIABLE + 1) )
             END SELECT
@@ -379,7 +379,7 @@
 !        --------
 !
          CALL DestructNumberStack( stack )
-         
+
       END FUNCTION EvaluateEquation_At_V
 !
 !///////////////////////////////////////////////////////////////////////
@@ -387,55 +387,55 @@
       LOGICAL FUNCTION FindExpression( equation, formula, variableNames, nVars )
       IMPLICIT NONE
 !
-!      ----------------------------------------------------------
+!      ------------------------------------------------------------
 !      Find the variable and the start and stop of the expression.
-!      Returns .true. for sucessful completion, .false. otherwise.
+!      Returns .true. for successful completion, .false. otherwise.
 !      The EQNErrorMessage stores the error.
-!      ----------------------------------------------------------
+!      ------------------------------------------------------------
 !
 !
       CHARACTER(LEN=*)                     , INTENT(IN)  :: equation
       CHARACTER(LEN=VARIABLE_NAME_LENGTH)  , INTENT(OUT) :: variableNames(EEC_MAX_NUMBER_OF_VARIABLES)
       CHARACTER(LEN=EQUATION_STRING_LENGTH), INTENT(OUT) :: formula
       INTEGER                                            :: nVars
-      
-      
+
+
       INTEGER           ::  eqPos, nf, nl, nr, n
 !
       FindExpression = .false.
-      variableNames   = "%none" 
+      variableNames   = "%none"
 !
 !      ----------------------------------------------------------------
 !      Find the location of the equal sign and the left and right
-!      parentheses that should surround the arguments. 
+!      parentheses that should surround the arguments.
 !      ----------------------------------------------------------------
 !
       nf    = LEN_TRIM(equation)
       eqPos = INDEX(equation,"=")
-      
-      IF (eqPos == 0)     THEN 
-          EQNErrorMessage = "No equal sign in expression" 
-          RETURN 
+
+      IF (eqPos == 0)     THEN
+          EQNErrorMessage = "No equal sign in expression"
+          RETURN
       END IF
       formula = equation(eqPos+1:)
       formula = ADJUSTL(formula)
 
       nl  = index(equation(1:eqPos),"(") ! location of left parenthesis (
       IF ( nl == 0 )     THEN   ! find position of left parenthesis
-          EQNErrorMessage = "Function name has no left parenthesis" 
-          RETURN 
+          EQNErrorMessage = "Function name has no left parenthesis"
+          RETURN
       END IF
-      
+
       nr = index(equation(1:eqPos),")") ! location of right parenthesis
-      IF (nr==0) THEN 
-          EQNErrorMessage = "Function name has no right parenthesis" 
-          RETURN 
+      IF (nr==0) THEN
+          EQNErrorMessage = "Function name has no right parenthesis"
+          RETURN
       END IF
 !
-      IF ( nr == nl+1 ) THEN 
-          EQNErrorMessage = "No variable found" 
-          RETURN 
-      END IF 
+      IF ( nr == nl+1 ) THEN
+          EQNErrorMessage = "No variable found"
+          RETURN
+      END IF
 !
 !     -----------------------------------
 !     Extract the independent variable(s)
@@ -450,14 +450,14 @@
 !     --------------------------
 !
       nl = 1
-      DO n = 1, LEN_TRIM(formula) 
+      DO n = 1, LEN_TRIM(formula)
          IF( formula(n:n) /= " " )     THEN
             formula(nl:nl) = formula(n:n)
             nl = nl + 1
          END IF
       END DO
       formula(nl:EQUATION_STRING_LENGTH) = " "
-      
+
       FindExpression = .true.
 !
       END FUNCTION FindExpression
@@ -465,19 +465,19 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE GetComponents( formula, components, tCount )
-         IMPLICIT NONE 
+         IMPLICIT NONE
          CHARACTER(LEN=EQUATION_STRING_LENGTH)    , INTENT(IN)  :: formula
          CHARACTER(LEN=TOKEN_LENGTH), DIMENSION(:), INTENT(OUT) :: components
          INTEGER                                  , INTENT(OUT) :: tCount
-         
+
          INTEGER                                     :: startPos
          INTEGER                                     :: l, m
-         
-         
+
+
          CHARACTER(LEN=TOKEN_LENGTH)                 :: token
          LOGICAL                                     :: firstCharacterIsDigit
          CHARACTER(LEN=1)                            :: lastChar
-         
+
          tCount   = 0
          startPos = 1
 !
@@ -492,7 +492,7 @@
 !           ------------------------------
 !
             DO m = 1, separatorCount
-            
+
                IF( formula(l:l) == separators(m) )     THEN ! A separator is found
 !
 !                 -----------------
@@ -519,7 +519,7 @@
                   EXIT
                END IF
             END DO
-            
+
          END DO
 !
 !        ----------------
@@ -544,7 +544,7 @@
 !           ---------------------------------
 !
             firstCharacterIsDigit = .false.
-            DO m = 1, SIZE(DIGITS) 
+            DO m = 1, SIZE(DIGITS)
                IF( token(1:1) == DIGITS(m) )     THEN
                   firstCharacterIsDigit = .true.
                   EXIT
@@ -570,7 +570,7 @@
 !        -----------------
 !
          m = 0
-         DO l = 1, tCount 
+         DO l = 1, tCount
             IF ( components(l) /= " " )     THEN
                m = m + 1
                components(m) = components(l)
@@ -605,10 +605,10 @@
 !     Examine each component
 !     ----------------------
 !
-      DO l = 1, tCount 
+      DO l = 1, tCount
          IF ( components(l) == "pi" .OR. components(l) == "PI" )     THEN
             classification(l) = TYPE_NUMBER
-         ELSE IF (components(l) == "(" .OR. components(l) == ")" )   THEN 
+         ELSE IF (components(l) == "(" .OR. components(l) == ")" )   THEN
             classification(l) = TYPE_PAREN
          ELSE
 !
@@ -619,19 +619,19 @@
             isVariable = .FALSE.
             DO k = 1, EEC_MAX_NUMBER_OF_VARIABLES
                IF ( components(l) == variableNames(k) )     THEN
-                  classification(l) = TYPE_VARIABLE + k - 1 
+                  classification(l) = TYPE_VARIABLE + k - 1
                   isVariable = .TRUE.
-                  EXIT 
-               END IF 
-            END DO 
-            IF(isVariable) CYCLE 
+                  EXIT
+               END IF
+            END DO
+            IF(isVariable) CYCLE
 !
 !           ---------------------
 !           See if it is a number
 !           ---------------------
 !
             isNumber = .false.
-            DO m = 1, SIZE(DIGITS) 
+            DO m = 1, SIZE(DIGITS)
                IF( components(l)(1:1) == DIGITS(m) )     THEN
                   classification(l) = TYPE_NUMBER
                   isNumber = .true.
@@ -678,14 +678,14 @@
             classification(1) = TYPE_MONO_OPERATOR
          END IF
       END IF
-      
-      DO l = 2, tCount 
+
+      DO l = 2, tCount
          IF( classification(l) == TYPE_OPERATOR .AND. &
            (classification(l-1) == TYPE_OPERATOR .OR. components(l-1) == '('))     THEN
             classification(l) = TYPE_MONO_OPERATOR
          END IF
       END DO
-      
+
       END SUBROUTINE ClassifyComponents
 !
 !////////////////////////////////////////////////////////////////////////
@@ -709,18 +709,18 @@
          TYPE(Token)       :: tok
          TYPE(TokenStack)  :: stack, postfixStack
          CHARACTER(LEN=1)  :: c,s
-         
+
          N = SIZE(tokens)
          CALL ConstructTokenStack( stack       , N )
          CALL ConstructTokenStack( postfixStack, N )
-         
+
          DO t = 1, SIZE(tokens)
-         
+
             IF ( tokens(t) % tokenType == TYPE_NUMBER .OR. &
                  tokens(t) % tokenType >= TYPE_VARIABLE )     THEN
-                 
+
                CALL TokenStackPush( postfixStack, tokens(t) )
-               
+
             ELSE IF ( tokens(t) % token == ")" )     THEN
 !
 !              ------------------------------------------------------
@@ -746,7 +746,7 @@
                      CALL TokenStackPush( postfixStack, tok )
                   END IF
                END IF
-               
+
             ELSE
 !
 !              ---------------------------------------------------
@@ -771,7 +771,7 @@
 !        ---------------
 !
          top = stack % top
-         DO m = 1, top 
+         DO m = 1, top
             CALL TokenStackPop( stack, tok )
             CALL TokenStackPush( postfixStack, tok )
          END DO
@@ -782,7 +782,7 @@
 !
          top                = postfixStack % top
          sizeOfPostfixArray = top
-         DO m = 1, top 
+         DO m = 1, top
             postFixArray(m) = postfixStack % tokens(m)
          END DO
 !
@@ -792,128 +792,128 @@
 !
          CALL DestructTokenStack( stack )
          CALL DestructTokenStack( postfixStack )
-         
+
       END SUBROUTINE ConvertToPostfix
-      
+
 !
 !///////////////////////////////////////////////////////////////////////
 !
-      INTEGER FUNCTION isp(char) 
+      INTEGER FUNCTION isp(char)
 !
 !     -----------------------------------------------------------------------
 !     determines in-stack priority of operator. looks only at first character
 !     -----------------------------------------------------------------------
 !
-      character char*1 
+      character char*1
 !
-      if (char=='(') THEN 
-          isp = 0 
- 
-      ELSE IF (char=='+' .or. char=='-') THEN 
-          isp = 1 
- 
-      ELSE IF (char=='*' .or. char=='/') THEN 
-          isp = 2 
- 
-      ELSE IF (char=='^') THEN 
-          isp = 3 
- 
-      ELSE IF (char==';') THEN 
-          isp = -2 
- 
-      ELSE IF (char=='@') THEN 
-          isp = 4 
- 
-      else 
-          isp = -1 
-      end if 
-! 
-      END FUNCTION isp 
+      if (char=='(') THEN
+          isp = 0
+
+      ELSE IF (char=='+' .or. char=='-') THEN
+          isp = 1
+
+      ELSE IF (char=='*' .or. char=='/') THEN
+          isp = 2
+
+      ELSE IF (char=='^') THEN
+          isp = 3
+
+      ELSE IF (char==';') THEN
+          isp = -2
+
+      ELSE IF (char=='@') THEN
+          isp = 4
+
+      else
+          isp = -1
+      end if
+!
+      END FUNCTION isp
 !
 !///////////////////////////////////////////////////////////////////////
 !
-      INTEGER FUNCTION icp(char) 
+      INTEGER FUNCTION icp(char)
 !
 !     ------------------------------------------------------------------------
 !     Determines in-stack priority of operator.  Looks only at first character
 !     ------------------------------------------------------------------------
 !
       character char*1
-      
-      if (char=='(') THEN 
-          icp = 5 
- 
-      ELSE IF (char=='+' .or. char=='-') THEN 
-          icp = 1 
- 
-      ELSE IF (char=='*' .or. char=='/') THEN 
-          icp = 2 
- 
-      ELSE IF (char=='^') THEN 
-          icp = 5 
- 
-      ELSE IF (char=='@') THEN 
-          icp = 6 
- 
-      else 
-          icp = 7 
-      end if 
+
+      if (char=='(') THEN
+          icp = 5
+
+      ELSE IF (char=='+' .or. char=='-') THEN
+          icp = 1
+
+      ELSE IF (char=='*' .or. char=='/') THEN
+          icp = 2
+
+      ELSE IF (char=='^') THEN
+          icp = 5
+
+      ELSE IF (char=='@') THEN
+          icp = 6
+
+      else
+          icp = 7
+      end if
 !
       END FUNCTION icp
-!                                                                       
+!
 !///////////////////////////////////////////////////////////////////////
-!                                                                       
-      SUBROUTINE FunOfx(fun,a,result) 
-!                                                                       
-      REAL(KIND=EP)    :: a,result 
-      CHARACTER(LEN=*) :: fun 
-      INTRINSIC        ::  abs,acos,asin,atan,cos,exp,log,log10,sin,sqrt,tan 
+!
+      SUBROUTINE FunOfx(fun,a,result)
+!
+      REAL(KIND=EP)    :: a,result
+      CHARACTER(LEN=*) :: fun
+      INTRINSIC        ::  abs,acos,asin,atan,cos,exp,log,log10,sin,sqrt,tan
 !---
-!     ..                                                                
-      if ( fun == "cos" .OR. fun == "COS") then 
-          result = cos(a) 
-                                                                        
-      else if ( fun == "sin".OR. fun == "SIN") then 
-          result = sin(a) 
-                                                                        
-      else if ( fun == "exp".OR. fun == "EXP") then 
-          result = exp(a) 
-                                                                        
-      else if ( fun == "sqrt".OR. fun == "SQRT") then 
-          result = sqrt(a) 
-                                                                        
-      else if ( fun == "ln".OR. fun == "LN") then 
-          result = log(a) 
-                                                                        
-      else if ( fun == "log".OR. fun == "LOG") then 
-          result = log10(a) 
-                                                                        
-      else if ( fun == "abs".OR. fun == "ABS") then 
-          result = abs(a) 
-                                                                        
-      else if ( fun == "acos".OR. fun == "ACOS") then 
-          result = acos(a) 
-                                                                        
-      else if ( fun == "asin".OR. fun == "ASIN") then 
-          result = asin(a) 
-                                                                        
-      else if ( fun == "tan".OR. fun == "TAN") then 
-          result = tan(a) 
-                                                                        
-      else if ( fun == "tanh".OR. fun == "TANH") then 
-          result = tanh(a) 
-                                                                        
-      else if ( fun == "atan".OR. fun == "ATAN") then 
-          result = atan(a) 
-          
-      else if ( fun == "atanh".OR. fun == "ATANH") then 
-          result = atanh(a) 
-                                                                        
-      else 
-          write (6,fmt=*) "unknown function" 
-          result = 0.0d0 
-      end if 
-      END SUBROUTINE funofx                                          
+!     ..
+      if ( fun == "cos" .OR. fun == "COS") then
+          result = cos(a)
+
+      else if ( fun == "sin".OR. fun == "SIN") then
+          result = sin(a)
+
+      else if ( fun == "exp".OR. fun == "EXP") then
+          result = exp(a)
+
+      else if ( fun == "sqrt".OR. fun == "SQRT") then
+          result = sqrt(a)
+
+      else if ( fun == "ln".OR. fun == "LN") then
+          result = log(a)
+
+      else if ( fun == "log".OR. fun == "LOG") then
+          result = log10(a)
+
+      else if ( fun == "abs".OR. fun == "ABS") then
+          result = abs(a)
+
+      else if ( fun == "acos".OR. fun == "ACOS") then
+          result = acos(a)
+
+      else if ( fun == "asin".OR. fun == "ASIN") then
+          result = asin(a)
+
+      else if ( fun == "tan".OR. fun == "TAN") then
+          result = tan(a)
+
+      else if ( fun == "tanh".OR. fun == "TANH") then
+          result = tanh(a)
+
+      else if ( fun == "atan".OR. fun == "ATAN") then
+          result = atan(a)
+
+      else if ( fun == "atanh".OR. fun == "ATANH") then
+          result = atanh(a)
+
+      else
+          write (6,fmt=*) "unknown function"
+          result = 0.0d0
+      end if
+      END SUBROUTINE funofx
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -936,8 +936,8 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE TokenStackPush( stack, tok ) 
-         IMPLICIT NONE 
+      SUBROUTINE TokenStackPush( stack, tok )
+         IMPLICIT NONE
          TYPE(TokenStack) :: stack
          TYPE(Token)      :: tok
          stack % top               = stack % top + 1
@@ -946,14 +946,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE TokenStackPop( stack, tok ) 
-         IMPLICIT NONE 
+      SUBROUTINE TokenStackPop( stack, tok )
+         IMPLICIT NONE
          TYPE(TokenStack) :: stack
          TYPE(Token)      :: tok
-         
+
          IF( stack % top <= 0 ) THEN
             PRINT *, "Attempt to pop from empty token stack"
-         ELSE 
+         ELSE
             tok       = stack % tokens(stack % top)
             stack % top = stack % top - 1
          END IF
@@ -961,14 +961,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE TokenStackPeek( stack, tok ) 
-         IMPLICIT NONE 
+      SUBROUTINE TokenStackPeek( stack, tok )
+         IMPLICIT NONE
          TYPE(TokenStack) :: stack
          TYPE(Token)      :: tok
-         
+
          IF( stack % top <= 0 ) THEN
             PRINT *, "Attempt to peek from empty token stack"
-         ELSE 
+         ELSE
             tok = stack % tokens(stack % top)
          END IF
       END SUBROUTINE TokenStackPeek
@@ -994,8 +994,8 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE NumberStackPush( stack, v ) 
-         IMPLICIT NONE 
+      SUBROUTINE NumberStackPush( stack, v )
+         IMPLICIT NONE
          TYPE(NumberStack) :: stack
          REAL(KIND=EP)     :: v
          stack % top               = stack % top + 1
@@ -1004,14 +1004,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE NumberStackPop( stack, v ) 
-         IMPLICIT NONE 
+      SUBROUTINE NumberStackPop( stack, v )
+         IMPLICIT NONE
          TYPE(NumberStack) :: stack
          REAL(KIND=EP)     :: v
-         
+
          IF( stack % top <= 0 ) THEN
             PRINT *, "Attempt to pop from empty number stack"
-         ELSE 
+         ELSE
             v       = stack % values(stack % top)
             stack % top = stack % top - 1
          END IF
@@ -1019,14 +1019,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-!      SUBROUTINE NumberStackPeek( stack, v ) 
-!         IMPLICIT NONE 
+!      SUBROUTINE NumberStackPeek( stack, v )
+!         IMPLICIT NONE
 !         TYPE(NumberStack) :: stack
 !         REAL(KIND=EP)     :: v
-!         
+!
 !         IF( stack % top <= 0 ) THEN
 !            PRINT *, "Attempt to peek from empty number stack"
-!         ELSE 
+!         ELSE
 !            v = stack % values(stack % top)
 !         END IF
 !      END SUBROUTINE NumberStackPeek
@@ -1034,13 +1034,13 @@
 !////////////////////////////////////////////////////////////////////////
 !
        FUNCTION FinalSyntaxCheckOK( self ) RESULT(success)
-         IMPLICIT NONE 
+         IMPLICIT NONE
          TYPE(EquationEvaluator) :: self
          INTEGER                 :: t, p
          LOGICAL                 :: success
          TYPE(Token)             :: tok
          INTEGER                 :: stackTop
-         
+
          success = .true.
 !
 !        -----------------
@@ -1079,10 +1079,10 @@
 !        -----
 !
          stackTop = 0
-         DO t = 1, SIZE(self % postfix) 
+         DO t = 1, SIZE(self % postfix)
             tok = self % postfix(t)
             SELECT CASE ( tok % tokenType )
-            
+
                CASE( TYPE_NUMBER )
                   stackTop = stackTop + 1
 
@@ -1093,12 +1093,12 @@
                      success = .false.
                      RETURN
                   END IF
-                 
+
                CASE DEFAULT ! Type Variable
                   IF ( tok % tokenType >= TYPE_VARIABLE )     THEN
                      stackTop = stackTop + 1
-                  END IF 
-                  
+                  END IF
+
             END SELECT
          END DO
          IF ( stackTop > 1 )     THEN
@@ -1108,8 +1108,8 @@
 
        END FUNCTION FinalSyntaxCheckOK
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
        FUNCTION scanUpToString(stringToScan, startPos, stopChars) RESULT(s)
 !
 !      -------------------------------------------------------------------------------------
@@ -1117,7 +1117,7 @@
 !      stopChar. If the stopChar is not found, then startPos = EE_FAIL
 !      -------------------------------------------------------------------------------------
 !
-          IMPLICIT NONE  
+          IMPLICIT NONE
           CHARACTER(LEN=*)                        :: stringToScan
           INTEGER                                 :: startPos
           CHARACTER(LEN=*)                        :: stopChars
@@ -1129,30 +1129,30 @@
 !
           INTEGER                                 :: i, j
           LOGICAL                                 :: charFound
-          
+
           iLoop: DO i = startPos, LEN_TRIM(stringToScan)
              charFound = .FALSE.
-             DO j = 1,LEN_TRIM(stopChars) 
+             DO j = 1,LEN_TRIM(stopChars)
                 IF(stringToScan(i:i) == stopChars(j:j))     THEN
                    charFound = .TRUE.
                    EXIT iLoop
-                END IF 
-             END DO 
+                END IF
+             END DO
           END DO iLoop
-          
+
           IF ( .NOT.charFound )     THEN
-             s        = '' 
+             s        = ''
              startPos = EEC_NONE
-          ELSE 
+          ELSE
              s        = stringToScan(startPos:i-1)
-             startPos = i 
-          END IF 
-          
+             startPos = i
+          END IF
+
        END FUNCTION scanUpToString
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-       SUBROUTINE getArguments(stringToScan, arguments, nArguments)  
+!////////////////////////////////////////////////////////////////////////
+!
+       SUBROUTINE getArguments(stringToScan, arguments, nArguments)
           IMPLICIT NONE
 !
 !         ---------
@@ -1169,30 +1169,29 @@
 !
           INTEGER                               :: n, k, indx
           CHARACTER(LEN=LEN_TRIM(stringToScan)) :: r
-          
+
           arguments = "%none"
           n = 1
           r = scanUpToString(stringToScan = stringToScan, startPos = n, stopChars = '(')
-            
+
           n    = n + 1
           indx = 1
-          DO k = 1, LEN_TRIM(stringToScan) 
+          DO k = 1, LEN_TRIM(stringToScan)
                r = scanUpToString(stringToScan = stringToScan,startPos = n,stopChars = ',)')
-               IF(n == EEC_NONE)   EXIT 
+               IF(n == EEC_NONE)   EXIT
 
                nArguments      = indx
                arguments(indx) = r
-               IF(stringToScan(n:n) == ')') EXIT 
-               
+               IF(stringToScan(n:n) == ')') EXIT
+
                n          = n + 1
                indx       = indx + 1
                IF(indx > EEC_MAX_NUMBER_OF_VARIABLES)     THEN
                   nArguments = EEC_TOO_MANY_ARGUMENTS
-                  RETURN  
-               END IF 
-            END DO 
-           
+                  RETURN
+               END IF
+            END DO
+
        END SUBROUTINE getArguments
-      
+
       END Module EquationEvaluatorClass
-      

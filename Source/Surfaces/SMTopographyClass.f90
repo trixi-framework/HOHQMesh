@@ -171,7 +171,7 @@
         gaussianCurvatureBaseAt = ABS(gaussianCurvatureBaseAt) !Can be negative
 !
 !       -------------------------------------------------------------------
-!       The Guassian curvature will be zero if the curvature is zero in one
+!       The Gaussian curvature will be zero if the curvature is zero in one
 !       of the two tangential directions. In that case, use the curvature
 !       along the gradient direction.
 !       -------------------------------------------------------------------

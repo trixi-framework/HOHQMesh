@@ -14,4 +14,4 @@ This is a collection of comments on some of the approximations and assumptions m
 
 6. The sizer controls spread the region out using a Gaussian profile. The square root (for distance) and exponentials used are very expensive. Meshing times for meshes with sizer controls are significantly longer than those without. Since the actual shape of the regions is not important, consider using a quadratic polynomial approximation to a Gaussian instead to perhaps speed things up. In practice, of all the horrendous algorithms, the size controls seem to be the only ones that are costly.
 
-7. Sizing due to topography is chosen according to its Gaussian curvature. The Gaussian curvature is approximated by second order finite differences, and is descriped in the document [approximation of Gaussian curvature](ApproximationOfGaussianCurvature.md).
+7. Sizing due to topography is chosen according to its Gaussian curvature. The Gaussian curvature is approximated by second order finite differences, and is described in the document [approximation of Gaussian curvature](ApproximationOfGaussianCurvature.md).

@@ -2,51 +2,51 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
 !////////////////////////////////////////////////////////////////////////
 !
 !      QuadTreeGrid.f95
-!      Created: 2010-07-18 14:19:10 -0400 
-!      By: David Kopriva  
+!      Created: 2010-07-18 14:19:10 -0400
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
       Module QuadTreeGridClass
-      
+
       USE SMConstants
       USE SMMeshObjectsModule
       USE MeshSizerClass
       USE FTObjectClass
-      
+
       IMPLICIT NONE
 !
 !     ------------------------
@@ -63,9 +63,9 @@
          REAL(KIND=RP)   , DIMENSION(3)           :: dx, x0       ! Grid spacing and location of lower left corner
          INTEGER                                  :: level        ! where the grid is located in the tree.
          INTEGER                                  :: templateType ! One of Schneiders' classifications
-         INTEGER                                  :: boundaryTest ! takes on INSIDE, OUTSIDE, ON_BONDARY, UNDETERMINED
+         INTEGER                                  :: boundaryTest ! takes on INSIDE, OUTSIDE, ON_BOUNDARY, UNDETERMINED
          INTEGER                                  :: rotation     ! For template construction
-         
+
          TYPE(SMNodePtr), DIMENSION(:,:), POINTER :: nodes => NULL()        ! Nodes are numbered (0:N(1),0:N(2))
          TYPE(SMQuadPtr), DIMENSION(:,:), POINTER :: quads => NULL()       ! Quads are numbered (1:N(1),1:N(2))
 !
@@ -96,7 +96,7 @@
          PROCEDURE :: initWithTemplateType => TemplateInit
          FINAL     :: destructGrid
          PROCEDURE :: printDescription => printQuadTreeGridDescription
-         
+
       END TYPE QuadTreeGrid
 !
 !     -----------------
@@ -108,24 +108,24 @@
       END TYPE NestedQuadTreeGridPtr
 !
 !     --------------
-!     MODULE Globals      
+!     MODULE Globals
 !     --------------
 !
       INTEGER  :: highestLevel    = 0
       INTEGER  :: globalNodeCount = 0
       INTEGER  :: globalGridCount = 0
-       
+
       INTEGER                                                :: numberOfGridsAtLevel
       TYPE(NestedQuadTreeGridPtr), DIMENSION(:), ALLOCATABLE :: gridsAtLevel
 !
 !     ========
-      CONTAINS 
+      CONTAINS
 !     ========
 !
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE initGridWithParameters(self, dx, x0, N, parent, locInParent, level)
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -140,7 +140,7 @@
 !        ---------------
 !        Local variables
 !        ---------------
-!         
+!
          INTEGER                 :: i,j
          REAL(KIND=RP)           :: x(3)
          CLASS(SMNode) , POINTER :: node => NULL()
@@ -150,7 +150,7 @@
 !        -------------------
 !
          CALL self % FTObject % init()
-         
+
          self % level        = level
          self % templateType = 0 !Subdivision into arbitrary number of quads
          self % N            = N
@@ -167,29 +167,29 @@
 !        ---------------------------------------------------------------------------------
 !
          ALLOCATE( self % nodes(0:N(1),0:N(2)) )
-         DO j = 0, self % N(2) 
+         DO j = 0, self % N(2)
             DO i = 0, self % N(1)
                CALL GetGridPosition( self % x0, self % dx, i  , j  , x )
                ALLOCATE(node)
                CALL node % initWithLocationAndID(x,UNDEFINED)
                node % level = level
                self % nodes(i,j) % node => node
-            END DO 
+            END DO
          END DO
 !
 !        ----------------------------------------------------
-!        Mark nodes now as corner nodes at the highest level 
-!        in case there is no outer boundary. 
+!        Mark nodes now as corner nodes at the highest level
+!        in case there is no outer boundary.
 !        ----------------------------------------------------
 !
          IF( level == 0 )     THEN
-            DO i = 0, N(1) 
+            DO i = 0, N(1)
                self % nodes(i,0)    % node % bCurveID      = BOTTOM
                self % nodes(i,N(2)) % node % bCurveID      = TOP
                self % nodes(i,0)    % node % bCurveChainID = OUTER_BOX
                self % nodes(i,N(2)) % node % bCurveChainID = OUTER_BOX
             END DO
-            DO j = 0, N(2) 
+            DO j = 0, N(2)
                self % nodes(0,j)    % node % bCurveID      = LEFT
                self % nodes(N(1),j) % node % bCurveID      = RIGHT
                self % nodes(0,j)    % node % bCurveChainID = OUTER_BOX
@@ -208,10 +208,10 @@
 !        ----------------------------------------------------------------------------------------
 !
          ALLOCATE( self % quads(1:N(1), 1:N(2)) )
-         DO j = 1, self % N(2) 
+         DO j = 1, self % N(2)
             DO i = 1, self % N(1)
                 self % quads(i,j) % quad => NULL()
-            END DO 
+            END DO
          END DO
 !
 !        ---------------------------------------------------------------------------
@@ -220,10 +220,10 @@
 !        ---------------------------------------------------------------------------
 !
          ALLOCATE( self % children( 1:N(1), 1:N(2) ) )
-         DO j = 1, self % N(2) 
+         DO j = 1, self % N(2)
             DO i = 1, self % N(1)
-               NULLIFY(self % children(i,j) % grid)               
-            END DO 
+               NULLIFY(self % children(i,j) % grid)
+            END DO
          END DO
 !
 !        -------------------------------------------
@@ -244,13 +244,13 @@
 !
          NULLIFY( self % neighborL, self % neighborR, &
                   self % neighborT, self % neighborB )
-         
+
       END SUBROUTINE initGridWithParameters
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE TemplateInit( self, templateType, dx, x0, parent, l, level, rotation ) 
-      IMPLICIT NONE 
+      SUBROUTINE TemplateInit( self, templateType, dx, x0, parent, l, level, rotation )
+      IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -268,7 +268,7 @@
 !
          INTEGER                             :: i, j
          INTEGER                             :: N(3) = (/3,3,3/)
-         
+
          N = refinementType
 !
 !        ----
@@ -276,7 +276,7 @@
 !        ----
 !
          CALL self % FTObject % init()
-         
+
          self % level        = level
          self % templateType = templateType
          self % N            = N
@@ -291,10 +291,10 @@
 !        -----------------------------------
 !
          ALLOCATE( self % children( 1:N(1), 1:N(2) ) )
-         DO j = 1, self % N(2) 
+         DO j = 1, self % N(2)
             DO i = 1, self % N(1)
-               NULLIFY(self % children(i,j) % grid)               
-            END DO 
+               NULLIFY(self % children(i,j) % grid)
+            END DO
          END DO
 
 !
@@ -311,17 +311,17 @@
 !        ---------------------------------------------------------------------------------
 !
          ALLOCATE( self % nodes(0:N(1),0:N(2)) )
-         DO j = 0, self % N(2) 
+         DO j = 0, self % N(2)
             DO i = 0, self % N(1)
                NULLIFY( self % nodes(i,j) % node )
-            END DO 
+            END DO
          END DO
-         
+
          ALLOCATE( self % quads(1:N(1), 1:N(2)) )
-         DO j = 1, self % N(2) 
+         DO j = 1, self % N(2)
             DO i = 1, self % N(1)
                NULLIFY( self % quads(i,j) % quad )
-            END DO 
+            END DO
          END DO
 !
 !        ---------------------------------------------
@@ -331,19 +331,19 @@
 !        ---------------------------------------------
 !
          NULLIFY( self % neighborL, self % neighborR, self % neighborT, self % neighborB )
-         
+
       END SUBROUTINE TemplateInit
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE DestructGrid(self) 
-         IMPLICIT NONE 
+      RECURSIVE SUBROUTINE DestructGrid(self)
+         IMPLICIT NONE
          TYPE(QuadTreeGrid)          :: self
          INTEGER                      :: i,j, N, M
          CLASS(SMQuad)      , POINTER :: quad => NULL()
          CLASS(SMNode)      , POINTER :: node => NULL()
-         CLASS(FTObject)    , POINTER :: obj 
-         
+         CLASS(FTObject)    , POINTER :: obj
+
          N = self % N(1)
          M = self % N(2)
 !
@@ -353,7 +353,7 @@
 !
          IF( ASSOCIATED( self % children ) )     THEN
             DO j = 1, M
-               DO i = 1, N 
+               DO i = 1, N
                   IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN
                      obj => self % children(i,j) % grid
                      CALL release(obj)
@@ -362,40 +362,40 @@
                END DO
             END DO
             DEALLOCATE( self % children )
-         END IF 
+         END IF
 !
 !        ----
 !        Self
 !        ----
 !
          IF( ASSOCIATED(self % quads) )     then
-            DO j = 1, self % N(2) 
+            DO j = 1, self % N(2)
                DO i = 1, self % N(1)
                   quad => self % quads(i,j) % quad
                   IF( ASSOCIATED(quad) ) THEN
                      obj => quad
                      CALL release(obj)
-                     END IF 
-               END DO 
+                     END IF
+               END DO
             END DO
             DEALLOCATE(self % quads)
          END IF
-         
-         IF( ASSOCIATED(self % nodes) )     THEN 
-            DO j = 0, self % N(2) 
+
+         IF( ASSOCIATED(self % nodes) )     THEN
+            DO j = 0, self % N(2)
                DO i = 0, self % N(1)
                   node => self % nodes(i,j) % node
                   IF( ASSOCIATED(node) )    THEN
                      obj => node
                      CALL release(obj)
-                  END IF 
-               END DO 
+                  END IF
+               END DO
             END DO
             DEALLOCATE( self % nodes )
          END IF
-         
+
          NULLIFY( self % neighborL, self % neighborR, self % neighborT, self % neighborB )
-         
+
          highestLevel         = 0
          globalNodeCount      = 0
          globalGridCount      = 0
@@ -403,20 +403,20 @@
 
       END SUBROUTINE DestructGrid
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      RECURSIVE SUBROUTINE releaseGrid(self)  
+!////////////////////////////////////////////////////////////////////////
+!
+      RECURSIVE SUBROUTINE releaseGrid(self)
          IMPLICIT NONE
          CLASS(QuadTreeGrid), POINTER :: self
          CLASS(FTObject)    , POINTER :: obj
-         
+
          IF(.NOT. ASSOCIATED(self)) RETURN
-         
+
          obj => self
          CALL releaseFTObject(self = obj)
          IF ( .NOT. ASSOCIATED(obj) )     THEN
-            self => NULL() 
-         END IF      
+            self => NULL()
+         END IF
       END SUBROUTINE releaseGrid
 !@mark -
 !
@@ -426,7 +426,7 @@
       IMPLICIT NONE
 !
 !     ----------------------------------------------------
-!     Recursively subdivide the QuadTreeGrid until each quad 
+!     Recursively subdivide the QuadTreeGrid until each quad
 !     within the grid satisfies the sizeFunction.
 !     ----------------------------------------------------
 !
@@ -451,14 +451,14 @@
       N  = refinementType
       nX = self % N(1)
       nY = self % N(2)
-      IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN 
+      IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN
 !
 !     ----------------
 !     Do for each quad
 !     ----------------
 !
       NULLIFY(childGrid)
-      
+
       DO j = 1, nY
          DO i = 1, nX
 !
@@ -470,38 +470,38 @@
             CALL GetGridPosition( self % x0, self % dx, i-1, j-1, xMin )
             CALL GetGridPosition( self % x0, self % dx, i  , j  , xMax )
             hMin = sizeFunctionMinimumOnBox( sizer, xMin, xMax )
-            
+
             IF ( hMin - MAXVAL(self % dx(1:2)) < -subdivisionRelTol*MAXVAL(self % dx(1:2)))     THEN
-            
+
                IF ( highestLevel < maxLevelLimit )     THEN
-               
+
                   dx = self % dx/DBLE(refinementType)
                   ALLOCATE(childGrid)
                   CALL childGrid % initGridWithParameters( dx, xMin, N, self, (/i,j,0/), self % level+1)
                   self % children(i,j) % grid => childGrid
                   CALL SetNeighborPointers( childGrid )
-                  
+
                   CALL RefineGrid_ToSizeFunction_( childGrid, sizer )
-                  
+
                   highestLevel = MAX( highestLevel, self % level+1 )
-                  
-               ELSE 
-               
+
+               ELSE
+
                   WRITE(xMinAsString, '(F7.2,1x,F7.2)') xMin(1), xMin(2)
                   limitMsg = "Resolution near " // xMinAsString // " needs more subdivisions than the currently allowed. " //&
                               "To override, rerun with the command line flag '-sLimit'. But think before doing this."
-                                                
+
                   CALL ThrowErrorExceptionOfType(poster = "RefineGrid_ToSizeFunction_", &
                                                  msg    = limitMsg,       &
                                                  typ    = FT_ERROR_FATAL)
-                  RETURN 
-               END IF 
-               
+                  RETURN
+               END IF
+
             END IF
-            
+
          END DO
       END DO
-      
+
       END SUBROUTINE RefineGrid_ToSizeFunction_
 !
 !////////////////////////////////////////////////////////////////////////
@@ -517,9 +517,9 @@
       CLASS(QuadTreeGrid), POINTER :: self
       CLASS(QuadTreeGrid), POINTER :: neighbor, parent
       INTEGER                      :: i, j, n, m
-      
+
       IF( self % level == 0 )     RETURN ! Root grid has no neighbors.
-      
+
       i = self % locInParent(1)
       j = self % locInParent(2)
 !
@@ -540,7 +540,7 @@
       END IF
       IF( ASSOCIATED(neighbor) )     THEN
          self % neighborL     => neighbor
-         neighbor % neighborR => self 
+         neighbor % neighborR => self
       END IF
 !
 !     --------------
@@ -560,7 +560,7 @@
       END IF
       IF( ASSOCIATED(neighbor) )     THEN
          self % neighborR     => neighbor
-         neighbor % neighborL => self 
+         neighbor % neighborL => self
       END IF
 !
 !     ---------------
@@ -570,7 +570,7 @@
       NULLIFY( neighbor )
       IF( j > 1 )     THEN
          neighbor => ChildGridAt_InGrid_(i,j-1,self % parent)
-      ELSE 
+      ELSE
          parent   => self % parent
          neighbor => parent % neighborB
          IF( ASSOCIATED(neighbor) )     THEN
@@ -580,7 +580,7 @@
       END IF
       IF( ASSOCIATED(neighbor) )     THEN
          self % neighborB     => neighbor
-         neighbor % neighborT => self 
+         neighbor % neighborT => self
       END IF
 !
 !     ------------
@@ -590,7 +590,7 @@
       NULLIFY( neighbor )
       IF( j < self % parent % N(2) )     THEN
          neighbor => ChildGridAt_InGrid_(i,j+1,self % parent)
-      ELSE 
+      ELSE
          parent   => self % parent
          neighbor => parent % neighborT
          IF( ASSOCIATED(neighbor) )     THEN
@@ -600,64 +600,64 @@
       END IF
       IF( ASSOCIATED(neighbor) )     THEN
          self % neighborT     => neighbor
-         neighbor % neighborB => self 
+         neighbor % neighborB => self
       END IF
-      
+
       END SUBROUTINE SetNeighborPointers
-      
+
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION ChildGridAt_InGrid_(i,j,grid) RESULT(p) 
+      FUNCTION ChildGridAt_InGrid_(i,j,grid) RESULT(p)
          IMPLICIT NONE
          INTEGER                      :: i, j
          CLASS(QuadTreeGrid), POINTER :: grid, p
-         
+
          IF( ASSOCIATED(grid) .AND. ASSOCIATED(grid % children) )     THEN
             p => grid % children(i,j) % grid
          ELSE
             NULLIFY(p)
          END IF
-         
+
       END FUNCTION ChildGridAt_InGrid_
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION NodeAt_InGrid_(i,j,grid) RESULT(p) 
+      FUNCTION NodeAt_InGrid_(i,j,grid) RESULT(p)
          IMPLICIT NONE
          INTEGER                     :: i, j
          CLASS(QuadTreeGrid), POINTER :: grid
          CLASS(SMNode)      , POINTER :: p
-         
+
          IF ( ASSOCIATED(grid) )     THEN
             p=> grid % nodes(i,j) % node
          ELSE
             NULLIFY(p)
          END IF
-   
+
       END FUNCTION NodeAt_InGrid_
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION QuadAt_InGrid_(i,j,grid) RESULT(p) 
+      FUNCTION QuadAt_InGrid_(i,j,grid) RESULT(p)
       IMPLICIT NONE
       INTEGER                      :: i, j
       CLASS(QuadTreeGrid), POINTER :: grid
       CLASS(SMQuad)    , POINTER   :: p
-      
+
       IF ( ASSOCIATED(grid) )     THEN
          p=> grid % quads(i,j) % quad
       ELSE
          NULLIFY(p)
       END IF
-      
+
       END FUNCTION QuadAt_InGrid_
 !
 !////////////////////////////////////////////////////////////////////////
 !
       RECURSIVE SUBROUTINE AssignNodeIdsForGrid_( self )
       IMPLICIT NONE
-      
+
       CLASS(QuadTreeGrid) :: self
 !
 !     ---------------
@@ -665,7 +665,7 @@
 !     ---------------
 !
       INTEGER :: i, j, N, M
-      
+
       N = self % N(1)
       M = self % N(2)
 !
@@ -673,16 +673,16 @@
 !     For self
 !     --------
 !
-      DO j = 0, M 
+      DO j = 0, M
          DO i = 0, N
             IF( .NOT.ASSOCIATED(self % nodes(i,j) % node) )    CYCLE
             IF( self % nodes(i,j) % node % refCount()   == 1 )       CYCLE ! Only the main grid, not quads references this
             IF( self % nodes(i,j) % node % activeStatus == REMOVE )  CYCLE ! Marked as outside
             IF( self % nodes(i,j) % node % id           == UNDEFINED )     THEN
-            
+
                globalNodeCount               = globalNodeCount + 1
                self % nodes(i,j) % node % id = globalNodeCount
-               
+
             END IF
          END DO
       END DO
@@ -693,7 +693,7 @@
 !
       IF( ASSOCIATED(self % children) )     THEN
          DO j = 1, M
-            DO i = 1, N 
+            DO i = 1, N
                IF( ASSOCIATED( self % children(i,j) % grid ) ) &
                    CALL AssignNodeIdsForGrid_( self % children(i,j) % grid )
             END DO
@@ -719,7 +719,7 @@
 !     ---------------
 !
       INTEGER :: i, j, N, M
-      
+
       N = self % N(1)
       M = self % N(2)
 !
@@ -728,43 +728,43 @@
 !     --------
 !
       IF ( flag )     then
-         DO j = 0, M 
-            DO i = 0, N 
+         DO j = 0, M
+            DO i = 0, N
                IF(ASSOCIATED(self % nodes(i,j) % node)) self % nodes(i,j) % node % id = -ABS(self % nodes(i,j) % node % id)
             END DO
          END DO
       ELSE
-         DO j = 0, M 
-            DO i = 0, N 
+         DO j = 0, M
+            DO i = 0, N
                IF(ASSOCIATED(self % nodes(i,j) % node)) self % nodes(i,j) % node % id = ABS(self % nodes(i,j) % node % id)
             END DO
          END DO
-      END IF 
+      END IF
 !
 !     ------------
 !     For children
 !     ------------
 !
       IF( .NOT.ASSOCIATED(self % children) )   RETURN
-      
+
       DO j = 1, M
-         DO i = 1, N 
+         DO i = 1, N
             IF( ASSOCIATED( self % children(i,j) % grid ) ) &
                 CALL FlagNodeIds( self % children(i,j) % grid, flag )
          END DO
       END DO
-      
+
       END SUBROUTINE FlagNodeIds
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE DeleteDuplicateNodesForGrid( self ) 
-      IMPLICIT NONE 
+      RECURSIVE SUBROUTINE DeleteDuplicateNodesForGrid( self )
+      IMPLICIT NONE
       CLASS(QuadTreeGrid), POINTER :: self
-      
+
       INTEGER                      :: i, j, N, M, Nc, Mc
       CLASS(QuadTreeGrid), POINTER :: parent, neighbor
-      
+
       N = self%N(1); M = self%N(2)
 !
 !     ------------------------------------------------------
@@ -772,28 +772,28 @@
 !     on the parent, if one exists.
 !     ------------------------------------------------------
 !
-      
+
       IF( ASSOCIATED(self%parent) )     THEN
          parent => self%parent
          i = self%locInParent(1); j = self%locInparent(2)
-         
+
          IF( ASSOCIATED(self%nodes(0,0)%node       ) .AND. &
              ASSOCIATED(parent%nodes(i-1,j-1)%node) )     THEN
             CALL PointNodePtr_To_(self%nodes(0,0), parent%nodes(i-1,j-1) )
-         END IF 
-         
+         END IF
+
          IF( ASSOCIATED(self%nodes(N,0)%node       ) .AND. &
-             ASSOCIATED(parent%nodes(i,j-1)%node) )     THEN                
+             ASSOCIATED(parent%nodes(i,j-1)%node) )     THEN
             CALL PointNodePtr_To_(self%nodes(N,0), parent%nodes(i,j-1) )
          END IF
-         
+
          IF( ASSOCIATED(self%nodes(N,M)%node       ) .AND. &
-             ASSOCIATED(parent%nodes(i,j)%node) )     THEN                
+             ASSOCIATED(parent%nodes(i,j)%node) )     THEN
             CALL PointNodePtr_To_(self%nodes(N,M), parent%nodes(i,j) )
          END IF
-         
+
          IF( ASSOCIATED(self%nodes(0,M)%node       ) .AND. &
-             ASSOCIATED(parent%nodes(i-1,j)%node) )     THEN                
+             ASSOCIATED(parent%nodes(i-1,j)%node) )     THEN
             CALL PointNodePtr_To_(self%nodes(0,M), parent%nodes(i-1,j) )
          END IF
 
@@ -810,14 +810,14 @@
 !     Left side
 !     ---------
 !
-      
+
       IF( ASSOCIATED(self%neighborL) )     THEN
          neighbor => self%neighborL
          Nc = neighbor%N(1); Mc = neighbor%N(2)
          i = 0
          DO j = 1, M-1 ! Must assume that grids have the same size (3x3) or (2x2)
             IF( ASSOCIATED(self%nodes(i,j)%node       ) .AND. &
-                ASSOCIATED(neighbor%nodes(Nc,j)%node) )     THEN                
+                ASSOCIATED(neighbor%nodes(Nc,j)%node) )     THEN
                CALL PointNodePtr_To_(self%nodes(i,j), neighbor%nodes(Nc,j) )
             END IF
          END DO
@@ -847,7 +847,7 @@
          neighbor => self%neighborB
          Nc = neighbor%N(1); Mc = neighbor%N(2)
          j = 0
-         DO i = 1, N-1 ! Must assume that grids have the same size (3x3) or (2x2) 
+         DO i = 1, N-1 ! Must assume that grids have the same size (3x3) or (2x2)
             IF( ASSOCIATED(self%nodes(i,j)%node       ) .AND. &
                 ASSOCIATED(neighbor%nodes(i,Mc)%node) )     THEN
                CALL PointNodePtr_To_(self%nodes(i,j), neighbor%nodes(i,Mc) )
@@ -863,7 +863,7 @@
          neighbor => self%neighborT
          Nc = neighbor%N(1); Mc = neighbor%N(2)
          j = M
-         DO i = 1, N-1 ! Must assume that grids have the same size (3x3) or (2x2) 
+         DO i = 1, N-1 ! Must assume that grids have the same size (3x3) or (2x2)
             IF( ASSOCIATED(self%nodes(i,j)%node       ) .AND. &
                 ASSOCIATED(neighbor%nodes(i,0)%node) )     THEN
                CALL PointNodePtr_To_(self%nodes(i,j), neighbor%nodes(i,0) )
@@ -875,14 +875,14 @@
 !     Continue with each of the child grids below this one
 !     ----------------------------------------------------
 !
-      DO j = 1, M 
-         DO i = 1, N 
+      DO j = 1, M
+         DO i = 1, N
             IF( ASSOCIATED( self%children(i,j)%grid ) )  THEN
                CALL DeleteDuplicateNodesForGrid( self%children(i,j)%grid )
             END IF
          END DO
-      END DO      
-      
+      END DO
+
       END SUBROUTINE DeleteDuplicateNodesForGrid
 !
 !////////////////////////////////////////////////////////////////////////
@@ -893,19 +893,19 @@
 !     Routine that creates the quads for template0 grids
 !     --------------------------------------------------
 !
-      IMPLICIT NONE 
+      IMPLICIT NONE
       CLASS(QuadTreeGrid), POINTER :: self
       INTEGER                   :: i, j, N, M
-            
+
       N = self % N(1)
       M = self % N(2)
 
-      DO j = 1, M 
+      DO j = 1, M
          DO i = 1, N
             IF ( .NOT.ASSOCIATED(self % quads(i,j) % quad) )     THEN
                ALLOCATE(self % quads(i,j) % quad)
-               CALL self % quads(i,j) % quad % init() 
-            END IF 
+               CALL self % quads(i,j) % quad % init()
+            END IF
             CALL PointNodePtr_To_(self % quads(i,j) % quad % nodes(1), self % nodes(i-1,j-1))
             CALL PointNodePtr_To_(self % quads(i,j) % quad % nodes(2), self % nodes(i  ,j-1))
             CALL PointNodePtr_To_(self % quads(i,j) % quad % nodes(3), self % nodes(i  ,j  ))
@@ -918,13 +918,13 @@
 !     --------------------------
 !
       IF( .NOT.ASSOCIATED(self % children) )      RETURN
-      
-      DO j = 1, M 
-         DO i = 1, N 
+
+      DO j = 1, M
+         DO i = 1, N
             IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL ConstructQuads( self % children(i,j) % grid )
          END DO
       END DO
-               
+
       END SUBROUTINE ConstructQuads
 !
 !////////////////////////////////////////////////////////////////////////
@@ -932,9 +932,9 @@
       RECURSIVE SUBROUTINE AssignNodeLevels( self )
       IMPLICIT NONE
       CLASS(QuadTreeGrid), POINTER :: self
-      
+
       INTEGER                    :: i, j,  N, M
-            
+
       N = self % N(1)
       M = self % N(2)
 !
@@ -946,7 +946,7 @@
          DO i = 0, N
             IF( ASSOCIATED(self % nodes(i,j) % node) ) THEN
                self % nodes(i,j) % node % level = MAX( self % nodes(i,j) % node % level, self % level )
-            END IF 
+            END IF
          END DO
       END DO
 !
@@ -955,13 +955,13 @@
 !     --------------------------
 !
       IF( ASSOCIATED(self % children) )     THEN
-         DO j = 1, M 
-            DO i = 1, N 
+         DO j = 1, M
+            DO i = 1, N
                IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL AssignNodeLevels( self % children(i,j) % grid )
             END DO
          END DO
       END IF
-         
+
       END SUBROUTINE AssignNodeLevels
 !
 !////////////////////////////////////////////////////////////////////////
@@ -969,9 +969,9 @@
       RECURSIVE SUBROUTINE ClearNodeLevels( self )
       IMPLICIT NONE
       CLASS(QuadTreeGrid), POINTER :: self
-      
+
       INTEGER                    :: i, j,  N, M
-      
+
       N = self % N(1)
       M = self % N(2)
 !
@@ -990,13 +990,13 @@
 !     --------------------------
 !
       IF( ASSOCIATED(self % children) )     THEN
-         DO j = 1, M 
-            DO i = 1, N 
+         DO j = 1, M
+            DO i = 1, N
                IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL AssignNodeLevels( self % children(i,j) % grid )
             END DO
          END DO
       END IF
-     
+
       END SUBROUTINE ClearNodeLevels
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1006,7 +1006,7 @@
       IMPLICIT NONE
       INTEGER                   :: level
       CLASS(QuadTreeGrid), POINTER :: self
-      
+
       INTEGER :: N, M, i, j
 !
       IF( self % level ==  level )     THEN
@@ -1017,33 +1017,33 @@
          IF( ASSOCIATED( self % children ) )    THEN
             DO j = 1, M
                DO i = 1, N
-                  IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN 
+                  IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN
                       CALL FindNumberOfGridsIn_AtLevel_( self % children(i,j) % grid, level )
-                  END IF 
+                  END IF
                END DO
             END DO
          END IF
-         
+
       END IF
-     
+
       END SUBROUTINE FindNumberOfGridsIn_AtLevel_
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE GatherGridsAtLevel_FromRtGrid_( level, self ) 
-      IMPLICIT NONE 
+      RECURSIVE SUBROUTINE GatherGridsAtLevel_FromRtGrid_( level, self )
+      IMPLICIT NONE
       INTEGER                      :: level
       CLASS(QuadTreeGrid), POINTER :: self
       INTEGER                      :: N,M, i, j
-     
+
       N = self % N(1); M = self % N(2)
-     
+
       IF( self % level ==  level )     THEN
          globalGridCount = globalGridCount + 1
          gridsAtLevel( globalGridCount ) % grid => self
       ELSE
          N = self % N(1); M = self % N(2)
-         
+
          IF( ASSOCIATED( self % children ) )     then
             DO j = 1, M
                DO i = 1, N
@@ -1052,14 +1052,14 @@
                END DO
             END DO
          END IF
-         
+
       END IF
-      
+
       END SUBROUTINE GatherGridsAtLevel_FromRtGrid_
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE GetGridPosition( x0, dx, i, j, x ) 
+      SUBROUTINE GetGridPosition( x0, dx, i, j, x )
          IMPLICIT NONE
          REAL(KIND=RP), DIMENSION(3), INTENT(IN)  :: x0, dx
          INTEGER                    , INTENT(IN)  :: i,j
@@ -1071,7 +1071,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE GetGridLocation( x0, dx, i, j, x ) 
+      SUBROUTINE GetGridLocation( x0, dx, i, j, x )
          IMPLICIT NONE
          REAL(KIND=RP), DIMENSION(2), INTENT(IN)  :: x0, dx
          REAL(KIND=RP), DIMENSION(2), INTENT(IN)  :: x
@@ -1086,11 +1086,11 @@
       RECURSIVE SUBROUTINE PrintGridDiagnostics( self )
       IMPLICIT NONE
       CLASS(QuadTreeGrid), POINTER :: self
-      
+
       INTEGER               :: i, j, k, N, M
       CLASS(SMNode), POINTER :: node
       CLASS(SMQuad), POINTER :: quad
-      
+
       N = self % N(1)
       M = self % N(2)
 !
@@ -1112,14 +1112,14 @@
             PRINT *, i, j, self % nodes(i,j) % node % refCount(), node % id, node % level, node % x
          END DO
       END DO
-      
+
       PRINT *, "Quads at level ", self % level, "Dx = ", self % dx
       DO j = 1, M
          DO i = 1, N
             IF( .NOT.ASSOCIATED(self % quads(i,j) % quad) )     CYCLE
             quad => self % quads(i,j) % quad
             PRINT *, i, j
-            DO k = 1, 4 
+            DO k = 1, 4
                PRINT *, quad % nodes(k) % node % id, quad % nodes(k) % node % x
             END DO
          END DO
@@ -1135,19 +1135,19 @@
 !     --------------------------
 !
       IF (ASSOCIATED( self % children ) )     THEN
-         DO j = 1, M 
-            DO i = 1, N 
+         DO j = 1, M
+            DO i = 1, N
                IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL PrintGridDiagnostics( self % children(i,j) % grid )
             END DO
          END DO
       END IF
-     
+
       END SUBROUTINE PrintGridDiagnostics
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE printQuadTreeGridDescription(self,iUnit)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE printQuadTreeGridDescription(self,iUnit)
+         IMPLICIT NONE
          CLASS(QuadTreeGrid) :: self
          INTEGER             :: iUnit
          WRITE(iUnit, *) "QuadTreeGrid object"

@@ -19,7 +19,7 @@ printf "Clean up... "
 make clean -s
 echo "OK"
 
-# Ensure that there are no uncommited files/directories *except* the FTOL sources
+# Ensure that there are no uncommitted files/directories *except* the FTOL sources
 printf "Ensure directory is clean and FTObjectLibrary is present... "
 if [[ "$(git status --ignored --porcelain | grep -v '.DS_Store')" != "!! Contrib/FTObjectLibrary/" ]]; then
   echo "ERROR: directory is not clean or missing the FTObjectLibrary directory" >&2
