@@ -2,33 +2,33 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
@@ -36,8 +36,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      MeshCleaner.f90
-!      Created: 2011-06-06 14:19:58 -0400 
-!      By: David Kopriva  
+!      Created: 2011-06-06 14:19:58 -0400
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -47,10 +47,10 @@
       USE SMMeshClass
       USE MeshQualityAnalysisClass
       USE MeshBoundaryMethodsModule
-      USE ConectionsModule
+      USE ConnectionsModule
       USE ElementOperations
       USE InterfaceElementMethods
-      IMPLICIT NONE 
+      IMPLICIT NONE
 !
 !--------------------------------------------------------------------
 !> Apply various mesh improvement techniques to eliminate bad elements
@@ -64,7 +64,7 @@
 !
       SUBROUTINE PerformTopologyCleanup( mesh, errorCode )
          USE SMMeshClass
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -79,7 +79,7 @@
 !
          INTEGER  :: numberOfValenceChanges, numberOfDiamondsRemoved
          LOGICAL  :: valenceHasChanged, diamondsHaveBeenRemoved
-         
+
          valenceHasChanged       = .false.
          diamondsHaveBeenRemoved = .false.
          numberOfValenceChanges  = 0
@@ -90,13 +90,13 @@
 !        ------------------------------------
 !
          CALL ReduceNodeValences( mesh, numberOfValenceChanges, errorCode )
-         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
-          
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+
          IF ( numberOfValenceChanges > 0 )     THEN
             valenceHasChanged = .true.
             IF ( printMessage )     THEN
                PRINT *, "      Valences have been modified ", numberOfValenceChanges, " time(s)"
-            END IF 
+            END IF
          END IF
 !
 !        ---------------
@@ -104,13 +104,13 @@
 !        ---------------
 !
          CALL RemoveDiamondElements( mesh, numberOfDiamondsRemoved, errorCode )
-         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
-         
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+
          IF ( numberOfDiamondsRemoved > 0 )     THEN
             diamondsHaveBeenRemoved = .true.
             IF ( PrintMessage )     THEN
                PRINT *, "      Number of diamond elements removed = ", numberOfDiamondsRemoved
-            END IF 
+            END IF
          END IF
 !
 !        -------------------------------------------------
@@ -129,7 +129,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE ReduceNodeValences( mesh, numberOfValenceChanges, errorCode )
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -153,17 +153,17 @@
 !        valences since the array will be created and destroyed by the
 !        cleanup routines.
 !        -------------------------------------------------------------
-!                  
+!
          CALL MakeNodeToElementConnections( mesh, errorCode )
-         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
-         
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+
          ALLOCATE(localNumElementsForNode(SIZE(numElementsForNode)))
          localNumElementsForNode = numElementsForNode
 !
 !        --------------------------------
 !        Check and clean up node valences
 !        --------------------------------
-!        
+!
          DO nodeID = 1, SIZE(localNumElementsForNode)
             SELECT CASE ( localNumElementsForNode(nodeID) )
                CASE( 7 )
@@ -175,15 +175,15 @@
                   !Do nothing
             END SELECT
          END DO
-         
+
          DEALLOCATE(localNumElementsForNode)
 
       END SUBROUTINE ReduceNodeValences
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE RemoveDiamondElements( mesh, numberOfDiamondsRemoved, errorCode ) 
-         IMPLICIT NONE 
+      SUBROUTINE RemoveDiamondElements( mesh, numberOfDiamondsRemoved, errorCode )
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -210,17 +210,17 @@
 !
          elementIterator => mesh % elementsIterator
          CALL elementIterator % setToStart()
-         
+
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
             CALL cast(obj,currentElement)
-            
+
             CALL DeleteElementIfDiamond( currentElement, mesh, errorCode )
-            
+
             IF ( currentElement % remove )     THEN
                numberOfDiamondsRemoved = numberOfDiamondsRemoved + 1
             END IF
-                        
+
             CALL elementIterator % moveToNext()
          END DO
 !
@@ -233,13 +233,13 @@
          IF ( numberOfDiamondsRemoved > 0 )     THEN
             CALL DoLazyDelete( mesh )
          END IF
-         
-         
-      END SUBROUTINE RemoveDiamondElements 
+
+
+      END SUBROUTINE RemoveDiamondElements
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUp7ValenceNode_InMesh(id, mesh, errorCode) 
+      SUBROUTINE CleanUp7ValenceNode_InMesh(id, mesh, errorCode)
       USE ErrorTypesModule
 !
 !     ----------------------------------------------
@@ -248,7 +248,7 @@
 !     elements and inserting a diamond element.
 !     ----------------------------------------------
 !
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -268,22 +268,22 @@
          REAL(KIND=RP)               :: theta, thetaMax
          INTEGER, DIMENSION(4)       :: diagonalMap = [3,4,1,2]
          REAL(KIND=RP)               :: x1(3), x2(3), x(3)
-         
+
          CLASS(SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
          CLASS(SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
          CLASS(SMEdge)     , POINTER :: edge => NULL()
          CLASS(FTObject)   , POINTER :: obj => NULL()
-         
+
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes
          TYPE(SMElementPtr)            :: eNeighbors(2)
          TYPE(SMEdgePtr)               :: sharedEdgePointers(2), newEdgePointers(2)
-         
+
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
 !
 !        ------------------------
 !        Make current connections
 !        ------------------------
-!                  
+!
          CALL MakeNodeToElementConnections( mesh, errorCode )
          CALL MakeNodeToEdgeConnections   ( mesh )
 !
@@ -292,12 +292,12 @@
 !        ---------------------------------------
 !
          thetaMax = 0.0_RP
-         
+
          DO k = 1, numElementsForNode(id)
             e       => elementsForNodes(k,id) % element
             localID = ElementLocalNodeIDForNodeID( id, e )
             theta   = AngleAtLocalNode_ForElement(localID,e)
-            
+
             IF(theta > thetaMax)     THEN
                thetaMax         = theta
                eTarget          => e
@@ -334,7 +334,7 @@
          END DO
 !
 !        --------------------------------------------------------
-!        If there aren't two neighbors, then something is wrong. 
+!        If there aren't two neighbors, then something is wrong.
 !        Bail when this happens.
 !        --------------------------------------------------------
 !
@@ -380,17 +380,17 @@
          END IF
 !
 !        -------------------------------------------
-!        Create a new node inside the target element      
+!        Create a new node inside the target element
 !        -------------------------------------------
 !
          node => eTarget % nodes(localIDForTarget) % node
-         
+
          nodeForThisID => node ! save pointer before overwriting
-         
-         x1 = node % x       
+
+         x1 = node % x
          x2 = eTarget % nodes(diagonalMap(localIDForTarget)) % node % x
          x  = 0.5_RP*(x1 + x2)
-         
+
          ALLOCATE(newNode)
          CALL newNode % initWithLocationAndID(x,mesh % newNodeID())
          obj               => newNode
@@ -404,7 +404,7 @@
          CALL releaseSMNode(eTarget % nodes(localIDForTarget) % node)
          eTarget % nodes(localIDForTarget) % node => newNode
          CALL newNode % retain()
-         
+
          localID = ElementLocalNodeIDForNodeID( id, eNeighbors(1) % element )
          CALL releaseSMNode(eNeighbors(1) % element % nodes(localID) % node)
          eNeighbors(1) % element % nodes(localID) % node => newNode
@@ -420,13 +420,13 @@
 !        --------------------
 !
          elementNodes(1) % node => nodeForThisID
-         
+
          IF ( newEdgePointers(1) % edge % nodes(1) % node % id == id )     THEN
             elementNodes(2) % node => newEdgePointers(1) % edge % nodes(2) % node
          ELSE
             elementNodes(2) % node => newEdgePointers(1) % edge % nodes(1) % node
          END IF
-         
+
          elementNodes(3) % node => newNode
 
          IF ( newEdgePointers(2) % edge % nodes(1) % node % id == id )     THEN
@@ -434,7 +434,7 @@
          ELSE
             elementNodes(4) % node => newEdgePointers(2) % edge % nodes(1) % node
          END IF
-         
+
          newID = mesh % newElementID()
          ALLOCATE(e)
          CALL e % initWithNodesIDAndType( elementNodes, newID, QUAD )
@@ -444,13 +444,13 @@
 !
          CALL deallocateNodeToEdgeConnections()
          CALL deallocateNodeToElementConnections()
-         
-      END SUBROUTINE CleanUp7ValenceNode_InMesh 
+
+      END SUBROUTINE CleanUp7ValenceNode_InMesh
 !
 !////////////////////////////////////////////////////////////////////////
 !
-!      SUBROUTINE CleanUp8ValenceNode_InMesh(id,mesh) 
-!         IMPLICIT NONE 
+!      SUBROUTINE CleanUp8ValenceNode_InMesh(id,mesh)
+!         IMPLICIT NONE
 !!
 !!        ---------
 !!        Arguments
@@ -471,13 +471,13 @@
 !!        Find the element with the smallest angle
 !!        ----------------------------------------
 !!
-!         
-!      END SUBROUTINE CleanUp8ValenceNode_InMesh 
+!
+!      END SUBROUTINE CleanUp8ValenceNode_InMesh
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE PerformFinalMeshCleanup( mesh , model, errorCode ) 
+      SUBROUTINE PerformFinalMeshCleanup( mesh , model, errorCode )
          USE SMModelClass
          IMPLICIT NONE
 !
@@ -530,7 +530,7 @@
             numberOfBadElements = badElements % COUNT()
             ALLOCATE( shapeMeasures    ( NUMBER_OF_2D_SHAPE_MEASURES, numberOfBadElements ) )
             ALLOCATE( badElementMeasure( NUMBER_OF_2D_SHAPE_MEASURES, numberOfBadElements ) )
-            
+
             DO k = 1, numberOfBadElements
                obj => badElements % objectAtIndex(k)
                CALL cast(obj,e)
@@ -562,11 +562,11 @@
 !
             CALL releaseFTMutableObjectArray(badElements)
             DEALLOCATE( shapeMeasures, badElementMeasure )
-            
+
             IF ( numberOfChevrons > 0 )     THEN
                CALL DoLazyDelete( mesh )
                CALL mesh % syncEdges()
-            END IF 
+            END IF
 !
 !           -------------------------------------------
 !           Bail if the mesh is so bad that it can't be
@@ -574,7 +574,7 @@
 !           -------------------------------------------
 !
 !            badElements => BadElementsInMesh( mesh )
-!            IF(ASSOCIATED(badElements))     THEN 
+!            IF(ASSOCIATED(badElements))     THEN
 !               DO k = 1, numberOfBadElements
 !                  obj => badElements % objectAtIndex(k)
 !                  CALL cast(obj,e)
@@ -593,10 +593,10 @@
 !                      CALL badElements % release()
 !                      DEALLOCATE(badElements)
 !                      DEALLOCATE(shapeMeasures, badElementMeasure)
-!                      RETURN 
-!                  END IF 
+!                      RETURN
+!                  END IF
 !               END DO
-!            END IF 
+!            END IF
 !
 !           --------------------------
 !           Clean up boundary elements
@@ -604,13 +604,13 @@
 !
             CALL UnmarkNodesNearBoundaries( mesh % nodesIterator )
             CALL CleanUpBoundaryElements( mesh, model, errorCode )
-         END IF        
-         
+         END IF
+
       END SUBROUTINE PerformFinalMeshCleanup
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE MakeElement_RightHanded( e ) 
+      SUBROUTINE MakeElement_RightHanded( e )
          IMPLICIT NONE
 !
 !        ---------
@@ -631,18 +631,18 @@
 !
          nptr2 => e % nodes(2) % node
          nptr4 => e % nodes(4) % node
-         
+
          e % nodes(2) % node => nptr4
          e % nodes(4) % node => nptr2
-         
+
       END SUBROUTINE MakeElement_RightHanded
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUpBoundaryElements( mesh, model, errorCode ) 
+      SUBROUTINE CleanUpBoundaryElements( mesh, model, errorCode )
          USE SMModelClass
-         USE ConectionsModule
-         IMPLICIT NONE 
+         USE ConnectionsModule
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -666,7 +666,7 @@
          CLASS(FTObject)            , POINTER :: obj => NULL()
          TYPE (FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
-         
+
          numBoundaries = model % numberOfInnerCurves &
                        + model % numberOfOuterCurves &
                        + model % numberOfInterfaceCurves
@@ -683,18 +683,18 @@
 !        the boundary angles 90 degrees.
 !        -----------------------------------------------
 !
-         IF( errorCode == A_OK_ERROR_CODE)     THEN 
+         IF( errorCode == A_OK_ERROR_CODE)     THEN
             CALL makeNodeToElementConnections(mesh, errorCode)
             DO j = 1, numBoundaries
                ALLOCATE(edgeListIterator)
                IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
-               
+
                obj  => boundaryEdgesArray % objectAtIndex(j)
                CALL cast(obj,currentEdgeList)
-               
+
                CALL edgeListIterator % initWithFTLinkedList(currentEdgeList)
                CALL edgeListIterator % setToStart()
-               
+
                DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
                   obj => EdgeListIterator % object()
                   CALL cast(obj,currentEdge)
@@ -702,19 +702,19 @@
                      e   => currentEdge % elements(1) % element
 !               BUG: puts boundary points in the wrong place.
                      CALL CleanUpBoundaryElement( e, model )
-                  END IF 
-   
+                  END IF
+
                   CALL EdgeListIterator % moveToNext()
                END DO
-               
+
                CALL releaseFTLinkedListIterator(edgeListIterator)
             END DO
             CALL deallocateNodeToEdgeConnections
          ELSE
             CALL mesh % destroyEdgeArrays()
             CALL deallocateNodeToElementConnections
-            RETURN 
-         END IF 
+            RETURN
+         END IF
 !
 !        -------------------------------------------
 !        Run through the interface elements
@@ -722,7 +722,7 @@
 !        -------------------------------------------
 !
          IF ( model % numberOfInterfaceCurves > 0 )     THEN
-         
+
            ALLOCATE(interfaceElements)
            CALL interfaceElements % init()
 !
@@ -733,33 +733,33 @@
 !
            DO j = 1, numBoundaries
                IF( boundaryEdgesType(j) == BOUNDARY_EDGES ) CYCLE
-               
+
                obj  => boundaryEdgesArray % objectAtIndex(j)
                CALL cast(obj,currentEdgeList)
-               
+
                ALLOCATE(edgeListIterator)
                CALL edgeListIterator % initWithFTLinkedList(currentEdgeList)
                CALL edgeListIterator % setToStart()
-               
+
                DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
                   obj => EdgeListIterator % object()
                   CALL cast(obj,currentEdge)
-                  
+
                   IF ( currentEdge % edgeType == ON_INTERFACE )     THEN
-                  
+
                      e   => currentEdge % elements(1) % element
                      obj => e
                      CALL interfaceElements % add(obj)
-                     
+
                      e   => currentEdge % elements(2) % element
                      obj => e
                      CALL interfaceElements % add(obj)
-                     
+
                   END IF
-                  
+
                   CALL EdgeListIterator % moveToNext()
                END DO
-               
+
                CALL releaseFTLinkedListIterator(edgeListIterator)
            END DO
 !
@@ -769,8 +769,8 @@
 !          ----------------------------------------------------
 !
             CALL makeNodeToElementConnections(mesh, errorCode)
-            
-            IF( errorCode == A_OK_ERROR_CODE)     THEN 
+
+            IF( errorCode == A_OK_ERROR_CODE)     THEN
                nodesIterator => mesh % nodesIterator
                CALL nodesIterator % setToStart()
                DO WHILE ( .NOT.nodesIterator % isAtEnd() )
@@ -801,28 +801,28 @@
                               elementNode => e % nodes(k) % node
 
                               IF ( elementNode % distToBoundary == 0.0_RP )     THEN
-                                 nodeCount = nodeCount + 1 
+                                 nodeCount = nodeCount + 1
                               END IF
                            END DO
-                           
+
                            IF ( nodeCount == 1 )     THEN
                               obj => e
                               CALL interfaceElements % add(obj)
-                           END IF 
-                           
-                        END DO   
-                     END IF 
-                  END IF 
-                  
+                           END IF
+
+                        END DO
+                     END IF
+                  END IF
+
                   CALL nodesIterator % moveToNext()
                END DO
                CALL deallocateNodeToElementConnections()
-            ELSE 
+            ELSE
                CALL mesh % destroyEdgeArrays()
                CALL deallocateNodeToElementConnections
-               RETURN 
+               RETURN
             END IF
-           
+
 !
 !          -------------------------------
 !          Split the elements as necessary
@@ -831,14 +831,14 @@
            CALL splitInterfaceElements( mesh, interfaceElements )
 !
            CALL releaseFTLinkedList(interfaceElements)
-         END IF 
+         END IF
 !
 !        --------
 !        Clean up
 !        --------
 !
          CALL DoLazyDelete( mesh )
-            
+
          CALL mesh % renumberAllLists()
          CALL mesh % syncEdges()
          CALL mesh % destroyEdgeArrays()
@@ -849,8 +849,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE CleanUpChevronElements( badElements, shapeMeasures, numberOfChevrons )
-       
-         IMPLICIT NONE 
+
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -871,9 +871,9 @@
          INTEGER                   :: numberOfBadElements
          INTEGER                   :: k, j, badNodeID
          INTEGER                   :: nbrNodeLocalID , badNodeLocalID
-         
+
          INTEGER, EXTERNAL :: Loop
-         
+
          numberOfBadElements = badElements % COUNT()
          numberOfChevrons    = 0
 
@@ -889,14 +889,14 @@
             IF( shapeMeasures(MAX_ANGLE_INDEX,k) > 175.0_RP ) THEN !TODO make 175 a variable
                CALL ElementAngles( e, angles, .true. ) !Lefties have been reversed
                badNodeLocalID = -1
-               DO j = 1, 4 
+               DO j = 1, 4
                   IF( angles(j) > 175.0_RP )     THEN
                      badNodeLocalID = j
                      EXIT
                   END IF
                END DO
                IF(badNodeLocalID < 0) CYCLE !Bail on this one
-               
+
                node => e % nodes(badNodeLocalID) % node
                badNodeID = node % id
 !
@@ -907,18 +907,18 @@
                IF ( numElementsForNode(badNodeID) == 2 )     THEN
                   IF( ASSOCIATED(e,elementsForNodes(1,badNodeID) % element) )     THEN
                      eNbr => elementsForNodes(2,badNodeID) % element
-                  ELSE IF ( ASSOCIATED(e,elementsForNodes(2,badNodeID) % element) )   THEN 
+                  ELSE IF ( ASSOCIATED(e,elementsForNodes(2,badNodeID) % element) )   THEN
                      eNbr => elementsForNodes(1,badNodeID) % element
                   ELSE
                      PRINT *, "Unassociated pointer for node ", badNodeID, " in element ", e % id
-                     CYCLE 
+                     CYCLE
                   END IF
 !
-!                 ---------------------------------------------------------
-!                 Replace the bad node in this element by the opposite node
-!                 in the neigboring element.
+!                 ---------------------------------------------
+!                 Replace the bad node in this element by
+!                 the opposite node in the neighboring element.
 !                 Find where in the neighbor this node is.
-!                 ----------------------------------------
+!                 ---------------------------------------------
 !
                   j = -1
                   DO j = 1,4
@@ -930,7 +930,7 @@
                         EXIT
                      END IF
                   END DO
-                  
+
                   IF ( j < 0 )     THEN
                      PRINT *, "Bad shared element connection, ignoring elements ", e % id, eNbr % id
                      CYCLE
@@ -954,7 +954,7 @@
                   CALL e % nodes(badNodeLocalID) % node % retain()
                   eNbr % remove = .true.
                   numberOfChevrons = numberOfChevrons + 1
-                  
+
                ELSE !TODO Do something here at some point.
 !
 !                 ------------------------------------
@@ -963,16 +963,16 @@
 !
 !                  PRINT *, "Alternate Topology on bad angle", numElementsForNode(badNodeID)
 !                  DO j = 1,4
-!                     PRINT *, e % nodes(j) % node % x 
+!                     PRINT *, e % nodes(j) % node % x
 !                  END DO
 !                  PRINT *, "-----------"
                END IF
             END IF
-            
+
          END DO
-         IF(numberOfChevrons > 0) PRINT *, numberOfChevrons, " chevron elements removed from mesh." 
-         
-      END SUBROUTINE CleanUpChevronElements 
+         IF(numberOfChevrons > 0) PRINT *, numberOfChevrons, " chevron elements removed from mesh."
+
+      END SUBROUTINE CleanUpChevronElements
 !
 !///////////////////////////////////////////////////////////////////////////////////////////////////////
 !
@@ -980,7 +980,7 @@
          USE SMModelClass
          USE ErrorTypesModule
          USE fMinModule
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -999,17 +999,17 @@
          INTEGER                          :: boundaryNodeCount
          INTEGER                          :: k, m, j
          INTEGER                          :: mark(4)
-         
+
          REAL(KIND=RP)  , DIMENSION(3)    :: p
-         REAL(KIND=RP)                    :: t, tSav
-         
+         REAL(KIND=RP)                    :: t, tSave
+
          CLASS(SMCurve)       , POINTER   :: c => NULL()
          CLASS(SMChainedCurve), POINTER   :: chain  => NULL()      ! Returned also so that it, too can be used.
          TYPE(SMNode)                     :: nodeCopy(4) ! Two extra but not a big deal.
          CLASS(SMElement)     , POINTER   :: eTest => NULL()
          LOGICAL                          :: badArrayOriginal(6)      ! Node valence <= 6
          INTEGER                          :: nodeID
-         
+
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
 !
 !        -------------------------------------------------------
@@ -1023,7 +1023,7 @@
             IF ( e % nodes(k) % node % bCurveID > UNDEFINED .AND. &
                  e % nodes(k) % node % distToBoundary == 0.0_RP )     THEN
                boundaryNodeCount = boundaryNodeCount + 1
-               mark(k) = CBE_ON_BOUNDARY 
+               mark(k) = CBE_ON_BOUNDARY
             END IF
          END DO
 !
@@ -1043,9 +1043,9 @@
          DO k = 1,4
             IF( mark(k) == CBE_ON_BOUNDARY )     THEN
 !
-!              -------------------------------------------
-!              Find the quality of the neigboring elements
-!              -------------------------------------------
+!              --------------------------------------------
+!              Find the quality of the neighboring elements
+!              --------------------------------------------
 !
                nodeID = elementNodes(k) % node % id
 
@@ -1055,7 +1055,7 @@
                      WRITE(msg,*) "Neighbors to node ", node % x, "Not associated. Aborting cleanup."
                      CALL ThrowErrorExceptionOfType("CleanUpBoundaryElement",msg,FT_ERROR_WARNING)
                      RETURN
-                  END IF 
+                  END IF
                   badArrayOriginal(j) = elementIsBad(eTest)
                END DO
             END IF
@@ -1084,14 +1084,14 @@
                CALL ThrowErrorExceptionOfType("CleanUpBoundaryElement",msg,FT_ERROR_WARNING)
                RETURN
             END IF
-            
+
             sourceNode  => elementNodes(m) % node
             node        => elementNodes(k) % node
             nodeCopy(k) =  node % typeCopy()
-            
+
             p      = sourceNode % x
             t      = node % whereOnBoundary
-            tSav   = t
+            tSave  = t
 !
             c => model % curveWithID(node % bCurveID, chain)
             t = ParametrizationAtPointNear(c,p,t)
@@ -1101,7 +1101,7 @@
 !            tEnd   = MIN(tEnd, 1.0_RP)
 !!
 !            t = fmin(tStart, tEnd, c, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
-            
+
             node % whereOnBoundary  = t
             node % distToBoundary   = 0.0_RP !This is a boundary node
             node % gWhereOnBoundary = chain % ChainTForCurveTInCurve(t,c)
@@ -1109,11 +1109,11 @@
             node % x                = c % positionAt(t)
          END DO
 !
-!        ----------------------------------------------------------------
+!        --------------------------------------------------------------
 !        This element has been adjusted. See if the new element and the
-!        neigbors of the nodes have been messed up. If so, go back to the
-!        original.
-!        ----------------------------------------------------------------
+!        neighbors of the nodes have been messed up. If so, go back to
+!        the original.
+!        --------------------------------------------------------------
 !
 !         badArrayNew = .false.
 !         DO k = 1, 4
@@ -1137,13 +1137,13 @@
 !               obj => e % nodes % objectAtIndex(k) !Supersceeded with new data structure
 !               CALL cast(obj,node)
 !               CALL copyOfNodeType(nodeCopy(k),node)
-!            END IF 
+!            END IF
 !         END DO
       END SUBROUTINE CleanUpBoundaryElement
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE DeleteElementIfDiamond(e, mesh, errorCode) 
+      SUBROUTINE DeleteElementIfDiamond(e, mesh, errorCode)
          IMPLICIT NONE
 !
 !        ---------
@@ -1178,7 +1178,7 @@
             valences(k) = numElementsForNode(id)
             IF(valences(k) == 3) hasA3ValenceNode = .true.
          END DO
-         IF(.NOT.hasA3ValenceNode) RETURN 
+         IF(.NOT.hasA3ValenceNode) RETURN
 !
 !        -------------------------------------------------------
 !        A diamond has two non-adjacent 3-valence nodes, n1 & n2
@@ -1191,11 +1191,11 @@
                   isDiamond = .true.
                   localIds(1)  = k
                   localIds(2)  = k + 2
-                  EXIT 
+                  EXIT
                END IF
             END IF
          END DO
-         
+
          IF(.NOT.isDiamond) RETURN
 !
 !        --------------------------------------
@@ -1257,7 +1257,7 @@
 !        -------------------------------------------------------------------
 !
          CALL makeNodeToElementConnections(mesh, errorCode)
-               
-      END SUBROUTINE DeleteElementIfDiamond 
+
+      END SUBROUTINE DeleteElementIfDiamond
 
       END Module MeshCleaner

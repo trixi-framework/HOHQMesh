@@ -2,33 +2,33 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
@@ -36,8 +36,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      MeshGeneratorMethods.f90
-!      Created: August 21, 2013 1:01 PM 
-!      By: David Kopriva  
+!      Created: August 21, 2013 1:01 PM
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -51,17 +51,17 @@
       USE MeshOutputMethods
       USE MeshSizerClass
       IMPLICIT NONE
-   
+
 !
 !     ========
-      CONTAINS 
+      CONTAINS
 !     ========
 !
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE GenerateQuadMesh(project, errorCode)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE GenerateQuadMesh(project, errorCode)
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -75,44 +75,44 @@
 !        ---------------
 !
          INTEGER :: k
-               
-         CALL GenerateAQuadMesh( project, errorCode ) 
+
+         CALL GenerateAQuadMesh( project, errorCode )
 !
-!        -------------------------------------------------------------------------
-!        If there is a problem, ususally it is because the initial background grid
+!        ------------------------------------------------------------------------
+!        If there is a problem, usually it is because the initial background grid
 !        is too large. Try again with a smaller background grid, just in case.
-!        -------------------------------------------------------------------------
+!        ------------------------------------------------------------------------
 !
          IF ( errorCode > A_OK_ERROR_CODE )     THEN ! Try again at most two times
             DO k = 1, 2
-            
+
                errorCode = A_OK_ERROR_CODE
-               IF(printMessage)     THEN 
+               IF(printMessage)     THEN
                   PRINT *, "Background grid is too large. Trying again with 1/2 size" ! Throw exception here
                END IF
-               
+
                project % backgroundParams % dx           =   project % backgroundParams % dx/2.0_RP
                project % backgroundParams % N            = 2*project % backgroundParams % N
                project % sizer % baseSize                = 0.5_RP*project % sizer % baseSize
                project % backgroundParams % backgroundGridSize = 0.5_RP*project % backgroundParams % backgroundGridSize
-               
+
                CALL ResetProject(project)
                CALL clearBoundaryCurves(project % sizer)
                CALL BuildSizerBoundaryCurves(self = project)
-               
-               CALL GenerateAQuadMesh(project,errorCode) 
-               
-               IF( errorCode == A_OK_ERROR_CODE)     EXIT 
-            END DO 
-        END IF 
-        
+
+               CALL GenerateAQuadMesh(project,errorCode)
+
+               IF( errorCode == A_OK_ERROR_CODE)     EXIT
+            END DO
+        END IF
+
       END SUBROUTINE GenerateQuadMesh
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE GenerateAQuadMesh(project, errorCode)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE GenerateAQuadMesh(project, errorCode)
          USE MeshCleaner
-         IMPLICIT NONE  
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -131,18 +131,18 @@
 !        --------------------------------------------------------------
 !
 !         CALL generateTemporaryBoundaryArrays( project % sizer )
-         
+
          errorCode = A_OK_ERROR_CODE
          CALL GenerateQuadMeshFromGrid( project, errorCode )
          CALL trapExceptions !Abort on fatal exceptions
-         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
 !
 !        ------------------------
 !        Perform topology cleanup
 !        ------------------------
 !
          CALL PerformTopologyCleanup(project % mesh, errorCode)
-         IF(errorCode > A_OK_ERROR_CODE)     RETURN 
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
 !
 !        ------------------------
 !        Smooth mesh if requested
@@ -160,7 +160,7 @@
 !
          IF(PrintMessage) PRINT *, "   Performing final mesh cleanup..."
             CALL PerformFinalMeshCleanup( project % mesh, project % model, errorCode )
-            IF(errorCode > A_OK_ERROR_CODE)     RETURN 
+            IF(errorCode > A_OK_ERROR_CODE)     RETURN
          IF(PrintMessage) PRINT *, "   Mesh cleanup done."
 !
 !        --------------------------------------
@@ -170,7 +170,7 @@
          IF(Associated(project % smoother))     THEN
             IF(PrintMessage) PRINT *, "   Begin Final Smoothing..."
             CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
-            IF(errorCode > A_OK_ERROR_CODE)     RETURN 
+            IF(errorCode > A_OK_ERROR_CODE)     RETURN
             IF(PrintMessage) PRINT *, "   final Smoothing done."
          END IF
 !
@@ -183,27 +183,27 @@
          CALL CompleteElementConstruction(project)
 !
 !     ----------------------------------------------------------
-!     If this is a multi-material mesh, then set each element's 
+!     If this is a multi-material mesh, then set each element's
 !     materialID and materialName
 !     ----------------------------------------------------------
 !
       IF ( ASSOCIATED(interfaceCurves) .AND. &
            project % runParams % meshFileFormat == ISM_MM)     THEN
-         CALL SetMaterialProperties(mesh = project % mesh) 
-      END IF 
+         CALL SetMaterialProperties(mesh = project % mesh)
+      END IF
 !
 !     -------------------------------------
 !     We no longer need the boundary arrays
 !     -------------------------------------
 !
       CALL destroyTemporaryBoundaryArrays
-      
+
       IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
 
       END SUBROUTINE GenerateAQuadMesh
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE GenerateQuadMeshFromGrid( project, errorCode )
       USE BoundaryEdgeCleaningModule
 !
@@ -231,11 +231,11 @@
       CLASS(FTObject)    , POINTER :: obj       => NULL()
       CLASS(FTLinkedList), POINTER :: list      => NULL()
       TYPE (FTException) , POINTER :: exception => NULL()
-      
+
       INTEGER                      :: numberOfBoundaries,numBoundaryEdgeLists
       INTEGER                      :: j
       INTEGER                      :: idOfOuterBoundary
-      
+
       TYPE (FTLinkedListIterator), POINTER :: iterator
       CLASS(SMChainedCurve)      , POINTER :: chain
 !
@@ -247,7 +247,7 @@
          CALL GenerateGridWithSizerAndType( project % grid, project % sizer, &
                                             project % meshParams % meshType)
          project % numberOfLevelsUsed = highestLevel
-         IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN 
+         IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN
       IF(PrintMessage) PRINT *, "   Quadtree grid generated"
 !
 !     ---------------
@@ -256,7 +256,7 @@
 !
       ALLOCATE( project % mesh )
       CALL project % mesh % init( )
-      
+
       mesh  => project % mesh
       model => project % model
       grid  => project % grid
@@ -265,29 +265,29 @@
 !     ----------------------------------------------------------
 !     Save the polynomial order and the curve names to the mesh.
 !     Material names are associated with the bounding interface
-!     curves.  
+!     curves.
 !     ----------------------------------------------------------
 !
       mesh % polynomialOrder =  project % runParams % polynomialOrder
       numberOfBoundaries = model % numberOfInnerCurves + model % numberOfOuterCurves &
                          + model % numberOfInterfaceCurves
-                         
+
       IF ( model % numberOfInterfaceCurves > 0 )     THEN
-      
+
             ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(numberOfBoundaries))
             mesh % materialNameForID = project % backgroundMaterialName
-            
+
             iterator => model % interfaceBoundariesIterator
             CALL iterator % setToStart()
             DO WHILE( .NOT.iterator % isAtEnd() )
                obj => iterator % object()
                CALL castToSMChainedCurve(obj,chain)
-               
+
                mesh % materialNameForID(chain % id()) = chain % curveName()
-               
+
                CALL iterator % moveToNext()
-            END DO 
-      END IF 
+            END DO
+      END IF
 !
 !     -------------------------------------
 !     Create the nodes, elements, and edges
@@ -306,7 +306,7 @@
       NULLIFY(project % grid)
 !
 !     --------------------------------------------------------------
-!     Now make the mesh conform to exterior or interface boundaries. 
+!     Now make the mesh conform to exterior or interface boundaries.
 !
 !     Determining exterior quads requires a curve defined in terms
 !     of an array. Convert and temporarily save the boundary curves.
@@ -346,23 +346,23 @@
       CALL mesh % buildEdgeList()
 
       IF( model % curveCount == 0 )     RETURN
-  
+
       numBoundaryEdgeLists = model%numberOfInnerCurves + &
                              model%numberOfOuterCurves + &
                              model%numberOfInterfaceCurves
-                             
+
       CALL AllocateBoundaryEdgesArray(numBoundaryEdgeLists)
       CALL CollectBoundaryEdges( mesh, errorCode )
-      
-      IF( errorCode > A_OK_ERROR_CODE)     RETURN 
-      
+
+      IF( errorCode > A_OK_ERROR_CODE)     RETURN
+
       CALL OrderBoundaryEdges( mesh )
-      
+
       IF ( catch(WARNING_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
          exception => errorObject()
          CALL throw(exception)
          RETURN
-      END IF 
+      END IF
 !
 !     -------------------------------------------------------
 !     Smooth the edges along exterior and interior boundaries
@@ -379,7 +379,7 @@
 !
       idOfOuterBoundary = UNDEFINED
       IF( ASSOCIATED( sizer % outerBoundary ) ) idOfOuterBoundary = sizer % outerBoundary % id
-      
+
       CALL LocateEdgeImagesOnBoundaries( mesh, model, idOfOuterBoundary, skipInterfaces = .FALSE. )
 
       IF ( catch(FATAL_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
@@ -387,10 +387,10 @@
          exception => errorObject()
          CALL throw(exception)
          RETURN
-      END IF 
+      END IF
 
       CALL CleanUpBoundaryCurves( mesh, model, errorCode )
-      IF(errorCode > A_OK_ERROR_CODE)     RETURN 
+      IF(errorCode > A_OK_ERROR_CODE)     RETURN
 !
 !     ------------------------------------------
 !     The edge lists are also no longer in sync.
@@ -402,7 +402,7 @@
       CALL smoothBoundaryEdges
 !
 !     ----------------------------------------------------------------
-!     Next, find where the edges should project onto the 
+!     Next, find where the edges should project onto the
 !     boundary. Try to keep them uniformly distributed if possible
 !     by moving the proposed node locations along the boundary, except
 !     for the end nodes, which will be attached to corners.
@@ -415,8 +415,8 @@
          CALL throw(exception)
          RETURN
       END IF
-      
-      DO j = 1, boundaryEdgesArray % COUNT() 
+
+      DO j = 1, boundaryEdgesArray % COUNT()
          obj => boundaryEdgesArray % objectAtIndex(j)
          CALL cast(obj,list)
          CALL FlagEndNodes( list, model )
@@ -430,10 +430,10 @@
 !
       DO j = 1, boundaryEdgesArray % COUNT()
          IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
-         
+
          obj => boundaryEdgesArray % objectAtIndex(j)
          CALL cast(obj,list)
-         CALL GenerateBoundaryElements( mesh, model, list ) 
+         CALL GenerateBoundaryElements( mesh, model, list )
       END DO
 !
 !     -------------------------------
@@ -445,7 +445,7 @@
       CALL unmarkNodesNearBoundaries( mesh % nodesIterator )
       CALL mesh % syncEdges()
       CALL mesh % renumberAllLists()
-      
+
       IF(PrintMessage) PRINT *, "   Nodes and elements generated"
 
       END SUBROUTINE GenerateQuadMeshFromGrid
@@ -493,18 +493,18 @@
 !     Flag with a sign change to ignore aliases as having already been written out.
 !     ----------------------------------------------------------------------------
 !
-      DO j = 0, M 
+      DO j = 0, M
          DO i = 0, N
             IF(.NOT.ASSOCIATED(grid % nodes(i,j) % node) )            CYCLE
             IF( grid % nodes(i,j) % node % refCount() == 1 )          CYCLE  ! => Only the main grid, not quads references this
             IF( grid % nodes(i,j) % node % activeStatus == REMOVE )   CYCLE  ! Marked as outside
             IF( grid % nodes(i,j) % node % id > 0 )     THEN
-            
+
                obj => grid % nodes(i,j) % node
                CALL mesh % nodes % add(obj)
                grid % nodes(i,j) % node % id = -ABS(grid % nodes(i,j) % node % id)
             END IF
-            
+
          END DO
       END DO
 !
@@ -512,12 +512,12 @@
 !     Now generate the element connectivity
 !     -------------------------------------
 !
-      DO j = 1, M 
-         DO i = 1, N 
+      DO j = 1, M
+         DO i = 1, N
             IF ( ASSOCIATED(grid % quads(i,j) % quad) )     THEN
                IF ( ASSOCIATED(grid % children(i,j) % grid) )  CYCLE
                elementID = mesh % newElementID()
-               DO k = 1, 4 
+               DO k = 1, 4
                   eNodes(k) % node => grid % quads(i,j) % quad % nodes(k) % node
                END DO
                ALLOCATE(e)
@@ -533,9 +533,9 @@
 !     For children
 !     ------------
 !
-      IF( ASSOCIATED(grid % children) )     THEN 
+      IF( ASSOCIATED(grid % children) )     THEN
          DO j = 1, M
-            DO i = 1, N 
+            DO i = 1, N
                IF( ASSOCIATED( grid % children(i,j) % grid ) ) &
                    CALL GenerateNodesAndElements( mesh, grid % children(i,j) % grid )
             END DO
@@ -547,15 +547,15 @@
 !     --------------------
 !
       IF( grid % level == 0 ) CALL FlagNodeIds( grid, .false. )
-     
+
       END SUBROUTINE GenerateNodesAndElements
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE GenerateBoundaryElements( mesh, model, list ) 
+      SUBROUTINE GenerateBoundaryElements( mesh, model, list )
          USE fMinModule
          USE MeshOutputMethods, ONLY: WriteSkeletonToTecplot
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
 !
 !        ---------
@@ -571,10 +571,10 @@
 !        ---------------
 !
          TYPE(SMNodePtr), DIMENSION(:), POINTER :: nodeArray => NULL()
-         
+
          INTEGER, EXTERNAL :: Loop
 
-         
+
          CLASS(SMNode)  , POINTER       :: node => NULL(), prevNode => NULL(), jointNode => NULL(), nextNode => NULL()
          CLASS(SMNode)  , POINTER       :: startNode => NULL()
          TYPE(SMNodePtr), DIMENSION(2)  :: newNodes
@@ -585,10 +585,10 @@
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
          CLASS(SMElement)     , POINTER :: e => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
-         
+
          INTEGER                        :: k, nodeArraySize
          INTEGER                        :: jointType, bCurveSide
-         
+
          REAL(KIND=RP)                  :: t, p(3)
          REAL(KIND=RP)                  :: tStart, tEnd
 !
@@ -614,7 +614,7 @@
          bCurveSide =  node % bCurveSide
          t          =  node % whereOnBoundary
          cStart     => model % curveWithID(node % bCurveID, chain)
-         
+
          ALLOCATE(node)
          CALL initBoundaryNode( cStart, chain, t, bCurveSide, mesh % newNodeID(), node )
          obj => node
@@ -629,15 +629,15 @@
 !
          k = 1
          DO WHILE ( k <= nodeArraySize )
-         
+
             IF ( k < nodeArraySize )     THEN
                jointType = nodeArray(k+1) % node % nodeType
             ELSE
                jointType = nodeArray(1) % node % nodeType
             END IF
-            
+
             SELECT CASE ( jointType )
-            
+
                CASE( NONE, ROW_SIDE )
 !
 !                 ---------------------------------------------------------------
@@ -657,7 +657,7 @@
                      boundaryEdgeNodes(2) % node => nodeArray(k+1) % node
                      t                           =  node % whereOnBoundary
                      cEnd                        => model % curveWithID(node % bCurveID, chain)
-                     
+
                      ALLOCATE(node)
                      CALL initBoundaryNode( cEnd, chain, t, bCurveSide, mesh % newNodeID(), node )
 
@@ -679,7 +679,7 @@
                   CALL mesh % elements % add(obj)
                   CALL releaseSMElement(e)
                   prevNode => newNodes(2) % node
-                  
+
                CASE( ROW_END )
 !
 !                 ---------------------------------------------------------------
@@ -705,10 +705,10 @@
                   cStart => model % curveWithID(nodeArray(k) % node % bCurveID, chain)
 
                   t      = fMin( tStart, tEnd, cStart, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
-                  
+
                   ALLOCATE(node)
                   CALL initBoundaryNode( cStart, chain, t, bCurveSide, mesh % newNodeID(), node )
-                  
+
                   newNodes(2) % node => node
                   obj => node
                   CALL mesh % nodes % add(obj)
@@ -732,7 +732,7 @@
 !                 ------------
 !
                   t    =  1.0_RP
-                  
+
                   ALLOCATE(node)
                   CALL initBoundaryNode( cStart, chain, t, bCurveSide, mesh % newNodeID(), node )
                   elementNodes(3) % node => node
@@ -750,15 +750,15 @@
                   ELSE
                      nextNode => nodeArray(1) % node !Wrap around
                   END IF
-                  
+
                   cEnd   => model % curveWithID(nextNode % bCurveID, chain)
                   tStart = 0.0_RP
                   tEnd   = nextNode % whereOnBoundary ! No further than the next node along the chain
                   t      = fMin( tStart, tEnd, cEnd, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
-                  
+
                   ALLOCATE(node)
                   CALL initBoundaryNode( cEnd, chain, t, bCurveSide, mesh % newNodeID(), node )
-                  
+
                   elementNodes(4) % node => node
                   obj => node
                   CALL mesh % nodes % add(obj)
@@ -779,7 +779,7 @@
 !
                   prevNode => elementNodes(4) % node
 !
-                  
+
                CASE( ROW_CORNER )
 !
 !                 -----------------------------------------------------
@@ -816,9 +816,9 @@
                   prevNode % whereOnBoundary  = 1.0_RP
                   prevNode % gWhereOnBoundary = chain % ChainTForCurveTInCurve( 1.0_RP, cStart )
                   prevNode % nodeType         = ROW_CORNER
-                  
+
                   elementNodes(2) % node => prevNode
-                  
+
                   e => boundaryElementFor4Nodes( mesh % newElementID(), elementNodes )
                   obj => e
                   CALL mesh % elements % add(obj)
@@ -830,7 +830,7 @@
 !
                   prevNode => elementNodes(2) % node
                   k = k + 1
-                  
+
                CASE( ROW_REVERSAL )
 !
 !                 --------------------------------------------------------------
@@ -875,15 +875,15 @@
                   elementNodes(2) % node => nodeArray(k) % node
                   elementNodes(3) % node => nodeArray(Loop(k+1,nodeArraySize)) % node
                   elementNodes(4) % node => nodeArray(Loop(k+2,nodeArraySize)) % node
-                  
+
                   e => boundaryElementFor4Nodes( mesh % newElementID(), elementNodes )
                   obj => e
                   CALL mesh % elements % add(obj)
                   CALL releaseSMElement(e)
-                  
+
                   prevNode => elementNodes(1) % node
                   k = k + 1
-                  
+
                CASE DEFAULT
                  WRITE(stderr,*) " "
                  WRITE(stderr,*) "**************************************************************************"
@@ -896,41 +896,41 @@
             END SELECT
             k = k + 1
          END DO
-         
-         DEALLOCATE( nodeArray )         
-         
+
+         DEALLOCATE( nodeArray )
+
       END SUBROUTINE GenerateBoundaryElements
 !@mark -
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE flagBoundaryTypes(curveTypeForID)
 !
 !     ------------------------------------------------------------------------
-!     Assign a boundary type (EXTERIOR, INTERIOR, INTERFACE) according to the 
+!     Assign a boundary type (EXTERIOR, INTERIOR, INTERFACE) according to the
 !     curve's id
 !     ------------------------------------------------------------------------
 !
          IMPLICIT NONE
          INTEGER, DIMENSION(:) :: curveTypeForID
          INTEGER :: k
-         
+
          IF(ASSOCIATED( outerBoundaryCurve ))     THEN
             curveTypeForID(outerBoundaryCurve % id) = OUTER
          END IF
-         
+
           IF(ASSOCIATED( interiorCurves ))     THEN
             DO k = 1, SIZE(interiorCurves)
                curveTypeForID(interiorCurves(k) % curveArray % id) = INNER
             END DO
          END IF
-        
+
          IF( ASSOCIATED( interfaceCurves ) )     THEN
              DO k = 1, SIZE(interfaceCurves)
                curveTypeForID(interfaceCurves(k) % curveArray % id) = INTERIOR_INTERFACE
             END DO
          END IF
-         
+
       END SUBROUTINE flagBoundaryTypes
 !
 !////////////////////////////////////////////////////////////////////////
@@ -956,14 +956,14 @@
          CLASS(SMNode)              , POINTER :: node1 => NULL(), node2 => NULL(), node => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
-         
+
          INTEGER                             :: k, l, j, m, mSteps
          INTEGER                             :: w
          REAL(KIND=RP)                       :: nodes(3,4)
          REAL(KIND=RP)                       :: x1(3), x2(3), xRight, yTop, xLeft, yBottom
          REAL(KIND=RP)                       :: h, hMin, dz, z(3), segmentLength
          LOGICAL                             :: removedHere
-         
+
          elements        => mesh % elements
          elementIterator => mesh % elementsIterator
 !
@@ -972,7 +972,7 @@
 !        ------------------------------------------------
 !
          IF( ASSOCIATED( outerBoundaryCurve ) )    THEN
-            
+
             CALL elementIterator % setToStart()
             DO WHILE(.NOT.elementIterator % isAtEnd())
                obj => elementIterator % object()
@@ -984,9 +984,9 @@
 !              -----------------------------------------------
 !
                removedHere = .false.
-               
+
                DO k = 1, 4
-                  
+
                   w = ACWindingFunction( e % nodes(k) % node % x, outerBoundaryCurve % x, &
                                          outerBoundaryCurve % nSegments )
                   IF ( abs(w) == 0 ) THEN
@@ -994,7 +994,7 @@
                      removedHere   = .true.
                      EXIT
                   END IF
-                  
+
                END DO
 !
 !              --------------------------------------------
@@ -1016,27 +1016,27 @@
                   node => e % nodes(1) % node
                   aPointInsidetheCurve(:,outerBoundaryCurve % id) = node % x
                END IF
-               
-               CALL elementIterator % moveToNext() 
-            END DO  
-            
+
+               CALL elementIterator % moveToNext()
+            END DO
+
          ELSE ! we just have the outer box
-        
+
             xRight  = backgroundParams % x0(1) + backgroundParams % dx(1)*backgroundParams % N(1)
             yTop    = backgroundParams % x0(2) + backgroundParams % dx(2)*backgroundParams % N(2)
             xLeft   = backgroundParams % x0(1)
             yBottom = backgroundParams % x0(2)
-            
+
             CALL elementIterator % setToStart()
             DO WHILE ( .NOT.elementIterator % isAtEnd() )
                obj => elementIterator % object()
                CALL cast(obj,e)
                removedHere = .false.
-               
+
                DO k = 1, 4
                   node1 => e % nodes(edgeMap(1,k)) % node
                   node2 => e % nodes(edgeMap(2,k)) % node
-                  
+
                   x1    = node1 % x
                   x2    = node2 % x
                   IF( AlmostEqual(x1(2),yBottom) .AND. AlmostEqual(x2(2),yBottom) )      THEN
@@ -1101,9 +1101,9 @@
                           node2 % nodeType = CORNER_NODE
                       END IF
                   END IF
-                 
+
                END DO
-               
+
                CALL elementIterator % moveToNext()
             END DO
          END IF
@@ -1112,21 +1112,21 @@
 !        Do the same for inner boundaries
 !        --------------------------------
 !
-         IF( ASSOCIATED( interiorCurves ) )    THEN         
+         IF( ASSOCIATED( interiorCurves ) )    THEN
             DO l = 1, SIZE(interiorCurves)
                curveArray => interiorCurves(l) % curveArray
-               
+
                CALL elementIterator % setToStart()
-               
+
                DO WHILE ( .NOT.elementIterator % isAtEnd() )
                   obj => elementIterator % object()
                   CALL cast(obj,e)
                   removedHere = .FALSE.
-                  
+
                   IF( .NOT.e % remove )     THEN
-                     
+
                         DO k = 1, 4
-                           
+
                           node => e % nodes(k) % node
                           w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments )
                           IF ( ABS(w) >= 1 ) THEN
@@ -1146,8 +1146,8 @@
 !                       ----------------------------------------------------------------
 !
                         IF( .NOT.e % remove )     THEN
-                        
-                           DO k = 1, 4 
+
+                           DO k = 1, 4
                               nodes(:,k) = e % nodes(k) % node % x
                            END DO
 !
@@ -1156,13 +1156,13 @@
 !                          --------------------------
 !
                            hMin = SQRT( (nodes(1,1) - nodes(1,4))**2 + (nodes(2,1) - nodes(2,4))**2)
-                           DO k = 1, 3 
+                           DO k = 1, 3
                               h = SQRT( (nodes(1,k+1) - nodes(1,k))**2 + (nodes(2,k+1) - nodes(2,k))**2)
                               hMin = MIN( h, hMin )
                            END DO
 !
 !                          --------------------------------------------------------------------
-!                          See if any of the nodes are inside the element. If the elements 
+!                          See if any of the nodes are inside the element. If the elements
 !                          are small compared to the spacing on the curve, linearly interpolate
 !                          the curve segment and see if those fall inside the element. HACK:
 !                          the decision on how big is too big is arbitrary at the moment.
@@ -1191,7 +1191,7 @@
                                  x2 = curveArray % x(:,0)
                               ELSE
                                  x2 = curveArray % x(:,j+1)
-                              END IF 
+                              END IF
                               segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
                               IF( segmentLength > 0.25_RP*hMin )     THEN
                                  mSteps = NINT(segmentLength/hMin)*5
@@ -1214,18 +1214,18 @@
 !                       --------------------------------------------
 !
                         IF ( e % remove .AND. removedHere )     THEN
-                          DO k = 1, 4 
+                          DO k = 1, 4
                               node => e % nodes(k) % node
                               node % bCurveChainID = curveArray % id
                               node % bCurveSide    = OUTSIDE
                           END DO
                         END IF
-                     
+
                   END IF
-                  
+
                   CALL elementIterator % moveToNext()
                END DO
-               
+
             END DO
 !
 !           ----------------------------------------------
@@ -1233,15 +1233,15 @@
 !           is inside an inner curve
 !           ----------------------------------------------
 !
-            IF( ASSOCIATED( outerBoundaryCurve ) ) THEN 
+            IF( ASSOCIATED( outerBoundaryCurve ) ) THEN
                aPointInsidetheCurve(:,1) = aPointInsidetheCurve(:,2)
             END IF
          END IF
-        
+
       END SUBROUTINE MarkExteriorElements
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE MarkFloaters( mesh )
 !
 !        ------------------------------------------------------------------
@@ -1270,17 +1270,17 @@
 !
          elements        => mesh % elements
          elementIterator => mesh % elementsIterator
-         
+
          CALL elementIterator % setToStart()
          DO WHILE(.NOT.elementIterator % isAtEnd())
 !            obj => elementIterator % object()
 !            CALL cast(obj,e)
-            
-!            DO k = 1, 4 
-!               
+
+!            DO k = 1, 4
+!
 !            END DO
             CALL elementIterator % moveToNext()
-         END DO 
+         END DO
 
       END SUBROUTINE MarkFloaters
 !
@@ -1306,7 +1306,7 @@
          CLASS(SMNode)              , POINTER :: node            => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
-         
+
          INTEGER                              :: k, l, j, m, mSteps
          REAL(KIND=RP)                        :: w
          REAL(KIND=RP)                        :: nodes(3,4)
@@ -1314,7 +1314,7 @@
          REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
          LOGICAL                              :: isInterfaceElement
          INTEGER                              :: numInside, numOutside, location(4)
-         
+
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
          elements        => mesh % elements
@@ -1326,7 +1326,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            
+
             CALL elementIterator % setToStart()
 !
 !           -------------------------
@@ -1337,7 +1337,7 @@
                obj => elementIterator % object()
                CALL cast(obj,e)
                isInterfaceElement = .false.
-               
+
                IF( .NOT.e % remove )     THEN
 !
 !                 -----------------------------------------------------
@@ -1371,14 +1371,14 @@
                      DO k = 1,4
                         e % nodes(k) % node % bCurveSide = location(k) ! INSIDE or OUTSIDE
                      END DO
-                     
+
                   ELSE
 !
 !                    ------------------------------------
 !                    Grab the four corners of the element
 !                    ------------------------------------
 !
-                     DO k = 1, 4 
+                     DO k = 1, 4
                         nodes(:,k) = e % nodes(k) % node % x
                      END DO
 !
@@ -1387,13 +1387,13 @@
 !                    --------------------------
 !
                      hMin = SQRT( (nodes(1,1) - nodes(1,4))**2 + (nodes(2,1) - nodes(2,4))**2)
-                     DO k = 1, 3 
+                     DO k = 1, 3
                         h = SQRT( (nodes(1,k+1) - nodes(1,k))**2 + (nodes(2,k+1) - nodes(2,k))**2)
                         hMin = MIN( h, hMin )
                      END DO
 !
 !                    ----------------------------------------------------------------------
-!                    See if any of the curve points are inside the element. If the elements 
+!                    See if any of the curve points are inside the element. If the elements
 !                    are small compared to the spacing on the curve, linearly interpolate
 !                    the curve segment and see if those fall inside the element. HACK:
 !                    the decision on how big is too big is arbitrary at the moment.
@@ -1418,7 +1418,7 @@
                         x1 = curveArray % x(:,j)
                         x2 = curveArray % x(:,j+1)
                         segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
-                        
+
                         IF( segmentLength > 0.25*hMin )     THEN
                            mSteps = NINT(segmentLength/hMin)*5
                            dz = 1.0_RP/DBLE(mSteps)
@@ -1431,7 +1431,7 @@
                            END DO
                            IF( isInterfaceElement )     EXIT
                         END IF
-                        
+
                      END DO !Loop over segments
                   END IF
                END IF !(.NOT.e%remove)
@@ -1440,8 +1440,8 @@
 !              Let the nodes know which curve they are near
 !              --------------------------------------------
 !
-               IF ( isInterfaceElement )     THEN                        
-                  DO k = 1, 4 
+               IF ( isInterfaceElement )     THEN
+                  DO k = 1, 4
                      node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
 !
@@ -1449,7 +1449,7 @@
 !                    To order boundary edges, we need to know a point inside this curve
 !                    ------------------------------------------------------------------
 !
-                     IF(node % bCurveSide == UNDEFINED )     THEN 
+                     IF(node % bCurveSide == UNDEFINED )     THEN
                         w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
 
                         IF ( ABS(w) > 0.6_RP ) THEN
@@ -1461,12 +1461,12 @@
                      END IF
                   END DO
                END IF
-               
+
                CALL elementIterator % moveToNext()
             END DO !WHILE ( .NOT.elementIterator % isAtEnd )
-            
+
          END DO !l = 1, SIZE(interfaceCurves)
-         
+
       END SUBROUTINE MarkInterfaceElements
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1499,11 +1499,11 @@
          CLASS(SMNode)              , POINTER :: node            => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
-         
+
          INTEGER                              :: k, l
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
-         
+
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
          elements => mesh % elements
@@ -1511,7 +1511,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            
+
             CALL elementIterator % setToStart()
 !
 !           -------------------------
@@ -1526,14 +1526,14 @@
 !              Mark elements that have only inside or boundary nodes
 !              -----------------------------------------------------
 !
-               IF(.NOT.e % remove)     THEN 
+               IF(.NOT.e % remove)     THEN
                   numInside  = 0
                   numOutside = 0
                   location   = UNDEFINED
-                  
+
                   DO k = 1, 4
                      node => e % nodes(k) % node
-                     
+
                      w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
                      IF ( abs(w) == 0 ) THEN
                         location(k)                   = OUTSIDE
@@ -1556,14 +1556,14 @@
                         node => e % nodes(k) % node
                         node % materialID = e % materialID
                      END DO
-                  END IF 
-               END IF 
-               
+                  END IF
+               END IF
+
                CALL elementIterator % moveToNext()
             END DO !WHILE ( .NOT.elementIterator % isAtEnd )
-            
+
          END DO !l = 1, SIZE(interfaceCurves)
-         
+
       END SUBROUTINE SetMaterialProperties
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1586,10 +1586,10 @@
 !        ---------------
 !
          REAL(KIND=RP) :: p(3)
-         
+
          p = c % positionAt(t)
          CALL node % initWithLocationAndID(p,id)
-         
+
          node % whereOnBoundary  = t
          node % gWhereOnBoundary = chain % ChainTForCurveTInCurve( t, c )
          node % distToBoundary   = 0.0_RP
@@ -1597,7 +1597,7 @@
          node % bCurveChainID    = chain % id()
          node % bCurveSide       = bCurveSide
          node % nodeType         = ROW_SIDE !Most will be, change later if necessary
-         
+
       END SUBROUTINE initBoundaryNode
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1621,13 +1621,13 @@
          REAL(KIND=RP)  , DIMENSION(3,2) :: oldX, newX
          REAL(KIND=RP)  , DIMENSION(3)   :: u, v
          TYPE(SMNodePtr), DIMENSION(4)   :: eNodes
-         
-         
+
+
          oldX(:,1) = oldNodes(1) % node % x
          oldX(:,2) = oldNodes(2) % node % x
          newX(:,1) = newNodes(1) % node % x
          newX(:,2) = newNodes(2) % node % x
-         
+
          u = oldX(:,2) - oldX(:,1)
          v = newX(:,1) - oldX(:,1)
          IF( CrossProductDirection(u,v) == UP )     THEN
@@ -1641,10 +1641,10 @@
             eNodes(3) % node => newNodes(2) % node
             eNodes(4) % node => oldNodes(2) % node
          END IF
-         
+
          ALLOCATE(e)
          CALL e % initWithNodesIDAndType(eNodes, elementID, QUAD )
-         
+
       END FUNCTION boundaryElementForNodes
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1668,13 +1668,13 @@
          REAL(KIND=RP)  , DIMENSION(3)   :: x1, x2, x4
          REAL(KIND=RP)  , DIMENSION(3)   :: u, v
          TYPE(SMNodePtr), DIMENSION(4)   :: eNodes
-         
+
          ALLOCATE(e)
-         
+
          x1 = newNodes(1) % node % x
          x2 = newNodes(2) % node % x
          x4 = newNodes(4) % node % x
-         
+
          u = x2 - x1
          v = x4 - x1
          IF( CrossProductDirection(u,v) == UP )     THEN
@@ -1687,13 +1687,13 @@
 
             CALL e % initWithNodesIDAndType(eNodes, elementID, QUAD )
          END IF
-         
+
       END FUNCTION boundaryElementFor4Nodes
 !
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE FlagEndNodes( list, model )
-      IMPLICIT NONE 
+      IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -1714,7 +1714,7 @@
          INTEGER                                   :: j, k, jNode, id, jNode0, jNode1
          REAL(KIND=RP)                             :: t, dt, t0, t1, x, dMin, d
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
-         
+
          nodeArray     => GatheredNodes( list )
          nodeArraySize = SIZE(nodeArray)
 !
@@ -1722,7 +1722,7 @@
 !        Set the default node type
 !        -------------------------
 !
-         DO j = 1, nodeArraySize 
+         DO j = 1, nodeArraySize
             nodeArray(j) % node % nodeType = ROW_SIDE
          END DO
 !
@@ -1751,10 +1751,10 @@
 !
          t0 = HUGE(t0)
          t1 = -10.0_RP !Doesn't really matter...
-         
+
          jnode0 = -1
          jnode1 = -1
-         DO j = 1, nodeArraySize 
+         DO j = 1, nodeArraySize
             t = nodeArray(j) % node % gWhereOnBoundary
             IF( t < t0 )     THEN
                t0     = t
@@ -1765,13 +1765,13 @@
                jNode1 = j
             END IF
          END DO
-         
+
          IF( t0 < 1.0_RP - t1 )     THEN
            IF ( jNode0 < 0 )     THEN
               WRITE(msg,*) "Joint node 0 not found"
               CALL ThrowErrorExceptionOfType("FlagEndNodes", msg, FT_ERROR_FATAL)
-              RETURN 
-           END IF 
+              RETURN
+           END IF
            nodeArray(jNode0) % node % whereOnBoundary = 0.0_RP
            nodeArray(jNode0) % node % nodeType        = boundaryCurve % jointClassification(0)
            nodeArray(jNode0) % node % bCurveID        = boundaryCurve % myCurveIDs(1)
@@ -1779,8 +1779,8 @@
            IF ( jNode1 < 0 )     THEN
               WRITE(msg,*) "Joint node 1 not found"
               CALL ThrowErrorExceptionOfType("FlagEndNodes", msg, FT_ERROR_FATAL)
-              RETURN 
-           END IF 
+              RETURN
+           END IF
            nodeArray(jNode1) % node % whereOnBoundary = 1.0_RP
            nodeArray(jNode1) % node % nodeType        = boundaryCurve % jointClassification(0)
          END IF
@@ -1793,13 +1793,13 @@
             t = k*dt
 !
 !           ----------------------
-!           Find the closest point: 
+!           Find the closest point:
 !           TODO should bisect
 !           ----------------------
 !
             dMin  = HUGE(dMin)
             jNode = -1
-            DO j = 1, SIZE(nodeArray) 
+            DO j = 1, SIZE(nodeArray)
                x = nodeArray(j) % node % gWhereOnBoundary
                d = ABS(t - x)
                IF( d < dMin )     THEN
@@ -1810,8 +1810,8 @@
            IF ( jNode < 0 )     THEN
               WRITE(msg,*) "Joint node not found"
               CALL ThrowErrorExceptionOfType("FlagEndNodes", msg, FT_ERROR_FATAL)
-              RETURN 
-           END IF 
+              RETURN
+           END IF
 !
 !           ------------------------
 !           Set the node information
@@ -1824,21 +1824,21 @@
 !
 !        ---------------------------------------------------------------------------------
 !        At Row-Reversal points along a curve, it is possible that the row-reversal point
-!        is the closest point along the curve to more than one node. To account for this, 
+!        is the closest point along the curve to more than one node. To account for this,
 !        mark all points within the tolerance used to find the closest point by the joint
 !        classification.
 !        ---------------------------------------------------------------------------------
 !
          DO k = 0, boundaryCurve % COUNT()-1
-            
+
             IF( boundaryCurve % jointClassification(k) == ROW_REVERSAL )     THEN
                currentCurve => boundaryCurve % curveAtIndex(k+1)
                t            = boundaryCurve % ChainTForCurveTInCurve(0.0_RP,currentCurve)
                t1           = boundaryCurve % ChainTForCurveTInCurve(1.0_RP,currentCurve)
-               
+
                DO j = 1, SIZE(nodeArray)
                   node => nodeArray(j) % node
-                  
+
                   IF ( ABS(node % gWhereOnBoundary - t) <= minimizationTolerance )     THEN
                      node % whereOnBoundary  = 0.0_RP
                      node % gWhereOnBoundary = t
@@ -1849,9 +1849,9 @@
                      node % nodeType         = ROW_REVERSAL
                   END IF
                END DO
-               
+
             END IF
-            
+
          END DO
 !
 !        --------
@@ -1859,11 +1859,11 @@
 !        --------
 !
          DEALLOCATE( nodeArray )
-         
+
       END SUBROUTINE FlagEndNodes
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE setElementBoundaryInfo(project)
 !
 !     ------------------------------------------------------------------------
@@ -1892,20 +1892,20 @@
          N     =  project % runParams % polynomialOrder
          mesh  => project % mesh
          model => project % model
-         
+
          iterator => mesh % elementsIterator
          CALL iterator % setToStart()
-         
+
          DO WHILE ( .NOT.iterator % isAtEnd() )
-         
+
             obj => iterator % object()
             CALL cast(obj,e)
             CALL ElementBoundaryInfoInit( e % boundaryInfo, N)
             CALL gatherElementBoundaryInfo( e, model )
-                       
+
             CALL iterator % moveToNext()
          END DO
-       
+
       END SUBROUTINE setElementBoundaryInfo
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1917,7 +1917,7 @@
 !     edges of the element. This info is
 !
 !     nodeIDs(4)    = integer id # of the 4 corner nodes
-!     bCurveFlag(4) = integer ON or OFF of whether a boundary 
+!     bCurveFlag(4) = integer ON or OFF of whether a boundary
 !                     curve is defined or NOT
 !     bCurveName(4) = Name of the 4 boundary curves. Equals "---" IF
 !                     the element side is interior,
@@ -1944,18 +1944,18 @@
          CLASS(SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
          CLASS(SMCurve)       , POINTER :: c     => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
-         
+
          REAL(KIND=RP)            :: tStart(4), tEnd(4), t_j, deltaT
          INTEGER                  :: curveId(4)
          CHARACTER(LEN=32)        :: noCurveName(-4:-1) = (/"Right ", "Left  ", "Bottom", "Top   " /)
-         
+
          N = SIZE(e % boundaryInfo%x,2)-1
 !
 !        -----
 !        Nodes
 !        -----
 !
-         DO k = 1, 4 
+         DO k = 1, 4
             node1 => e % nodes(k) % node
             e % boundaryInfo % nodeIDs(k) = node1 % id
          END DO
@@ -1966,8 +1966,8 @@
 !
          e % boundaryInfo%bCurveName = "---"
          e % boundaryInfo%bCurveFlag = OFF
-         
-         DO k = 1, 4 
+
+         DO k = 1, 4
             node1 => e % nodes(edgeMap(1,k)) % node
             node2 => e % nodes(edgeMap(2,k)) % node
 !
@@ -1992,11 +1992,11 @@
                   curveID(k)    = node2 % bCurveID
                   c             => model % curveWithID(node2 % bCurveID, chain)
                END IF
-               
+
                e % boundaryInfo % bCurveName(k) = c % curveName()
                tStart(k)            = node1 % gWhereOnBoundary
                tEnd(k)              = node2 % gWhereOnBoundary
-               
+
             ELSE IF ( IsOnOuterBox(node1) .AND. IsOnOuterBox(node2) )     THEN
 !
 !              --------------------------------------------------------------
@@ -2008,7 +2008,7 @@
                ELSE
                   e % boundaryInfo % bCurveName(k) = noCurveName(node1 % bCurveID)
                END IF
-               
+
             END IF
          END DO
 !
@@ -2018,47 +2018,47 @@
 !        --------------------------------------------
 !
          DO k = 1, 4
-         
+
             IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN ! Use boundary curves to compute interpolant
-            
+
               c      => model % curveWithID(curveID(k), chain)
-              
+
               deltaT = tEnd(k) - tStart(k)
               IF( deltaT > maxParameterChange )     THEN !Crossing over the start
                  deltaT = deltaT - 1.0_RP
               ELSE IF (deltaT < -maxParameterChange ) THEN
                  deltaT = 1.0_RP + deltaT
               END IF
-              
-              DO j = 0, N 
-              
+
+              DO j = 0, N
+
                   t_j = tStart(k) + deltaT*(1.0_RP - COS(j*PI/N))/2.0_RP
                   IF( t_j > 1.0_RP )     THEN
                      t_j = t_j - 1.0_RP
                   ELSE IF( t_j < 0.0_RP )     THEN
                      t_j = t_j + 1.0_RP
                   END IF
-                  
+
                   e % boundaryInfo % x(:,j,k) = chain % PositionAt( t_j )
-                  
+
                 END DO
              ELSE ! Use a straight line between end nodes
-             
+
                node1 => e % nodes(edgeMap(1,k)) % node
                node2 => e % nodes(edgeMap(2,k)) % node
-               
-               DO j = 0, N 
+
+               DO j = 0, N
                   t_j = (1.0_RP - COS(j*PI/N))/2.0_RP
                   e % boundaryInfo % x(:,j,k) = (1.0_RP - t_j)*node1 % x + t_j*node2 % x
-               END DO 
-                
+               END DO
+
              END IF
          END DO
 
       END SUBROUTINE gatherElementBoundaryInfo
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE CompleteElementConstruction(project)
 !
 !     ---------------------------------------------------------------
@@ -2067,7 +2067,7 @@
 !
          USE CurveInterpolantClass
          USE TransfiniteMapClass
-         IMPLICIT NONE  
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -2101,42 +2101,42 @@
 !
          N     =  project % runParams % polynomialOrder
          mesh  => project % mesh
-         
+
          iterator => mesh % elementsIterator
          CALL iterator % setToStart()
 
          ALLOCATE( boundaryCurves(4) )
          ALLOCATE( nodes(0:N) )
          ALLOCATE( values(0:N,3) )
-         
-         DO j = 0, N 
+
+         DO j = 0, N
             nodes(j) = -COS(j*PI/N)
          END DO
          values = 0.0_RP
-         DO k = 1, 4 
+         DO k = 1, 4
             CALL Construct( boundaryCurves(k), N, nodes, values )
          END DO
          quadMap = NewTransfiniteQuadMap( boundaryCurves )
-         
+
          DO WHILE ( .NOT.iterator % isAtEnd() )
-         
+
             obj => iterator % object()
             CALL cast(obj,e)
-            
+
             e % N = N
             CALL ComputeElementFacePatch(e, quadMap, nodes, N)
-            
+
             CALL iterator % moveToNext()
          END DO
 
          DEALLOCATE( boundaryCurves)
-         
+
       END SUBROUTINE CompleteElementConstruction
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE Perform2DMeshTransformations(project)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE Perform2DMeshTransformations(project)
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -2149,21 +2149,21 @@
 !        ---------------
 !
          TYPE (SMMesh)              , POINTER :: mesh
-         
+
          mesh => project % mesh
-         
+
          IF ( .NOT. isIdentityRotation(self = project % rotationTransformer) )     THEN
-            CALL RotationTransformMesh(mesh = mesh, rotationTransformer = project % rotationTransformer) 
-         END IF 
-         
+            CALL RotationTransformMesh(mesh = mesh, rotationTransformer = project % rotationTransformer)
+         END IF
+
          IF ( .NOT. isIdentityScale(self = project % scaleTransformer) )     THEN
-            CALL scaleMesh(mesh = mesh, scalingTransformer = project % scaleTransformer) 
-         END IF 
-      
+            CALL scaleMesh(mesh = mesh, scalingTransformer = project % scaleTransformer)
+         END IF
+
       END SUBROUTINE Perform2DMeshTransformations
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE ComputeElementFacePatch(e, quadMap, nodes, N)
          USE TransfiniteMapClass
          USE CurveInterpolantClass
@@ -2184,38 +2184,38 @@
 !
          REAL(KIND=RP) :: values(0:N,3)
          INTEGER       :: i, j, k
-         
+
          ALLOCATE(e % xPatch(3,0:N,0:N))
 !
 !        -------------------
 !        Set up the quad map
 !        -------------------
 !
-         DO k = 1, 4 
+         DO k = 1, 4
             DO j = 0, N
-               DO i = 1,3 
-                  values(j,i) = e % boundaryInfo % x(i,j,k) 
-               END DO 
-            END DO 
-            
+               DO i = 1,3
+                  values(j,i) = e % boundaryInfo % x(i,j,k)
+               END DO
+            END DO
+
             CALL SetValues( quadMap % boundaryCurves(k), values )
          END DO
          nodes = quadMap % boundaryCurves(1) % nodes
-         
-         DO j = 0, N 
-            DO i = 0, N 
+
+         DO j = 0, N
+            DO i = 0, N
                CALL EvaluateTransfiniteMapAt(this = quadMap,  &
                                              xi   = nodes(i), &
                                              eta  = nodes(j), &
-                                             res  = e % xPatch(:,i,j) ) 
-            END DO 
-         END DO 
-          
+                                             res  = e % xPatch(:,i,j) )
+            END DO
+         END DO
+
       END SUBROUTINE ComputeElementFacePatch
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE scaleMesh(mesh, scalingTransformer)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE scaleMesh(mesh, scalingTransformer)
          IMPLICIT NONE
 !
 !        ---------
@@ -2245,12 +2245,12 @@
          DO WHILE( .NOT.nodeIterator % isAtEnd() )
             obj => nodeIterator % object()
             CALL cast(obj,node)
-            
+
             xFormed = PerformScaleTransformation(x              = node % x, &
                                                  transformation = scalingTransformer)
             node % x = xFormed
             CALL nodeIterator % moveToNext()
-         END DO 
+         END DO
 !
 !        ---------------------------
 !        Scale element-stored values
@@ -2258,9 +2258,9 @@
 !
          elementIterator => mesh % elementsIterator
          CALL elementIterator % setToStart()
-         
+
          DO WHILE(.NOT.elementIterator % isAtEnd())
-         
+
             obj => elementIterator % object()
             CALL cast(obj,e)
             N = e % N
@@ -2269,34 +2269,34 @@
 !           Patch scaling
 !           -------------
 !
-            DO j = 0, N 
-               DO i = 0, N 
+            DO j = 0, N
+               DO i = 0, N
                   xFormed = PerformScaleTransformation(x              = e % xPatch(:,i,j), &
                                                        transformation = scalingTransformer)
                   e % xPatch(:,i,j) = xFormed
-               END DO 
-            END DO 
+               END DO
+            END DO
 !
 !           ----------------------
 !           Boundary point scaling
 !           ----------------------
 !
-            DO k = 1,4 
-               DO j = 0, N 
+            DO k = 1,4
+               DO j = 0, N
                   xFormed = PerformScaleTransformation(x              = e % boundaryInfo % x(:,j,k), &
                                                        transformation = scalingTransformer)
-                  e % boundaryInfo % x(:,j,k) = xFormed  
-               END DO 
-            END DO 
-            
+                  e % boundaryInfo % x(:,j,k) = xFormed
+               END DO
+            END DO
+
             CALL elementIterator % moveToNext()
-         END DO 
+         END DO
 
       END SUBROUTINE scaleMesh
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE RotationTransformMesh(mesh, rotationTransformer)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE RotationTransformMesh(mesh, rotationTransformer)
          IMPLICIT NONE
 !
 !        ---------
@@ -2326,12 +2326,12 @@
          DO WHILE( .NOT.nodeIterator % isAtEnd() )
             obj => nodeIterator % object()
             CALL cast(obj,node)
-            
+
             xFormed = PerformRotationTransform(x              = node % x, &
                                              transformation = rotationTransformer)
             node % x = xFormed
             CALL nodeIterator % moveToNext()
-         END DO 
+         END DO
 !
 !        ---------------------------
 !        Scale element-stored values
@@ -2339,9 +2339,9 @@
 !
          elementIterator => mesh % elementsIterator
          CALL elementIterator % setToStart()
-         
+
          DO WHILE(.NOT.elementIterator % isAtEnd())
-         
+
             obj => elementIterator % object()
             CALL cast(obj,e)
             N = e % N
@@ -2350,28 +2350,28 @@
 !           Patch scaling
 !           -------------
 !
-            DO j = 0, N 
-               DO i = 0, N 
+            DO j = 0, N
+               DO i = 0, N
                   xFormed = PerformRotationTransform(x              = e % xPatch(:,i,j), &
                                                    transformation = rotationTransformer)
                   e % xPatch(:,i,j) = xFormed
-               END DO 
-            END DO 
+               END DO
+            END DO
 !
 !           ----------------------
 !           Boundary point scaling
 !           ----------------------
 !
-            DO k = 1,4 
-               DO j = 0, N 
+            DO k = 1,4
+               DO j = 0, N
                   xFormed = PerformRotationTransform(x              = e % boundaryInfo % x(:,j,k), &
                                                    transformation = rotationTransformer)
-                  e % boundaryInfo % x(:,j,k) = xFormed  
-               END DO 
-            END DO 
-            
+                  e % boundaryInfo % x(:,j,k) = xFormed
+               END DO
+            END DO
+
             CALL elementIterator % moveToNext()
-         END DO 
+         END DO
 
       END SUBROUTINE RotationTransformMesh
    END MODULE MeshGenerationMethods

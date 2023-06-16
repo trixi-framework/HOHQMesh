@@ -2,33 +2,33 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
-! 
+!
 ! HOHQMesh contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 !    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
+! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
 !    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
@@ -36,19 +36,19 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      MeshQualityAnalysis.f90
-!      Created: 2011-05-19 08:58:04 -0400 
-!      By: David Kopriva  
+!      Created: 2011-05-19 08:58:04 -0400
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
       Module MeshQualityAnalysisClass
       USE SMMeshClass
       USE HexMeshObjectsModule
-      IMPLICIT NONE 
+      IMPLICIT NONE
 !
 !-------------------------------------------------------------------
 !> Compute standard mesh quality measures. Optionally write them out
-!! to a file for graphical analysis. Mesh Quality meqasures are 
+!! to a file for graphical analysis. Mesh Quality meqasures are
 !! taken from "The Verdict Library Reference Manual" by Stimpson et al.
 !-------------------------------------------------------------------
 !
@@ -67,29 +67,29 @@
          REAL(KIND=RP)    , DIMENSION(:), ALLOCATABLE :: minValues
          REAL(KIND=RP)    , DIMENSION(:), ALLOCATABLE :: avgValues
       END TYPE MeshStatistics
-      
+
       INTERFACE ComputeMeshQualityStatistics
          MODULE PROCEDURE :: ComputeMeshQualityStatistics2D
          MODULE PROCEDURE :: ComputeMeshQualityStatistics3D
       END INTERFACE ComputeMeshQualityStatistics
-      
+
       INTERFACE OutputMeshQualityMeasures
          MODULE PROCEDURE :: OutputMeshQualityMeasures2D
       END INTERFACE OutputMeshQualityMeasures
-      
+
       PRIVATE :: Cross3D, Dot3D, Norm3D, Normalize3D
 !
-!//////////////////////////////////////////////////////////////////////// 
+!////////////////////////////////////////////////////////////////////////
 !
 !                 2D Shape Measures
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       INTEGER, PARAMETER :: SIGNED_AREA_INDEX = 1, ASPECT_RATIO_INDEX = 2, &
                             CONDITION_INDEX   = 3, EDGE_RATIO_INDEX   = 4, &
                             JACOBIAN_INDEX    = 5, MIN_ANGLE_INDEX    = 6, &
                             MAX_ANGLE_INDEX   = 7, AREA_SIGN          = 8
-                                     
+
       REAL(KIND=RP), PARAMETER, PRIVATE :: FUDGE_FACTOR_HIGH = 1.1_RP, FUDGE_FACTOR_LOW = 0.9
 !
 !     ----------------------
@@ -97,7 +97,7 @@
 !     ----------------------
 !
       INTEGER, PARAMETER :: NUMBER_OF_2D_SHAPE_MEASURES = 8
-      
+
       CHARACTER(LEN=16), DIMENSION(NUMBER_OF_2D_SHAPE_MEASURES) :: &
               measureNames = (/  "Signed Area     ", &
                                  "Aspect Ratio    ", &
@@ -108,7 +108,7 @@
                                  "Maximum Angle   ", &
                                  "Area Sign       "  &
                              /)
-                             
+
       REAL(KIND=RP)    , DIMENSION(NUMBER_OF_2D_SHAPE_MEASURES) :: &
               refValues     = (/  1.0_RP , &
                                   1.0_RP , &
@@ -119,7 +119,7 @@
                                   90.0_RP, &
                                    1.0_RP  &
                              /)
-                             
+
       REAL(KIND=RP)    , DIMENSION(NUMBER_OF_2D_SHAPE_MEASURES) :: &
               acceptableLow = (/  0.0_RP , &
                                   1.0_RP , &
@@ -130,7 +130,7 @@
                                   90.0_RP,  &
                                    1.0_RP  &
                              /)
-                             
+
       REAL(KIND=RP)    , DIMENSION(NUMBER_OF_2D_SHAPE_MEASURES) :: &
               acceptableHigh = (/  999.999_RP , &
                                    999.999_RP , &
@@ -143,18 +143,18 @@
                              /)
 !
 !
-!//////////////////////////////////////////////////////////////////////// 
+!////////////////////////////////////////////////////////////////////////
 !
 !                 3D Shape Measures
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    INTEGER, PARAMETER :: NUMBER_OF_3D_SHAPE_MEASURES = 6
 
    INTEGER, PARAMETER :: DIAGONAL3D_INDEX = 1, EDGE_RATIO3D_INDEX = 2, &
                          JACOBIAN3D_INDEX = 3, SHAPE3D_INDEX      = 4, &
                          SKEW3D_INDEX     = 5, VOLUME3D_INDEX     = 6
-   
+
    CHARACTER(LEN=16), DIMENSION(NUMBER_OF_3D_SHAPE_MEASURES) :: &
            shapeMeasureNames3D = [ "Diagonal        ", &
                                    "Edge Ratio      ", &
@@ -163,7 +163,7 @@
                                    "Skew            ", &
                                    "Volume          "  &
                                  ]
-                          
+
    REAL(KIND=RP)    , DIMENSION(NUMBER_OF_3D_SHAPE_MEASURES) :: &
            refValues3D = [  1.0_RP , &
                             1.0_RP , &
@@ -172,7 +172,7 @@
                             0.0_RP , &
                             1.0_RP   &
                           ]
-                          
+
       REAL(KIND=RP)    , DIMENSION(NUMBER_OF_3D_SHAPE_MEASURES) :: &
               acceptableLow3D = [ 0.65_RP , &
                                   1.0_RP , &
@@ -181,7 +181,7 @@
                                   0.0_RP , &
                                   0.0_RP   &
                                 ]
-                                
+
       REAL(KIND=RP)    , DIMENSION(NUMBER_OF_3D_SHAPE_MEASURES) :: &
               acceptableHigh3D = (/  1.0_RP     , &
                                    999.999_RP , &
@@ -190,8 +190,8 @@
                                    0.5_RP     , &
                                    999.999_RP   &
                              /)
-      
-      
+
+
       INTERFACE OPERATOR (.cross.)
          MODULE PROCEDURE CrossProduct
       END INTERFACE
@@ -200,14 +200,14 @@
 ! note1: will have to change for nonplanar geometries
 !
 !     ========
-      CONTAINS 
+      CONTAINS
 !     ========
 !
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE DestructMeshStatistics(stats)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE DestructMeshStatistics(stats)
+         IMPLICIT NONE
          TYPE(MeshStatistics) :: stats
          DEALLOCATE( STATs % avgValues)
          DEALLOCATE( stats % maxValues)
@@ -215,33 +215,33 @@
          stats % statsType = UNDEFINED
       END SUBROUTINE DestructMeshStatistics
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE ConstructMeshStatistics( stats, statsType )  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ConstructMeshStatistics( stats, statsType )
+         IMPLICIT NONE
          TYPE(MeshStatistics) :: stats
          INTEGER              :: statsType
          INTEGER              :: numStats
-         
+
          IF ( ALLOCATED(STATs % avgValues) )     THEN
-            CALL DestructMeshStatistics(stats) 
-         END IF 
-          
+            CALL DestructMeshStatistics(stats)
+         END IF
+
          stats % statsType = statsType
          IF ( statsType == QUAD_STATISTICS )     THEN
             numStats =  NUMBER_OF_2D_SHAPE_MEASURES
-         ELSE 
-            numStats = NUMBER_OF_3D_SHAPE_MEASURES 
-         END IF 
-          
+         ELSE
+            numStats = NUMBER_OF_3D_SHAPE_MEASURES
+         END IF
+
          ALLOCATE(stats % avgValues(numStats))
          ALLOCATE(stats % minValues(numStats))
          ALLOCATE(stats % maxValues(numStats))
-         
+
          stats % avgValues  = 0.0_RP
          stats % maxValues  = 0.0_RP
          stats % minValues  = HUGE(1.0_RP)
-          
+
       END SUBROUTINE ConstructMeshStatistics
 !
 !////////////////////////////////////////////////////////////////////////
@@ -249,8 +249,8 @@
       SUBROUTINE ComputeMeshQualityStatistics2D( stats, mesh )
 !
 !     ------------------------------------------------------------------
-!     Compute mesh quality for each element, print the elemental values 
-!     and accumilate the statistics.
+!     Compute mesh quality for each element, print the elemental values
+!     and accumulate the statistics.
 !     ------------------------------------------------------------------
 !
          IMPLICIT NONE
@@ -271,29 +271,29 @@
          CLASS(FTObject)            , POINTER :: obj             => NULL()
          REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
          INTEGER                              :: k, nValues
-         
+
          CALL ConstructMeshStatistics(stats, statsType = QUAD_STATISTICS)
-         
+
          elementIterator => mesh % elementsIterator
          CALL elementIterator % setToStart()
-         
+
          nValues = 0
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
             CALL cast(obj,e)
             CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
-            
+
             DO k = 1, NUMBER_OF_2D_SHAPE_MEASURES
                stats % avgValues(k) = stats % avgValues(k) + shapeMeasures(k)
                stats % maxValues(k) = MAX( stats % maxValues(k), shapeMeasures(k) )
                stats % minValues(k) = MIN( stats % minValues(k), shapeMeasures(k) )
             END DO
-            
+
             CALL elementIterator % moveToNext()
             NValues = nValues + 1
          END DO
          stats % avgValues = stats % avgValues/NValues
-      
+
       END SUBROUTINE ComputeMeshQualityStatistics2D
 !
 !////////////////////////////////////////////////////////////////////////
@@ -301,8 +301,8 @@
       SUBROUTINE ComputeMeshQualityStatistics3D( stats, mesh )
 !
 !     ------------------------------------------------------------------
-!     Compute mesh quality for each element, print the elemental values 
-!     and accumilate the statistics.
+!     Compute mesh quality for each element, print the elemental values
+!     and accumulate the statistics.
 !     ------------------------------------------------------------------
 !
          IMPLICIT NONE
@@ -322,31 +322,31 @@
          INTEGER       :: k, nValues, lev, j, globalNodeID
          INTEGER       :: nodeLoc,nodeLev
          REAL(KIND=RP) :: P(3,0:7)
-         
+
          CALL ConstructMeshStatistics(stats, statsType = HEX_STATISTICS)
-         
+
          nValues = 0
          DO lev = 1, mesh % numberofLayers
             DO j = 1, mesh % numberOfQuadElements
-               DO k = 1, 8 
+               DO k = 1, 8
                   globalNodeID = mesh % elements(j,lev) % nodeIDs(k)
                   nodeLoc      = mesh % locAndLevelForNodeID(1,globalNodeID)
                   nodeLev      = mesh % locAndLevelForNodeID(2,globalNodeID)
                   P(:,k-1) = mesh % nodes(nodeLoc,nodeLev) % x
-               END DO 
+               END DO
                CALL Compute3DShapeMeasures(P,shapeMeasures)
-               
+
                DO k = 1, NUMBER_OF_3D_SHAPE_MEASURES
                   stats % avgValues(k) = stats % avgValues(k) + shapeMeasures(k)
                   stats % maxValues(k) = MAX( stats % maxValues(k), shapeMeasures(k) )
                   stats % minValues(k) = MIN( stats % minValues(k), shapeMeasures(k) )
                END DO
-               
+
                NValues = nValues + 1
             END DO
          END DO
          stats % avgValues = stats % avgValues/NValues
-      
+
       END SUBROUTINE ComputeMeshQualityStatistics3D
 !
 !////////////////////////////////////////////////////////////////////////
@@ -354,8 +354,8 @@
       SUBROUTINE OutputMeshQualityMeasures2D( mesh, fUnit )
 !
 !     ------------------------------------------------------------------
-!     Compute mesh quality for each element, print the elemental values 
-!     and accumilate the statistics.
+!     Compute mesh quality for each element, print the elemental values
+!     and accumulate the statistics.
 !     ------------------------------------------------------------------
 !
          IMPLICIT NONE
@@ -376,31 +376,31 @@
          CLASS(FTObject)            , POINTER :: obj => NULL()
          REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
          CHARACTER(LEN=16)                    :: namesFmt = "(   8A16 )", valuesFmt = '(  8F16.3)', numb = "10"
-         
+
          WRITE(numb,FMT='(I3)') NUMBER_OF_2D_SHAPE_MEASURES
          namesFmt  = "(" // TRIM(numb) // "A16)"
          valuesFmt = "(" // TRIM(numb) // "(1PE16.4))"
-         
+
          WRITE(fUnit,namesFmt) measureNames
-         
+
          elementIterator => mesh % elementsIterator
          CALL elementIterator % setToStart()
-         
+
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
             CALL cast(obj,e)
             CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
             WRITE( fUnit,valuesFmt) shapeMeasures
-            
+
             CALL elementIterator % moveToNext()
          END DO
-      
+
       END SUBROUTINE OutputMeshQualityMeasures2D
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ComputeElementShapeMeasures2D( e, shapeMeasures ) 
-         IMPLICIT NONE 
+      SUBROUTINE ComputeElementShapeMeasures2D( e, shapeMeasures )
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -412,7 +412,7 @@
 !        ---------------
 !        Local variables
 !        ---------------
-!         
+!
          REAL(KIND=RP) :: P(3,4)         ! Location of the four corners
          REAL(KIND=RP) :: L(3,4)         ! Sequential edge vectors
          REAL(KIND=RP) :: LNorm(4)       ! lengths of the edge vectors
@@ -429,7 +429,7 @@
          REAL(KIND=RP) :: condition      ! condition NUMBER
          REAL(KIND=RP) :: angles(4)      ! The 4 angles in the quad
          REAL(KIND=RP) :: s
-         
+
          INTEGER       :: loop(0:5) = (/4,1,2,3,4,1/)
          INTEGER       :: k
          LOGICAL       :: rightHanded
@@ -442,7 +442,7 @@
 !        Grab the locations
 !        ------------------
 !
-         DO k = 1, 4 
+         DO k = 1, 4
             P(:,k) = e % nodes(k) % node % x
          END DO
 !
@@ -457,7 +457,7 @@
          END DO
          LMax = MAXVAL(LNorm)
          LMin = MINVAL(LNorm)
-         
+
          D1   = P(:,3) - P(:,1)
          D2   = P(:,4) - P(:,2)
          DMax = MAX( Norm2(D1), Norm2(D2) )
@@ -474,7 +474,7 @@
 !        Normals
 !        -------
 !
-         DO k = 1,4 
+         DO k = 1,4
             N(k)    = L(:,loop(k-1)).cross.L(:,k)
             NHat(k) = 1.0_RP !  See note1
          END DO
@@ -485,7 +485,7 @@
 !        Areas
 !        -----
 !
-         DO k = 1, 4 
+         DO k = 1, 4
             alpha(k) = N(k)  !  See note1
          END DO
 !
@@ -566,7 +566,7 @@
 !     Compute the interior angles of each of the 4 element corners
 !     ------------------------------------------------------------
 !
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -579,17 +579,17 @@
 !        ---------------
 !        Local variables
 !        ---------------
-!         
+!
          REAL(KIND=RP) :: P(3,4)         ! Location of the four corners
          REAL(KIND=RP) :: L(3,4)         ! Sequential edge vectors
          REAL(KIND=RP) :: LNorm(4)       ! lengths of the edge vectors
          REAL(KIND=RP) :: theta
          REAL(KIND=RP) :: r              ! positive for right handed element
          REAL(KIND=RP) :: c              ! Cross product result
-         
+
          INTEGER       :: k
          INTEGER       :: loop(0:5) = (/4,1,2,3,4,1/)
-         
+
          IF ( rightHanded )     THEN
             r = 1.0_RP
          ELSE
@@ -601,7 +601,7 @@
 !        Grab the locations
 !        ------------------
 !
-         DO k = 1, 4 
+         DO k = 1, 4
             P(:,k) = e % nodes(k) % node % x
          END DO
 !
@@ -618,7 +618,7 @@
 !        Compute the angles
 !        ------------------
 !
-         DO k = 1, 4 
+         DO k = 1, 4
             theta = ACOS( -(L(1,k)*L(1,loop(k+1)) + L(2,k)*L(2,loop(k+1)))/&
                            (LNorm(k)*LNorm(loop(k+1))))*180.0_RP/PI
 !
@@ -630,11 +630,11 @@
             IF( c*r < 0.0_RP )     THEN
                theta = 360.0_RP - c
             END IF
-                           
+
             angles(loop(k+1)) = theta !angle between edges k & k+1 <=> node k.
 
          END DO
-         
+
       END SUBROUTINE ElementAngles
 !
 !////////////////////////////////////////////////////////////////////////
@@ -656,32 +656,32 @@
          CLASS(SMElement)           , POINTER :: e => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
-         
+
          elementIterator => mesh % elementsIterator
          ALLOCATE(array)
          CALL array % initWithSize(100)
-         
+
          CALL elementIterator % setToStart()
-         
+
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
             CALL cast(obj,e)
-            
+
             IF( elementIsBad(e) )  CALL array % addObject(obj)
-            
+
             CALL elementIterator % moveToNext()
          END DO
-         
+
          IF ( array % COUNT() == 0 )     THEN
             DEALLOCATE(array)
-            array => NULL() 
-         END IF 
+            array => NULL()
+         END IF
 
       END FUNCTION BadElementsInMesh
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION elementIsBad(e) 
+      LOGICAL FUNCTION elementIsBad(e)
          IMPLICIT NONE
 !
 !        ---------
@@ -696,9 +696,9 @@
 !
          REAL(KIND=RP) :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
          INTEGER       :: k
-         
+
          CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
-            
+
          elementIsBad = .false.
          DO k = 1, NUMBER_OF_2D_SHAPE_MEASURES
             IF( shapeMeasures(k) < FUDGE_FACTOR_LOW*acceptableLow(k) .OR. &
@@ -708,7 +708,7 @@
             END IF
          END DO
 
-      END FUNCTION elementIsBad 
+      END FUNCTION elementIsBad
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -732,7 +732,7 @@
 !        ---------------
 !
          INTEGER       :: k
-         
+
          info = .false.
          DO k = 1, NUMBER_OF_2D_SHAPE_MEASURES
             IF( shapeMeasures(k) < FUDGE_FACTOR_LOW*acceptableLow(k) .OR. &
@@ -740,7 +740,7 @@
                 info(k) = .true.
             END IF
          END DO
-         
+
       END SUBROUTINE ExtractBadElementInfo
 !
 !////////////////////////////////////////////////////////////////////////
@@ -763,40 +763,40 @@
          INTEGER                  :: k
          REAL(KIND=RP)            :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
          LOGICAL                  :: info(NUMBER_OF_2D_SHAPE_MEASURES)
-         
+
          CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
          CALL ExtractBadElementInfo( shapeMeasures, info )
-         
+
          WRITE( fUnit, *) "Element ", e % id
-         
-         DO k = 1,4 
+
+         DO k = 1,4
             WRITE( fUnit, *) "      ", e % nodes(k) % node % x
          END DO
-         
+
          WRITE( fUnit, *) "Problems:"
          DO k = 1, NUMBER_OF_2D_SHAPE_MEASURES
             IF( info(k) ) WRITE( fUnit, *) "      ", measureNames(k), shapeMeasures(k)
          END DO
          WRITE( fUnit, *) " "
          WRITE( funit, * ) "//////////////////////////////////////////////////"
-         
+
       END SUBROUTINE PrintBadElementInfo
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION CrossProduct( u, v ) RESULT(c) 
+      FUNCTION CrossProduct( u, v ) RESULT(c)
       IMPLICIT NONE
       REAL(KIND=RP), INTENT(IN)  :: u(3), v(3)
       REAL(KIND=RP)              :: c
-      
+
       c = u(1)*v(2) - v(1)*u(2)
-      
+
       END FUNCTION CrossProduct
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE Compute3DShapeMeasures(P, shapeMeasures)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE Compute3DShapeMeasures(P, shapeMeasures)
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -833,17 +833,17 @@
          shapeMeasures(SHAPE3D_INDEX)      = Shape3D(alpha,A)
          shapeMeasures(SKEW3D_INDEX)       = Skew3D(X)
          shapeMeasures(VOLUME3D_INDEX)     = Volume3D(alpha)
-        
-         
+
+
       END SUBROUTINE Compute3DShapeMeasures
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE ComputeLVectors(P,L)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ComputeLVectors(P,L)
+         IMPLICIT NONE
          REAL(KIND=RP) :: P(3,0:7)
          REAL(KIND=RP) :: L(3,0:11)
-         
+
          L(:,0)  = P(:,1) - P(:,0)
          L(:,1)  = P(:,2) - P(:,1)
          L(:,2)  = P(:,3) - P(:,2)
@@ -856,64 +856,64 @@
          L(:,9)  = P(:,6) - P(:,5)
          L(:,10) = P(:,7) - P(:,6)
          L(:,11) = P(:,7) - P(:,4)
-         
+
       END SUBROUTINE ComputeLVectors
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION LMax3D(L)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION LMax3D(L)
+         IMPLICIT NONE
          REAL(KIND=RP) :: L(3,0:11)
          INTEGER       :: i
          REAL(KIND=RP) :: d
-         
+
          LMax3D = 0.0_RP
-         DO i = 0,11 
+         DO i = 0,11
             CALL Norm3D(u = L(:,i),norm = d)
-            LMax3D = MAX(LMax3D, d) 
-         END DO 
-          
+            LMax3D = MAX(LMax3D, d)
+         END DO
+
       END FUNCTION LMax3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION LMin3D(L)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION LMin3D(L)
+         IMPLICIT NONE
          REAL(KIND=RP) :: L(3,0:11)
          INTEGER       :: i
          REAL(KIND=RP) :: d
-         
+
          LMin3D = HUGE(LMin3D)
-         DO i = 0,11 
+         DO i = 0,11
             CALL Norm3D(u = L(:,i),norm = d)
-            LMin3D = MIN(LMin3D, d) 
-         END DO 
-          
+            LMin3D = MIN(LMin3D, d)
+         END DO
+
       END FUNCTION LMin3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE ComputeXVectors(P,X)
-         IMPLICIT NONE  
+         IMPLICIT NONE
          REAL(KIND=RP) :: P(3,0:7)
          REAL(KIND=RP) :: X(3,3)
-         
+
          X(:,1) = (P(:,1) - P(:,0)) + (P(:,2) - P(:,3)) + &
                   (P(:,5) - P(:,4)) + (P(:,6) - P(:,7))
          X(:,2) = (P(:,3) - P(:,0)) + (P(:,2) - P(:,1)) + &
                   (P(:,7) - P(:,4)) + (P(:,6) - P(:,5))
          X(:,3) = (P(:,4) - P(:,0)) + (P(:,5) - P(:,1)) + &
                   (P(:,6) - P(:,2)) + (P(:,7) - P(:,3))
-         
+
       END SUBROUTINE ComputeXVectors
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE ComputeHexShapeMatrices(P, L, X, A)  
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ComputeHexShapeMatrices(P, L, X, A)
+      IMPLICIT NONE
 !
 !        ----------
-!        Arguments 
+!        Arguments
 !        ----------
 !
          REAL(KIND=RP) :: P(3,0:7)
@@ -928,44 +928,44 @@
          A(:,1,0) = L(:,0)
          A(:,2,0) = L(:,3)
          A(:,3,0) = L(:,4)
-         
+
          A(:,1,1) =  L(:,1)
          A(:,2,1) = -L(:,0)
          A(:,3,1) =  L(:,5)
-         
+
          A(:,1,2) =  L(:,2)
          A(:,2,2) = -L(:,1)
          A(:,3,2) =  L(:,6)
-         
+
          A(:,1,3) = -L(:,3)
          A(:,2,3) = -L(:,2)
          A(:,3,3) =  L(:,7)
-         
+
          A(:,1,4) =  L(:,11)
          A(:,2,4) =  L(:,8)
          A(:,3,4) = -L(:,4)
-         
+
          A(:,1,5) = -L(:,8)
          A(:,2,5) =  L(:,9)
          A(:,3,5) = -L(:,5)
-         
+
          A(:,1,6) = -L(:,9)
          A(:,2,6) =  L(:,10)
          A(:,3,6) = -L(:,6)
-         
+
          A(:,1,7) = -L(:,10)
          A(:,2,7) = -L(:,11)
          A(:,3,7) = -L(:,7)
-         
+
          A(:,1,8) =  X(:,1)
          A(:,2,8) =  X(:,2)
          A(:,3,8) =  X(:,3)
-         
+
       END SUBROUTINE ComputeHexShapeMatrices
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE ComputeAlphaVector(A,alpha)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ComputeAlphaVector(A,alpha)
          IMPLICIT NONE
 !
 !        ---------
@@ -980,21 +980,21 @@
 !        ---------------
 !
          INTEGER :: i
-         
-         DO i = 0, 8 
-            alpha(i) = determinant(A(:,:,i)) 
-         END DO 
-          
+
+         DO i = 0, 8
+            alpha(i) = determinant(A(:,:,i))
+         END DO
+
       END SUBROUTINE ComputeAlphaVector
 !
-!//////////////////////////////////////////////////////////////////////// 
+!////////////////////////////////////////////////////////////////////////
 !
 !                 Shape Measures
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION DiagonalMeasure(P)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION DiagonalMeasure(P)
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -1008,63 +1008,63 @@
 !
          REAL(KIND=RP) :: D(3,0:3), DMin, DMax, DNorm
          INTEGER       :: i
-         
+
          DMin = HUGE(DMin)
          DMax = TINY(DMax)
-         
+
          D(:,0) = P(:,6) - P(:,0)
          D(:,1) = P(:,7) - P(:,1)
          D(:,2) = P(:,4) - P(:,2)
          D(:,3) = P(:,5) - P(:,3)
-         
-         DO i = 0, 3 
+
+         DO i = 0, 3
             CALL Norm3D(D(:,i),norm = DNorm)
-            DMin = MIN(DMin, DNorm) 
+            DMin = MIN(DMin, DNorm)
             DMax = MAX(DMax, DNorm)
-         END DO 
-         
+         END DO
+
          DiagonalMeasure = DMin/DMax
-         
+
       END FUNCTION DiagonalMeasure
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION EdgeRatio3D(L)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION EdgeRatio3D(L)
+         IMPLICIT NONE
          REAL(KIND=RP) :: L(3,0:11)
-         
+
          EdgeRatio3D = LMax3D(L)/LMin3D(L)
-         
+
       END FUNCTION EdgeRatio3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION Jacobian3D(alpha)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION Jacobian3D(alpha)
+         IMPLICIT NONE
          REAL(KIND=RP) :: alpha(0:8)
          INTEGER       :: i
-         
+
          Jacobian3D = HUGE(Jacobian3D)
-         DO i = 0,7 
-            Jacobian3D = MIN(Jacobian3D,alpha(i)) 
-         END DO 
-         Jacobian3D = MIN(Jacobian3D,alpha(8)/64.0_RP) 
-        
+         DO i = 0,7
+            Jacobian3D = MIN(Jacobian3D,alpha(i))
+         END DO
+         Jacobian3D = MIN(Jacobian3D,alpha(8)/64.0_RP)
+
       END FUNCTION Jacobian3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION Volume3D(alpha)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION Volume3D(alpha)
+         IMPLICIT NONE
          REAL(KIND=RP) :: alpha(0:8)
-         
+
          Volume3D = alpha(8)/64.0_RP
       END FUNCTION Volume3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION Skew3D(X)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION Skew3D(X)
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -1079,24 +1079,24 @@
          REAL(KIND=RP) :: XHat(3,3)
          INTEGER       :: i
          REAL(KIND=RP) :: dot12, dot13, dot23
-         
-         DO i = 1,3 
+
+         DO i = 1,3
             XHat(:,i) = X(:,i)
-            CALL Normalize3D(XHat(:,i)) 
-         END DO 
-         
-         CALL Dot3D(u = XHat(:,1),v = XHat(:,2),dot = dot12) 
-         CALL Dot3D(u = XHat(:,1),v = XHat(:,3),dot = dot13) 
-         CALL Dot3D(u = XHat(:,2),v = XHat(:,3),dot = dot23) 
-         
+            CALL Normalize3D(XHat(:,i))
+         END DO
+
+         CALL Dot3D(u = XHat(:,1),v = XHat(:,2),dot = dot12)
+         CALL Dot3D(u = XHat(:,1),v = XHat(:,3),dot = dot13)
+         CALL Dot3D(u = XHat(:,2),v = XHat(:,3),dot = dot23)
+
          Skew3D = MAX(ABS(dot12), ABS(dot13), ABS(dot23))
-         
+
       END FUNCTION Skew3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION Shape3D(alpha,A)  
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION Shape3D(alpha,A)
+      IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -1111,20 +1111,20 @@
 !
          INTEGER       :: i
          REAL(KIND=RP) :: mag
-         
+
          Shape3D = HUGE(shape3D )
-         DO i = 0, 8 
+         DO i = 0, 8
             mag = NORM2(A(:,1,i))**2 + NORM2(A(:,2,i))**2 + NORM2(A(:,3,i))**2
             Shape3d = MIN(Shape3D, (alpha(i)**(2.0_RP/3.0_RP))/mag)
-         END DO 
-         
+         END DO
+
          Shape3D = 3.0_RP*Shape3D
-          
+
       END FUNCTION Shape3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION determinant(A)  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION determinant(A)
          IMPLICIT NONE
 !
 !        ---------
@@ -1138,63 +1138,62 @@
 !        ---------------
 !
          REAL(KIND=RP) :: cross(3), d
-         
+
          CALL Cross3D(u = A(:,2),v = A(:,3),cross = cross)
          CALL Dot3D(u = A(:,1),v = cross,dot = d)
          determinant = d
-       
+
       END FUNCTION determinant
 !
-!//////////////////////////////////////////////////////////////////////// 
+!////////////////////////////////////////////////////////////////////////
 !
 !                 VECTOR OPS - From Geometry3D.
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE Cross3D(u,v,cross)
          IMPLICIT NONE
          REAL(KIND=RP), INTENT(IN)  :: u(3), v(3)
          REAL(KIND=RP), INTENT(OUT) :: cross(3)
-         
+
          cross(1) =   u(2)*v(3) - v(2)*u(3)
          cross(2) = -(u(1)*v(3) - v(1)*u(3))
          cross(3) =   u(1)*v(2) - v(1)*u(2)
       END SUBROUTINE Cross3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE Dot3D(u,v,dot)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE Dot3D(u,v,dot)
+         IMPLICIT NONE
          REAL(KIND=RP), INTENT(IN)  :: u(3), v(3)
          REAL(KIND=RP), INTENT(OUT) :: dot
-         
+
          dot = u(1)*v(1) + u(2)*v(2) + u(3)*v(3)
-         
+
       END SUBROUTINE Dot3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE Norm3D(u,norm)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE Norm3D(u,norm)
+         IMPLICIT NONE
          REAL(KIND=RP), INTENT(IN)  :: u(3)
          REAL(KIND=RP), INTENT(OUT) :: norm
-         
+
          norm = u(1)*u(1) + u(2)*u(2) + u(3)*u(3)
          norm = SQRT(norm)
-         
+
       END SUBROUTINE Norm3D
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE Normalize3D(u)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE Normalize3D(u)
+         IMPLICIT NONE
          REAL(KIND=RP), INTENT(INOUT)  :: u(3)
-         
+
          REAL(KIND=RP)                 :: norm
-         
+
          CALL Norm3D(u,norm)
-         u = u/norm 
+         u = u/norm
       END SUBROUTINE Normalize3D
 
       END Module MeshQualityAnalysisClass
-      
