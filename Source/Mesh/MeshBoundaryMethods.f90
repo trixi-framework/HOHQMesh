@@ -855,7 +855,7 @@
          REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: nHat => NULL()
          REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: xCurve => NULL()
          REAL(KIND=RP)  , DIMENSION(3)            :: z, p
-         REAL(KIND=RP)                            :: tStart, tEnd, t, tStar
+         REAL(KIND=RP)                            :: tStart, tEnd, t
          REAL(KIND=RP)                            :: d, dMin, dt
          INTEGER                                  :: j, k, M
          INTEGER                                  :: totalCurvePoints
@@ -918,7 +918,6 @@
             p    = node % x
             dMin = HUGE(dMin)
             DO k = 0, totalCurvePoints - 1
-!               d = SQRT( distanceSquaredBetweenPoints(xCurve(:,k),p,nHat(:,j)) )
                d = SQRT( distanceSquaredBetweenPoints(xCurve(:,k),p,[0.0_RP,0.0_RP,0.0_RP]) )
                IF( d < dMin )     THEN
                   t                     = k*dt
@@ -955,25 +954,7 @@
                tEnd   = chain % curveTForChainT(tEnd )
                tStart = MAX(tStart, 0.0_RP)
                tEnd   = MIN(tEnd, 1.0_RP)
-!
-               tStar = t
-!
-!              ---------------------------------------------------------------
-!              Using fmin seems to give the same point sometimes for different
-!              p values. Just doing a search seems to work. TODO: HACK.
-!              ---------------------------------------------------------------
-!
-!               t = fmin(tStart, tEnd, c, p, [0.0_RP,0.0_RP,0.0_RP], minimizationTolerance )
-               dMin = HUGE(dMin)
-               DO k = 1, 20
-                  t = tStart + k*(tEnd-tStart)/20.0_RP
-                  d = distanceSquared(t,c,p,[0.0_RP,0.0_RP,0.0_RP])
-                  IF ( d < dMin )     THEN
-                     tStar = t
-                     dMin  = d
-                  END IF
-               END DO
-               t = tStar
+               t      = fmin(c, tStart, tEnd, minimizationTolerance, p, [0.0_RP,0.0_RP,0.0_RP] )
             ELSE
                c => chain % curveWithLocation(t)
                t =  chain % curveTForChainT(t)

@@ -517,7 +517,7 @@
          IF ( PRESENT(pnt) )     THEN
             fu = distanceSquared(u,self,pnt,nHat) 
          ELSE 
-            fu = ObjectiveFunction(self,u)!f(u)
+            fu = ObjectiveFunction(self,u)
          END IF 
          
          IF ( fu <= fx )     THEN

@@ -703,7 +703,7 @@
                   tEnd   = 1.0_RP
                   cStart => model % curveWithID(nodeArray(k) % node % bCurveID, chain)
 
-                  t      = fMin( cStart, tStart, tEnd, minimizationTolerance, p, (/0.0_RP, 0.0_RP, 0.0_RP/) )
+                  t = 0.5_RP*(tStart + tEnd)
 
                   ALLOCATE(node)
                   CALL initBoundaryNode( cStart, chain, t, bCurveSide, mesh % newNodeID(), node )
@@ -754,7 +754,7 @@
                   tStart = 0.0_RP
                   tEnd   = nextNode % whereOnBoundary ! No further than the next node along the chain
 
-                  t      = fMin( cEnd, tStart, tEnd, minimizationTolerance, p, (/0.0_RP, 0.0_RP, 0.0_RP/) )
+                  t = 0.5_RP*(tStart + tEnd)
 
                   ALLOCATE(node)
                   CALL initBoundaryNode( cEnd, chain, t, bCurveSide, mesh % newNodeID(), node )
