@@ -2,22 +2,22 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
 ! --- End License
@@ -25,8 +25,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      Sizer.f90
-!      Created: August 15, 2013 1:01 PM 
-!      By: David Kopriva  
+!      Created: August 15, 2013 1:01 PM
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -39,7 +39,7 @@
       USE FTLinkedListIteratorClass
       USE SizerControls
       USE SMTopographyClass
-      
+
       IMPLICIT NONE
 !
 !     ---------------------
@@ -71,222 +71,222 @@
          PROCEDURE :: setBaseSize
          PROCEDURE :: setBottomTopography
          PROCEDURE :: sizeRatio
-         
+
       END TYPE MeshSizer
-      
+
       TYPE SizerCurvePtr
          CLASS(ChainedSegmentedCurve), POINTER :: curve => NULL()
       END TYPE SizerCurvePtr
 !
 !     ========
-      CONTAINS 
+      CONTAINS
 !     ========
 !
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE initMeshSizer( self, baseSize, xMin, xMax )
-         IMPLICIT NONE  
+         IMPLICIT NONE
          CLASS(MeshSizer) :: self
          REAL(KIND=RP)    :: baseSize(3), xMin(3), xMax(3)
-         
+
          CALL self % FTObject % init()
-         
+
          CALL self % setBaseSize(MAXVAL(baseSize))
-         
+
          self % noOfInnerBoundaries     = 0
          self % noOfInterfaceBoundaries = 0
          self % xMin                    = xMin
          self % xMax                    = xMax
-         
+
          self % outerBoundary           => NULL()
          self % innerBoundariesList     => NULL()
          self % interfaceBoundariesList => NULL()
          self % topography              => NULL()
-         
+
          ALLOCATE(self % controlsList)
          CALL self % controlsList % init()
-         
+
       END SUBROUTINE initMeshSizer
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE destructMeshSizer(self)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE destructMeshSizer(self)
+         IMPLICIT NONE
          TYPE(MeshSizer) :: self
          CLASS(FTObject), POINTER  :: obj
-         
+
          IF ( ASSOCIATED(self % controlsList) )     THEN
             obj => self % controlsList
             CALL release(obj)
-         END IF 
-         
+         END IF
+
          IF ( ASSOCIATED(self % innerBoundariesList) )     THEN
             obj => self % innerBoundariesList
             CALL release(obj)
-         END IF 
-         
+         END IF
+
          IF ( ASSOCIATED(self % interfaceBoundariesList) )     THEN
             obj => self % interfaceBoundariesList
             CALL release(obj)
-         END IF 
-         
+         END IF
+
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             obj => self % outerBoundary
             CALL release(obj)
-         END IF 
-         
+         END IF
+
          IF ( ASSOCIATED(self % topography) )     THEN
             obj => self % topography
             CALL release(obj)
-         END IF 
-         
+         END IF
+
       END SUBROUTINE destructMeshSizer
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE releaseSizer(self)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE releaseSizer(self)
          IMPLICIT NONE
          TYPE (MeshSizer), POINTER :: self
          CLASS(FTObject) , POINTER :: obj
-         
+
          IF(.NOT. ASSOCIATED(self)) RETURN
-         
+
          obj => self
          CALL releaseFTObject(self = obj)
          IF ( .NOT. ASSOCIATED(obj) )     THEN
-            self => NULL() 
-         END IF      
+            self => NULL()
+         END IF
       END SUBROUTINE releaseSizer
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE clearBoundaryCurves( self )  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE clearBoundaryCurves( self )
+         IMPLICIT NONE
          TYPE (MeshSizer) :: self
          CLASS(FTObject), POINTER  :: obj
-         
+
          IF ( ASSOCIATED(self % innerBoundariesList) )     THEN
             obj => self % innerBoundariesList
             CALL release(obj)
-         END IF 
-         
+         END IF
+
          IF ( ASSOCIATED(self % interfaceBoundariesList) )     THEN
             obj => self % interfaceBoundariesList
             CALL release(obj)
-         END IF 
-         
+         END IF
+
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             obj => self % outerBoundary
             CALL release(obj)
-         END IF 
-         
+         END IF
+
          NULLIFY(self % outerBoundary)
          NULLIFY(self % interfaceBoundariesList)
          NULLIFY(self % innerBoundariesList)
 
          self % noOfInnerBoundaries     = 0
          self % noOfInterfaceBoundaries = 0
-     
+
       END SUBROUTINE clearBoundaryCurves
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE setBaseSize(self, baseSize)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE setBaseSize(self, baseSize)
+         IMPLICIT NONE
          CLASS(MeshSizer) :: self
          REAL(KIND=RP)    :: baseSize
-         self % baseSize = baseSize          
+         self % baseSize = baseSize
       END SUBROUTINE setBaseSize
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE addSizerCenterControl(self,center)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE addSizerCenterControl(self,center)
          IMPLICIT NONE
          CLASS(MeshSizer)                   :: self
          CLASS(SizerCenterControl), POINTER :: center
          CLASS(FTObject)          , POINTER :: obj => NULL()
-         
+
          IF ( .NOT.ASSOCIATED(self % controlsList) )     THEN
             ALLOCATE(self % controlsList)
-            CALL self % controlsList % init() 
+            CALL self % controlsList % init()
          END IF
-         
+
          obj => center
          CALL self % controlsList % add(obj)
-         
+
       END SUBROUTINE addSizerCenterControl
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE addSizerLineControl(self,line)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE addSizerLineControl(self,line)
          IMPLICIT NONE
          CLASS(MeshSizer)                 :: self
          CLASS(SizerLineControl), POINTER :: line
          CLASS(FTObject)        , POINTER :: obj => NULL()
-         
+
          IF ( .NOT.ASSOCIATED(self % controlsList) )     THEN
             ALLOCATE(self % controlsList)
-            CALL self % controlsList % init() 
+            CALL self % controlsList % init()
          END IF
-         
+
          obj => line
          CALL self % controlsList % add(obj)
-         
+
       END SUBROUTINE addSizerLineControl
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE addBoundaryCurve( self, segmentedCurve, curveType )  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE addBoundaryCurve( self, segmentedCurve, curveType )
+         IMPLICIT NONE
          CLASS(MeshSizer)                      :: self
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurve
          INTEGER                               :: curveType ! = INNER, OUTER, INTERIOR_INTERFACE
          CLASS(FTObject), POINTER              :: obj => NULL()
-         
+
          SELECT CASE ( curveType )
-         
-            CASE( INNER ) 
-            
+
+            CASE( INNER )
+
                IF ( .NOT.ASSOCIATED(self % innerBoundariesList) )     THEN
                   ALLOCATE(self % innerBoundariesList)
                   CALL self %  innerBoundariesList % init()
-               END IF 
-               
+               END IF
+
                obj => segmentedCurve
                CALL self %  innerBoundariesList % add(obj)
                self % noOfInnerBoundaries = self % noOfInnerBoundaries + 1
-               
+
             CASE( INTERIOR_INTERFACE )
-            
+
                IF ( .NOT.ASSOCIATED(self % interfaceBoundariesList) )     THEN
                   ALLOCATE(self % interfaceBoundariesList)
                   CALL self %  interfaceBoundariesList % init()
-               END IF 
-               
+               END IF
+
                obj => segmentedCurve
                CALL self %  interfaceBoundariesList % add(obj)
                self % noOfInterfaceBoundaries = self % noOfInterfaceBoundaries + 1
-               
+
             CASE( OUTER )
-            
+
                self % outerBoundary => segmentedCurve
                CALL self % outerBoundary % retain()
-            CASE DEFAULT 
-         END SELECT 
-         
+            CASE DEFAULT
+         END SELECT
+
       END SUBROUTINE addBoundaryCurve
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE setBottomTopography(self, topography)
-         IMPLICIT NONE  
+         IMPLICIT NONE
          CLASS(MeshSizer)             :: self
          CLASS(SMTopography), POINTER :: topography
 
          self % topography => topography
          CALL self % topography % retain()
-                   
+
       END SUBROUTINE setBottomTopography
 !
 !////////////////////////////////////////////////////////////////////////
@@ -313,7 +313,7 @@
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
          INTEGER                          :: i,j, nX(3) = [10,10,0]
          REAL(KIND=RP), PARAMETER         :: SIZE_FACTOR = 0.9_RP
-         
+
          CLASS(FTLinkedListIterator) , POINTER :: iterator            => NULL()
          CLASS(FTObject)             , POINTER :: obj                 => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
@@ -323,8 +323,8 @@
 !        -----------------------------------------
 !
          hMin = HUGE(hMin)
-         
-         IF ( ASSOCIATED(sizer % controlsList) )     THEN 
+
+         IF ( ASSOCIATED(sizer % controlsList) )     THEN
             dX = (xMax - xMin)/nX
             DO j = 0, nX(2)
                x(2) = xMin(2) + j*dx(2)
@@ -349,7 +349,7 @@
                   IF(hMin < SIZE_FACTOR*dX(1)) EXIT TLoop
                END DO
             END DO TLoop
-         END IF 
+         END IF
 !
 !        ------------------------------------
 !        Sizes given by curves in the domain.
@@ -359,11 +359,11 @@
          IF( ASSOCIATED(sizer%outerBoundary) )     THEN
             cSize = MAX( cSize, invCurveSizeForBox(sizer % outerBoundary, xMin, xMax ) )
          END IF
-         
+
          IF ( ASSOCIATED( sizer % innerBoundariesList) )     THEN
             CALL cSizeForCurvesInList(sizer % innerBoundariesList, cSize, xMin, xMax)
-         END IF 
-         
+         END IF
+
          IF( ASSOCIATED(sizer % interfaceBoundariesList) )     THEN
             CALL cSizeForCurvesInList(sizer % interfaceBoundariesList, cSize, xMin, xMax)
          END IF
@@ -385,7 +385,7 @@
                aSize   = cDim/minNumberOfElementsInsideArea
             END IF
          END IF
-         
+
          IF ( ASSOCIATED(sizer % interfaceBoundariesList) )     THEN
             ALLOCATE(iterator)
             CALL iterator % initwithFTLinkedList(sizer % interfaceBoundariesList)
@@ -393,32 +393,32 @@
             DO WHILE (.NOT.iterator % isAtEnd())
                obj => iterator % object()
                CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
-               
+
                IF(Point_IsInsideBox(xMin,segmentedCurveChain % boundingBox) .OR. &
                   Point_IsInsideBox(xMax,segmentedCurveChain % boundingBox)) THEN
-                  
+
                   cHeight = Height( segmentedCurveChain )
                   cWidth  = Width ( segmentedCurveChain )
                   cDim    = MIN(cHeight,cWidth)
                   aSize   = MIN(cDim/minNumberOfElementsInsideArea,aSize)
                END IF
-   
+
                CALL iterator % moveToNext()
             END DO
             obj => iterator
             CALL release(obj)
-         END IF 
+         END IF
 !
 !        -------------------------
 !        Final choice for the size
 !        -------------------------
 !
          hMin = MIN( hMin, cSize, sizer % baseSize, aSize )
-      
+
       END FUNCTION sizeFunctionMinimumOnBox
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE cSizeForCurvesInList( list, cSize, xMin, xMax )
          IMPLICIT NONE
 !
@@ -441,7 +441,7 @@
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(list)
          CALL iterator % setToStart()
-         
+
          DO WHILE (.NOT.iterator % isAtEnd())
             obj => iterator % object()
             CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
@@ -450,13 +450,13 @@
          END DO
          obj => iterator
          CALL release(obj)
-   
+
       END SUBROUTINE cSizeForCurvesInList
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION controlSize( self, x ) 
-      
+      REAL(KIND=RP) FUNCTION controlSize( self, x )
+
          IMPLICIT NONE
 !
 !        ---------
@@ -475,7 +475,7 @@
          CLASS(SizerCenterControl)  , POINTER :: center => NULL()
          CLASS(SizerLineControl)    , POINTER :: line => NULL()
          REAL(KIND=RP)                        :: hFunInv
-         
+
          hFunInv = 1.0_RP/self % baseSize
 !
 !        --------------------------------
@@ -483,11 +483,11 @@
 !        --------------------------------
 !
          IF ( ASSOCIATED(self % controlsList) )     THEN
-         
+
             ALLOCATE(iterator)
             CALL iterator % initwithFTLinkedList( self % controlsList)
             CALL iterator % setToStart()
-            
+
             DO WHILE (.NOT.iterator % isAtEnd())
                obj => iterator % object()
                SELECT TYPE(obj)
@@ -498,27 +498,27 @@
                      line => obj
                      hFunInv = MAX(hFunInv , hInvForLineControl( line, x ) )
                   CLASS DEFAULT
-                  
-               END SELECT 
-               
+
+               END SELECT
+
                CALL iterator % moveToNext()
             END DO
             obj => iterator
             CALL release(obj)
-            
-         END IF 
+
+         END IF
 !
 !        -------------------------
 !        Compute the size function
 !        -------------------------
 !
          controlSize = 1.0_RP/hFunInv
-         
+
       END FUNCTION controlSize
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION invCurveSizeForBox(chain, xMin, xMax ) 
+      REAL(KIND=RP) FUNCTION invCurveSizeForBox(chain, xMin, xMax )
       USE Geometry
       IMPLICIT NONE
 !
@@ -537,26 +537,26 @@
          CLASS(FRSegmentedCurve), POINTER :: c => NULL()
          INTEGER                          :: k, N, j
          REAL(KIND=RP)                    :: s
-         
+
          nodes(:,1) = xMin
          nodes(:,2) = (/xMax(1),xMin(2), 0.0_RP/)
          nodes(:,3) = xMax
          nodes(:,4) = (/xMin(1),xMax(2), 0.0_RP/)
-         
+
          invCurveSizeForBox = 0.0_RP
-         
+
          N = chain % curveCount()
          DO k = 1, N
             c => chain % segmentedCurveAtIndex(k)
             DO j = 1, c % COUNT()
-               x = c % positionAtIndex(j) 
+               x = c % positionAtIndex(j)
                IF ( PointInQuad(nodes,x) )     THEN
                   s = c % invScaleAtIndex(j)
-                  invCurveSizeForBox =  MAX(s, invCurveSizeForBox) 
-               END IF 
+                  invCurveSizeForBox =  MAX(s, invCurveSizeForBox)
+               END IF
             END DO
          END DO
-         
+
       END FUNCTION invCurveSizeForBox
 !
 !////////////////////////////////////////////////////////////////////////
@@ -567,7 +567,7 @@
 !     Save the distances between the different curves in the mesh
 !     -----------------------------------------------------------
 !
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -578,12 +578,12 @@
 !        ---------------
 !        Local variables
 !        ---------------
-!         
+!
          TYPE(SizerCurvePtr)        , DIMENSION(:), ALLOCATABLE :: innerCurvesArray
          CLASS(FTLinkedListIterator), POINTER                   :: iterator => NULL()
          CLASS(FTObject)            , POINTER                   :: obj => NULL()
-         
-         CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL() 
+
+         CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()
          INTEGER                                                :: k
          INTEGER                                                :: numberOfInsideBoundaries
 !
@@ -592,13 +592,13 @@
 !        ------------------------------------------------------
 !
          numberOfInsideBoundaries = self % noOfInnerBoundaries + self % noOfInterfaceBoundaries
-         
+
          IF( numberOfInsideBoundaries > 0 ) ALLOCATE( innerCurvesArray(numberOfInsideBoundaries) )
-         
+
          k = 1
          IF( self % noOfInnerBoundaries > 0 )     THEN
             ALLOCATE(iterator)
-            
+
             CALL iterator % initwithFTLinkedList(self % innerBoundariesList)
             CALL iterator % setToStart()
             DO WHILE (.NOT.iterator % isAtEnd())
@@ -606,14 +606,14 @@
                CALL castToChainedSegmentedCurve(obj,innerSegmentedCurveChain)
                innerCurvesArray(k) % curve => innerSegmentedCurveChain
                k = k + 1
-               CALL iterator % moveToNext()           
-            END DO  
+               CALL iterator % moveToNext()
+            END DO
             CALL releaseFTLinkedListIterator(iterator)
-         END IF 
-            
+         END IF
+
          IF ( self % noOfInterfaceBoundaries > 0 )     THEN
             ALLOCATE(iterator)
-            
+
             CALL iterator % initwithFTLinkedList(self % interfaceBoundariesList)
             CALL iterator % setToStart
             DO WHILE (.NOT.iterator % isAtEnd())
@@ -621,24 +621,24 @@
                CALL castToChainedSegmentedCurve(obj,innerSegmentedCurveChain)
                innerCurvesArray(k) % curve => innerSegmentedCurveChain
                k                           = k + 1
-               CALL iterator % moveToNext()           
-            END DO  
+               CALL iterator % moveToNext()
+            END DO
             CALL releaseFTLinkedListIterator(iterator)
          END IF
 !
 !        -----------------------------------------------
-!        Find the distances of the outer boundary curve 
+!        Find the distances of the outer boundary curve
 !        to all inner curves
 !        -----------------------------------------------
 !
          IF ( ASSOCIATED(self%outerBoundary) .AND. numberOfInsideBoundaries > 0 )     THEN
-         
+
             CALL OuterToInnerboundaryDistances(self,innerCurvesArray,numberOfInsideBoundaries)
-            
+
          ELSE IF ( numberOfInsideBoundaries > 0 )     THEN
-         
+
             CALL OuterBoxToInnerboundaryDistances(self,innerCurvesArray,numberOfInsideBoundaries)
-            
+
          END IF
 !
 !        ------------------------------------
@@ -649,7 +649,7 @@
 !        ------------------------------------
 !
          IF ( numberOfInsideBoundaries > 1 )     THEN
-         
+
             CALL InnerToInnerBoundaryDistances(innerCurvesArray,numberOfInsideBoundaries)
 
          END IF
@@ -658,35 +658,35 @@
 !        Finally, check to see if a curve is close to itself
 !        ---------------------------------------------------
 !
-         IF(ASSOCIATED(self % outerBoundary))     THEN 
+         IF(ASSOCIATED(self % outerBoundary))     THEN
             CALL CurveToCurveBoundaryDistances(segmentedCurveChain = self % outerBoundary, &
                                                isOuterBoundary = .TRUE.)
-         END IF 
-         
+         END IF
+
          IF ( numberOfInsideBoundaries > 0 )     THEN
             DO k = 1, numberOfInsideBoundaries
                CALL CurveToCurveBoundaryDistances(segmentedCurveChain = innerCurvesArray(k) % curve, &
                                                   isOuterBoundary = .FALSE. )
-            END DO 
-         END IF 
+            END DO
+         END IF
 !
 !        -------
 !        Cleanup
 !        -------
 !
          IF(ALLOCATED(innerCurvesArray)) DEALLOCATE( innerCurvesArray )
-         
-      END SUBROUTINE ComputeCurveDistanceScales      
+
+      END SUBROUTINE ComputeCurveDistanceScales
 !
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE OuterToInnerboundaryDistances(self, innerCurvesArray, numberOfInsideBoundaries)
-! 
-!      ------------------------------------------------------------------- 
-!      Find the distance from the outer curve to all the inner curves 
-!      ------------------------------------------------------------------- 
-! 
-      IMPLICIT NONE  
+!
+!      -------------------------------------------------------------------
+!      Find the distance from the outer curve to all the inner curves
+!      -------------------------------------------------------------------
+!
+      IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -701,11 +701,11 @@
 !     ---------------
 !
       INTEGER                                                :: i, j, k, l, m, N, nSegments
-      CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL() 
+      CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()
       CLASS(FRSegmentedCurve)     , POINTER                  :: innerSegment, outerSegment
       REAL(KIND=RP)                                          :: x(3), y(3), d, outerInvScale, innerInvScale
       REAL(KIND=RP)                                          :: nHatInner(3), nHatOuter(3), dot
-         
+
       N = self % outerBoundary % numberOfCurvesInChain
 !
 !     -----------------------------------------
@@ -728,7 +728,7 @@
 !           -----------------------
 !           For each inner boundary
 !           -----------------------
-!   
+!
             DO k = 1, numberOfInsideBoundaries
                innerSegmentedCurveChain => innerCurvesArray(k) % curve
 !
@@ -747,7 +747,7 @@
                      y             = innerSegment % positionAtIndex(m)
                      innerInvScale = innerSegment % invScaleAtIndex(m)
                      nHatInner     = innerSegment % normalAtIndex(m)
-                     
+
                      d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
 !
 !                    -----------------------------------------------------------
@@ -762,25 +762,25 @@
                         CALL outerSegment % setCurveInvScaleForIndex(outerInvScale,i)
                         CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,m)
                      END IF
-                     
-                  END DO  
-               END DO  
-            END DO  
+
+                  END DO
+               END DO
+            END DO
          END DO
-      END DO  
-            
+      END DO
+
 
       END SUBROUTINE OuterToInnerboundaryDistances
 !
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE OuterBoxToInnerboundaryDistances(self, innerCurvesArray, numberOfInsideBoundaries)
-! 
-!      ------------------------------------------------------------------- 
-!      Find the distance from the outer curve to all the inner curves 
-!      ------------------------------------------------------------------- 
-! 
-      IMPLICIT NONE  
+!
+!      -------------------------------------------------------------------
+!      Find the distance from the outer curve to all the inner curves
+!      -------------------------------------------------------------------
+!
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -839,7 +839,7 @@
                   y             = innerSegment % positionAtIndex(j)
                   innerInvScale = innerSegment % invScaleAtIndex(j)
                   nHatInner     = innerSegment % normalAtIndex(j)
-               
+
                   d = ABS( A(m)*y(1) + B(m)*y(2) + C(m) ) !/SQRT(A(m)**2 + B(m)**2)
                   d = closeCurveFactor/d ! Inverse length - 3 cells
 !
@@ -848,22 +848,22 @@
                      innerInvScale = MAX(d,innerInvScale)
                      CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,j)
                   END IF
-               END DO 
+               END DO
             END DO
          END DO
       END DO
-            
+
       END SUBROUTINE OuterBoxToInnerboundaryDistances
 !
 !////////////////////////////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE InnerToInnerBoundaryDistances(innerCurvesArray, numberOfInsideBoundaries)
-! 
-!      ------------------------------------------------------------------- 
-!      Find the distance from the outer curve to all the inner curves 
-!      ------------------------------------------------------------------- 
-! 
-      IMPLICIT NONE  
+!
+!      -------------------------------------------------------------------
+!      Find the distance from the outer curve to all the inner curves
+!      -------------------------------------------------------------------
+!
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -882,7 +882,7 @@
       CLASS(FRSegmentedCurve)     , POINTER                  :: innerSegment, outerSegment
       REAL(KIND=RP)                                          :: x(3), y(3), d, outerInvScale, innerInvScale
       REAL(KIND=RP)                                          :: nHatInner(3), nHatOuter(3), dot
-         
+
 !
 !     -----------------------------------
 !     For each inner boundary curve chain
@@ -929,7 +929,7 @@
                         y             = innerSegment % positionAtIndex(i)
                         innerInvScale = innerSegment % invScaleAtIndex(i)
                         nHatInner     = innerSegment % normalAtIndex(i)
-                        
+
                         d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
 !
                         dot = DOT_PRODUCT(nHatInner,nHatOuter)
@@ -940,13 +940,13 @@
                            innerInvScale = MAX(d,innerInvScale)
                            CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,i)
                         END IF
-                     END DO  
-                  END DO  
-               END DO  
+                     END DO
+                  END DO
+               END DO
             END DO
-         END DO  
+         END DO
       END DO
-      
+
       END SUBROUTINE InnerToInnerBoundaryDistances
 !
 !////////////////////////////////////////////////////////////////////////
@@ -958,7 +958,7 @@
 !     elements are placed inside an interface curve.
 !     -----------------------------------------------------------
 !
-         IMPLICIT NONE 
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -979,14 +979,14 @@
          INTEGER                               :: k, j
 !
          IF ( self % noOfInterfaceBoundaries == 0 )     RETURN
-         
+
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(self % interfaceBoundariesList)
          CALL iterator % setToStart
          DO WHILE (.NOT.iterator % isAtEnd())
             obj => iterator % object()
             CALL castToChainedSegmentedCurve(obj,chain)
-            
+
             cHeight = Height( chain )
             cWidth  = Width ( chain )
             cSize   = MIN(cHeight,cWidth)
@@ -999,28 +999,28 @@
             DO k = 1, chain % curveCount()
                segment => chain % segmentedCurveAtIndex(k)
                DO j = 1, segment % COUNT()
-                  segmentInvScale = segment % invScaleAtIndex(j) 
+                  segmentInvScale = segment % invScaleAtIndex(j)
                   invScale        = MAX(1.0_RP/cScale,segmentInvScale)
                   CALL segment % setCurveInvScaleForIndex(invScale,j)
                END DO
-            END DO  
-            
+            END DO
+
             CALL iterator % moveToNext()
-         END DO  
+         END DO
          obj => iterator
          CALL release(obj)
-               
+
       END SUBROUTINE ComputeInterfaceCurveScales
 !
 !////////////////////////////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE CurveToCurveBoundaryDistances(segmentedCurveChain, isOuterBoundary )
-! 
-!      ---------------------------------------- 
-!      Find the distance from a curve to itself 
-!      ---------------------------------------- 
-! 
-      IMPLICIT NONE  
+!
+!      ----------------------------------------
+!      Find the distance from a curve to itself
+!      ----------------------------------------
+!
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -1068,22 +1068,22 @@
 !              --------------------------------
 !
                DO i = 1, innerSegment % COUNT()
-                  IF(n == l .AND. i == j)     CYCLE 
+                  IF(n == l .AND. i == j)     CYCLE
                   y             = innerSegment % positionAtIndex(i)
                   innerInvScale = innerSegment % invScaleAtIndex(i)
                   nHatInner     = innerSegment % normalAtIndex(i)
                   vecToTarget   = y - x
-                  
+
 !
                   normalsDot = DOT_PRODUCT(nHatInner,nHatOuter)
                   targetDot  = DOT_PRODUCT(vecToTarget,nHatOuter)
 
-                  
+
                   IF ( isOuterBoundary )     THEN
                      isProperTarget =  normalsDot  < -closeCurveNormalAlignment .AND. targetDot   < -normalTangentMin
-                  ELSE 
+                  ELSE
                      isProperTarget =  normalsDot  <  -closeCurveNormalAlignment .AND. targetDot   > normalTangentMin
-                  END IF 
+                  END IF
 
                   IF( isProperTarget )     THEN
                      d = closeCurveFactor/SQRT( (x(1) - y(1))**2 + (x(2) - y(2))**2 ) ! Inverse length - 3 cells
@@ -1093,27 +1093,27 @@
                      innerInvScale = MAX(d,innerInvScale)
                      CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,i)
                   END IF
-               END DO  
-            END DO  
+               END DO
+            END DO
          END DO
-      END DO  
-      
+      END DO
+
       END SUBROUTINE CurveToCurveBoundaryDistances
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE sizeRatio(self, ratio, worstOffenderName)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE sizeRatio(self, ratio, worstOffenderName)
 !
 !     ----------------------------------------------------------------------------
-!     Goes through all the model curves and computes the ratio of the 
-!     background grid size to the smallest size inferred by the local 
+!     Goes through all the model curves and computes the ratio of the
+!     background grid size to the smallest size inferred by the local
 !     curvatures. The log_2(Ratio) gives the number of subdivsions that
 !     would be needed (locally) to size the mesh. The routine also
 !     returns the name of the curve with the smallest implied scale, so that
 !     can be reported to the user, if desired.
 !     ----------------------------------------------------------------------------
-!      
-         IMPLICIT NONE  
+!
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -1128,37 +1128,37 @@
 !        ---------------
 !
          REAL(KIND=RP) :: backgroundGridSize, cSize, tSize
-         
+
          backgroundGridSize = self % baseSize
          cSize              = -TINY(cSize)
          worstOffenderName  = "none"
-         
+
          IF( ASSOCIATED(self % outerBoundary) )     THEN
             tSize = self % outerBoundary % maxInverseScale()
             IF ( tSize > cSize )     THEN
                cSize             = tSize
-               worstOffenderName = self % outerBoundary % curveName 
-            END IF 
+               worstOffenderName = self % outerBoundary % curveName
+            END IF
          END IF
-         
+
          IF ( ASSOCIATED( self % innerBoundariesList) )     THEN
             CALL maxInvSizeForCurvesInList(list      = self % innerBoundariesList, &
                                            cSize     = cSize,                      &
                                            curveName = worstOffenderName)
-         END IF 
-         
+         END IF
+
          IF ( ASSOCIATED( self % interfaceBoundariesList) )     THEN
             CALL maxInvSizeForCurvesInList(list      = self % interfaceBoundariesList, &
                                            cSize     = cSize,                      &
                                            curveName = worstOffenderName)
-         END IF 
-       
+         END IF
+
          ratio = backgroundGridSize*cSize
-         
+
       END SUBROUTINE sizeRatio
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE maxInvSizeForCurvesInList( list, cSize, curveName )
          IMPLICIT NONE
 !
@@ -1182,31 +1182,31 @@
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(list)
          CALL iterator % setToStart()
-                  
+
          DO WHILE (.NOT.iterator % isAtEnd())
             obj => iterator % object()
             CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
             tSize = segmentedCurveChain % maxInverseScale()
             IF ( tSize > cSize )     THEN
-               cSize     = tSize 
+               cSize     = tSize
                curveName = segmentedCurveChain % curveName
-            END IF 
+            END IF
 
             CALL iterator % moveToNext()
          END DO
          obj => iterator
          CALL release(obj)
-   
+
       END SUBROUTINE maxInvSizeForCurvesInList
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE printSizerDescription(self,iUnit)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE printSizerDescription(self,iUnit)
+         IMPLICIT NONE
          CLASS(MeshSizer) :: self
          INTEGER          :: iUnit
-         
-         WRITE(iUnit, *) "Number of inner boundries = ", self % noOfInnerBoundaries
+
+         WRITE(iUnit, *) "Number of inner boundaries = ", self % noOfInnerBoundaries
          WRITE(iUnit, *) "Number of interface boundaries = ", self % noOfInterfaceBoundaries
          WRITE(iUnit, *) "Base Size = ", self % baseSize
          WRITE(iUnit, *) "xMin = ", self % xMin

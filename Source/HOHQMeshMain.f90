@@ -166,7 +166,7 @@
          END IF
 
          IF ( CommandLineArgumentIsPresent("-help") )     THEN
-            WRITE(stderr,*)  "No help avalable yet. Sorry!"
+            WRITE(stderr,*)  "No help available yet. Sorry!"
             ERROR STOP "No help available"
          END IF
 

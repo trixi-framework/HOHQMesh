@@ -2,22 +2,22 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
 ! --- End License
@@ -25,22 +25,22 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      BoundaryEdgeCleaning.f90
-!      Created: September 16, 2013 9:37 AM 
-!      By: David Kopriva  
+!      Created: September 16, 2013 9:37 AM
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
       Module BoundaryEdgeCleaningModule
       USE SMMeshClass
       USE SMModelClass
-      USE ConectionsModule
-      IMPLICIT NONE 
-      CONTAINS 
+      USE ConnectionsModule
+      IMPLICIT NONE
+      CONTAINS
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUpBoundaryCurves( mesh, model, errorCode ) 
-      IMPLICIT NONE 
+      SUBROUTINE CleanUpBoundaryCurves( mesh, model, errorCode )
+      IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -66,7 +66,7 @@
          CALL MakeElementToEdgeConnections( mesh )
          CALL MakeNodeToEdgeConnections   ( mesh )
          CALL MakeNodeToElementConnections( mesh, errorCode )
-         
+
          numBoundaries = boundaryEdgesArray % COUNT()
 !
 !        ----------------------------------
@@ -90,7 +90,7 @@
             IF ( boundaryEdgesType(j) == INTERFACE_EDGES )     THEN
                CALL cast(boundaryEdgesArray % objectAtIndex(j),list)
                CALL MoveInterfaceNodesToBoundary(list,model)
-            END IF  
+            END IF
          END DO
 
          CALL DoLazyDelete( mesh )
@@ -102,12 +102,12 @@
          CALL deallocateElementToEdgeConnections
          CALL deallocateNodeToElementConnections
          CALL deallocateNodeToEdgeConnections
-         
+
       END SUBROUTINE CleanUpBoundaryCurves
-      
+
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUpBoundaryEdges( list ) 
+      SUBROUTINE CleanUpBoundaryEdges( list )
          IMPLICIT NONE
 !
 !        ---------
@@ -115,10 +115,10 @@
 !        ---------
 !
          CLASS(FTLinkedList), POINTER :: list
-         
+
          CALL RemoveCloseElements( list )
          CALL RemoveBumpOuts( list )
-         
+
       END SUBROUTINE CleanUpBoundaryEdges
 !
 !////////////////////////////////////////////////////////////////////////
@@ -168,17 +168,17 @@
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(boundaryEdgeList)
          CALL iterator % setToStart()
-         
+
          obj => iterator % object()
          CALL cast(obj,currentEdge)
          chainID = currentEdge % nodes(1) % node % bCurveChainID
          side    = currentEdge % nodes(1) % node % bCurveSide
-         
+
          DO WHILE ( .NOT.iterator % isAtEnd() )
-         
+
             obj => iterator % object()
             CALL cast(obj,currentEdge)
-            
+
             IF( .NOT.currentEdge % remove )     THEN !Already did this one
 !
 !              ---------------------
@@ -187,7 +187,7 @@
 !
                e           => currentEdge % elements(1) % element !Boundary edge only has one element association.
                elementSize = 0.0_RP
-               DO k = 1, 4 
+               DO k = 1, 4
                   edge        => edgesForElements(k,e%id) % edge
                   x1          = edge % nodes(1) % node % x
                   x2          = edge % nodes(2) % node % x
@@ -202,27 +202,27 @@
 !
                node1 => currentEdge % nodes(1) % node
                node2 => currentEdge % nodes(2) % node
-               
+
                IF( node1 % distToBoundary < elementSize      .OR.  &
                    node2 % distToBoundary < elementSize )    THEN
-                   
+
                    e % remove = .true.
 !
 !                  -----------------------------------------------
 !                  Target each of this element's edges for removal
 !                  -----------------------------------------------
 !
-                   DO k = 1, 4 
+                   DO k = 1, 4
                       IF( ASSOCIATED(edgesForElements(k,e % id) % edge % elements(1) % element) .AND. &
                           ASSOCIATED(edgesForElements(k,e % id) % edge % elements(2) % element) )     THEN !Edge k is currently SHARED
-                          
+
                           IF( edgesForElements(k,e % id) % edge % elements(1) % element % remove .AND.  &
                               edgesForElements(k,e % id) % edge % elements(2) % element % remove )     THEN !Both elements are slated for removal
-                              
+
                               edgesForElements(k,e % id) % edge % remove = .true.
-                              
+
                           ELSE ! Temporarily save the edge
-                          
+
                               newBoundaryEdge => edgesForElements(k,e % id) % edge
                               obj             => newBoundaryEdge
                               CALL newlyExposedBoundaryEdges % add(obj)
@@ -232,16 +232,16 @@
                               newboundaryEdge % nodes(2) % node % bCurveChainID = chainID
                               newboundaryEdge % nodes(1) % node % bCurveSide    = side
                               newboundaryEdge % nodes(2) % node % bCurveside    = side
-                              
+
                           END IF
                       ELSE
                          edgesForElements(k,e % id) % edge % remove = .true.
                       END IF
-                      
+
                    END DO
                 END IF
             END IF
-            
+
             CALL iterator % moveToNext()
          END DO !WHILE
 !
@@ -303,25 +303,25 @@
 !
          ALLOCATE(newlyExposedBoundaryEdges)
          CALL newlyExposedBoundaryEdges % init()
-         
+
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(boundaryEdgeList)
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
-         
+
             obj => iterator % object()
             CALL cast(obj,currentEdge)
-            
+
             IF( .NOT.currentEdge % remove )     THEN ! Haven't done this one yet
-            
+
                e           => currentEdge % elements(1) % element
-               
+
                IF( .NOT.e % remove )     THEN
                   nB = 0
                   interiorEdgeNumber = -1
-                  DO k = 1, 4 
+                  DO k = 1, 4
                      IF( edgesForElements(k,e % id) % edge % edgeType == ON_BOUNDARY )     THEN
-                        nB = nB + 1                     
+                        nB = nB + 1
                      ELSE
                         interiorEdgeNumber = k
                      END IF
@@ -329,8 +329,8 @@
                   IF ( interiorEdgeNumber < 0 )     THEN
                      WRITE(msg,*) "InteriorEdgeNumber not found. All edges appear to be boundaries"
                      CALL ThrowErrorExceptionOfType("RemoveBumpOuts", msg, FT_ERROR_FATAL)
-                     RETURN 
-                  END IF 
+                     RETURN
+                  END IF
 !
 !                 -----------------------------------------------------
 !                 A bumpout has three exterior edges. Best to remove,
@@ -350,7 +350,7 @@
                      END DO
 !
 !                    -----------------------------------------------------------
-!                    Make the remaining edge a boundary edge. Set its remaining 
+!                    Make the remaining edge a boundary edge. Set its remaining
 !                    element to the first position.
 !                    -----------------------------------------------------------
 !
@@ -369,14 +369,14 @@
 !
                      newBoundaryEdge % edgeType = ON_BOUNDARY
                      newBoundaryEdge % remove   = .false.
-                     
+
                      obj => newBoundaryEdge
                      CALL boundaryEdgeList % add(obj)
-      
+
                   END IF
                END IF
             END IF
-            
+
             CALL iterator % moveToNext()
          END DO
 !
@@ -396,15 +396,15 @@
 !        --------------------------------------------------
 !
          CALL removeMarkedEdges(iterator)
-         
+
          CALL releaseFTLinkedListIterator(iterator)
          CALL releaseFTLinkedList(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveBumpOuts
-!     
+!
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE MoveInterfaceNodesToBoundary( boundaryEdgeList, model ) 
+      SUBROUTINE MoveInterfaceNodesToBoundary( boundaryEdgeList, model )
          IMPLICIT NONE
 !
 !        ---------
@@ -426,34 +426,34 @@
          TYPE (FTLinkedListIterator), POINTER :: iterator    => NULL()
          INTEGER                              :: k
          REAL(KIND=RP)                        :: t
-         
+
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(boundaryEdgeList)
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
-         
+
             obj => iterator % object()
             CALL cast(obj,currentEdge)
-            
-            DO k = 1, 2 
+
+            DO k = 1, 2
                node                  => currentEdge % nodes(k) % node
-               IF(node % distToBoundary == 0.0_RP)     CYCLE 
-               
+               IF(node % distToBoundary == 0.0_RP)     CYCLE
+
                t                     =  node % whereOnBoundary
                cEnd                  => model % curveWithID(node % bCurveID, chain)
                node % x              =  cEnd % positionAt(t)
                node % distToBoundary =  0.0_RP
-            END DO  
-            
+            END DO
+
             CALL iterator % moveToNext()
          END DO
          CALL releaseFTLinkedListIterator(iterator)
-         
+
       END SUBROUTINE MoveInterfaceNodesToBoundary
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE removeMarkedEdges(iterator)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE removeMarkedEdges(iterator)
          IMPLICIT NONE
 !
 !        ----------------------------------------------
@@ -480,15 +480,15 @@
 
       END SUBROUTINE removeMarkedEdges
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE smoothBoundaryEdges
-         USE MeshBoundaryMethodsModule 
+         USE MeshBoundaryMethodsModule
          IMPLICIT NONE
          INTEGER :: j
          CLASS(FTObject)    , POINTER :: obj  => NULL()
          CLASS(FTLinkedList), POINTER :: list => NULL()
-         
+
          IF ( boundarySmoothingPasses > 0 )     THEN
             DO j = 1, SIZE(boundaryEdgesType)
                IF( boundaryEdgesType(j) == INTERFACE_EDGES )     CYCLE
@@ -497,7 +497,7 @@
                CALL SmoothEdgeListNodes( list, boundarySmoothingPasses )
             END DO
          END IF
-      
+
       END SUBROUTINE smoothBoundaryEdges
-      
+
       END MODULE BoundaryEdgeCleaningModule
