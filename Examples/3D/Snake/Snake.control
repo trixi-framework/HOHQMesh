@@ -9,7 +9,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/3D/Snake/Snake.mesh
       plot file name   = Examples/3D/Snake/Snake.tec
-      stats file name  = None
+      stats file name  = none
       mesh file format = ISM
       polynomial order = 4
       plot file format = sem

@@ -9,7 +9,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/2D/BoxWithRefinement/BoxWithRefinement.mesh
       plot file name   = Examples/2D/BoxWithRefinement/BoxWithRefinement.tec
-      stats file name  = None
+      stats file name  = none
       mesh file format = ISM
       polynomial order = 6
       plot file format = skeleton
