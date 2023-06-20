@@ -351,7 +351,7 @@
 !
 !           --------------------------------------------------------------------
 !           Basic sweeping along a curve. Does not correct for rotation, so best
-!           for curves that reamin in a plane.
+!           for curves that remain in a plane.
 !           --------------------------------------------------------------------
 !
                USE Frenet

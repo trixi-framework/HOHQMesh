@@ -100,13 +100,13 @@
 ! 
       FUNCTION allocateAndInitSegmentedCurveFromSegmentedChain(segmentedChain)  RESULT(segmentedCurve)
 !
-!        ---------------------------------------------------------------------------
-!        The incoming ChainedSegmentedCurve has an array of FRSegementedCurve's that
+!        --------------------------------------------------------------------------
+!        The incoming ChainedSegmentedCurve has an array of FRSegmentedCurve's that
 !        match at their endpoints. Thus there are duplicates at the joints. This
 !        function takes the points out of the chain and puts them into a single
 !        curve without the duplicates. The argument field (t) is set to zero since
 !        it has no meaning in this conversion.
-!        ---------------------------------------------------------------------------
+!        --------------------------------------------------------------------------
 !
          IMPLICIT NONE  
 !
