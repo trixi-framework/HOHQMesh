@@ -28,7 +28,7 @@
 !      Created: August 13, 2013 12:00 PM 
 !      By: David Kopriva 
 !
-!      Defines a chain with numberOfCurvesInChain of FRSegementedCurve s
+!      Defines a chain with numberOfCurvesInChain of FRSegmentedCurves
 !
 !////////////////////////////////////////////////////////////////////////
 !

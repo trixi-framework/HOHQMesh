@@ -739,9 +739,9 @@
                DO l = 1, innerSegmentedCurveChain % curveCount()
                   innerSegment => innerSegmentedCurveChain % segmentedCurveAtIndex(l)
 !
-!                 -----------------------------------------------
-!                 For each point along the inner segemented curve
-!                 -----------------------------------------------
+!                 ----------------------------------------------
+!                 For each point along the inner segmented curve
+!                 ----------------------------------------------
 !
                   DO m = 1, innerSegment % COUNT()
                      y             = innerSegment % positionAtIndex(m)
