@@ -895,13 +895,12 @@
          tEnd    = 1.0_RP
          dt      = (tEnd - tStart)/totalCurvePoints
 !
-!        -------------------------------------------------------------------
+!        -----------------------------------------------------------------
 !        First, estimate the location with a linear search along
 !        the boundary. Must do this because there can be local
 !        minima that fMin cannot deal with. Compute and store points along
 !        the curve to compare against.
-!
-!       -------------------------------------------------------------------
+!       ------------------------------------------------------------------
 !
          ALLOCATE( xCurve(3,0:totalCurvePoints) )
          DO j = 0, totalCurvePoints
@@ -918,7 +917,7 @@
             p    = node % x
             dMin = HUGE(dMin)
             DO k = 0, totalCurvePoints - 1
-               d = SQRT( distanceSquaredBetweenPoints(xCurve(:,k),p,[0.0_RP,0.0_RP,0.0_RP]) )
+               d = SQRT(distanceSquaredBetweenPoints(xCurve(:,k), p, [0.0_RP,0.0_RP,0.0_RP]))
                IF( d < dMin )     THEN
                   t                     = k*dt
                   node%gWhereOnBoundary = t
@@ -934,7 +933,7 @@
          DO j = 1, SIZE(nodePtrs)
             node => nodePtrs(j)%node
             p      = node % x
-            t      = node%gWhereOnBoundary
+            t      = node % gWhereOnBoundary
             c      => chain % curveWithLocation(t)
 
             tStart = t - dt
@@ -954,13 +953,13 @@
                tEnd   = chain % curveTForChainT(tEnd )
                tStart = MAX(tStart, 0.0_RP)
                tEnd   = MIN(tEnd, 1.0_RP)
-               t      = fmin(c, tStart, tEnd, minimizationTolerance, p, [0.0_RP,0.0_RP,0.0_RP] )
+               t      = fmin(c, tStart, tEnd, minimizationTolerance, p, [0.0_RP,0.0_RP,0.0_RP])
             ELSE
                c => chain % curveWithLocation(t)
                t =  chain % curveTForChainT(t)
             END IF
 
-            d = SQRT(distanceSquared(t,c,p,[0.0_RP,0.0_RP,0.0_RP]))
+            d = SQRT(distanceSquared(t, c, p, [0.0_RP,0.0_RP,0.0_RP]))
 
             node % bCurveID         = c % id()
             node % whereOnBoundary  = t
