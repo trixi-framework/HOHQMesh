@@ -393,9 +393,9 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      DOUBLE PRECISION FUNCTION distanceSquared(x,c,p,nHat)
+      REAL(KIND=RP) FUNCTION distanceSquared(x,c,p,nHat)
          IMPLICIT NONE
-         DOUBLE PRECISION :: x, p(3), z(3), nHat(3)
+         REAL(KIND=RP) :: x, p(3), z(3), nHat(3)
          CLASS(SMCurve)   :: c
          
          z               = c % positionAt(x)
@@ -404,11 +404,17 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      DOUBLE PRECISION FUNCTION DistanceSquaredBetweenPoints(z,p,nHat)
+      REAL(KIND=RP) FUNCTION DistanceSquaredBetweenPoints(z,p,nHat)
          USE ProgramGlobals, ONLY: directionPenalty
          IMPLICIT NONE
-         DOUBLE PRECISION ::  p(3), z(3), nHat(3)
-         
+         REAL(KIND=RP) ::  p(3), z(3), nHat(3)
+!
+!        ----------------------------------------------------------------------------------------------------------
+!        DAK: The nHat was put in to allow finding the minimum distance in a given direction, 
+!        but it didn't pan out, i.e. it didn't seem to turn out to be helpful. It could 
+!        be removed, but my thought is just to leave it in on the chance that we may want to use it later.         
+!        ----------------------------------------------------------------------------------------------------------
+!
          DistanceSquaredBetweenPoints = (z(1) - p(1))**2 + (z(2) - p(2))**2 &
                            - MIN((z(1)-p(1))*nHat(1) + (z(2) - p(2))*nHat(2),0.0d0)/directionPenalty
       END FUNCTION DistanceSquaredBetweenPoints
@@ -425,6 +431,13 @@
       CLASS(SMCurve)          :: self
       REAL(KIND=RP)           :: aIn, bIN, tol
       REAL(KIND=RP)           :: z
+!
+!     ----------------------------------------------------------------------------------------------------------
+!     DAK: The nHat was put in to allow finding the minimum distance in a given direction, 
+!     but it didn't pan out, i.e. it didn't seem to turn out to be helpful. It could 
+!     be removed, but my thought is just to leave it in on the chance that we may want to use it later.         
+!     ----------------------------------------------------------------------------------------------------------
+!
       REAL(KIND=RP), OPTIONAL :: pnt(3), nHat(3)
 !
 !     ---------------
@@ -472,7 +485,7 @@
             q = (x - v)*(fx - fw)
             p = (x - v)*q - (x - w)*r
             q = 2.0_RP*(q - r)
-            IF ( q > 0 )     THEN
+            IF ( q > 0.0_RP )     THEN
                p = -p 
             ELSE 
                q = -q 
