@@ -1052,7 +1052,7 @@
                                            message    = msg,                    &
                                            poster     = "SetRunParametersBlock")
 
-         params % statsFileName = "None"
+         params % statsFileName = "none"
          msg = "Control file is missing the stats file name. Stats not written."
          CALL SetStringValueFromDictionary(valueToSet = params % statsFileName, &
                                            sourceDict = paramsDict,             &
@@ -1558,17 +1558,27 @@
 !
       SUBROUTINE AddPathToProjectFiles(self, path)
          IMPLICIT NONE
-         CLASS(MeshProject) :: self
-         CHARACTER(LEN=*)   :: path
+         CLASS(MeshProject)                      :: self
+         CHARACTER(LEN=*)                        :: path
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
 
          IF ( path /= "" )     THEN
-            IF(self % runParams % MeshFileName /= "none")      THEN
+         
+            str = self % runParams % MeshFileName
+            CALL toLower(str)
+            IF(str /= "none")      THEN
                self % runParams % MeshFileName = TRIM(path) // self % runParams % MeshFileName
             END IF
-            IF(self % runParams % plotFileName /= "none")      THEN
+            
+            str = self % runParams % plotFileName
+            CALL toLower(str)
+            IF(str /= "none")      THEN
                self % runParams % plotFileName = TRIM(path) // self % runParams % plotFileName
             END IF
-            IF(self % runParams % statsFileName /= "none")      THEN
+            
+            str = self % runParams % statsFileName
+            CALL toLower(str)
+            IF(str /= "none")      THEN
                self % runParams % statsFileName = TRIM(path) // self % runParams % statsFileName
             END IF
          END IF
