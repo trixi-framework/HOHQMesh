@@ -76,10 +76,10 @@
 !        Write node data
 !        ---------------
 !
-         DO j = 0, SIZE(hex8Mesh % nodes,2)-1
-            DO k = 1, SIZE(hex8Mesh % nodes,1)
+         DO j = 0, SIZE(hex8Mesh % nodes, 2)-1
+            DO k = 1, SIZE(hex8Mesh % nodes, 1)
                WRITE( iUnit, *) hex8Mesh % nodes(k,j) % x, &
-                                hex8Mesh % elements(k,j) % materialID
+                                hex8Mesh % nodes(k,j) % materialID
             END DO
          END DO
 !
