@@ -42,6 +42,7 @@
       TYPE Node3D
          INTEGER       :: globalID
          REAL(KIND=RP) :: x(3)
+         INTEGER       :: materialID ! Inherited from the element (not precise, since nodes are shared)
       END TYPE Node3D
 !
 !
