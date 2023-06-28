@@ -68,7 +68,7 @@
 !        Set up header
 !        -------------
 !
-         WRITE(iUnit,*) 'VARIABLES = "X", "Y", "Z"'
+         WRITE(iUnit,*) 'VARIABLES = "X", "Y", "Z", "Material ID"'
          WRITE(iUnit,*) 'ZONE F=FEPOINT, ET=BRICK, N=',SIZE(hex8Mesh % nodes), &
                         'E=',SIZE(hex8Mesh % elements)
 !
@@ -78,7 +78,8 @@
 !
          DO j = 0, SIZE(hex8Mesh % nodes,2)-1
             DO k = 1, SIZE(hex8Mesh % nodes,1)
-               WRITE( iUnit, *) hex8Mesh % nodes(k,j) % x
+               WRITE( iUnit, *) hex8Mesh % nodes(k,j) % x, &
+                                hex8Mesh % elements(k,j) % materialID
             END DO
          END DO
 !
@@ -136,8 +137,7 @@
                DO k = 0, N
                   DO j = 0, N
                      DO i = 0, N
-                        WRITE(iUnit,*) (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3), &
-                                        hex8Mesh % elements(m,l) % materialID
+                        WRITE(iUnit,*) (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3)
                      END DO
                   END DO
                END DO
