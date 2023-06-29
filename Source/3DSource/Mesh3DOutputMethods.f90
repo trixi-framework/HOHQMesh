@@ -68,7 +68,7 @@
 !        Set up header
 !        -------------
 !
-         WRITE(iUnit,*) 'VARIABLES = "X", "Y", "Z", "Material ID"'
+         WRITE(iUnit,*) 'VARIABLES = "X", "Y", "Z"'
          WRITE(iUnit,*) 'ZONE F=FEPOINT, ET=BRICK, N=',SIZE(hex8Mesh % nodes), &
                         'E=',SIZE(hex8Mesh % elements)
 !
@@ -78,8 +78,7 @@
 !
          DO j = 0, SIZE(hex8Mesh % nodes, 2)-1
             DO k = 1, SIZE(hex8Mesh % nodes, 1)
-               WRITE( iUnit, *) hex8Mesh % nodes(k,j) % x, &
-                                hex8Mesh % nodes(k,j) % materialID
+               WRITE( iUnit, *) hex8Mesh % nodes(k,j) % x
             END DO
          END DO
 !
@@ -129,7 +128,7 @@
 !        -------------
 !
          WRITE(iUnit,*) ' TITLE = "SEM hex mesh" '
-         WRITE(iUnit,*) ' VARIABLES = "x","y", "z"'
+         WRITE(iUnit,*) ' VARIABLES = "x", "y", "z", "material ID"'
 
          DO l = 1, hex8Mesh % numberofLayers
             DO m = 1, hex8Mesh % numberOfQuadElements
@@ -137,7 +136,8 @@
                DO k = 0, N
                   DO j = 0, N
                      DO i = 0, N
-                        WRITE(iUnit,*) (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3)
+                        WRITE(iUnit,'(3E13.5,I2)') (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3),&
+                                                    hex8Mesh % elements(m,l) % materialID
                      END DO
                   END DO
                END DO
