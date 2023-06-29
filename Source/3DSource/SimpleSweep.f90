@@ -546,13 +546,6 @@
 !
                   nodeID = hex8Mesh % nodes(node2DID,j) % globalID
                   hex8Mesh % elements(quadElementID,j)  % nodeIDs(k+4) = nodeID
-!
-!                 -----------------------------
-!                 Save material ID at each node
-!                 -----------------------------
-!
-                  hex8Mesh % nodes(node2DID,j-1) % materialID = node % materialID
-                  hex8Mesh % nodes(node2DID,j) % materialID = node % materialID
                END DO
 !
 !              ------------------------------------------------------------------

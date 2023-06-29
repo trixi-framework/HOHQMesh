@@ -1540,11 +1540,6 @@
 !
                   IF ( numInside >= 2 )     THEN
                      e % materialID   = curveArray % id
-
-                     DO k = 1,4
-                        node => e % nodes(k) % node
-                        node % materialID = e % materialID
-                     END DO
                   END IF
                END IF
 
