@@ -87,6 +87,7 @@
          DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
             obj => mesh % nodesIterator % object()
             CALL castToSMNode(obj,node)
+            WRITE( iUnit, *) node % x
             CALL mesh % nodesIterator % moveToNext()
          END DO
 !
