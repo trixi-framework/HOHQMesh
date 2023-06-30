@@ -71,7 +71,6 @@
          INTEGER       :: bCurveSide       ! Either INSIDE or OUTSIDE the curve
          INTEGER       :: activeStatus     ! = ACTIVE or INACTIVE or REMOVE. Used by 2-refinement for templates
          INTEGER       :: nodeType         ! used to distinguish between corner nodes and others.
-         INTEGER       :: materialID       ! Inherited from the element (not precise, since nodes are shared)
          REAL(KIND=RP) :: x(3)             ! The node position
          REAL(KIND=RP) :: whereOnBoundary  ! Parametrization value of curve when near a physical boundary
          REAL(KIND=RP) :: gWhereOnBoundary ! Global parametrization value of curve on a chain
@@ -261,7 +260,6 @@
          self % distToBoundary  = HUGE(0.0_RP)
          self % bCurveChainID   = UNDEFINED
          self % bCurveSide      = UNDEFINED
-         self % materialID      = BACKGROUND_MATERIAL_ID
          self % nodeType        = UNDEFINED
       END SUBROUTINE initNodeWithLocationAndID
 !
@@ -283,7 +281,6 @@
          copy % distToBoundary  = self % distToBoundary 
          copy % bCurveChainID   = self % bCurveChainID  
          copy % bCurveSide      = self % bCurveSide     
-         copy % materialID      = self % materialID     
          copy % nodeType        = self % nodeType       
          
       END FUNCTION copyOfNodeClass
@@ -304,7 +301,6 @@
          copy % distToBoundary  = source % distToBoundary 
          copy % bCurveChainID   = source % bCurveChainID  
          copy % bCurveSide      = source % bCurveSide     
-         copy % materialID      = source % materialID     
          copy % nodeType        = source % nodeType       
          
       END SUBROUTINE copyOfNodeType

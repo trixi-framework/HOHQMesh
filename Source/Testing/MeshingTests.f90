@@ -294,8 +294,9 @@
             DO j = 1, SIZE(benchmarkResults % realValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % realValues(j), &
                                   actualValue   = currentResults % realValues(j),   &
-                                  tol           = 1.0d-4,                           &
-                                  msg = TRIM(realNames2D(j)))
+                                  relTol        = 1.0d-4,                           &
+                                  absTol        = 1.0d-5,                           &
+                                  msg           = TRIM(realNames2D(j)))
             END DO
          ELSE
             DO j = 1, SIZE(benchmarkResults % intValues)
@@ -307,8 +308,9 @@
             DO j = 1, SIZE(benchmarkResults % realValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % realValues(j), &
                                   actualValue   = currentResults % realValues(j),   &
-                                  tol           = 1.0d-4,                           &
-                                  msg = TRIM(realNames3D(j)))
+                                  relTol        = 1.0d-4,                           &
+                                  absTol        = 1.0d-5,                           &
+                                  msg           = TRIM(realNames3D(j)))
             END DO
          END IF
 
