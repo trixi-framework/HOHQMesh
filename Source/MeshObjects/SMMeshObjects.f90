@@ -19,17 +19,6 @@
 ! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
 ! SOFTWARE.
-! 
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
 !
@@ -82,7 +71,6 @@
          INTEGER       :: bCurveSide       ! Either INSIDE or OUTSIDE the curve
          INTEGER       :: activeStatus     ! = ACTIVE or INACTIVE or REMOVE. Used by 2-refinement for templates
          INTEGER       :: nodeType         ! used to distinguish between corner nodes and others.
-         INTEGER       :: materialID       ! Inherited from the element (not precise, since nodes are shared)
          REAL(KIND=RP) :: x(3)             ! The node position
          REAL(KIND=RP) :: whereOnBoundary  ! Parametrization value of curve when near a physical boundary
          REAL(KIND=RP) :: gWhereOnBoundary ! Global parametrization value of curve on a chain
@@ -272,7 +260,6 @@
          self % distToBoundary  = HUGE(0.0_RP)
          self % bCurveChainID   = UNDEFINED
          self % bCurveSide      = UNDEFINED
-         self % materialID      = BACKGROUND_MATERIAL_ID
          self % nodeType        = UNDEFINED
       END SUBROUTINE initNodeWithLocationAndID
 !
@@ -294,7 +281,6 @@
          copy % distToBoundary  = self % distToBoundary 
          copy % bCurveChainID   = self % bCurveChainID  
          copy % bCurveSide      = self % bCurveSide     
-         copy % materialID      = self % materialID     
          copy % nodeType        = self % nodeType       
          
       END FUNCTION copyOfNodeClass
@@ -315,7 +301,6 @@
          copy % distToBoundary  = source % distToBoundary 
          copy % bCurveChainID   = source % bCurveChainID  
          copy % bCurveSide      = source % bCurveSide     
-         copy % materialID      = source % materialID     
          copy % nodeType        = source % nodeType       
          
       END SUBROUTINE copyOfNodeType

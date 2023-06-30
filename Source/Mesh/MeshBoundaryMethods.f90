@@ -20,17 +20,6 @@
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-!
 ! --- End License
 !
 !////////////////////////////////////////////////////////////////////////
@@ -45,7 +34,6 @@
    USE MeshSizerClass
    USE SMMeshClass
    USE ConnectionsModule
-   USE fMinModule
    IMPLICIT NONE
 !
 !-------------------------------------------------------------------
@@ -846,7 +834,6 @@
 !     ---------------------------------------------------------------------
 !
          USE ProgramGlobals, ONLY :edgeLengthFactor
-         USE fMinModule    , ONLY : DistanceSquaredBetweenPoints
          USE Geometry
          IMPLICIT NONE
 !
@@ -868,7 +855,7 @@
          REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: nHat => NULL()
          REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: xCurve => NULL()
          REAL(KIND=RP)  , DIMENSION(3)            :: z, p
-         REAL(KIND=RP)                            :: tStart, tEnd, t, tStar
+         REAL(KIND=RP)                            :: tStart, tEnd, t
          REAL(KIND=RP)                            :: d, dMin, dt
          INTEGER                                  :: j, k, M
          INTEGER                                  :: totalCurvePoints
@@ -908,13 +895,12 @@
          tEnd    = 1.0_RP
          dt      = (tEnd - tStart)/totalCurvePoints
 !
-!        -------------------------------------------------------------------
+!        -----------------------------------------------------------------
 !        First, estimate the location with a linear search along
 !        the boundary. Must do this because there can be local
 !        minima that fMin cannot deal with. Compute and store points along
 !        the curve to compare against.
-!
-!       -------------------------------------------------------------------
+!       ------------------------------------------------------------------
 !
          ALLOCATE( xCurve(3,0:totalCurvePoints) )
          DO j = 0, totalCurvePoints
@@ -931,8 +917,7 @@
             p    = node % x
             dMin = HUGE(dMin)
             DO k = 0, totalCurvePoints - 1
-!               d = SQRT( distanceSquaredBetweenPoints(xCurve(:,k),p,nHat(:,j)) )
-               d = SQRT( distanceSquaredBetweenPoints(xCurve(:,k),p,[0.0_RP,0.0_RP,0.0_RP]) )
+               d = SQRT(distanceSquaredBetweenPoints(xCurve(:,k), p, [0.0_RP,0.0_RP,0.0_RP]))
                IF( d < dMin )     THEN
                   t                     = k*dt
                   node%gWhereOnBoundary = t
@@ -948,7 +933,7 @@
          DO j = 1, SIZE(nodePtrs)
             node => nodePtrs(j)%node
             p      = node % x
-            t      = node%gWhereOnBoundary
+            t      = node % gWhereOnBoundary
             c      => chain % curveWithLocation(t)
 
             tStart = t - dt
@@ -968,31 +953,13 @@
                tEnd   = chain % curveTForChainT(tEnd )
                tStart = MAX(tStart, 0.0_RP)
                tEnd   = MIN(tEnd, 1.0_RP)
-!
-               tStar = t
-!
-!              ---------------------------------------------------------------
-!              Using fmin seems to give the same point sometimes for different
-!              p values. Just doing a search seems to work. TODO: HACK.
-!              ---------------------------------------------------------------
-!
-!               t = fmin(tStart, tEnd, c, p, [0.0_RP,0.0_RP,0.0_RP], minimizationTolerance )
-               dMin = HUGE(dMin)
-               DO k = 1, 20
-                  t = tStart + k*(tEnd-tStart)/20.0_RP
-                  d = distanceSquared(t,c,p,[0.0_RP,0.0_RP,0.0_RP])
-                  IF ( d < dMin )     THEN
-                     tStar = t
-                     dMin  = d
-                  END IF
-               END DO
-               t = tStar
+               t      = fmin(c, tStart, tEnd, minimizationTolerance, p, [0.0_RP,0.0_RP,0.0_RP])
             ELSE
                c => chain % curveWithLocation(t)
                t =  chain % curveTForChainT(t)
             END IF
 
-            d = SQRT(distanceSquared(t,c,p,[0.0_RP,0.0_RP,0.0_RP]))
+            d = SQRT(distanceSquared(t, c, p, [0.0_RP,0.0_RP,0.0_RP]))
 
             node % bCurveID         = c % id()
             node % whereOnBoundary  = t

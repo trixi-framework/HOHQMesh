@@ -20,17 +20,6 @@
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-!
 ! --- End License
 !
 !////////////////////////////////////////////////////////////////////////
@@ -553,7 +542,6 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE GenerateBoundaryElements( mesh, model, list )
-         USE fMinModule
          USE MeshOutputMethods, ONLY: WriteSkeletonToTecplot
          USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
@@ -704,7 +692,7 @@
                   tEnd   = 1.0_RP
                   cStart => model % curveWithID(nodeArray(k) % node % bCurveID, chain)
 
-                  t      = fMin( tStart, tEnd, cStart, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
+                  t = 0.5_RP*(tStart + tEnd)
 
                   ALLOCATE(node)
                   CALL initBoundaryNode( cStart, chain, t, bCurveSide, mesh % newNodeID(), node )
@@ -754,7 +742,8 @@
                   cEnd   => model % curveWithID(nextNode % bCurveID, chain)
                   tStart = 0.0_RP
                   tEnd   = nextNode % whereOnBoundary ! No further than the next node along the chain
-                  t      = fMin( tStart, tEnd, cEnd, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
+
+                  t = 0.5_RP*(tStart + tEnd)
 
                   ALLOCATE(node)
                   CALL initBoundaryNode( cEnd, chain, t, bCurveSide, mesh % newNodeID(), node )
@@ -1551,11 +1540,6 @@
 !
                   IF ( numInside >= 2 )     THEN
                      e % materialID   = curveArray % id
-
-                     DO k = 1,4
-                        node => e % nodes(k) % node
-                        node % materialID = e % materialID
-                     END DO
                   END IF
                END IF
 

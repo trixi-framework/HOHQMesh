@@ -19,17 +19,6 @@
 ! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
 ! SOFTWARE.
-! 
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler, 
-!    Computer Methods for Mathematical Computations, 1977
 !
 ! --- End License
 !
@@ -91,8 +80,6 @@
 !
       REAL(KIND=RP) :: xTarget(3)
       PRIVATE       :: xTarget
-
-      PRIVATE :: fmin
       
       REAL(KIND=RP), PARAMETER, PRIVATE :: dt = 1.0d-5
 !
@@ -404,169 +391,179 @@
          d = (x(1)-xTarget(1))**2 + (x(2)-xTarget(2))**2
       END FUNCTION ObjectiveFunction
 !
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION distanceSquared(x,c,p,nHat)
+         IMPLICIT NONE
+         REAL(KIND=RP) :: x, p(3), z(3), nHat(3)
+         CLASS(SMCurve)   :: c
+         
+         z               = c % positionAt(x)
+         distanceSquared = DistanceSquaredBetweenPoints(z,p,nHat)
+      END FUNCTION distanceSquared
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION DistanceSquaredBetweenPoints(z,p,nHat)
+         USE ProgramGlobals, ONLY: directionPenalty
+         IMPLICIT NONE
+         REAL(KIND=RP) ::  p(3), z(3), nHat(3)
+!
+!        ----------------------------------------------------------------------------------------------------------
+!        DAK: The nHat was put in to allow finding the minimum distance in a given direction, 
+!        but it didn't pan out, i.e. it didn't seem to turn out to be helpful. It could 
+!        be removed, but my thought is just to leave it in on the chance that we may want to use it later.         
+!        ----------------------------------------------------------------------------------------------------------
+!
+         DistanceSquaredBetweenPoints = (z(1) - p(1))**2 + (z(2) - p(2))**2 &
+                           - MIN((z(1)-p(1))*nHat(1) + (z(2) - p(2))*nHat(2),0.0d0)/directionPenalty
+      END FUNCTION DistanceSquaredBetweenPoints
+!
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      double precision function fmin(self,ax,bx,tol)
-      double precision ax,bx,tol
+   FUNCTION fMin(self, aIn, bIn, tol, pnt, nHat ) RESULT(z)
+      IMPLICIT NONE
 !
-!      an approximation  x  to the point where  f  attains a minimum  on
-!  the interval  (ax,bx)  is determined.
+!     ---------
+!     Arguments
+!     ---------
 !
-!  input..
+      CLASS(SMCurve)          :: self
+      REAL(KIND=RP)           :: aIn, bIN, tol
+      REAL(KIND=RP)           :: z
 !
-!  ax    left endpoint of initial interval
-!  bx    right endpoint of initial interval
-!  f     function subprogram which evaluates  f(x)  for any  x
-!        in the interval  (ax,bx)
-!  tol   desired length of the interval of uncertainty of the final
-!        result (.ge.0.)
+!     ----------------------------------------------------------------------------------------------------------
+!     DAK: The nHat was put in to allow finding the minimum distance in a given direction, 
+!     but it didn't pan out, i.e. it didn't seem to turn out to be helpful. It could 
+!     be removed, but my thought is just to leave it in on the chance that we may want to use it later.         
+!     ----------------------------------------------------------------------------------------------------------
 !
-!  output..
+      REAL(KIND=RP), OPTIONAL :: pnt(3), nHat(3)
 !
-!  fmin  abcissa approximating the point where  f  attains a
-!        minimum
+!     ---------------
+!     local Variables
+!     ---------------
 !
-!      the method used is a combination of  golden  section  search  and
-!  successive parabolic interpolation.  convergence is never much slower
-!  than  that  for  a  fibonacci search.  if  f  has a continuous second
-!  derivative which is positive at the minimum (which is not  at  ax  or
-!  bx),  then  convergence  is  superlinear, and usually of the order of
-!  about  1.324....
-!      the function  f  is never evaluated at two points closer together
-!  than  eps*abs(fmin)+(tol/3), where eps is  approximately  the  square
-!  root  of  the  relative  machine  precision.   if   f   is a unimodal
-!  function and the computed values of   f   are  always  unimodal  when
-!  separated  by  at least  eps*abs(x)+(tol/3), then  fmin  approximates
-!  the abcissa of the global minimum of  f  on the interval  ax,bx  with
-!  an error less than  3*eps*abs(fmin)+tol.  if   f   is  not  unimodal,
-!  then fmin may approximate a local, but perhaps non-global, minimum to
-!  the same accuracy.
-!      this function subprogram is a slightly modified  version  of  the
-!  algol  60 procedure  localmin  given in richard brent, algorithms for
-!  minimization without derivatives, prentice-hall, inc. (1973).
+      REAL(KIND=RP) :: a, b, c, d, e, m, p, q, r, t2, u, v, w, fu, fv, fw, fx, t, x
+      REAL(KIND=RP) :: t3, eps
 !
+!     -----
+!     Setup
+!     -----
 !
-      CLASS(SMCurve) :: self
-      double precision  a,b,c,d,e,eps,xm,p,q,r,tol1,t2,u,v,w,fu,fv,fw,&
-     &    fx,x,tol3
-      double precision  dabs,dsqrt
+      eps = EPSILON(1.0_RP)
+      t3  = tol/3.0_RP
+      eps = SQRT(eps)
+      
+      c  = 0.5_RP*(3.0_RP - SQRT(5.0_RP))
+      a  = aIn
+      b  = bIn
+      x  = a + c*(b-a)   ; v = x  ; w = x   ; e = 0.0_RP; d = 0.0_RP
+      
+      IF ( PRESENT(pnt) )     THEN
+         fx = distanceSquared(x,self,pnt,nHat) 
+      ELSE 
+         fx = ObjectiveFunction(self,x)
+      END IF 
+      fv = fx; fw = fx
 !
-!  c is the squared inverse of the golden ratio
-      c=0.5d0*(3.0d0-dsqrt(5.0d0))
+!     ---------
+!     Main loop
+!     ---------
 !
-!  eps is approximately the square root of the relative machine
-!  precision.
+      DO
+         m  = 0.5_RP*(a + b)
+         t  = eps*ABS(x) + t3
+         t2 = 2.0_RP*t
+         
+         IF ( ABS(x-m) <= t2 - 0.5_RP*(b-a) )     EXIT
+         
+         p = 0.0_RP; q = 0.0_RP; r = 0.0_RP
+         
+         IF ( ABS(e) > t )     THEN !Fit parabola
+            r = (x - w)*(fx - fv)
+            q = (x - v)*(fx - fw)
+            p = (x - v)*q - (x - w)*r
+            q = 2.0_RP*(q - r)
+            IF ( q > 0.0_RP )     THEN
+               p = -p 
+            ELSE 
+               q = -q 
+            END IF
+            r = e
+            e = d
+         END IF
+         
+         IF ( ABS(p) < ABS(0.5_RP*q*r) .AND. &
+              p < q*(a - x)            .AND. &
+              p < q*(b - x) )                    THEN !Parabolic interpolation step
+              
+            d = p/q
+            u = x + d
+            
+            IF ( u - a < t2 .OR. b - u < t2 )     THEN
+               IF ( x < m )     THEN
+                  d = t 
+               ELSE 
+                  d = -t 
+               END IF 
+            END IF 
+            
+         ELSE ! Golden section step
+         
+            IF ( x < m )     THEN
+               e = b - x 
+            ELSE 
+               e = a - x 
+            END IF 
+            d = c*e  
+         END IF 
+         
+         IF ( ABS(d) >= t )     THEN
+            u = x + d 
+         ELSE IF (d > 0.0_RP)    THEN 
+            u = x + t
+         ELSE 
+            u = x - t
+         END IF
+         
+         IF ( PRESENT(pnt) )     THEN
+            fu = distanceSquared(u,self,pnt,nHat) 
+         ELSE 
+            fu = ObjectiveFunction(self,u)
+         END IF 
+         
+         IF ( fu <= fx )     THEN
+            IF ( u < x )     THEN
+               b = x 
+            ELSE 
+               a = x 
+            END IF 
+            v = w; fv = fw; w = x; fw = fx; x = u; fx = fu
+         ELSE
+            IF ( u < x )     THEN
+               a = u 
+            ELSE 
+               b = u 
+            END IF 
+            IF ( fu <= fw .OR. w == x )     THEN
+               v  = w
+               fv = fw
+               w  = u
+               fw = fu 
+            ELSE IF(fu <= fv .OR. v == x .OR. v == w)     THEN 
+               v = u; fv = fu 
+            END IF 
+              
+         END IF 
+      END DO
 !
-      eps=EPSILON(1.0d0)
-      tol1=eps+1.0d0
-      eps=dsqrt(eps)
+!     ------------------
+!     RETURN the result 
+!     ------------------
 !
-      a=ax
-      b=bx
-      v=a+c*(b-a)
-      w=v
-      x=v
-      e=0.0d0
-      fx=ObjectiveFunction(self,x)!f(x)
-      fv=fx
-      fw=fx
-      tol3=tol/3.0d0
-      d = 0.0d0
-!
-!  main loop starts here
-!
-   20 xm=0.5d0*(a+b)
-      tol1=eps*dabs(x)+tol3
-      t2=2.0d0*tol1
-!
-!  check stopping criterion
-!
-      if (dabs(x-xm).le.(t2-0.5d0*(b-a))) go to 190
-      p=0.0d0
-      q=0.0d0
-      r=0.0d0
-      if (dabs(e).le.tol1) go to 50
-!
-!  fit parabola
-!
-      r=(x-w)*(fx-fv)
-      q=(x-v)*(fx-fw)
-      p=(x-v)*q-(x-w)*r
-      q=2.0d0*(q-r)
-      if (q.le.0.0d0) go to 30
-      p=-p
-      go to 40
-   30 q=-q
-   40 r=e
-      e=d
-   50 if ((dabs(p).ge.dabs(0.5d0*q*r)).or.(p.le.q*(a-x))&
-     &          .or.(p.ge.q*(b-x))) go to 60
-!
-!  a parabolic-interpolation step
-!
-      d=p/q
-      u=x+d
-!
-!  f must not be evaluated too close to ax or bx
-!
-      if (((u-a).ge.t2).and.((b-u).ge.t2)) go to 90
-      d=tol1
-      if (x.ge.xm) d=-d
-      go to 90
-!
-!  a golden-section step
-!
-   60 if (x.ge.xm) go to 70
-      e=b-x
-      go to 80
-   70 e=a-x
-   80 d=c*e
-!
-!  f must not be evaluated too close to x
-!
-   90 if (dabs(d).lt.tol1) go to 100
-      u=x+d
-      go to 120
-  100 if (d.le.0.0d0) go to 110
-      u=x+tol1
-      go to 120
-  110 u=x-tol1
-  120 fu=ObjectiveFunction(self,u)!f(u)
-!
-!  update  a, b, v, w, and x
-!
-      if (fx.gt.fu) go to 140
-      if (u.ge.x) go to 130
-      a=u
-      go to 140
-  130 b=u
-  140 if (fu.gt.fx) go to 170
-      if (u.ge.x) go to 150
-      b=x
-      go to 160
-  150 a=x
-  160 v=w
-      fv=fw
-      w=x
-      fw=fx
-      x=u
-      fx=fu
-      go to 20
-  170 if ((fu.gt.fw).and.(w.ne.x)) go to 180
-      v=w
-      fv=fw
-      w=u
-      fw=fu
-      go to 20
-  180 if ((fu.gt.fv).and.(v.ne.x).and.(v.ne.w)) go to 20
-      v=u
-      fv=fu
-      go to 20
-!
-!  end of main loop
-!
-  190 fmin=x
-      return
-      END FUNCTION fmin
+      z = x
+      
+   END FUNCTION fMin
      
      END Module SMCurveClass

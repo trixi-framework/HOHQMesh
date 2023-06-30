@@ -3,7 +3,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Benchmarks/MeshFiles/Tests/HalfCircleExtrude.mesh
       plot file name   = Benchmarks/PlotFiles/Tests/HalfCircleExtrude.tec
-      stats file name  = None
+      stats file name  = none
       test file name   = Benchmarks/BenchmarkData/HalfCircleExtBenchmark.txt
       mesh file format = ISM
       polynomial order = 5

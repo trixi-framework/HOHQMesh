@@ -7,7 +7,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = MeshFiles/CylinderScale.mesh
       plot file name   = PlotFiles/CylinderScale.tec
-      stats file name  = None
+      stats file name  = none
       mesh file format = ISM
       polynomial order = 4
       plot file format = sem

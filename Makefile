@@ -31,7 +31,6 @@ Encoder.o \
 EquationEvaluatorClass.o \
 FatalErrorException.o \
 FileAndStringProcessing.o \
-fmin.o \
 Frenet.o \
 FRSegmentedCurveClass.o \
 FTDataClass.o \
@@ -229,11 +228,6 @@ SMConstants.o \
 ProgramGlobals.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/IO/FileAndStringProcessing.f90
 
-fmin.o :$(HOHQMESHPATH)/Source/Curves/fmin.f90 \
-SMCurveClass.o \
-ProgramGlobals.o
-	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/fmin.f90
-
 Frenet.o :$(HOHQMESHPATH)/Source/3DSource/Geometry/Frenet.f90 \
 SMCurveClass.o \
 Geometry3D.o
@@ -249,6 +243,7 @@ FTLinkedListClass.o \
 SizerControls.o \
 ProgramGlobals.o \
 Geometry.o \
+SMSplineCurveClass.o \
 ObjectArrayAdditions.o \
 FTLinkedListClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/DiscreteCurves/FRSegmentedCurveClass.f90
@@ -390,7 +385,6 @@ SMChainedCurveClass.o \
 ProgramGlobals.o \
 SMModel.o \
 SMMeshClass.o \
-fmin.o \
 Sizer.o \
 MeshOutputMethods.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Mesh/MeshBoundaryMethods.f90
@@ -404,7 +398,6 @@ ElementOperations.o \
 SMModel.o \
 SMMeshObjects.o \
 SMMeshClass.o \
-fmin.o \
 Geometry.o \
 MeshBoundaryMethods.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Mesh/MeshCleaner.f90
@@ -422,7 +415,6 @@ MeshBoundaryMethods.o \
 CurveInterpolantClass.o \
 MeshOperationsModule.o \
 MeshProject.o \
-fmin.o \
 MeshOutputMethods.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Mesh/MeshGeneratorMethods.f90
 
@@ -665,6 +657,7 @@ SMConstants.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Project/Model/SMModel.f90
 
 SMSplineCurveClass.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMSplineCurveClass.f90 \
+FTExceptionClass.o \
 SMCurveClass.o \
 SMConstants.o \
 Geometry.o

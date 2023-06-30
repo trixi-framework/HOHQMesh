@@ -20,17 +20,6 @@
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-!
 ! --- End License
 !
 !////////////////////////////////////////////////////////////////////////
@@ -305,8 +294,9 @@
             DO j = 1, SIZE(benchmarkResults % realValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % realValues(j), &
                                   actualValue   = currentResults % realValues(j),   &
-                                  tol           = 1.0d-4,                           &
-                                  msg = TRIM(realNames2D(j)))
+                                  relTol        = 1.0d-4,                           &
+                                  absTol        = 1.0d-5,                           &
+                                  msg           = TRIM(realNames2D(j)))
             END DO
          ELSE
             DO j = 1, SIZE(benchmarkResults % intValues)
@@ -318,8 +308,9 @@
             DO j = 1, SIZE(benchmarkResults % realValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % realValues(j), &
                                   actualValue   = currentResults % realValues(j),   &
-                                  tol           = 1.0d-4,                           &
-                                  msg = TRIM(realNames3D(j)))
+                                  relTol        = 1.0d-4,                           &
+                                  absTol        = 1.0d-5,                           &
+                                  msg           = TRIM(realNames3D(j)))
             END DO
          END IF
 

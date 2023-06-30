@@ -20,17 +20,6 @@
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-!
 ! --- End License
 !
 !////////////////////////////////////////////////////////////////////////
@@ -86,7 +75,7 @@
 !        Set up header
 !        -------------
 !
-         WRITE(iUnit,*) 'VARIABLES = "X", "Y", "Z", "Material ID"'
+         WRITE(iUnit,*) 'VARIABLES = "X", "Y", "Z"'
          WRITE(iUnit,*) 'ZONE F=FEPOINT, ET=QUADRILATERAL, N=',mesh % nodes % COUNT(), &
                         'E=',mesh % elements % COUNT()
 !
@@ -98,7 +87,7 @@
          DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
             obj => mesh % nodesIterator % object()
             CALL castToSMNode(obj,node)
-            WRITE( iUnit, *) node % x, node % materialID
+            WRITE( iUnit, *) node % x
             CALL mesh % nodesIterator % moveToNext()
          END DO
 !
@@ -159,7 +148,7 @@
 !
 
          WRITE(fUnit,*) ' TITLE = "SEM Quad mesh" '
-         WRITE(fUnit,*) ' VARIABLES = "x","y", "z"'
+         WRITE(fUnit,*) ' VARIABLES = "x", "y", "z", "material ID"'
 
          CALL mesh % elementsIterator % setToStart()
          DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
@@ -169,7 +158,8 @@
             WRITE(fUnit,*) "ZONE I=", N+1, ",J=",N+1,", F=POINT"
             DO j= 0, N
                DO i = 0, N
-                  WRITE(fUnit,'(6E13.5)') e % xPatch(1, i, j), e % xPatch(2, i, j), e % xPatch(3, i, j)
+                  WRITE(fUnit,'(3E13.5,I2)') e % xPatch(1, i, j), e % xPatch(2, i, j), e % xPatch(3, i, j), &
+                                             e % materialID
                END DO
             END DO
 
@@ -308,7 +298,7 @@
 
             CALL iterator % moveToNext()
          END DO
-         
+
          CLOSE(iUnit)
 !
       END SUBROUTINE WriteISMMeshFile

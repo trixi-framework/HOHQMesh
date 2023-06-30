@@ -4,10 +4,10 @@
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
-      mesh file name   = Examples/2D/EastCoastUS/EastCoastUS.inp
+      mesh file name   = Examples/2D/EastCoastUS/EastCoastUS.mesh
       plot file name   = Examples/2D/EastCoastUS/EastCoastUS2d.tec
       stats file name  = Examples/2D/EastCoastUS/EastCoastUS.txt
-      mesh file format = ISMv2
+      mesh file format = ISM-V2
       polynomial order = 5
       plot file format = sem
    \end{RUN_PARAMETERS}

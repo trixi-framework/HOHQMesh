@@ -20,17 +20,6 @@
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-!
 ! --- End License
 !
 !////////////////////////////////////////////////////////////////////////
@@ -108,9 +97,10 @@
             x      = line %positionAt(t)
             xExact = xStart*(1.0_RP - t) + xEnd*t
             e      = MAXVAL(ABS(x - xExact))
-            CALL FTAssertEqual(expectedValue = 0.0_RP, &
-                               actualValue   = e,      &
-                               tol           = tol,    &
+            CALL FTAssertEqual(expectedValue = 0.0_RP,         &
+                               actualValue   = e,              &
+                               relTol        = tol,            &
+                               absTol        = tol/10.0_RP,    &
                                msg           = "Line evaluation error too large")
          END DO
          CALL destructLine(self = line)
@@ -133,9 +123,10 @@
             yc     = 1.1_RP + 1.3_RP*SIN(theta)
             xExact = [xc,yc,0.0_RP]
             e      = MAXVAL(ABS(x - xExact))
-            CALL FTAssertEqual(expectedValue = 0.0_RP, &
-                               actualValue   = e,      &
-                               tol           = tol,    &
+            CALL FTAssertEqual(expectedValue = 0.0_RP,         &
+                               actualValue   = e,              &
+                               relTol        = tol,            &
+                               absTol        = tol/10.0_RP,    &
                                msg           = "Circle evaluation error too large")
          END DO
          CALL destructCircularArc(self = circle)
@@ -158,9 +149,10 @@
             yc     = 0.05_RP + 0.3_RP*sin(2.0_RP*pi*t)
             xExact = [xc,yc,0.0_RP]
             e      = MAXVAL(ABS(x - xExact))
-            CALL FTAssertEqual(expectedValue = 0.0_RP, &
-                               actualValue   = e,      &
-                               tol           = tol,    &
+            CALL FTAssertEqual(expectedValue = 0.0_RP,         &
+                               actualValue   = e,              &
+                               relTol        = tol,            &
+                               absTol        = tol/10.0_RP,    &
                                msg           = "Equation evaluation error too large")
          END DO
          CALL destructPECurve(self = curve)
@@ -190,9 +182,10 @@
             zc     = t
             xExact = [xc,yc,zc]
             e      = MAXVAL(ABS(x - xExact))
-            CALL FTAssertEqual(expectedValue = 0.0_RP, &
-                               actualValue   = e,      &
-                               tol           = tol,    &
+            CALL FTAssertEqual(expectedValue = 0.0_RP,         &
+                               actualValue   = e,              &
+                               relTol        = tol,            &
+                               absTol        = tol/10.0_RP,    &
                                msg           = "Spline error too large")
          END DO
 
@@ -213,28 +206,32 @@
          REAL(KIND=RP) :: exact, computed
 
         CALL ExactAndComputedSphereCurvature(0.5_RP,0.5_RP, exact, computed)
-        CALL FTAssertEqual(expectedValue = exact,    &
-                           actualValue   = computed, &
-                           tol           = 2.0d-8,   &
+        CALL FTAssertEqual(expectedValue = exact,     &
+                           actualValue   = computed,  &
+                           relTol         = 2.0d-8,   &
+                           absTol         = 2.0d-9,   &
                            msg           = "Computed Sphere Curvature error")
 
         CALL ExactAndComputedQuadraticCurvature(0.5_RP,0.5_RP, exact, computed)
         CALL FTAssertEqual(expectedValue = exact,    &
                            actualValue   = computed, &
-                           tol           = 1.0d-8,   &
+                           relTol        = 1.0d-8,   &
+                           absTol        = 1.0d-9,   &
                            msg           = "Computed Quadratic Curvature error")
 
         CALL ExactAndComputedQuadraticGradients(x     = 0.5_RP,     y        = 0.5_RP, &
                                                 exact = exactGradF, computed = gradF)
         CALL FTAssertEqual(expectedValue = 0.0_RP,                        &
                            actualValue   = MAXVAL(ABS(exactGradF-gradF)), &
-                           tol           = 1.0d-8,                        &
+                           relTol        = 1.0d-8,                        &
+                           absTol        = 1.0d-9,                        &
                            msg           = "Quadratic Gradients error")
 
         CALL ExactAndComputedQuadraticHessian(x = 0.5_RP,y = 0.5_RP,exact = exactHess,computed = hessF)
-        CALL FTAssertEqual(expectedValue = 0.0_RP,                        &
+        CALL FTAssertEqual(expectedValue = 0.0_RP,                       &
                            actualValue   = MAXVAL(ABS(exactHess-hessF)), &
-                           tol           = 1.0d-8,                        &
+                           relTol         = 1.0d-8,                      &
+                           absTol         = 1.0d-9,                      &
                            msg           = "Quadratic Hessian error")
 
       END SUBROUTINE TestGaussianCurvature

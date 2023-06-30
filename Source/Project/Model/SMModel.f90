@@ -20,17 +20,6 @@
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-!
 ! --- End License
 !
 !////////////////////////////////////////////////////////////////////////
@@ -888,7 +877,8 @@
 
             ALLOCATE(cCurve)
             CALL cCurve % initWithDataFile( TRIM(curveFile), curveName, self % curveCount + 1 )
-            !Spline curves have no exceptions thrown
+            IF(ReturnOnFatalError()) RETURN
+
             curvePtr => cCurve
             CALL chain  % addCurve(curvePtr)
             obj => cCurve
@@ -904,9 +894,10 @@
                                                message = "nKnots keyword not found in spline definition", &
                                                poster = "ImportSplineBlock")
             IF(ReturnOnFatalError()) RETURN
-!        ---------------------
-!        Get the spline points
-!        ---------------------
+!
+!           ---------------------
+!           Get the spline points
+!           ---------------------
 !
             obj         => splineDict % objectForKey(key = "data")
             splineData  => dataFromObject(obj)
@@ -921,15 +912,15 @@
 
             CALL DECODE(enc = encodedData, N = 4, M = numKnots, arrayOut = decodedArray)
 !
-!        ----------------
-!        Create the curve
-!        ----------------
+!           ----------------
+!           Create the curve
+!           ----------------
 !
             ALLOCATE(cCurve)
             CALL cCurve % initWithPointsNameAndID(decodedArray(1,:), decodedArray(2,:), &
                                                   decodedArray(3,:), decodedArray(4,:), &
                                                   curveName, self % curveCount + 1 )
-            !Spline curves have no exceptions thrown
+            IF(ReturnOnFatalError()) RETURN
             curvePtr => cCurve
             CALL chain  % addCurve(curvePtr)
             obj => cCurve

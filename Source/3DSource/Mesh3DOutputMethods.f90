@@ -20,17 +20,6 @@
 ! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
-! HOHQMesh contains code that, to the best of our knowledge, has been released as
-! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
-!    https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
-! * `fmin`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `spline`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-! * `seval`: originally by George Elmer Forsythe, Michael A. Malcolm, Cleve B. Moler,
-!    Computer Methods for Mathematical Computations, 1977
-!
 ! --- End License
 !
 !////////////////////////////////////////////////////////////////////////
@@ -87,8 +76,8 @@
 !        Write node data
 !        ---------------
 !
-         DO j = 0, SIZE(hex8Mesh % nodes,2)-1
-            DO k = 1, SIZE(hex8Mesh % nodes,1)
+         DO j = 0, SIZE(hex8Mesh % nodes, 2)-1
+            DO k = 1, SIZE(hex8Mesh % nodes, 1)
                WRITE( iUnit, *) hex8Mesh % nodes(k,j) % x
             END DO
          END DO
@@ -139,7 +128,7 @@
 !        -------------
 !
          WRITE(iUnit,*) ' TITLE = "SEM hex mesh" '
-         WRITE(iUnit,*) ' VARIABLES = "x","y", "z"'
+         WRITE(iUnit,*) ' VARIABLES = "x", "y", "z", "material ID"'
 
          DO l = 1, hex8Mesh % numberofLayers
             DO m = 1, hex8Mesh % numberOfQuadElements
@@ -147,8 +136,8 @@
                DO k = 0, N
                   DO j = 0, N
                      DO i = 0, N
-                        WRITE(iUnit,*) (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3), &
-                                        hex8Mesh % elements(m,l) % materialID
+                        WRITE(iUnit,'(3E13.5,I2)') (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3),&
+                                                    hex8Mesh % elements(m,l) % materialID
                      END DO
                   END DO
                END DO
