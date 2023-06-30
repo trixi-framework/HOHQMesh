@@ -546,6 +546,7 @@
 !
                   nodeID = hex8Mesh % nodes(node2DID,j) % globalID
                   hex8Mesh % elements(quadElementID,j)  % nodeIDs(k+4) = nodeID
+
                END DO
 !
 !              ------------------------------------------------------------------
