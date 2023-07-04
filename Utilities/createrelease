@@ -42,7 +42,7 @@ cp -r "$(pwd)" "$releasedir"
 echo "OK"
 
 # Delete .git directories
-printf "Delete .git directories for HOQHMesh and FTObjectLibrary... "
+printf "Delete .git directories for HOHQMesh and FTObjectLibrary... "
 rm -rf "$releasedir/.git" "$releasedir/Contrib/FTObjectLibrary/.git"
 echo "OK"
 

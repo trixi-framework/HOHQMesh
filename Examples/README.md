@@ -34,5 +34,5 @@ For this reason, we have reduced the storage requirements in the following ways:
 
    Note, due to file size, no "skeleton" plot file is provided for `Examples/3D/MtStHelens`. A user would need to generate these files locally.
 
-3. Example and Benchmark mesh files are not included in the repository.
+3. Example and Benchmark mesh files are **not** included in the repository.
    Again, users should generate them locally as desired.
