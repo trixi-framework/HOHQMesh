@@ -5,8 +5,8 @@
       plot file name   = Examples/2D/CavityRamp/CavityRamp.tec
       stats file name  = Examples/2D/CavityRamp/CavityRamp.txt
       mesh file format = ISM
-      polynomial order = 6
-      plot file format = sem
+      polynomial order = 4
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
 
    \begin{BACKGROUND_GRID}
