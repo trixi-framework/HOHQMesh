@@ -3,7 +3,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Benchmarks/MeshFiles/Tests/GingerbreadManMesh.mesh
       plot file name   = Benchmarks/PlotFiles/Tests/GingerbreadManPlot.tec
-      stats file name  = Benchmarks/StatsFiles/Tests/GingerbreadManPlot.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/GingerbreadManStats.txt
       test file name   = Benchmarks/BenchmarkData/GingerbreadBenchmark.txt
       mesh file format = ISM
       polynomial order = 6

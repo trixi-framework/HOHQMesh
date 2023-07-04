@@ -3,10 +3,10 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/2D/GingerbreadMan/GingerbreadManMesh.mesh
       plot file name   = Examples/2D/GingerbreadMan/GingerbreadManPlot.tec
-      stats file name  = Examples/2D/GingerbreadMan/Stats.txt
+      stats file name  = Examples/2D/GingerbreadMan/GingerbreadManStats.txt
       mesh file format = ISM
       polynomial order = 6
-      plot file format = sem
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
 
    \begin{BACKGROUND_GRID}
