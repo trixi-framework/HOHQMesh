@@ -1,12 +1,12 @@
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
-      mesh file name   = Examples/2D/HalfCircle/HalfCircle.mesh
-      plot file name   = Examples/2D/HalfCircle/HalfCircleSEM.tec
-      stats file name  = Examples/2D/HalfCircle/HalfCircle.txt
+      mesh file name   = Examples/2D/HalfCircle/HalfCircleArc.mesh
+      plot file name   = Examples/2D/HalfCircle/HalfCircleArc.tec
+      stats file name  = Examples/2D/HalfCircle/HalfCircleArc.txt
       mesh file format = ISM
-      polynomial order = 5
-      plot file format = sem
+      polynomial order = 3
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
 
    \begin{BACKGROUND_GRID}

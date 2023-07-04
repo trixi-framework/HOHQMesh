@@ -3,7 +3,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Benchmarks/MeshFiles/Tests/HalfCircleArc.mesh
       plot file name   = Benchmarks/PlotFiles/Tests/HalfCircleArc.tec
-      stats file name  = Benchmarks/StatsFiles/Tests/HalfCircle.txt
+      stats file name  = Benchmarks/StatsFiles/Tests/HalfCircleArc.txt
       test file name   = Benchmarks/BenchmarkData/HalfCircleBenchmark.txt
       mesh file format = ISM
       polynomial order = 3
