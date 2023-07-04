@@ -6,7 +6,7 @@
       stats file name  = Benchmarks/StatsFiles/Tests/HalfCircle.txt
       test file name   = Benchmarks/BenchmarkData/HalfCircleBenchmark.txt
       mesh file format = ISM
-      polynomial order = 5
+      polynomial order = 3
       plot file format = skeleton
    \end{RUN_PARAMETERS}
 

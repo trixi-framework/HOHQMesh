@@ -9,8 +9,8 @@
       stats file name  = Benchmarks/StatsFiles/Tests/Pond3D.txt
       test file name   = Benchmarks/BenchmarkData/Pond.txt
       mesh file format = ISM
-      polynomial order = 6
-      plot file format = sem
+      polynomial order = 3
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
    
    \begin{BACKGROUND_GRID}
