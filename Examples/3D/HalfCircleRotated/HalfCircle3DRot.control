@@ -5,8 +5,8 @@
       plot file name   = Examples/3D/HalfCircleRotated/HalfCircle3DR.tec
       stats file name  = Examples/3D/HalfCircleRotated/HalfCircle3DR.txt
       mesh file format = ISM
-      polynomial order = 5
-      plot file format = sem
+      polynomial order = 3
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
 
    \begin{MESH_PARAMETERS}
