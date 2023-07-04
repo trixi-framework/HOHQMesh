@@ -1,4 +1,4 @@
-Benchmarks/ControlFiles/PillC.control                
+Benchmarks/ControlFiles/Pill.control                
 Benchmarks/ControlFiles/SplineGeometry.control       
 Benchmarks/ControlFiles/SplineGeometryF.control      
 Benchmarks/ControlFiles/NACA0012.control             
