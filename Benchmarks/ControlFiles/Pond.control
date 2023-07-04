@@ -48,6 +48,7 @@
 
 \begin{TOPOGRAPHY}
 	eqn = f(x,y) = 1.5*exp(-0.5*((x-1.0)^2 + (y-1.0)^2)) + 0.75*exp(-0.5*((x+1.0)^2 + (y+1.0)^2))
+        Sizing = OFF
 \end{TOPOGRAPHY}
 
 \end{MODEL}
