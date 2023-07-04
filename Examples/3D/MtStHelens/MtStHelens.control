@@ -44,7 +44,7 @@
 \begin{MODEL}
 
 \begin{TOPOGRAPHY}
-	data file = Examples/3D/MtStHelens/sthelens_grid_data_new.txt
+	data file = Examples/3D/MtStHelens/sthelens_grid_data.txt
         sizing = ON
 \end{TOPOGRAPHY}
 
