@@ -1,15 +1,16 @@
 %
 % An example using a bottom topography constructed from a data file
+% with the automatic sizing using Gaussian curvature
 %
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/3D/MtStHelens/MtStHelens.inp
       plot file name   = Examples/3D/MtStHelens/MtStHelens.tec
-      stats file name  = Examples/3D/MtStHelens/MtStHelens.txt
+      stats file name  = none
       mesh file format = ABAQUS
-      polynomial order = 4
-      plot file format = sem
+      polynomial order = 3
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
 
    \begin{MESH_PARAMETERS}
@@ -27,7 +28,7 @@
    \begin{SIMPLE_EXTRUSION}
       direction          = 3
       height             = 4.0
-      subdivisions       = 6
+      subdivisions       = 3
       start surface name = Mountain
       end surface name   = Sky
    \end{SIMPLE_EXTRUSION}
@@ -43,7 +44,8 @@
 \begin{MODEL}
 
 \begin{TOPOGRAPHY}
-	data file = Examples/3D/MtStHelens/sthelens_grid_data.txt
+	data file = Examples/3D/MtStHelens/sthelens_grid_data_new.txt
+        sizing = ON
 \end{TOPOGRAPHY}
 
 \end{MODEL}
