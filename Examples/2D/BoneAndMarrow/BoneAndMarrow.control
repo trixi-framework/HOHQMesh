@@ -17,8 +17,8 @@
       plot file name   = Examples/2D/BoneAndMarrow/BoneAndMarrow.tec
       stats file name  = Examples/2D/BoneAndMarrow/BoneAndMarrow.txt
       mesh file format = ISM-MM
-      polynomial order = 5
-      plot file format = skeleton
+      polynomial order = 4
+      plot file format = sem
    \end{RUN_PARAMETERS}
 
    \begin{MESH_PARAMETERS}

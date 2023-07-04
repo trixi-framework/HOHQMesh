@@ -12,7 +12,7 @@
       stats file name  = none
       mesh file format = ISM
       polynomial order = 4
-      plot file format = skeleton
+      plot file format = sem
    \end{RUN_PARAMETERS}
 
     \begin{SIMPLE_EXTRUSION}
