@@ -30,9 +30,11 @@ For this reason, we have reduced the storage requirements in the following ways:
 
 2. Plot files are saved using only the "skeleton" option. For more detailed plots with the internal
    spectral element information, users should replace the "skeleton" plot file option with
-   the "sem" option and generate the meshes locally.
+   the "sem" option and generate the meshes locally. Two plot files with the "sem" output option are
+   provided in the Benchmark suite, specifically the two-dimensional `BoneAndMarrow` example
+   and three-dimensional `Box3D` example.
 
-   Note, due to file size, no "skeleton" plot file is provided for `Examples/3D/MtStHelens`. A user would need to generate these files locally.
+   Note, due to file size, no "skeleton" plot file is provided for `Examples/3D/MtStHelens`. A user would need to generate the files for this large mesh locally.
 
 3. Example and Benchmark mesh files are **not** included in the repository.
    Again, users should generate them locally as desired.
