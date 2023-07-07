@@ -1,5 +1,6 @@
 %
-%   This control file is for meshing a three element karman-trefftz airfoil
+%   This control file is for meshing a three element Karman-Trefftz airfoil
+%   Note, run with option -sLimit 9 to generate the mesh 
 %
 \begin{CONTROL_INPUT}
 

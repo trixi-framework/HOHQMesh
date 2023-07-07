@@ -3,7 +3,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/2D/AllFeatures/AllFeatures.mesh
       plot file name   = Examples/2D/AllFeatures/AllFeatures.tec
-      stats file name  = Examples/2D/AllFeatures/AllFeatures.tec
+      stats file name  = Examples/2D/AllFeatures/AllFeatures.txt
       mesh file format = ISM
       polynomial order = 4
       plot file format = skeleton
