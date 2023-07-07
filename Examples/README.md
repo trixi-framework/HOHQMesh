@@ -10,7 +10,7 @@ For this reason, we have reduced the storage requirements in the following ways:
 1. Plot files for example meshes that have a counterpart in the Benchmark suite are located
    in the Benchmarks directory. That is, the plot files for the following examples are
    found in `HOHQMesh/Benchmarks/PlotFiles/Benchmarks`:
-   
+
    - AllFeatures
    - BoneAndMarrow
    - BottomFromFile
@@ -25,7 +25,7 @@ For this reason, we have reduced the storage requirements in the following ways:
    - Pill
    - Pond3D
    - SplineGeometry
-   
+
    Those that do not have a counterpart have plot file examples in this directory.
 
 2. Plot files are saved using only the "skeleton" option. For more detailed plots with the internal
@@ -38,3 +38,51 @@ For this reason, we have reduced the storage requirements in the following ways:
 
 3. Example and Benchmark mesh files are **not** included in the repository.
    Again, users should generate them locally as desired.
+
+## Overview of 2D Examples
+
+The table below provides a short summary of each two-dimensional example as well as a listing of the different features
+they exercise.
+
+| **Name** | **Description** | **Outer Boundary** | **Inner boundaries** | **Parametric Equation** | **Circular Arc** | **Spline** | **Line** | **Refinement Center** | **Refinement Line** | **Multiple Materials** |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **All Features**          | Toy example; exercises all features                | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Bone and Marrow**       | Circular domain with two embedded boundaries       | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Box with refinement**   | Square domain with refinement regions              | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| **Cavity Ramp**           | Cavity domain with a sloping ramp on the exit side | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **Circles3**              | Two circles enclosed by a large circle             | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **East Coast US**         | Portion of US East coast from NYC to Jacksonville  | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Ellipse and 4 Circles** | Four circles enclosed by an ellipse                | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Gingerbread Man**       | Geometry with lots of holes                        | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Half Circle**           | Upper half circle                                  | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **Indian Ocean**          | Complex domain with islands and inlets             | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **KT3 Element**           | Three element Karman-Treffitz airfoil              | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **NACA0012**              | Standard Airfoil geometry                          | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **Pill**                  | Oblong domain with interior circles                | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **Spline Geometry**       | Free form domain defined as a spline               | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **SuperiorMain**          | Coastline of Lake                                  | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Square**                | Uniform Cartesian mesh                             | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+## Overview of 3D Examples
+
+The table below provides a short summary of each 3D example. The 3D meshes use features from
+the 2D mesh generation as well as an extrusion procedure. For instance, examples that extrude
+from a bottom topography use either a parametric equation or a bi-cubic spline interpolation.
+See the [Three Dimensional Hexahedral Meshes](https://trixi-framework.github.io/HOHQMesh/three-dimensional-hexahedral-meshes/#simple-extrusion)
+section of the HOHQMesh documentation for more details.
+
+For brevity, the table only provides a description and the extrusion algorithm used in each
+control file.
+
+| **Name** | **Description** | **Simple extrusion** | **Simple rotation** | **Sweeping (rotation)** | **Sweeping (parallel transport)** | **Bottom Topography** |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Bottom from file**     | Extruded bottom topography from file data                    | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **Box**                  | Uniform Cartesian mesh                                       | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Box Rotated**          | Rotated uniform Cartesian mesh                               | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **Cavity Ramp Extruded** | 3D Cavity domain with a sloping ramp on the exit side        | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Half Circle Extruded** | Extruded semi-circle                                         | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Half Circle Rotated**  | Rotated semi-circle                                          | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **Mt. St. Helens**       | Extruded bottom topography of Mt. St. Helens after explosion | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **Pond**                 | Extruded bottom topography from a multi-variable function    | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **Scaled Cylinder**      | Cylinder extruded and scaled along its length                | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Snake**                | Circular domain extruded with several sweep directions       | ❌ | ❌ | ❌ | ✅ | ❌ |
