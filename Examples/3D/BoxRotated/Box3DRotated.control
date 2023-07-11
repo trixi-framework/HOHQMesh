@@ -1,0 +1,40 @@
+%
+%   This control file uses no model and so generates a structured mesh 
+%   in a box. The mesh size and position is given by the BackgroundGrid 
+%   block. The background grid size is ignored when a BackgroundGrid block 
+%   is present.
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/3D/BoxRotated/Box3DRotated.mesh
+      plot file name   = Examples/3D/BoxRotated/Box3DRotated.tec
+      stats file name  = none
+      mesh file format = ISM
+      polynomial order = 4
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+
+    \begin{SIMPLE_ROTATION}
+      direction             = 1
+      rotation angle factor = 1.0
+      subdivisions          = 6
+      start surface name    = start
+      end surface name      = end
+   \end{SIMPLE_ROTATION}
+
+   \begin{BACKGROUND_GRID}
+       x0 = [0.0, 2.0, 0.0]
+       dx = [1.0, 1.0, 1.0]
+       N  = [5,5,5]
+   \end{BACKGROUND_GRID}
+
+    \begin{SPRING_SMOOTHER}
+       smoothing            = ON
+       smoothing type       = LinearAndCrossBarSpring
+       number of iterations = 5
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\end{FILE}

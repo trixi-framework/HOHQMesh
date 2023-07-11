@@ -1,12 +1,12 @@
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
-      mesh file name   = MeshFiles/SuperiorMain.mesh
-      plot file name   = PlotFiles/SuperiorMain.tec
-      stats file name  = Statistics/SuperiorMain.stat
+      mesh file name   = Examples/2D/LakeSuperior/SuperiorMain.mesh
+      plot file name   = Examples/2D/LakeSuperior/SuperiorMain.tec
+      stats file name  = None
       mesh file format = ISM-V2
-      polynomial order = 6
-      plot file format = sem
+      polynomial order = 4
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
 
    \begin{BACKGROUND_GRID}

@@ -10,7 +10,7 @@
       test file name   = Benchmarks/BenchmarkData/SeaMountCubic.txt
       mesh file format = ISM
       polynomial order = 6
-      plot file format = sem
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
    
    \begin{BACKGROUND_GRID}

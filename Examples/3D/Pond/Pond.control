@@ -8,8 +8,8 @@
       plot file name   = Examples/3D/Pond/Pond3D.tec
       stats file name  = Examples/3D/Pond/Pond3D.txt
       mesh file format = ISM
-      polynomial order = 6
-      plot file format = sem
+      polynomial order = 3
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
 
    \begin{MESH_PARAMETERS}

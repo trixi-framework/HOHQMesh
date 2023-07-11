@@ -4,7 +4,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/2D/Pill/Pill.mesh
       plot file name   = Examples/2D/Pill/Pill.tec
-      stats file name  = Examples/2D/Pill/Pill.txt
+      stats file name  = None
       mesh file format = ISM
       polynomial order = 6
       plot file format = skeleton
@@ -24,65 +24,73 @@
 
 \begin{MODEL}
 \begin{OUTER_BOUNDARY}
-  \begin{PARAMETRIC_EQUATION_CURVE}
+  \begin{END_POINTS_LINE}
 	 name = B1
-	 xEqn = f(t) =  2*t-1
-	 yEqn = f(t) =  0
-	 zEqn = f(t) =  0
-  \end{PARAMETRIC_EQUATION_CURVE}
+	 xStart = [-1.0,0.0,0.0]
+	 xEnd   = [1.0,0.0,0.0]
+  \end{END_POINTS_LINE}
 
-  \begin{PARAMETRIC_EQUATION_CURVE}
-	 name = B2
-	 xEqn = f(t) =  1 + 0.25*cos(0.5*(2*t-1)*pi)
-	 yEqn = f(t) =  0.25*(1+sin(0.5*(2*t-1)*pi))
-	 zEqn = f(t) =  0
-  \end{PARAMETRIC_EQUATION_CURVE}
+  \begin{CIRCULAR_ARC}
+	 name        = B2
+	 units       = degrees
+	 center      = [1.0,0.25,0.0]
+	 radius      = 0.25
+	 start angle = -90.0
+	 end angle   = 90.0
+  \end{CIRCULAR_ARC}
 
-  \begin{PARAMETRIC_EQUATION_CURVE}
+  \begin{END_POINTS_LINE}
 	 name = B3
-	 xEqn = f(t) =  1 - 2*t
-	 yEqn = f(t) =  0.5
-	 zEqn = f(t) =  0
-  \end{PARAMETRIC_EQUATION_CURVE}
+	 xStart = [1.0,0.5,0.0]
+	 xEnd   = [-1.0,0.5,0.0]
+  \end{END_POINTS_LINE}
 
-  \begin{PARAMETRIC_EQUATION_CURVE}
+  \begin{CIRCULAR_ARC}
 	 name = B4
-	 xEqn = f(t) =  0.25*cos((1+2*t)*0.5*pi) - 1
-	 yEqn = f(t) =  0.25*(1+sin((1+2*t)*0.5*pi))
-	 zEqn = f(t) =  0
-  \end{PARAMETRIC_EQUATION_CURVE}
+	 units       = degrees
+	 center      = [-1.0,0.25,0.0]
+	 radius      = 0.25
+	 start angle = 90.0
+	 end angle   = 270.0
+  \end{CIRCULAR_ARC}
 \end{OUTER_BOUNDARY}
 
 \begin{INNER_BOUNDARIES}
 	
    \begin{CHAIN}
       name = CircleLeft
-      \begin{PARAMETRIC_EQUATION_CURVE}
-         name = CircleLeft
-         xEqn = f(t) = -1 + 0.02*cos(2*pi*t)
-         yEqn = f(t) = 0.25 + 0.02*sin(2*pi*t)
-	 zEqn = f(t) =  0
-      \end{PARAMETRIC_EQUATION_CURVE}
+      \begin{CIRCULAR_ARC}
+         name 		= CircleLeft
+	 	 units       = degrees
+	 	 center      = [-1.0,0.25,0.0]
+	 	 radius      = 0.02
+	 	 start angle = 0.0
+	 	 end angle   = 360.0
+      \end{CIRCULAR_ARC}
    \end{CHAIN}
 
    \begin{CHAIN}
       name = CircleRight
-      \begin{PARAMETRIC_EQUATION_CURVE}
-         name = CircleRight
-         xEqn = f(t) = 1 + 0.02*cos(2*pi*t)
-         yEqn = f(t) = 0.25 + 0.02*sin(2*pi*t)
-	 zEqn = f(t) =  0
-      \end{PARAMETRIC_EQUATION_CURVE}
+      \begin{CIRCULAR_ARC}
+          name	    = CircleRight
+	 	 units       = degrees
+	 	 center      = [1.0,0.25,0.0]
+	 	 radius      = 0.02
+	 	 start angle = 0.0
+	 	 end angle   = 360.0
+      \end{CIRCULAR_ARC}
    \end{CHAIN}
 
    \begin{CHAIN}
       name = CircleCenter
-      \begin{PARAMETRIC_EQUATION_CURVE}
+      \begin{CIRCULAR_ARC}
          name = CircleCenter
-         xEqn = f(t) = 0.16*cos(2*pi*t)
-         yEqn = f(t) = 0.25 + 0.16*sin(2*pi*t)
-	 zEqn = f(t) =  0
-      \end{PARAMETRIC_EQUATION_CURVE}
+	 	 units       = degrees
+	 	 center      = [0.0,0.25,0.0]
+	 	 radius      = 0.16
+	 	 start angle = 0.0
+	 	 end angle   = 360.0
+      \end{CIRCULAR_ARC}
    \end{CHAIN}
 	   
 \end{INNER_BOUNDARIES}

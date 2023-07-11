@@ -3,7 +3,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/2D/IndianOcean/IndianOcean.mesh
       plot file name   = Examples/2D/IndianOcean/IndianOcean.tec
-      stats file name  = Examples/2D/IndianOcean/IndianOcean.stat
+      stats file name  = Examples/2D/IndianOcean/IndianOcean.txt
       mesh file format = ISM
       polynomial order = 5
       plot file format = skeleton

@@ -7,8 +7,8 @@
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
-      mesh file name   = MeshFiles/Square.mesh
-      plot file name   = PlotFiles/Square.tec
+      mesh file name   = Examples/2D/Square/Square.mesh
+      plot file name   = Examples/2D/Square/Square.tec
       stats file name  = none
       mesh file format = ISM
       polynomial order = 4

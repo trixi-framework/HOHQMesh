@@ -6,7 +6,7 @@
       stats file name  = none
       mesh file format = ISM
       polynomial order = 4
-      plot file format = sem
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
    
    \begin{BACKGROUND_GRID}

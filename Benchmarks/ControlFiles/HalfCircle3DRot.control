@@ -6,8 +6,8 @@
       stats file name  = Benchmarks/StatsFiles/Tests/HalfCircle3DR.txt
       test file name   = Benchmarks/BenchmarkData/HalfCircle3DRBenchmark.txt
       mesh file format = ISM
-      polynomial order = 5
-      plot file format = sem
+      polynomial order = 3
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
    
    \begin{BACKGROUND_GRID}

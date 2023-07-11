@@ -10,7 +10,7 @@
       test file name   = Benchmarks/BenchmarkData/BottomFromFile.txt
       mesh file format = ABAQUS
       polynomial order = 4
-      plot file format = sem
+      plot file format = skeleton
    \end{RUN_PARAMETERS}
 
    \begin{MESH_PARAMETERS}
