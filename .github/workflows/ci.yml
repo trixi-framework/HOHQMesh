@@ -20,6 +20,11 @@ on:
         required: false
         default: false
 
+env:
+  # Modify this variable to change the ifort compiler version - do NOT hardcode the version
+  # anywhere else!
+  INTEL_ONEAPI_VERSION: 2023.2.1
+
 jobs:
   test:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
@@ -78,6 +83,12 @@ jobs:
             shell: bash
             test_type: valgrind
             coverage: false
+          - os: ubuntu-latest
+            os_name: linux
+            compiler: ifort
+            shell: bash
+            test_type: regular
+            coverage: false
           # macOS
           - os: macos-11
             os_name: macos
@@ -119,6 +130,28 @@ jobs:
         with:
           update: true
           install: git base-devel mingw-w64-x86_64-toolchain
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: /opt/intel/oneapi
+          key: ${{ matrix.os }}-${{ matrix.compiler }}-${{ env.INTEL_ONEAPI_VERSION }}
+      - name: Install Intel oneAPI Fortran compiler
+        if: matrix.compiler == 'ifort' && steps.cache.outputs.cache-hit != 'true'
+        run: |
+          # download the key to system keyring
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+          | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+
+          # add signed entry to apt sources and configure the APT client to use Intel repository:
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+
+          # update package index and install Fortran compiler
+          sudo apt update
+          sudo apt-get install intel-oneapi-compiler-fortran-$INTEL_ONEAPI_VERSION
+
+          # set environment variables and make them persistent across steps
+          . /opt/intel/oneapi/setvars.sh
+          env | grep oneapi >> $GITHUB_ENV
       - name: Bootstrap
         run: |
           ./Utilities/bootstrap
