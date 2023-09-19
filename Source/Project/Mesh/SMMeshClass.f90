@@ -370,9 +370,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement), POINTER   :: e    => NULL()
-         CLASS(SMNode)   , POINTER   :: node => NULL()
-         CLASS(SMEdge)   , POINTER   :: edge => NULL()
+         TYPE(SMElement), POINTER   :: e    => NULL()
+         TYPE(SMNode)   , POINTER   :: node => NULL()
+         TYPE(SMEdge)   , POINTER   :: edge => NULL()
 
          CLASS(FTLinkedList)        , POINTER :: list => NULL()
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
@@ -391,7 +391,7 @@
          CALL iterator % setToStart()
          DO WHILE( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
             node % activeStatus = REMOVE
             CALL iterator % movetoNext()
          END DO

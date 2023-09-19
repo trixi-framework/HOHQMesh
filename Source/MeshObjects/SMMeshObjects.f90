@@ -414,7 +414,7 @@
 !
          IMPLICIT NONE  
          CLASS(FTObject), POINTER :: obj
-         CLASS(SMNode)  , POINTER :: cast
+         TYPE(SMNode)   , POINTER :: cast
          
          cast => NULL()
          SELECT TYPE (e => obj)
