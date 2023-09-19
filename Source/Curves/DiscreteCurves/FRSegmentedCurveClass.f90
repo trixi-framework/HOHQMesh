@@ -765,7 +765,7 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(FTMutableObjectArray), POINTER :: newPointArray
+         TYPE (FTMutableObjectArray), POINTER :: newPointArray
          INTEGER                              :: k, j, N, M
          CLASS(FTObject)            , POINTER :: pObj
          CLASS(SMSegmentedCurveNode), POINTER :: pk, pkp1, newP
