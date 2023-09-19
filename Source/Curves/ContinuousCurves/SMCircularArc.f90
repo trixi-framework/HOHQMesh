@@ -73,11 +73,11 @@
 ! 
       SUBROUTINE initWithParametersNameAndID( self, center, radius, startAngle, EndAngle, cName, id )
          IMPLICIT NONE
-         CLASS(SMCircularArc)    :: self
-         CHARACTER(LEN=*) :: cName
-         INTEGER          :: id
-         REAL(KIND=RP)    :: center(3), radius
-         REAL(KIND=RP)    :: startAngle, endAngle
+         CLASS(SMCircularArc) :: self
+         CHARACTER(LEN=*)     :: cName
+         INTEGER              :: id
+         REAL(KIND=RP)        :: center(3), radius
+         REAL(KIND=RP)        :: startAngle, endAngle
          
          CALL self % SMCurve % initWithNameAndID(cName,id)
          

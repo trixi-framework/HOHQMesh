@@ -118,7 +118,7 @@
 !
    SUBROUTINE ConstructTestData(self, testDataType)
       IMPLICIT NONE
-      CLASS(testData) :: self
+      TYPE(testData) :: self
       INTEGER         :: testDataType
 
       CALL DestructTestData(self)
@@ -139,7 +139,7 @@
 !
    SUBROUTINE DestructTestData(self)
       IMPLICIT NONE
-      CLASS(testData) :: self
+      TYPE(testData) :: self
 
       IF(ALLOCATED(self % intValues))  DEALLOCATE(self % intValues)
       IF(ALLOCATED(self % realValues)) DEALLOCATE(self % realValues)

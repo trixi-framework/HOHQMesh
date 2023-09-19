@@ -105,7 +105,7 @@
 !        ---------------
 !
          CLASS(FTObject)           , POINTER :: obj
-         CLASS(FTValueDictionary)  , POINTER :: generatorDict
+         TYPE(FTValueDictionary)   , POINTER :: generatorDict
          INTEGER                             :: algorithmChoice
          INTEGER                             :: numberOf3DGenerators
 !
@@ -187,7 +187,7 @@
 !        ---------------
 !
          CLASS(FTObject)           , POINTER     :: obj
-         CLASS(FTValueDictionary)  , POINTER     :: generatorDict
+         TYPE(FTValueDictionary)  , POINTER     :: generatorDict
          INTEGER                                 :: numberOfLayers
          CHARACTER(LEN=STRING_CONSTANT_LENGTH)   :: subdivisionsKey
          INTEGER                                 :: algorithmChoice = NONE
@@ -331,7 +331,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh) :: mesh
+         TYPE(SMMesh) :: mesh
          INTEGER       :: pmutation
 !
 !        ---------------

@@ -280,7 +280,7 @@
          INTEGER                              :: id1, id2
          REAL(KIND=RP)                        :: force(3), x1(3), x2(3)
          CLASS(SMEdge)              , POINTER :: edge => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         TYPE(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          
          iterator => mesh % edgesIterator
@@ -328,7 +328,7 @@
          REAL(KIND=RP)                        :: force(3), x1(3), x2(3)
          CLASS(SMNode)              , POINTER :: node1 => NULL(), node2 => NULL()
          CLASS(SMElement)           , POINTER :: e => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         TYPE(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          
          iterator => mesh % elementsIterator
@@ -426,7 +426,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary), POINTER :: smootherDict
+         TYPE(FTValueDictionary), POINTER :: smootherDict
          TYPE(SpringSmootherParameters)    :: smp
 !
 !        ---------------

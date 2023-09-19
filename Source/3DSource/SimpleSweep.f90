@@ -112,7 +112,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary) :: dict
+         TYPE(FTValueDictionary) :: dict
 !
 !        ---------------
 !        Local variables
@@ -194,7 +194,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary) :: dict
+         TYPE(FTValueDictionary) :: dict
 !
 !        ---------------
 !        Local variables
@@ -271,7 +271,7 @@
 !        ---------
 !
          TYPE ( MeshProject )        :: project
-         CLASS( FTValueDictionary )  :: parametersDictionary
+         TYPE( FTValueDictionary )   :: parametersDictionary
          INTEGER                     :: pMutation
          REAL(KIND=RP)               :: h
 !
@@ -443,7 +443,7 @@
          REAL(KIND=RP)             :: x(3), z, y(3)
          REAL(KIND=RP)             :: delta, eta, xi
          CLASS(FTObject) , POINTER :: obj
-         CLASS(SMElement), POINTER :: e
+         TYPE(SMElement), POINTER :: e
 !
 !        ------------------------------------------
 !        Extend the face points on the quad element

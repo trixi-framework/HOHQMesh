@@ -56,7 +56,7 @@
 !        ---------
 !
          REAL(KIND=RP)                :: valueToSet
-         CLASS(FTValueDictionary)     :: sourceDict
+         TYPE(FTValueDictionary)      :: sourceDict
          INTEGER, INTENT(IN)          :: errorLevel
          CHARACTER(LEN=*), INTENT(IN) :: key
          CHARACTER(LEN=*)             :: message, poster
@@ -83,7 +83,7 @@
 !        ---------
 !
          INTEGER                      :: valueToSet
-         CLASS(FTValueDictionary)     :: sourceDict
+         TYPE(FTValueDictionary)      :: sourceDict
          INTEGER, INTENT(IN)          :: errorLevel
          CHARACTER(LEN=*), INTENT(IN) :: key
          CHARACTER(LEN=*)             :: message, poster
@@ -110,7 +110,7 @@
 !        ---------
 !
          CHARACTER(LEN=*)             :: valueToSet
-         CLASS(FTValueDictionary)     :: sourceDict
+         TYPE(FTValueDictionary)      :: sourceDict
          INTEGER, INTENT(IN)          :: errorLevel
          CHARACTER(LEN=*), INTENT(IN) :: key
          CHARACTER(LEN=*)             :: message, poster
@@ -137,7 +137,7 @@
 !        ---------
 !
          REAL(KIND=RP)                :: arrayToSet(3)
-         CLASS(FTValueDictionary)     :: sourceDict
+         TYPE(FTValueDictionary)      :: sourceDict
          INTEGER, INTENT(IN)          :: errorLevel
          CHARACTER(LEN=*), INTENT(IN) :: key
          CHARACTER(LEN=*)             :: message, poster
@@ -184,7 +184,7 @@
 !        ---------
 !
          INTEGER                      :: arrayToSet(3)
-         CLASS(FTValueDictionary)     :: sourceDict
+         TYPE(FTValueDictionary)      :: sourceDict
          INTEGER, INTENT(IN)          :: errorLevel
          CHARACTER(LEN=*), INTENT(IN) :: key
          CHARACTER(LEN=*)             :: message, poster

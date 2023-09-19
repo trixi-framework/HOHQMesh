@@ -56,7 +56,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTException), POINTER :: ReaderException
+         TYPE(FTException), POINTER  :: ReaderException
          CHARACTER(LEN=*)            :: exceptionName, variableName, whereInCode, message
 !
 !        ---------------
