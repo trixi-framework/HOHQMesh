@@ -79,10 +79,10 @@
 !
          SUBROUTINE ConstructCurveSweeper(self, sweepCurve, scaleCurve, sweepAlgorithm)
             IMPLICIT NONE
-            TYPE( CurveSweeper)            :: self
+            TYPE( CurveSweeper)           :: self
             TYPE(SMChainedCurve), POINTER :: sweepCurve
             TYPE(SMChainedCurve), POINTER :: scaleCurve
-            CHARACTER(LEN=*)               :: sweepAlgorithm
+            CHARACTER(LEN=*)              :: sweepAlgorithm
 
             self % sweepCurve => sweepCurve
             IF(ASSOCIATED(sweepCurve)) CALL self % sweepCurve % retain()

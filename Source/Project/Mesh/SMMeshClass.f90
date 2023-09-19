@@ -315,7 +315,7 @@
 !                 ---------------------------------------------------
 !
                   obj => hashTable % objectForKeys(key1,key2)
-                  CALL cast(obj,edge)
+                  CALL castToSMEdge(obj,edge)
                   edge % elements(2) % element => element
                   CALL element % retain()
                   edge % elementSide(2) = k
@@ -407,7 +407,7 @@
          DO WHILE( .NOT.iterator % isAtEnd())
             obj       => iterator % object()
 
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             IF ( e % remove )     THEN
                takeStep = .FALSE.
                CALL iterator % removeCurrentRecord()
@@ -434,7 +434,7 @@
                takeStep  =  .TRUE.
                obj       => iterator % object()
 
-               CALL cast(obj,edge)
+               CALL castToSMEdge(obj,edge)
                IF ( edge % remove )     THEN
                   takeStep = .FALSE.
                   CALL iterator % removeCurrentRecord()
@@ -459,7 +459,7 @@
             takeStep  =  .TRUE.
             obj       => iterator % object()
 
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
             IF ( node % activeStatus == REMOVE .OR. node % refCount() == 1 )     THEN
             ! Note that if refCount = 1 then this is the only place a node is referenced is in the
             ! node list. It should be removed since it is not used elsewhere.
