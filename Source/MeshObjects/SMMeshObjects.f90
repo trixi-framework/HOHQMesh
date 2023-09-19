@@ -607,7 +607,7 @@
 ! 
       SUBROUTINE releaseSMEdge(self)  
          IMPLICIT NONE
-         CLASS(SMEdge)   , POINTER :: self
+         TYPE (SMEdge)   , POINTER :: self
          CLASS(FTObject) , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -656,7 +656,7 @@
 !
          IMPLICIT NONE  
          CLASS(FTObject) , POINTER :: obj
-         CLASS(SMEdge)   , POINTER :: cast
+         TYPE (SMEdge)   , POINTER :: cast
          
          cast => NULL()
          SELECT TYPE (e => obj)

@@ -272,9 +272,9 @@
 !
          TYPE(FTSparseMatrix)       :: hashTable
          TYPE(FTLinkedListIterator) :: elementIterator
-         CLASS(SMEdge)   , POINTER  :: edge => NULL()
+         TYPE (SMEdge)   , POINTER  :: edge => NULL()
          CLASS(FTObject) , POINTER  :: obj => NULL()
-         CLASS(SMElement), POINTER  :: element => NULL()
+         TYPE (SMElement), POINTER  :: element => NULL()
          CLASS(SMNode)   , POINTER  :: startNode => NULL(), endNode => NULL()
 
          INTEGER                    :: nNodes
@@ -290,7 +290,7 @@
 
          DO WHILE (.NOT.elementIterator % isAtEnd())
             obj => elementIterator % object()
-            CALL cast(obj,element)
+            CALL castToSMElement(obj,element)
 !
 !           -------------------
 !           Gather the node ids
