@@ -100,7 +100,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement)           , POINTER :: e               => NULL()
+         TYPE (SMElement)           , POINTER :: e               => NULL()
          CLASS(FTLinkedList)        , POINTER :: newElementsList => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
          CLASS(SMNode)              , POINTER :: node            => NULL()
@@ -130,7 +130,7 @@
          CALL interfaceElementIterator % setToStart()
          DO WHILE ( .NOT.interfaceElementIterator % isAtEnd() )
             obj => interfaceElementIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             IF ( e % remove )     THEN
                CALL interfaceElementIterator % moveToNext()
                CYCLE !in case elements are doubled up
@@ -226,7 +226,7 @@
 !        ---------
 !
          TYPE (SMMesh)      , POINTER :: mesh
-         CLASS(SMElement)   , POINTER :: e
+         TYPE (SMElement)   , POINTER :: e
          CLASS(FtLinkedList), POINTER :: newElementsList
 !
 !        ---------------
@@ -380,7 +380,7 @@
 !        ---------
 !
          TYPE (SMmesh)      , POINTER :: mesh
-         CLASS(SMElement)   , POINTER :: e
+         TYPE (SMElement)   , POINTER :: e
          CLASS(FTLinkedList), POINTER :: newElementsList
          INTEGER                      :: localNodeNumber
 !
@@ -572,7 +572,7 @@
 !        ---------
 !
          TYPE(SMNodePtr), DIMENSION(4)           :: elementNodes
-         CLASS(SMElement)              , POINTER :: e
+         TYPE (SMElement)              , POINTER :: e
          CLASS(FTLinkedList)           , POINTER :: newElementsList
          INTEGER                                 :: elementID
 !

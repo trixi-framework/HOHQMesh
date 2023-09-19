@@ -187,9 +187,9 @@
 !        ---------------
 !
          CLASS(FTObject)    , POINTER         :: obj  => NULL()
-         CLASS(SMNode)      , POINTER         :: node => NULL()
-         CLASS(SMEdge)      , POINTER         :: edge => NULL()
-         CLASS(SMElement)   , POINTER         :: e    => NULL()
+         TYPE(SMNode)       , POINTER         :: node => NULL()
+         TYPE(SMEdge)       , POINTER         :: edge => NULL()
+         TYPE(SMElement)    , POINTER         :: e    => NULL()
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
 
          INTEGER                  :: iUnit, j, k
@@ -235,7 +235,7 @@
          CALL iterator % setToStart
          DO WHILE(.NOT.iterator % isAtEnd())
             obj => iterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
             WRITE(iUnit,*) node % x
             CALL iterator % moveToNext()
          END DO
@@ -260,7 +260,7 @@
             CALL iterator % setToStart()
             DO WHILE(.NOT.iterator % isAtEnd())
                obj => iterator % object()
-               CALL cast(obj,edge)
+               CALL castToSMEdge(obj,edge)
                CALL gatherEdgeInfo(edge, edgeInfoArray)
                WRITE(iUnit, '(6(I6,2x))') edgeInfoArray
                CALL iterator % moveToNext()
@@ -276,7 +276,7 @@
 
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
 
             IF ( version == ISM_MM )     THEN
                WRITE( iUnit, *) e % boundaryInfo % nodeIDs, TRIM(mesh % materialNameForID(e % materialID))
@@ -321,8 +321,8 @@
 !        ---------------
 !
          CLASS(FTObject)    , POINTER         :: obj  => NULL()
-         CLASS(SMNode)      , POINTER         :: node => NULL()
-         CLASS(SMElement)   , POINTER         :: e    => NULL()
+         TYPE (SMNode)      , POINTER         :: node => NULL()
+         TYPE (SMElement)   , POINTER         :: e    => NULL()
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
 
          INTEGER                  :: iUnit, j, k
@@ -366,7 +366,7 @@
          j = 1
          DO WHILE(.NOT.iterator % isAtEnd())
             obj => iterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
             WRITE(iUnit, '(I0,3(", ", F18.13))') j, node % x
             CALL iterator % moveToNext()
             j = j + 1
@@ -382,7 +382,7 @@
          j = 1
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             WRITE( iUnit, '(I0,4(", ", I0))') j, e % boundaryInfo % nodeIDs
             CALL iterator % moveToNext()
             j = j + 1
@@ -401,7 +401,7 @@
          CALL iterator % setToStart
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             ! Print the corner IDs
             WRITE( iUnit, '(A3,4(" ", I0))') "** ", e % boundaryInfo % nodeIDs
             ! Print flag if an edge is curved
@@ -438,7 +438,7 @@
          CALL iterator % setToStart
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             WRITE( iUnit, '(9A)') "** ", (TRIM(e % boundaryInfo % bCurveName(bndyNameRemap(k))), " ", k = 1, 4)
             CALL iterator % moveToNext()
          END DO
@@ -466,7 +466,7 @@
          TYPE (FTMutableObjectArray) , POINTER :: badElements => NULL()
          INTEGER                               :: statsFileUnit, k
          CLASS(FTObject)             , POINTER :: obj => NULL()
-         CLASS(SMElement)            , POINTER :: e   => NULL()
+         TYPE (SMElement)            , POINTER :: e   => NULL()
          INTEGER, EXTERNAL                     :: UnusedUnit
 
          statsFileUnit = UnusedUnit()
@@ -483,7 +483,7 @@
 
             DO k = 1, badElements % COUNT()
                obj => badElements % objectAtIndex(indx = k)
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
                CALL PrintBadElementInfo( e, statsFileUnit )
             END DO
             CALL releaseFTMutableObjectArray(badElements)
@@ -526,7 +526,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMEdge), POINTER     :: edge
+         TYPE (SMEdge), POINTER     :: edge
          INTEGER      , INTENT(OUT) :: info(6)
 !
 !        ---------------

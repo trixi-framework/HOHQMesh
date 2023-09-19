@@ -186,7 +186,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement)           , POINTER :: currentElement  => NULL()
+         TYPE (SMElement)           , POINTER :: currentElement  => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
 !
@@ -202,7 +202,7 @@
 
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
-            CALL cast(obj,currentElement)
+            CALL castToSMElement(obj,currentElement)
 
             CALL DeleteElementIfDiamond( currentElement, mesh, errorCode )
 
@@ -483,7 +483,7 @@
 !        ---------------
 !
          TYPE (FTMutableObjectArray) , POINTER     :: badElements => NULL()
-         CLASS(SMElement)            , POINTER     :: e => NULL()
+         TYPE (SMElement)            , POINTER     :: e => NULL()
          CLASS(FTObject)             , POINTER     :: obj => NULL()
          REAL(KIND=RP)               , ALLOCATABLE :: shapeMeasures(:,:)
          LOGICAL                     , ALLOCATABLE :: badElementMeasure(:,:)
@@ -522,7 +522,7 @@
 
             DO k = 1, numberOfBadElements
                obj => badElements % objectAtIndex(k)
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
                CALL ComputeElementShapeMeasures2D( e, shapeMeasures(:,k) )
                CALL ExtractBadElementInfo( shapeMeasures(:,k), badElementMeasure(:,k) )
             END DO
@@ -533,7 +533,7 @@
 !
             DO k = 1, numberOfBadElements
                obj => badElements % objectAtIndex(k)
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
                IF( shapeMeasures(AREA_SIGN,k ) < 0.0_RP ) CALL MakeElement_RightHanded( e )
             END DO
 !
@@ -649,9 +649,9 @@
          INTEGER                              :: j, k, nodeCount
          CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
          CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
-         CLASS(SMEDGE)              , POINTER :: currentEdge => NULL()
-         CLASS(SMElement)           , POINTER :: e => NULL()
-         CLASS(SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
+         TYPE (SMEDGE)              , POINTER :: currentEdge => NULL()
+         TYPE (SMElement)           , POINTER :: e => NULL()
+         TYPE (SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          TYPE (FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
@@ -686,7 +686,7 @@
 
                DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
                   obj => EdgeListIterator % object()
-                  CALL cast(obj,currentEdge)
+                  CALL castToSMEdge(obj,currentEdge)
                   IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
                      e   => currentEdge % elements(1) % element
 !               BUG: puts boundary points in the wrong place.
@@ -732,7 +732,7 @@
 
                DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
                   obj => EdgeListIterator % object()
-                  CALL cast(obj,currentEdge)
+                  CALL castToSMEdge(obj,currentEdge)
 
                   IF ( currentEdge % edgeType == ON_INTERFACE )     THEN
 
@@ -764,7 +764,7 @@
                CALL nodesIterator % setToStart()
                DO WHILE ( .NOT.nodesIterator % isAtEnd() )
                   obj => nodesIterator % object()
-                  CALL cast(obj,meshNode)
+                  CALL castToSMNode(obj,meshNode)
 !
 !              ------------------------------
 !              See it this is a boundary node
@@ -853,9 +853,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement), POINTER :: e => NULL(), eNbr => NULL()
+         TYPE (SMElement), POINTER :: e => NULL(), eNbr => NULL()
          CLASS(FTObject) , POINTER :: obj => NULL()
-         CLASS(SMNode)   , POINTER :: node => NULL()
+         TYPE (SMNode)   , POINTER :: node => NULL()
          REAL(KIND=RP)             :: angles(4)
          INTEGER                   :: numberOfBadElements
          INTEGER                   :: k, j, badNodeID
@@ -868,7 +868,7 @@
 
          DO k = 1, numberOfBadElements
             obj => badElements % objectAtIndex(k)
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             IF( e % remove )     CYCLE
 !
 !           -------------------------------------
@@ -1138,7 +1138,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement), POINTER :: e
+         TYPE (SMElement), POINTER :: e
          TYPE(SMMesh)              :: mesh
          INTEGER                   :: errorCode
 !

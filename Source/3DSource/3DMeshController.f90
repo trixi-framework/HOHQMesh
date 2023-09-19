@@ -372,8 +372,8 @@
 !        ---------------
 !
          CLASS(FTObject) , POINTER  :: obj
-         CLASS(SMNode)   , POINTER  :: node
-         CLASS(SMElement), POINTER  :: e
+         TYPE (SMNode)   , POINTER  :: node
+         TYPE (SMElement), POINTER  :: e
          INTEGER                    :: i,j
 !
 !        -----------------------------
@@ -399,7 +399,7 @@
          DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
 
             obj => mesh % elementsIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
 
             DO j = 0, e % N
                DO i = 0, e % N

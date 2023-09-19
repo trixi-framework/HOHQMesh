@@ -256,7 +256,7 @@
 !        ---------------
 !
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
-         CLASS(SMElement)           , POINTER :: e               => NULL()
+         TYPE (SMElement)           , POINTER :: e               => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
          REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
          INTEGER                              :: k, nValues
@@ -269,7 +269,7 @@
          nValues = 0
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
 
             DO k = 1, NUMBER_OF_2D_SHAPE_MEASURES
@@ -361,7 +361,7 @@
 !        ---------------
 !
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
-         CLASS(SMElement)           , POINTER :: e => NULL()
+         TYPE (SMElement)           , POINTER :: e => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          REAL(KIND=RP)                        :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
          CHARACTER(LEN=16)                    :: namesFmt = "(   8A16 )", valuesFmt = '(  8F16.3)', numb = "10"
@@ -377,7 +377,7 @@
 
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
             WRITE( fUnit,valuesFmt) shapeMeasures
 
@@ -395,7 +395,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement)  , POINTER :: e
+         TYPE (SMElement)  , POINTER :: e
          REAL(KIND=RP)               :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES)
 !
 !        ---------------
@@ -561,7 +561,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement), POINTER :: e
+         TYPE (SMElement), POINTER :: e
          REAL(KIND=RP)             :: angles(4)
          LOGICAL                   :: rightHanded
 !
@@ -642,7 +642,7 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(SMElement)           , POINTER :: e => NULL()
+         TYPE (SMElement)           , POINTER :: e => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
 
@@ -654,7 +654,7 @@
 
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
 
             IF( elementIsBad(e) )  CALL array % addObject(obj)
 
@@ -677,7 +677,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement), POINTER :: e
+         TYPE(SMElement), POINTER :: e
 !
 !        ---------------
 !        Local Variables
@@ -742,7 +742,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement), POINTER :: e
+         TYPE (SMElement), POINTER :: e
          INTEGER                   :: fUnit
 !
 !        ---------------

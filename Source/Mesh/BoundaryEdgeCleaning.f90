@@ -147,9 +147,9 @@
 !
          CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges  => NULL()
          TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
-         CLASS(SMElement)           , POINTER :: e => NULL()
-         CLASS(SMEdge)              , POINTER :: currentEdge, newBoundaryEdge, edge
-         CLASS(SMNode)              , POINTER :: node1, node2
+         TYPE (SMElement)           , POINTER :: e => NULL()
+         TYPE (SMEdge)              , POINTER :: currentEdge, newBoundaryEdge, edge
+         TYPE (SMNode)              , POINTER :: node1, node2
          CLASS(FTObject)            , POINTER :: obj
          INTEGER                              :: k, chainID, side
          REAL(KIND=RP)                        :: elementSize, x1(3), x2(3)
@@ -170,14 +170,14 @@
          CALL iterator % setToStart()
 
          obj => iterator % object()
-         CALL cast(obj,currentEdge)
+         CALL castToSMEdge(obj,currentEdge)
          chainID = currentEdge % nodes(1) % node % bCurveChainID
          side    = currentEdge % nodes(1) % node % bCurveSide
 
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
             obj => iterator % object()
-            CALL cast(obj,currentEdge)
+            CALL castToSMEdge(obj,currentEdge)
 
             IF( .NOT.currentEdge % remove )     THEN !Already did this one
 !
@@ -291,7 +291,7 @@
 !
          CLASS(FTLinkedList)        , POINTER      :: newlyExposedBoundaryEdges => NULL()
          CLASS(SMElement)           , POINTER      :: e => NULL()
-         CLASS(SMEdge)              , POINTER      :: currentEdge => NULL(), newBoundaryEdge => NULL()
+         TYPE (SMEdge)              , POINTER      :: currentEdge => NULL(), newBoundaryEdge => NULL()
          TYPE (FTLinkedListIterator), POINTER      :: iterator => NULL()
          CLASS(FTObject)            , POINTER      :: obj => NULL()
          INTEGER                                   :: k, nB, interiorEdgeNumber
@@ -310,7 +310,7 @@
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
             obj => iterator % object()
-            CALL cast(obj,currentEdge)
+            CALL castToSMEdge(obj,currentEdge)
 
             IF( .NOT.currentEdge % remove )     THEN ! Haven't done this one yet
 
@@ -419,8 +419,8 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: obj         => NULL()
-         CLASS(SMEdge)              , POINTER :: currentEdge => NULL()
-         CLASS(SMNode)              , POINTER :: node        => NULL()
+         TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
+         TYPE (SMNode)              , POINTER :: node        => NULL()
          CLASS(SMCurve)             , POINTER :: cEnd        => NULL()
          CLASS(SMChainedCurve)      , POINTER :: chain       => NULL()
          TYPE (FTLinkedListIterator), POINTER :: iterator    => NULL()
@@ -433,7 +433,7 @@
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
             obj => iterator % object()
-            CALL cast(obj,currentEdge)
+            CALL castToSMEdge(obj,currentEdge)
 
             DO k = 1, 2
                node                  => currentEdge % nodes(k) % node
@@ -463,14 +463,14 @@
 !
          TYPE (FTLinkedListIterator), POINTER :: iterator
          CLASS(FTobject)            , POINTER :: obj         => NULL()
-         CLASS(SMEdge)              , POINTER :: currentEdge => NULL()
+         TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
          LOGICAL                              :: takeStep
 
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             takeStep = .TRUE.
-            CALL cast(obj,currentEdge)
+            CALL castToSMEdge(obj,currentEdge)
             IF( currentEdge % remove )     THEN
                 CALL iterator % removeCurrentRecord()
                 takeStep = .FALSE.

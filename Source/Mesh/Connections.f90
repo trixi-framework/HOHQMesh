@@ -71,7 +71,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMEdge)              , POINTER :: edge => NULL()
+         TYPE (SMEdge)              , POINTER :: edge => NULL()
          CLASS(SMElement)           , POINTER :: e => NULL()
          INTEGER                              :: side, k, id, numElements
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
@@ -94,7 +94,7 @@
 
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,edge)
+            CALL castToSMEdge(obj,edge)
             DO k = 1, 2
                IF( ASSOCIATED(edge % elements(k) % element) )    THEN
                   e     => edge % elements(k) % element
@@ -141,8 +141,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)               , POINTER  :: node => NULL()
-         CLASS(SMElement)            , POINTER  :: e    => NULL()
+         TYPE (SMNode)               , POINTER  :: node => NULL()
+         TYPE (SMElement)            , POINTER  :: e    => NULL()
          INTEGER                                :: k, id, numNodes
          CLASS(FTLinkedListIterator), POINTER   :: iterator => NULL()
          CLASS(FTObject)            , POINTER   :: obj => NULL()
@@ -169,7 +169,7 @@
 
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             DO k = 1, 4
                node => e % nodes(k) % node
 
@@ -232,8 +232,8 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)  , POINTER             :: node     => NULL()
-         CLASS(SMEdge)  , POINTER             :: edge     => NULL()
+         TYPE (SMNode)  , POINTER             :: node     => NULL()
+         TYPE (SMEdge)  , POINTER             :: edge     => NULL()
          CLASS(FTObject), POINTER             :: obj      => NULL()
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          INTEGER                              :: k, id, numNodes
@@ -258,7 +258,7 @@
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,edge)
+            CALL castToSMEdge(obj,edge)
             DO k = 1, 2
                node                                          => edge % nodes(k) % node
                id                                            =  node % id

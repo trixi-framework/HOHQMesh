@@ -1199,9 +1199,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMChainedCurve), POINTER :: chain => NULL()
-         CLASS(SMCurve)       , POINTER :: currentCurve => NULL()
-         CLASS(FTObject)      , POINTER :: obj => NULL()
+         CLASS(SMChainedCurve)      , POINTER :: chain => NULL()
+         CLASS(SMCurve)             , POINTER :: currentCurve => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          CLASS(FTLinkedListIterator), POINTER    :: iterator => NULL()
 
          INTEGER                        :: chainCount
