@@ -339,7 +339,7 @@
 !        ---------------
 !
          CLASS(FTObject), POINTER  :: obj
-         CLASS(SMNode)  , POINTER  :: node
+         TYPE(SMNode)  , POINTER  :: node
          REAL(KIND=RP)             :: x(3)
 
          CALL mesh % nodesIterator % setToStart()

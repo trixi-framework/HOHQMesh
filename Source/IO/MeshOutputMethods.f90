@@ -59,9 +59,9 @@
          INTEGER           :: iUnit, j
          INTEGER, EXTERNAL :: UnusedUnit
 
-         CLASS(SMElement), POINTER :: e    => NULL()
+         TYPE(SMElement) , POINTER :: e    => NULL()
          CLASS(FTObject) , POINTER :: obj  => NULL()
-         CLASS(SMNode)   , POINTER :: node => NULL()
+         TYPE(SMNode)    , POINTER :: node => NULL()
          INTEGER                   :: ids(8)
 !
 !        -----------

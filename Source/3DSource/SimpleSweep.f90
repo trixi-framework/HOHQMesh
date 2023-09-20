@@ -290,7 +290,7 @@
 
 
          TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
-         CLASS(SMNode)                   , POINTER     :: currentNode
+         TYPE(SMNode)                    , POINTER     :: currentNode
          CLASS(FTObject)                 , POINTER     :: obj
 !
 !
