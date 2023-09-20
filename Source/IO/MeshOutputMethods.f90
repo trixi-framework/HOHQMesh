@@ -130,7 +130,7 @@
          INTEGER            :: fUnit
          INTEGER            :: i, j
 
-         CLASS(SMElement), POINTER :: e    => NULL()
+         TYPE (SMElement), POINTER :: e    => NULL()
          CLASS(FTObject) , POINTER :: obj  => NULL()
 !
 !        ----------

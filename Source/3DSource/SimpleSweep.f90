@@ -505,8 +505,8 @@
          INTEGER   :: flagMap(4) = [1,4,2,6]
 
 
-         CLASS(SMNode)                   , POINTER     :: node
-         CLASS(SMElement)                , POINTER     :: currentQuadElement
+         TYPE (SMNode)                   , POINTER     :: node
+         TYPE (SMElement)                , POINTER     :: currentQuadElement
          CLASS(FTObject)                 , POINTER     :: obj
 
          numberOfQuadElements = hex8Mesh % numberOfQuadElements

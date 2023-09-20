@@ -649,7 +649,7 @@
          INTEGER                              :: j, k, nodeCount
          CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
          CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
-         TYPE (SMEDGE)              , POINTER :: currentEdge => NULL()
+         TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
          TYPE (SMElement)           , POINTER :: e => NULL()
          TYPE (SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
