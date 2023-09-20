@@ -314,7 +314,7 @@
          INTEGER                          :: i,j, nX(3) = [10,10,0]
          REAL(KIND=RP), PARAMETER         :: SIZE_FACTOR = 0.9_RP
 
-         CLASS(FTLinkedListIterator) , POINTER :: iterator            => NULL()
+         TYPE (FTLinkedListIterator) , POINTER :: iterator            => NULL()
          CLASS(FTObject)             , POINTER :: obj                 => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
 !
@@ -580,7 +580,7 @@
 !        ---------------
 !
          TYPE(SizerCurvePtr)        , DIMENSION(:), ALLOCATABLE :: innerCurvesArray
-         CLASS(FTLinkedListIterator), POINTER                   :: iterator => NULL()
+         TYPE(FTLinkedListIterator) , POINTER                   :: iterator => NULL()
          CLASS(FTObject)            , POINTER                   :: obj => NULL()
 
          CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()
