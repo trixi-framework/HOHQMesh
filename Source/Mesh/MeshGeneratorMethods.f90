@@ -213,7 +213,7 @@
 !     Local variables
 !     ---------------
 !
-      CLASS(QuadTreeGrid), POINTER :: grid      => NULL()
+      TYPE (QuadTreeGrid), POINTER :: grid      => NULL()
       TYPE (SMMesh)      , POINTER :: mesh      => NULL()
       TYPE (SMModel)     , POINTER :: model     => NULL()
       TYPE (MeshSizer)   , POINTER :: sizer     => NULL()
@@ -448,7 +448,7 @@
 !     Arguments
 !     ---------
 !
-      CLASS(QuadTreeGrid), POINTER :: grid
+      TYPE (QuadTreeGrid), POINTER :: grid
       TYPE (SMMesh)      , POINTER :: mesh
 !
 !     ---------------

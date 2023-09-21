@@ -68,7 +68,7 @@
 !      Arguments
 !      ---------
 !
-      CLASS(QuadTreeGrid), POINTER :: grid
+      TYPE (QuadTreeGrid), POINTER :: grid
       CLASS(MeshSizer)             :: sizer
       INTEGER                      :: gridType
       
@@ -89,7 +89,7 @@
 !      Arguments
 !      ---------
 !
-      CLASS(QuadTreeGrid), POINTER :: grid
+      TYPE (QuadTreeGrid), POINTER :: grid
       CLASS(MeshSizer)             :: sizer
       
       CALL generateNonconformingQuadTree(grid = grid,sizer = sizer)
@@ -107,7 +107,7 @@
 !      Arguments
 !      ---------
 !
-      CLASS(QuadTreeGrid), POINTER :: grid
+      TYPE (QuadTreeGrid), POINTER :: grid
       CLASS(MeshSizer)             :: sizer
       
       CALL generateNonconformingQuadTree(grid = grid,sizer = sizer)
@@ -127,7 +127,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER :: grid
+         TYPE (QuadTreeGrid), POINTER :: grid
          CLASS(MeshSizer)             :: sizer
          INTEGER :: k
       
