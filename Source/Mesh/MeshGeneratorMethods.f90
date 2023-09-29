@@ -563,8 +563,8 @@
          INTEGER, EXTERNAL :: Loop
 
 
-         CLASS(SMNode)  , POINTER       :: node => NULL(), prevNode => NULL(), jointNode => NULL(), nextNode => NULL()
-         CLASS(SMNode)  , POINTER       :: startNode => NULL()
+         TYPE (SMNode)  , POINTER       :: node => NULL(), prevNode => NULL(), jointNode => NULL(), nextNode => NULL()
+         TYPE (SMNode)  , POINTER       :: startNode => NULL()
          TYPE(SMNodePtr), DIMENSION(2)  :: newNodes
          TYPE(SMNodePtr), DIMENSION(2)  :: boundaryEdgeNodes
          TYPE(SMNodePtr), DIMENSION(4)  :: elementNodes
@@ -1251,8 +1251,8 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
-!         CLASS(SMElement)           , POINTER :: e               => NULL()
-!         CLASS(SMNode)              , POINTER :: node            => NULL()
+!         TYPE (SMElement)           , POINTER :: e               => NULL()
+!         TYPE (SMNode)              , POINTER :: node            => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
 !         CLASS(FTObject)            , POINTER :: obj             => NULL()
 !         INTEGER                              :: k
@@ -1562,7 +1562,7 @@
          REAL(KIND=RP)                  :: t
          CLASS(SMCurve)       , POINTER :: c
          CLASS(SMChainedCurve), POINTER :: chain
-         CLASS(SMNode)        , POINTER :: node
+         TYPE (SMNode)        , POINTER :: node
          INTEGER                        :: bCurveSide, id
 !
 !        ---------------
@@ -1692,8 +1692,8 @@
 !
          CLASS(SMChainedCurve)         , POINTER   :: boundaryCurve => NULL()
          CLASS(SMCurve)                , POINTER   :: currentCurve  => NULL()
-         CLASS(SMNodePtr), DIMENSION(:), POINTER   :: nodeArray     => NULL()
-         CLASS(SMNode)                 , POINTER   :: node          => NULL()
+         TYPE (SMNodePtr), DIMENSION(:), POINTER   :: nodeArray     => NULL()
+         TYPE (SMNode)                 , POINTER   :: node          => NULL()
          INTEGER                                   :: nodeArraySize
          INTEGER                                   :: j, k, jNode, id, jNode0, jNode1
          REAL(KIND=RP)                             :: t, dt, t0, t1, x, dMin, d
@@ -1925,7 +1925,7 @@
 !
          INTEGER                        :: j, k
          INTEGER                        :: N
-         CLASS(SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
+         TYPE (SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
          CLASS(SMCurve)       , POINTER :: c     => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
 

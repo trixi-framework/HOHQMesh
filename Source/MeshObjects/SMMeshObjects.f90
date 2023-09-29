@@ -149,7 +149,7 @@
          TYPE(SMNodePtr)   , DIMENSION(2) :: nodes
          TYPE(SMElementPtr), DIMENSION(2) :: elements
          INTEGER                          :: elementSide(2)
-         CLASS(SMNode)    , POINTER       :: auxiliaryNode => NULL() ! used for splitting interface elements
+         TYPE (SMNode)     , POINTER      :: auxiliaryNode => NULL() ! used for splitting interface elements
 !
 !        ========
          CONTAINS
@@ -546,7 +546,7 @@
       SUBROUTINE initEdgeWithNodesAndID(self, startNode, endNode, id)
          IMPLICIT NONE
          CLASS(SMEdge)          :: self
-         CLASS(SMNode), POINTER :: startNode, endNode
+         TYPE (SMNode), POINTER :: startNode, endNode
          INTEGER                :: id
          
          INTEGER                :: k
@@ -671,8 +671,8 @@
 ! 
       SUBROUTINE SetAuxiliaryNode( self, node )  
          IMPLICIT NONE  
-         CLASS(SMEdge), POINTER    :: self
-         CLASS(SMNode), POINTER    :: node
+         TYPE (SMEdge), POINTER    :: self
+         TYPE (SMNode), POINTER    :: node
          self % auxiliaryNode => node
          CALL node % retain()
       END SUBROUTINE SetAuxiliaryNode

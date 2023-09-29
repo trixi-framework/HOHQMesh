@@ -372,7 +372,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)        , POINTER :: node => NULL()
+         TYPE (SMNode)        , POINTER :: node => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
          CLASS(SMCurve)       , POINTER :: c => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
@@ -382,7 +382,7 @@
          CALL nodeIterator % setToStart()
          DO WHILE ( .NOT.nodeIterator % isAtEnd() )
             obj => nodeIterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
 
             IF (node  %  activeStatus == INACTIVE)     THEN
                nodeAcceleration(:,node  %  id) = 0.0_RP

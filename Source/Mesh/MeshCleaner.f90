@@ -258,9 +258,9 @@
          INTEGER, DIMENSION(4)       :: diagonalMap = [3,4,1,2]
          REAL(KIND=RP)               :: x1(3), x2(3), x(3)
 
-         CLASS(SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
+         TYPE (SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
          TYPE (SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
-         CLASS(SMEdge)     , POINTER :: edge => NULL()
+         TYPE (SMEdge)     , POINTER :: edge => NULL()
          CLASS(FTObject)   , POINTER :: obj => NULL()
 
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes
@@ -1152,7 +1152,7 @@
          REAL(KIND=RP)             :: x(3), corners(3,4)
          TYPE (SMElement), POINTER :: eNbr    => NULL()
          CLASS(FTObject) , POINTER :: obj     => NULL()
-         CLASS(SMNode)   , POINTER :: newNode => NULL()
+         TYPE (SMNode)   , POINTER :: newNode => NULL()
          TYPE(SMNodePtr)           :: elementNodes(4)  !Temp container for this procedure
 !
 !        --------------------------------------------

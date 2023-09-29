@@ -132,7 +132,7 @@
 !
          INTEGER                 :: i,j
          REAL(KIND=RP)           :: x(3)
-         CLASS(SMNode) , POINTER :: node => NULL()
+         TYPE (SMNode) , POINTER :: node => NULL()
 !
 !        -------------------
 !        Self initialization
@@ -330,7 +330,7 @@
          TYPE(QuadTreeGrid)          :: self
          INTEGER                      :: i,j, N, M
          CLASS(SMQuad)      , POINTER :: quad => NULL()
-         CLASS(SMNode)      , POINTER :: node => NULL()
+         TYPE (SMNode)      , POINTER :: node => NULL()
          CLASS(FTObject)    , POINTER :: obj
 
          N = self % N(1)
@@ -616,7 +616,7 @@
          IMPLICIT NONE
          INTEGER                     :: i, j
          TYPE (QuadTreeGrid), POINTER :: grid
-         CLASS(SMNode)      , POINTER :: p
+         TYPE (SMNode)      , POINTER :: p
 
          IF ( ASSOCIATED(grid) )     THEN
             p=> grid % nodes(i,j) % node
@@ -1076,8 +1076,8 @@
       IMPLICIT NONE
       TYPE (QuadTreeGrid), POINTER :: self
 
-      INTEGER               :: i, j, k, N, M
-      CLASS(SMNode), POINTER :: node
+      INTEGER                :: i, j, k, N, M
+      TYPE (SMNode), POINTER :: node
       CLASS(SMQuad), POINTER :: quad
 
       N = self % N(1)

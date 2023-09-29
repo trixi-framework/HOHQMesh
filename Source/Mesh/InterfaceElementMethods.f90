@@ -235,9 +235,8 @@
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes
          TYPE(SMNodePtr)               :: newNodePtr1, newNodePtr2
-         CLASS(SMEdge)   , POINTER     :: edge => NULL()
-         CLASS(SMNode)   , POINTER     :: swapNodePtr => NULL(), node => NULL()
-!         CLASS(FTObject), POINTER      :: obj => NULL()
+         TYPE (SMEdge)   , POINTER     :: edge => NULL()
+         TYPE (SMNode)   , POINTER     :: swapNodePtr => NULL(), node => NULL()
          
          INTEGER                       :: side, id, k
          INTEGER                       :: sideP, sideM
@@ -389,9 +388,9 @@
 !        ---------------
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes
-         CLASS(SMNode)   , POINTER     :: nodeP => NULL(), nodeM => NULL(), nodeC => NULL()
-         CLASS(SMEdge)   , POINTER     :: edge  => NULL()
-         CLASS(SMNode)   , POINTER     :: node  => NULL()
+         TYPE (SMNode)   , POINTER     :: nodeP => NULL(), nodeM => NULL(), nodeC => NULL()
+         TYPE (SMEdge)   , POINTER     :: edge  => NULL()
+         TYPE (SMNode)   , POINTER     :: node  => NULL()
          CLASS(FTObject) , POINTER     :: obj   => NULL()
          
          INTEGER                       :: id, k
@@ -598,8 +597,8 @@
       SUBROUTINE constructNewNode(mesh,x,edge,node)
          IMPLICIT NONE  
          TYPE (SMMesh)  , POINTER :: mesh
-         CLASS(SMEdge)  , POINTER :: edge
-         CLASS(SMNode)  , POINTER :: node
+         TYPE (SMEdge)  , POINTER :: edge
+         TYPE (SMNode)  , POINTER :: node
          CLASS(FTObject), POINTER :: obj => NULL()
          REAL(KIND=RP)            :: x(3)
          

@@ -851,7 +851,7 @@
 !
          CLASS(SMCurve)                 , POINTER :: c => NULL(), c2 => NULL()
          TYPE(SMNodePtr), DIMENSION(:)  , POINTER :: nodePtrs => NULL()
-         CLASS(SMNode)                  , POINTER :: node => NULL()
+         TYPE (SMNode)                  , POINTER :: node => NULL()
          REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: nHat => NULL()
          REAL(KIND=RP)  , DIMENSION(:,:), POINTER :: xCurve => NULL()
          REAL(KIND=RP)  , DIMENSION(3)            :: z, p
@@ -997,7 +997,7 @@
 !
          CLASS(SMChainedCurve)        , POINTER :: chain => NULL()
          TYPE(SMNodePtr), DIMENSION(:), POINTER :: nodeArray => NULL()
-         CLASS(SMNode)                , POINTER :: node => NULL()
+         TYPE (SMNode)                , POINTER :: node => NULL()
          INTEGER                                :: nodeArraySize, j
          REAL(KIND=RP)                          :: t0, tm, tp, tmpTol = 1.0d-2
 

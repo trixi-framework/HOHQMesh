@@ -275,7 +275,7 @@
          TYPE (SMEdge)   , POINTER  :: edge => NULL()
          CLASS(FTObject) , POINTER  :: obj => NULL()
          TYPE (SMElement), POINTER  :: element => NULL()
-         CLASS(SMNode)   , POINTER  :: startNode => NULL(), endNode => NULL()
+         TYPE (SMNode)   , POINTER  :: startNode => NULL(), endNode => NULL()
 
          INTEGER                    :: nNodes
          INTEGER                    :: nodeIDs(4), endNodes(2)
