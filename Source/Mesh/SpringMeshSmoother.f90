@@ -426,7 +426,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE(FTValueDictionary), POINTER :: smootherDict
+         CLASS(FTValueDictionary), POINTER :: smootherDict
          TYPE(SpringSmootherParameters)    :: smp
 !
 !        ---------------
