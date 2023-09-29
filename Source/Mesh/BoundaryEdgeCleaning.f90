@@ -290,7 +290,7 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER      :: newlyExposedBoundaryEdges => NULL()
-         CLASS(SMElement)           , POINTER      :: e => NULL()
+         TYPE (SMElement)           , POINTER      :: e => NULL()
          TYPE (SMEdge)              , POINTER      :: currentEdge => NULL(), newBoundaryEdge => NULL()
          TYPE (FTLinkedListIterator), POINTER      :: iterator => NULL()
          CLASS(FTObject)            , POINTER      :: obj => NULL()

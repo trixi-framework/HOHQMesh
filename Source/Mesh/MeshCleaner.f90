@@ -259,7 +259,7 @@
          REAL(KIND=RP)               :: x1(3), x2(3), x(3)
 
          CLASS(SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
-         CLASS(SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
+         TYPE (SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
          CLASS(SMEdge)     , POINTER :: edge => NULL()
          CLASS(FTObject)   , POINTER :: obj => NULL()
 
@@ -453,7 +453,7 @@
 !!        ---------------
 !!
 !!         INTEGER                  :: k
-!!         CLASS(SMElement), POINTER :: e
+!!         TYPE(SMElement), POINTER :: e
 !!         REAL(KIND=RP)            :: theta
 !!
 !!        ----------------------------------------
@@ -606,7 +606,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement) :: e
+         TYPE (SMElement) :: e
 !
 !        ---------------
 !        Local variables
@@ -650,7 +650,7 @@
          CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
          CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
          TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
-         TYPE (SMElement)           , POINTER :: e => NULL()
+         CLASS(SMElement)           , POINTER :: e => NULL()
          TYPE (SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          TYPE (FTLinkedListIterator), POINTER :: edgeListIterator
@@ -974,7 +974,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement)          :: e
+         CLASS (SMElement), POINTER :: e
          TYPE (SMModel)  , POINTER :: model
 !
 !        ---------------
@@ -982,7 +982,7 @@
 !        ---------------
 !
          INTEGER, PARAMETER               :: CBE_ON_BOUNDARY = 1, CBE_OFF_BOUNDARY = 0
-         CLASS(SMNode)  , POINTER         :: sourceNode => NULL(), node => NULL()
+         CLASS (SMNode)  , POINTER         :: sourceNode => NULL(), node => NULL()
          TYPE(SMNodePtr)                  :: elementNodes(4)  !Temp container for this procedure
          INTEGER                          :: boundaryNodeCount
          INTEGER                          :: k, m, j
@@ -994,7 +994,7 @@
          CLASS(SMCurve)       , POINTER   :: c => NULL()
          CLASS(SMChainedCurve), POINTER   :: chain  => NULL()      ! Returned also so that it, too can be used.
          TYPE(SMNode)                     :: nodeCopy(4) ! Two extra but not a big deal.
-         CLASS(SMElement)     , POINTER   :: eTest => NULL()
+         TYPE (SMElement)     , POINTER   :: eTest => NULL()
          LOGICAL                          :: badArrayOriginal(6)      ! Node valence <= 6
          INTEGER                          :: nodeID
 
@@ -1150,7 +1150,7 @@
          INTEGER                   :: k, j, id, idNbr, localIds(2)
          LOGICAL                   :: hasA3ValenceNode, isDiamond
          REAL(KIND=RP)             :: x(3), corners(3,4)
-         CLASS(SMElement), POINTER :: eNbr    => NULL()
+         TYPE (SMElement), POINTER :: eNbr    => NULL()
          CLASS(FTObject) , POINTER :: obj     => NULL()
          CLASS(SMNode)   , POINTER :: newNode => NULL()
          TYPE(SMNodePtr)           :: elementNodes(4)  !Temp container for this procedure

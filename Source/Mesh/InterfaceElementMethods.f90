@@ -580,7 +580,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement), POINTER :: eNew => NULL()
+         TYPE (SMElement), POINTER :: eNew => NULL()
          CLASS(FTObject) , POINTER :: obj  => NULL()
          
          ALLOCATE(eNew)

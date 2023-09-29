@@ -72,7 +72,7 @@
 !        ---------------
 !
          TYPE (SMEdge)              , POINTER :: edge => NULL()
-         CLASS(SMElement)           , POINTER :: e => NULL()
+         TYPE (SMElement)           , POINTER :: e => NULL()
          INTEGER                              :: side, k, id, numElements
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()

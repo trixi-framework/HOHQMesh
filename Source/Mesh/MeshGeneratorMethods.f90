@@ -457,7 +457,7 @@
 !
       INTEGER                        :: i, j, k, N, M
       INTEGER                        :: elementID
-      CLASS(SMElement), POINTER      :: e   => NULL()
+      TYPE (SMElement), POINTER      :: e   => NULL()
       CLASS(FTObject) , POINTER      :: obj => NULL()
       TYPE( SMNodePtr), DIMENSION(4) :: eNodes
 !
@@ -571,7 +571,7 @@
 
          CLASS(SMCurve)       , POINTER :: cStart => NULL(), cEnd => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
-         CLASS(SMElement)     , POINTER :: e => NULL()
+         TYPE (SMElement)     , POINTER :: e => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
 
          INTEGER                        :: k, nodeArraySize
@@ -1642,7 +1642,7 @@
 !        ---------
 !
          TYPE(SMNodePtr) , DIMENSION(4)   :: newNodes
-         CLASS(SMElement), POINTER        :: e
+         TYPE (SMElement), POINTER        :: e
          INTEGER                          :: elementID
 !
 !        ---------------
