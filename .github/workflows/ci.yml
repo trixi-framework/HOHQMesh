@@ -110,7 +110,7 @@ jobs:
         shell: ${{ matrix.shell }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # - name: Add msbuild to PATH
       #   if: ${{ matrix.os_name == 'windows-latest' }}
       #   uses: microsoft/setup-msbuild@v1.0.2
