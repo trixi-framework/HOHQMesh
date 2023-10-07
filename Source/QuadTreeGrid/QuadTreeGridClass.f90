@@ -343,11 +343,7 @@
          IF( ASSOCIATED( self % children ) )     THEN
             DO j = 1, M
                DO i = 1, N
-                  IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN
-                     obj => self % children(i,j) % grid
-                     CALL release(obj)
-                     self % children(i,j) % grid => NULL()
-                  END IF
+                  CALL releaseGrid(self % children(i,j) % grid)
                END DO
             END DO
             DEALLOCATE( self % children )
@@ -360,11 +356,7 @@
          IF( ASSOCIATED(self % quads) )     then
             DO j = 1, self % N(2)
                DO i = 1, self % N(1)
-                  quad => self % quads(i,j) % quad
-                  IF( ASSOCIATED(quad) ) THEN
-                     obj => quad
-                     CALL release(obj)
-                     END IF
+                  CALL releaseSMQuad(self % quads(i,j) % quad)
                END DO
             END DO
             DEALLOCATE(self % quads)
@@ -373,11 +365,7 @@
          IF( ASSOCIATED(self % nodes) )     THEN
             DO j = 0, self % N(2)
                DO i = 0, self % N(1)
-                  node => self % nodes(i,j) % node
-                  IF( ASSOCIATED(node) )    THEN
-                     obj => node
-                     CALL release(obj)
-                  END IF
+                  CALL releaseSMNode(self % nodes(i,j) % node)
                END DO
             END DO
             DEALLOCATE( self % nodes )

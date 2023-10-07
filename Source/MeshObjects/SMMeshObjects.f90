@@ -725,7 +725,7 @@
 ! 
       SUBROUTINE releaseSMQuad(self)  
          IMPLICIT NONE
-         CLASS(SMQuad)   , POINTER :: self
+         TYPE (SMQuad)   , POINTER :: self
          CLASS(FTObject) , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
