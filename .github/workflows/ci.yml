@@ -150,7 +150,7 @@ jobs:
           sudo apt-get install intel-oneapi-compiler-fortran-$INTEL_ONEAPI_VERSION
 
           # set environment variables and make them persistent across steps
-          . /opt/intel/oneapi/setvars.sh --include-intel-llvm
+          . /opt/intel/oneapi/setvars.sh
           env | grep oneapi >> $GITHUB_ENV
       - name: Bootstrap
         run: |
