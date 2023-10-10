@@ -168,6 +168,7 @@ jobs:
       - name: Run memory checks with Valgrind (only Linux)
         if: ${{ matrix.os_name == 'linux' && matrix.test_type == 'valgrind' }}
         run: |
+          sudo apt update
           sudo apt-get install -y valgrind
           valgrind --error-exitcode=1 -s ./HOHQMesh -test
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
