@@ -2,9 +2,9 @@
 ## Quick Introduction <a name="Compiling"></a>
 HOHQMesh is currently being distributed on gitHub. In that repository is a makefile, plus source, documentation (which contains this document) and a directory of examples.
 
-HOHQMesh is written in fortran 2018. It is known to compile and run with gfortran on Mac/Linux/Windows and with ifort on Mac and Linux. At the time of this writing, HOHQMesh compiles, but does not run correctly, with the nFortran compiler from nvidia. Let us know if there are issues with other compilers, or more recent versions of those.
+HOHQMesh is written in fortran 2018. It is known to compile and run with `gfortran` on Mac/Linux/Windows and with `ifort` on Mac and Linux. At the time of this writing, HOHQMesh compiles, but does not run correctly, with the nFortran compiler from nvidia. Let us know if there are issues with other compilers, or more recent versions of those.
 
-The mesher has one dependency, FTObjectLibrary, which supplies the container classes and exception classes. It is also available on gitHub under a project of that name. 
+The mesher has one dependency, FTObjectLibrary, which supplies the container classes and exception classes. It is also available on gitHub under a project of that name.
 
 The makefile is for gmake. Use it to compile the mesher.
 
@@ -73,7 +73,7 @@ For example, to build HOHQMesh specifically with the Fortran compiler
 make -j 4 FC=gfortran-10
 ```
 
-HOHQMesh is tested to run with the gfortran and ifort compilers. We recommend the gfortran compiler. Our experience on the test suite is that it runs about 50% slower with the ifort compiler.
+HOHQMesh is tested to run with the `gfortran` and `ifort` compilers. We recommend the `gfortran` compiler. Our experience on the test suite is that it runs about 50% slower with the `ifort` compiler.
 
 ### Testing
 After building HOHQMesh, you can verify that everything works as expected by
@@ -105,7 +105,7 @@ For example, to mesh the GingerbreadMan model in the Examples directory, type
 ```
 
 
-The mesh and plot files will be created relative to the directory of the executable. For the moment, until things get really robust, diagnostic information can be printed as the program executes. 
+The mesh and plot files will be created relative to the directory of the executable. For the moment, until things get really robust, diagnostic information can be printed as the program executes.
 
 Three more compiler flags are also defined:
 
