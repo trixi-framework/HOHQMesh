@@ -72,6 +72,8 @@ For example, to build HOHQMesh specifically with the Fortran compiler
 make -j 4 FC=gfortran-10
 ```
 
+HOHQMesh is tested to run with the gfortran and ifort compilers. We recommend the gfortran compiler. Our experience on the test suite is that it runs about 50% slower with the ifort compiler.
+
 ### Testing
 After building HOHQMesh, you can verify that everything works as expected by
 running the internal test suite. To execute the tests, type
