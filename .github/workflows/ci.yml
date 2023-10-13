@@ -152,6 +152,7 @@ jobs:
           # set environment variables and make them persistent across steps
           . /opt/intel/oneapi/setvars.sh
           env | grep oneapi >> $GITHUB_ENV
+      - name: Use existing Intel oneAPI Fortran compiler
         if: matrix.compiler == 'ifort' && steps.cache.outputs.cache-hit == 'true'
         run: |
           # set environment variables and make them persistent across steps
