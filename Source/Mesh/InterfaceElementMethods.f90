@@ -100,10 +100,10 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement)           , POINTER :: e               => NULL()
+         TYPE (SMElement)           , POINTER :: e               => NULL()
          CLASS(FTLinkedList)        , POINTER :: newElementsList => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
-         CLASS(SMNode)              , POINTER :: node            => NULL()
+         TYPE (SMNode)              , POINTER :: node            => NULL()
          TYPE (FTLinkedListIterator), POINTER :: interfaceElementIterator => NULL()
          INTEGER                              :: interfaceNodeCount, k
          INTEGER                              :: boundaryNodeNumber, oppositeNodeNumber
@@ -130,7 +130,7 @@
          CALL interfaceElementIterator % setToStart()
          DO WHILE ( .NOT.interfaceElementIterator % isAtEnd() )
             obj => interfaceElementIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             IF ( e % remove )     THEN
                CALL interfaceElementIterator % moveToNext()
                CYCLE !in case elements are doubled up
@@ -226,7 +226,7 @@
 !        ---------
 !
          TYPE (SMMesh)      , POINTER :: mesh
-         CLASS(SMElement)   , POINTER :: e
+         TYPE (SMElement)   , POINTER :: e
          CLASS(FtLinkedList), POINTER :: newElementsList
 !
 !        ---------------
@@ -235,9 +235,8 @@
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes
          TYPE(SMNodePtr)               :: newNodePtr1, newNodePtr2
-         CLASS(SMEdge)   , POINTER     :: edge => NULL()
-         CLASS(SMNode)   , POINTER     :: swapNodePtr => NULL(), node => NULL()
-!         CLASS(FTObject), POINTER      :: obj => NULL()
+         TYPE (SMEdge)   , POINTER     :: edge => NULL()
+         TYPE (SMNode)   , POINTER     :: swapNodePtr => NULL(), node => NULL()
          
          INTEGER                       :: side, id, k
          INTEGER                       :: sideP, sideM
@@ -380,7 +379,7 @@
 !        ---------
 !
          TYPE (SMmesh)      , POINTER :: mesh
-         CLASS(SMElement)   , POINTER :: e
+         TYPE (SMElement)   , POINTER :: e
          CLASS(FTLinkedList), POINTER :: newElementsList
          INTEGER                      :: localNodeNumber
 !
@@ -389,9 +388,9 @@
 !        ---------------
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes
-         CLASS(SMNode)   , POINTER     :: nodeP => NULL(), nodeM => NULL(), nodeC => NULL()
-         CLASS(SMEdge)   , POINTER     :: edge  => NULL()
-         CLASS(SMNode)   , POINTER     :: node  => NULL()
+         TYPE (SMNode)   , POINTER     :: nodeP => NULL(), nodeM => NULL(), nodeC => NULL()
+         TYPE (SMEdge)   , POINTER     :: edge  => NULL()
+         TYPE (SMNode)   , POINTER     :: node  => NULL()
          CLASS(FTObject) , POINTER     :: obj   => NULL()
          
          INTEGER                       :: id, k
@@ -572,7 +571,7 @@
 !        ---------
 !
          TYPE(SMNodePtr), DIMENSION(4)           :: elementNodes
-         CLASS(SMElement)              , POINTER :: e
+         TYPE (SMElement)              , POINTER :: e
          CLASS(FTLinkedList)           , POINTER :: newElementsList
          INTEGER                                 :: elementID
 !
@@ -580,7 +579,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement), POINTER :: eNew => NULL()
+         TYPE (SMElement), POINTER :: eNew => NULL()
          CLASS(FTObject) , POINTER :: obj  => NULL()
          
          ALLOCATE(eNew)
@@ -598,8 +597,8 @@
       SUBROUTINE constructNewNode(mesh,x,edge,node)
          IMPLICIT NONE  
          TYPE (SMMesh)  , POINTER :: mesh
-         CLASS(SMEdge)  , POINTER :: edge
-         CLASS(SMNode)  , POINTER :: node
+         TYPE (SMEdge)  , POINTER :: edge
+         TYPE (SMNode)  , POINTER :: node
          CLASS(FTObject), POINTER :: obj => NULL()
          REAL(KIND=RP)            :: x(3)
          

@@ -44,8 +44,8 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                   :: nodeID
-         CLASS(SMElement), POINTER :: e
+         INTEGER                  :: nodeID
+         TYPE(SMElement), POINTER :: e
 !
 !        ---------------
 !        Local variables
@@ -72,8 +72,8 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                   :: k
-         CLASS(SMElement), POINTER :: e
+         INTEGER                  :: k
+         TYPE(SMElement), POINTER :: e
 !
 !        ---------------
 !        local Variables

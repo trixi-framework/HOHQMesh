@@ -213,7 +213,7 @@
 !     Local variables
 !     ---------------
 !
-      CLASS(QuadTreeGrid), POINTER :: grid      => NULL()
+      TYPE (QuadTreeGrid), POINTER :: grid      => NULL()
       TYPE (SMMesh)      , POINTER :: mesh      => NULL()
       TYPE (SMModel)     , POINTER :: model     => NULL()
       TYPE (MeshSizer)   , POINTER :: sizer     => NULL()
@@ -448,7 +448,7 @@
 !     Arguments
 !     ---------
 !
-      CLASS(QuadTreeGrid), POINTER :: grid
+      TYPE (QuadTreeGrid), POINTER :: grid
       TYPE (SMMesh)      , POINTER :: mesh
 !
 !     ---------------
@@ -457,7 +457,7 @@
 !
       INTEGER                        :: i, j, k, N, M
       INTEGER                        :: elementID
-      CLASS(SMElement), POINTER      :: e   => NULL()
+      TYPE (SMElement), POINTER      :: e   => NULL()
       CLASS(FTObject) , POINTER      :: obj => NULL()
       TYPE( SMNodePtr), DIMENSION(4) :: eNodes
 !
@@ -563,15 +563,15 @@
          INTEGER, EXTERNAL :: Loop
 
 
-         CLASS(SMNode)  , POINTER       :: node => NULL(), prevNode => NULL(), jointNode => NULL(), nextNode => NULL()
-         CLASS(SMNode)  , POINTER       :: startNode => NULL()
+         TYPE (SMNode)  , POINTER       :: node => NULL(), prevNode => NULL(), jointNode => NULL(), nextNode => NULL()
+         TYPE (SMNode)  , POINTER       :: startNode => NULL()
          TYPE(SMNodePtr), DIMENSION(2)  :: newNodes
          TYPE(SMNodePtr), DIMENSION(2)  :: boundaryEdgeNodes
          TYPE(SMNodePtr), DIMENSION(4)  :: elementNodes
 
          CLASS(SMCurve)       , POINTER :: cStart => NULL(), cEnd => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
-         CLASS(SMElement)     , POINTER :: e => NULL()
+         TYPE (SMElement)     , POINTER :: e => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
 
          INTEGER                        :: k, nodeArraySize
@@ -940,9 +940,9 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: elements => NULL()
-         CLASS(SMElement)           , POINTER :: e => NULL()
+         TYPE (SMElement)           , POINTER :: e => NULL()
          CLASS(SegmentedCurveArray) , POINTER :: curveArray => NULL()
-         CLASS(SMNode)              , POINTER :: node1 => NULL(), node2 => NULL(), node => NULL()
+         TYPE (SMNode)              , POINTER :: node1 => NULL(), node2 => NULL(), node => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
 
@@ -965,7 +965,7 @@
             CALL elementIterator % setToStart()
             DO WHILE(.NOT.elementIterator % isAtEnd())
                obj => elementIterator % object()
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
 !
 !              -----------------------------------------------
 !              Remove element if it has a node that is outside
@@ -1019,7 +1019,7 @@
             CALL elementIterator % setToStart()
             DO WHILE ( .NOT.elementIterator % isAtEnd() )
                obj => elementIterator % object()
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
                removedHere = .false.
 
                DO k = 1, 4
@@ -1109,7 +1109,7 @@
 
                DO WHILE ( .NOT.elementIterator % isAtEnd() )
                   obj => elementIterator % object()
-                  CALL cast(obj,e)
+                  CALL castToSMElement(obj,e)
                   removedHere = .FALSE.
 
                   IF( .NOT.e % remove )     THEN
@@ -1251,8 +1251,8 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
-!         CLASS(SMElement)           , POINTER :: e               => NULL()
-!         CLASS(SMNode)              , POINTER :: node            => NULL()
+!         TYPE (SMElement)           , POINTER :: e               => NULL()
+!         TYPE (SMNode)              , POINTER :: node            => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
 !         CLASS(FTObject)            , POINTER :: obj             => NULL()
 !         INTEGER                              :: k
@@ -1290,9 +1290,9 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
-         CLASS(SMElement)           , POINTER :: e               => NULL()
+         TYPE (SMElement)           , POINTER :: e               => NULL()
          CLASS(SegmentedCurveArray) , POINTER :: curveArray      => NULL()
-         CLASS(SMNode)              , POINTER :: node            => NULL()
+         TYPE (SMNode)              , POINTER :: node            => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
 
@@ -1324,7 +1324,7 @@
 !
             DO WHILE ( .NOT.elementIterator % isAtEnd() )
                obj => elementIterator % object()
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
                isInterfaceElement = .false.
 
                IF( .NOT.e % remove )     THEN
@@ -1483,9 +1483,9 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
-         CLASS(SMElement)           , POINTER :: e               => NULL()
+         TYPE (SMElement)           , POINTER :: e               => NULL()
          CLASS(SegmentedCurveArray) , POINTER :: curveArray      => NULL()
-         CLASS(SMNode)              , POINTER :: node            => NULL()
+         TYPE (SMNode)              , POINTER :: node            => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
 
@@ -1509,7 +1509,7 @@
 !
             DO WHILE ( .NOT.elementIterator % isAtEnd() )
                obj => elementIterator % object()
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
 !
 !              -----------------------------------------------------
 !              Mark elements that have only inside or boundary nodes
@@ -1562,7 +1562,7 @@
          REAL(KIND=RP)                  :: t
          CLASS(SMCurve)       , POINTER :: c
          CLASS(SMChainedCurve), POINTER :: chain
-         CLASS(SMNode)        , POINTER :: node
+         TYPE (SMNode)        , POINTER :: node
          INTEGER                        :: bCurveSide, id
 !
 !        ---------------
@@ -1642,7 +1642,7 @@
 !        ---------
 !
          TYPE(SMNodePtr) , DIMENSION(4)   :: newNodes
-         CLASS(SMElement), POINTER        :: e
+         TYPE (SMElement), POINTER        :: e
          INTEGER                          :: elementID
 !
 !        ---------------
@@ -1692,8 +1692,8 @@
 !
          CLASS(SMChainedCurve)         , POINTER   :: boundaryCurve => NULL()
          CLASS(SMCurve)                , POINTER   :: currentCurve  => NULL()
-         CLASS(SMNodePtr), DIMENSION(:), POINTER   :: nodeArray     => NULL()
-         CLASS(SMNode)                 , POINTER   :: node          => NULL()
+         TYPE (SMNodePtr), DIMENSION(:), POINTER   :: nodeArray     => NULL()
+         TYPE (SMNode)                 , POINTER   :: node          => NULL()
          INTEGER                                   :: nodeArraySize
          INTEGER                                   :: j, k, jNode, id, jNode0, jNode1
          REAL(KIND=RP)                             :: t, dt, t0, t1, x, dMin, d
@@ -1870,7 +1870,7 @@
          TYPE (SMMesh)              , POINTER :: mesh
          CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
-         CLASS(SMElement)           , POINTER :: e
+         TYPE (SMElement)           , POINTER :: e
          TYPE (SMModel)             , POINTER :: model
 
          N     =  project % runParams % polynomialOrder
@@ -1883,7 +1883,7 @@
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
             obj => iterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             CALL ElementBoundaryInfoInit( e % boundaryInfo, N)
             CALL gatherElementBoundaryInfo( e, model )
 
@@ -1916,7 +1916,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement)         , POINTER :: e
+         TYPE (SMElement)         , POINTER :: e
          TYPE (SMModel)           , POINTER :: model
 !
 !        ---------------
@@ -1925,7 +1925,7 @@
 !
          INTEGER                        :: j, k
          INTEGER                        :: N
-         CLASS(SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
+         TYPE (SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
          CLASS(SMCurve)       , POINTER :: c     => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
 
@@ -2067,7 +2067,7 @@
          TYPE (SMMesh)              , POINTER :: mesh
          CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
-         CLASS(SMElement)           , POINTER :: e
+         TYPE (SMElement)           , POINTER :: e
          TYPE(TransfiniteQuadMap)             :: quadMap
          TYPE(CurveInterpolant)     , POINTER :: boundaryCurves(:)
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
@@ -2105,7 +2105,7 @@
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
             obj => iterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
 
             e % N = N
             CALL ComputeElementFacePatch(e, quadMap, nodes, N)
@@ -2157,7 +2157,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement), POINTER :: e
+         TYPE (SMElement), POINTER :: e
          INTEGER                   :: N
          TYPE(TransfiniteQuadMap)  :: quadMap
          REAL(KIND=RP)             :: nodes(0:N)
@@ -2215,8 +2215,8 @@
 !
          TYPE (FTLinkedListIterator), POINTER :: nodeIterator, elementIterator
          CLASS(FTObject)            , POINTER :: obj  => NULL()
-         CLASS(SMNode)              , POINTER :: node => NULL()
-         CLASS(SMElement)           , POINTER :: e
+         TYPE (SMNode)              , POINTER :: node => NULL()
+         TYPE (SMElement)           , POINTER :: e
          REAL(KIND=RP)                        :: xFormed(3)
          INTEGER                              :: i, j, k, N
 !
@@ -2228,7 +2228,7 @@
          CALL nodeIterator % setToStart()
          DO WHILE( .NOT.nodeIterator % isAtEnd() )
             obj => nodeIterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
 
             xFormed = PerformScaleTransformation(x              = node % x, &
                                                  transformation = scalingTransformer)
@@ -2246,7 +2246,7 @@
          DO WHILE(.NOT.elementIterator % isAtEnd())
 
             obj => elementIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             N = e % N
 !
 !           -------------
@@ -2296,8 +2296,8 @@
 !
          TYPE (FTLinkedListIterator), POINTER :: nodeIterator, elementIterator
          CLASS(FTObject)            , POINTER :: obj  => NULL()
-         CLASS(SMNode)              , POINTER :: node => NULL()
-         CLASS(SMElement)           , POINTER :: e
+         TYPE (SMNode)              , POINTER :: node => NULL()
+         TYPE (SMElement)           , POINTER :: e
          REAL(KIND=RP)                        :: xFormed(3)
          INTEGER                              :: i, j, k, N
 !
@@ -2309,7 +2309,7 @@
          CALL nodeIterator % setToStart()
          DO WHILE( .NOT.nodeIterator % isAtEnd() )
             obj => nodeIterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
 
             xFormed = PerformRotationTransform(x              = node % x, &
                                              transformation = rotationTransformer)
@@ -2327,7 +2327,7 @@
          DO WHILE(.NOT.elementIterator % isAtEnd())
 
             obj => elementIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             N = e % N
 !
 !           -------------

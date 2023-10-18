@@ -63,7 +63,7 @@
 !        ------
 !
          INTEGER            , DIMENSION(3)  :: locInParent ! (i,j,k) location within the parent
-         CLASS(QuadTreeGrid), POINTER       :: parent
+         TYPE (QuadTreeGrid), POINTER       :: parent
 !
 !        --------
 !        Children
@@ -75,7 +75,7 @@
 !        References to Neighbor grids
 !        ----------------------------
 !
-         CLASS(QuadTreeGrid), POINTER :: neighborL => NULL(), neighborR => NULL(), neighborT => NULL(), neighborB => NULL()
+         TYPE (QuadTreeGrid), POINTER :: neighborL => NULL(), neighborR => NULL(), neighborT => NULL(), neighborB => NULL()
 !
 !        ========
          CONTAINS
@@ -93,7 +93,7 @@
 !     -----------------
 !
       TYPE NestedQuadTreeGridPtr
-         CLASS(QuadTreeGrid), POINTER :: grid => NULL()
+         TYPE (QuadTreeGrid), POINTER :: grid => NULL()
       END TYPE NestedQuadTreeGridPtr
 !
 !     --------------
@@ -121,7 +121,7 @@
 !        ---------
 !
          CLASS(QuadTreeGrid)               :: self
-         CLASS(QuadTreeGrid), POINTER      :: parent
+         TYPE (QuadTreeGrid), POINTER      :: parent
          REAL(KIND=RP)      , DIMENSION(3) :: dx, x0
          INTEGER            , DIMENSION(3) :: N , locInParent
          INTEGER                           :: level
@@ -132,7 +132,7 @@
 !
          INTEGER                 :: i,j
          REAL(KIND=RP)           :: x(3)
-         CLASS(SMNode) , POINTER :: node => NULL()
+         TYPE (SMNode) , POINTER :: node => NULL()
 !
 !        -------------------
 !        Self initialization
@@ -246,7 +246,7 @@
 !        ---------
 !
          CLASS(QuadTreeGrid)               :: self
-         CLASS(QuadTreeGrid), POINTER      :: parent
+         TYPE (QuadTreeGrid), POINTER      :: parent
          REAL(KIND=RP)      , DIMENSION(3) :: dx, x0
          INTEGER            , DIMENSION(3) :: l
          INTEGER                           :: level, rotation, templateType
@@ -330,7 +330,7 @@
          TYPE(QuadTreeGrid)          :: self
          INTEGER                      :: i,j, N, M
          CLASS(SMQuad)      , POINTER :: quad => NULL()
-         CLASS(SMNode)      , POINTER :: node => NULL()
+         TYPE (SMNode)      , POINTER :: node => NULL()
          CLASS(FTObject)    , POINTER :: obj
 
          N = self % N(1)
@@ -343,11 +343,7 @@
          IF( ASSOCIATED( self % children ) )     THEN
             DO j = 1, M
                DO i = 1, N
-                  IF( ASSOCIATED( self % children(i,j) % grid ) ) THEN
-                     obj => self % children(i,j) % grid
-                     CALL release(obj)
-                     self % children(i,j) % grid => NULL()
-                  END IF
+                  CALL releaseGrid(self % children(i,j) % grid)
                END DO
             END DO
             DEALLOCATE( self % children )
@@ -360,11 +356,7 @@
          IF( ASSOCIATED(self % quads) )     then
             DO j = 1, self % N(2)
                DO i = 1, self % N(1)
-                  quad => self % quads(i,j) % quad
-                  IF( ASSOCIATED(quad) ) THEN
-                     obj => quad
-                     CALL release(obj)
-                     END IF
+                  CALL releaseSMQuad(self % quads(i,j) % quad)
                END DO
             END DO
             DEALLOCATE(self % quads)
@@ -373,11 +365,7 @@
          IF( ASSOCIATED(self % nodes) )     THEN
             DO j = 0, self % N(2)
                DO i = 0, self % N(1)
-                  node => self % nodes(i,j) % node
-                  IF( ASSOCIATED(node) )    THEN
-                     obj => node
-                     CALL release(obj)
-                  END IF
+                  CALL releaseSMNode(self % nodes(i,j) % node)
                END DO
             END DO
             DEALLOCATE( self % nodes )
@@ -396,7 +384,7 @@
 !
       RECURSIVE SUBROUTINE releaseGrid(self)
          IMPLICIT NONE
-         CLASS(QuadTreeGrid), POINTER :: self
+         TYPE (QuadTreeGrid), POINTER :: self
          CLASS(FTObject)    , POINTER :: obj
 
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -423,7 +411,7 @@
 !      Arguments
 !      ---------
 !
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
       TYPE(MeshSizer)              :: sizer
 !
 !     ---------------
@@ -433,7 +421,7 @@
       INTEGER                      :: i, j, nX, nY
       INTEGER                      :: N(3) = 3
       REAL(KIND=RP)                :: hMin, xMin(3), xMax(3), dX(3)
-      CLASS(QuadTreeGrid), POINTER :: childGrid
+      TYPE (QuadTreeGrid), POINTER :: childGrid
       CHARACTER(LEN=256)           :: limitMsg
       CHARACTER(LEN=32)            :: xMinAsString
 !
@@ -503,8 +491,8 @@
 !     -----------------------------------------------------------
 !
       IMPLICIT NONE
-      CLASS(QuadTreeGrid), POINTER :: self
-      CLASS(QuadTreeGrid), POINTER :: neighbor, parent
+      TYPE (QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: neighbor, parent
       INTEGER                      :: i, j, n, m
 
       IF( self % level == 0 )     RETURN ! Root grid has no neighbors.
@@ -600,7 +588,7 @@
       FUNCTION ChildGridAt_InGrid_(i,j,grid) RESULT(p)
          IMPLICIT NONE
          INTEGER                      :: i, j
-         CLASS(QuadTreeGrid), POINTER :: grid, p
+         TYPE (QuadTreeGrid), POINTER :: grid, p
 
          IF( ASSOCIATED(grid) .AND. ASSOCIATED(grid % children) )     THEN
             p => grid % children(i,j) % grid
@@ -615,8 +603,8 @@
       FUNCTION NodeAt_InGrid_(i,j,grid) RESULT(p)
          IMPLICIT NONE
          INTEGER                     :: i, j
-         CLASS(QuadTreeGrid), POINTER :: grid
-         CLASS(SMNode)      , POINTER :: p
+         TYPE (QuadTreeGrid), POINTER :: grid
+         TYPE (SMNode)      , POINTER :: p
 
          IF ( ASSOCIATED(grid) )     THEN
             p=> grid % nodes(i,j) % node
@@ -631,7 +619,7 @@
       FUNCTION QuadAt_InGrid_(i,j,grid) RESULT(p)
       IMPLICIT NONE
       INTEGER                      :: i, j
-      CLASS(QuadTreeGrid), POINTER :: grid
+      TYPE (QuadTreeGrid), POINTER :: grid
       CLASS(SMQuad)    , POINTER   :: p
 
       IF ( ASSOCIATED(grid) )     THEN
@@ -647,7 +635,7 @@
       RECURSIVE SUBROUTINE AssignNodeIdsForGrid_( self )
       IMPLICIT NONE
 
-      CLASS(QuadTreeGrid) :: self
+      TYPE (QuadTreeGrid) :: self
 !
 !     ---------------
 !     Local variables
@@ -700,7 +688,7 @@
 !     Flag a node by setting its id sign to negative. Unflag by making positive.
 !     --------------------------------------------------------------------------
 !
-      CLASS(QuadTreeGrid) :: self
+      TYPE (QuadTreeGrid) :: self
       LOGICAL            :: flag
 !
 !     ---------------
@@ -749,10 +737,10 @@
 !
       RECURSIVE SUBROUTINE DeleteDuplicateNodesForGrid( self )
       IMPLICIT NONE
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
 
       INTEGER                      :: i, j, N, M, Nc, Mc
-      CLASS(QuadTreeGrid), POINTER :: parent, neighbor
+      TYPE (QuadTreeGrid), POINTER :: parent, neighbor
 
       N = self%N(1); M = self%N(2)
 !
@@ -883,7 +871,7 @@
 !     --------------------------------------------------
 !
       IMPLICIT NONE
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
       INTEGER                   :: i, j, N, M
 
       N = self % N(1)
@@ -920,7 +908,7 @@
 !
       RECURSIVE SUBROUTINE AssignNodeLevels( self )
       IMPLICIT NONE
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
 
       INTEGER                    :: i, j,  N, M
 
@@ -957,7 +945,7 @@
 !
       RECURSIVE SUBROUTINE ClearNodeLevels( self )
       IMPLICIT NONE
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
 
       INTEGER                    :: i, j,  N, M
 
@@ -994,7 +982,7 @@
 !
       IMPLICIT NONE
       INTEGER                   :: level
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
 
       INTEGER :: N, M, i, j
 !
@@ -1022,7 +1010,7 @@
       RECURSIVE SUBROUTINE GatherGridsAtLevel_FromRtGrid_( level, self )
       IMPLICIT NONE
       INTEGER                      :: level
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
       INTEGER                      :: N,M, i, j
 
       N = self % N(1); M = self % N(2)
@@ -1074,10 +1062,10 @@
 !
       RECURSIVE SUBROUTINE PrintGridDiagnostics( self )
       IMPLICIT NONE
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
 
-      INTEGER               :: i, j, k, N, M
-      CLASS(SMNode), POINTER :: node
+      INTEGER                :: i, j, k, N, M
+      TYPE (SMNode), POINTER :: node
       CLASS(SMQuad), POINTER :: quad
 
       N = self % N(1)

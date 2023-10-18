@@ -53,8 +53,8 @@
          IMPLICIT NONE
 
          TYPE CurveSweeper
-            CLASS(SMChainedCurve), POINTER :: sweepCurve
-            CLASS(SMChainedCurve), POINTER :: scaleCurve
+            TYPE(SMChainedCurve), POINTER  :: sweepCurve
+            TYPE(SMChainedCurve), POINTER  :: scaleCurve
             TYPE(RotationTransform)        :: RotationTransformer
             TYPE(ScaleTransform)           :: scaleTransformer
             INTEGER                        :: sweepAlgorithm
@@ -122,7 +122,7 @@
 !              Arguments
 !              ---------
 !
-               CLASS(FTValueDictionary) :: controlDict, modelDict
+               TYPE(FTValueDictionary) :: controlDict, modelDict
 !
 !              ---------------
 !              Local variables

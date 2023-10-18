@@ -90,7 +90,7 @@
       END TYPE SMNode
       
       TYPE SMNodePtr
-         CLASS(SMNode), POINTER :: node => NULL()
+         TYPE(SMNode), POINTER :: node => NULL()
       END TYPE SMNodePtr
 !
 !     ----------------------------
@@ -136,7 +136,7 @@
       END TYPE SMElement
       
       TYPE SMElementPtr
-         CLASS(SMElement), POINTER :: element => NULL()
+         TYPE(SMElement), POINTER :: element => NULL()
       END TYPE SMElementPtr
 !
 !     ---------------
@@ -149,7 +149,7 @@
          TYPE(SMNodePtr)   , DIMENSION(2) :: nodes
          TYPE(SMElementPtr), DIMENSION(2) :: elements
          INTEGER                          :: elementSide(2)
-         CLASS(SMNode)    , POINTER       :: auxiliaryNode => NULL() ! used for splitting interface elements
+         TYPE (SMNode)     , POINTER      :: auxiliaryNode => NULL() ! used for splitting interface elements
 !
 !        ========
          CONTAINS
@@ -161,7 +161,7 @@
       END TYPE SMEdge
       
       TYPE SMEdgePtr
-         CLASS(SMEdge), POINTER :: edge => NULL()
+         TYPE(SMEdge), POINTER :: edge => NULL()
       END TYPE SMEdgePtr
 !
 !     ---------------
@@ -179,7 +179,7 @@
       END TYPE SMQuad
       
       TYPE SMQuadPtr
-         CLASS(SMQuad), POINTER :: quad => NULL()
+         TYPE(SMQuad), POINTER :: quad => NULL()
       END TYPE SMQuadPtr
 !
 !     -----
@@ -230,7 +230,7 @@
       FUNCTION nodeFromSMMeshobject(obj) RESULT(cast)  
       IMPLICIT NONE  
          CLASS(FTObject), POINTER :: obj
-         CLASS(SMNode)  , POINTER :: cast
+         TYPE(SMNode)   , POINTER :: cast
          
          cast => NULL()
          SELECT TYPE (e => obj)
@@ -345,7 +345,7 @@
 ! 
       SUBROUTINE releaseSMNode(self)  
          IMPLICIT NONE
-         CLASS(SMNode)  , POINTER :: self
+         TYPE (SMNode)  , POINTER :: self
          CLASS(FTObject), POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -370,7 +370,7 @@
 !
       PURE LOGICAL FUNCTION isOnBoundaryCurve( node ) 
          IMPLICIT NONE 
-         CLASS(SMNode), POINTER, INTENT(IN) :: node
+         TYPE(SMNode), POINTER, INTENT(IN) :: node
          IF( node % bCurveChainID > UNDEFINED )     THEN
             IsOnBoundaryCurve = .true.
          ELSE
@@ -382,7 +382,7 @@
 !
       PURE LOGICAL FUNCTION IsOnOuterBox( node ) 
          IMPLICIT NONE 
-         CLASS(SMNode), POINTER, INTENT(IN) :: node
+         TYPE(SMNode), POINTER, INTENT(IN) :: node
          IF( node % bCurveChainID < UNDEFINED )     THEN
             IsOnOuterBox = .true.
          ELSE
@@ -394,7 +394,7 @@
 !
       PURE LOGICAL FUNCTION hasFixedPosition( node ) 
          IMPLICIT NONE 
-         CLASS(SMNode), POINTER, INTENT(IN) :: node
+         TYPE(SMNode), POINTER, INTENT(IN) :: node
          
           IF( node%distToBoundary < EPSILON(1.0_RP) )     THEN
             HasFixedPosition = .true.
@@ -414,7 +414,7 @@
 !
          IMPLICIT NONE  
          CLASS(FTObject), POINTER :: obj
-         CLASS(SMNode), POINTER :: cast
+         TYPE(SMNode)   , POINTER :: cast
          
          cast => NULL()
          SELECT TYPE (e => obj)
@@ -467,7 +467,7 @@
 ! 
       SUBROUTINE releaseSMElement(self)  
          IMPLICIT NONE
-         CLASS(SMElement), POINTER :: self
+         TYPE(SMElement), POINTER :: self
          CLASS(FTObject) , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -529,7 +529,7 @@
 !
          IMPLICIT NONE  
          CLASS(FTObject) , POINTER :: obj
-         CLASS(SMElement), POINTER :: cast
+         TYPE(SMElement), POINTER :: cast
          
          cast => NULL()
          SELECT TYPE (e => obj)
@@ -546,7 +546,7 @@
       SUBROUTINE initEdgeWithNodesAndID(self, startNode, endNode, id)
          IMPLICIT NONE
          CLASS(SMEdge)          :: self
-         CLASS(SMNode), POINTER :: startNode, endNode
+         TYPE (SMNode), POINTER :: startNode, endNode
          INTEGER                :: id
          
          INTEGER                :: k
@@ -607,7 +607,7 @@
 ! 
       SUBROUTINE releaseSMEdge(self)  
          IMPLICIT NONE
-         CLASS(SMEdge)   , POINTER :: self
+         TYPE (SMEdge)   , POINTER :: self
          CLASS(FTObject) , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -656,7 +656,7 @@
 !
          IMPLICIT NONE  
          CLASS(FTObject) , POINTER :: obj
-         CLASS(SMEdge)   , POINTER :: cast
+         TYPE (SMEdge)   , POINTER :: cast
          
          cast => NULL()
          SELECT TYPE (e => obj)
@@ -671,8 +671,8 @@
 ! 
       SUBROUTINE SetAuxiliaryNode( self, node )  
          IMPLICIT NONE  
-         CLASS(SMEdge), POINTER    :: self
-         CLASS(SMNode), POINTER    :: node
+         TYPE (SMEdge), POINTER    :: self
+         TYPE (SMNode), POINTER    :: node
          self % auxiliaryNode => node
          CALL node % retain()
       END SUBROUTINE SetAuxiliaryNode
@@ -725,7 +725,7 @@
 ! 
       SUBROUTINE releaseSMQuad(self)  
          IMPLICIT NONE
-         CLASS(SMQuad)   , POINTER :: self
+         TYPE (SMQuad)   , POINTER :: self
          CLASS(FTObject) , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN

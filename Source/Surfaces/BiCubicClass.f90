@@ -223,7 +223,7 @@
          ! https://www.giassa.net/?page_id=371 that has a very nice explanation of where
          ! the different terms come from.
          IMPLICIT NONE
-         CLASS(BiCubicInterpolation) :: self
+         TYPE(BiCubicInterpolation) :: self
          REAL(KIND=RP)               :: t(2)
          ! local variables
          INTEGER       :: i, j, k

@@ -78,8 +78,8 @@
          CLASS(SMChainedCurve)      , POINTER     :: scaleCurve          => NULL()
          CLASS(FTLinkedList)        , POINTER     :: innerBoundaries     => NULL()
          CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
-         CLASS(FTLinkedListIterator), POINTER     :: innerBoundariesIterator => NULL()
-         CLASS(FTLinkedListIterator), POINTER     :: interfaceBoundariesIterator => NULL()
+         TYPE(FTLinkedListIterator) , POINTER     :: innerBoundariesIterator => NULL()
+         TYPE(FTLinkedListIterator) , POINTER     :: interfaceBoundariesIterator => NULL()
          CLASS(SMTopography)        , POINTER     :: topography => NULL()
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
@@ -1199,9 +1199,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMChainedCurve), POINTER :: chain => NULL()
-         CLASS(SMCurve)       , POINTER :: currentCurve => NULL()
-         CLASS(FTObject)      , POINTER :: obj => NULL()
+         CLASS(SMChainedCurve)      , POINTER :: chain => NULL()
+         CLASS(SMCurve)             , POINTER :: currentCurve => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
          CLASS(FTLinkedListIterator), POINTER    :: iterator => NULL()
 
          INTEGER                        :: chainCount

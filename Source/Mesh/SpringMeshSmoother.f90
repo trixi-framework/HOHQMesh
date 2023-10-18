@@ -147,7 +147,7 @@
 !
          INTEGER                      :: k, nodeID, N
          REAL(KIND=RP)                :: maxV
-         CLASS(SMNode)      , POINTER :: node => NULL()
+         TYPE(SMNode)       , POINTER :: node => NULL()
          CLASS(FTObject)    , POINTER :: obj => NULL()
          CLASS(FTLinkedList), POINTER :: boundaryNodesList => NULL()
 !
@@ -166,7 +166,7 @@
          CALL mesh % nodesIterator % setToStart()
          DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
             obj => mesh % nodesIterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
             node  %  activeStatus = ACTIVE
             CALL mesh % nodesIterator % moveToNext()
          END DO
@@ -185,7 +185,7 @@
             CALL mesh % nodesIterator % setToStart()
             DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
                obj                => mesh % nodesIterator % object()
-               CALL cast(obj,node)
+               CALL castToSMNode(obj,node)
                nodeID                 = node % id
                node % x               = node % x + self % deltaT*nodeVelocity(:,nodeID)
                nodeVelocity(:,nodeID) = nodeVelocity(:,nodeID) + &
@@ -279,8 +279,8 @@
 !
          INTEGER                              :: id1, id2
          REAL(KIND=RP)                        :: force(3), x1(3), x2(3)
-         CLASS(SMEdge)              , POINTER :: edge => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         TYPE(SMEdge)               , POINTER :: edge => NULL()
+         TYPE(FTLinkedListIterator) , POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          
          iterator => mesh % edgesIterator
@@ -288,7 +288,7 @@
          
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,edge)
+            CALL castTosmEdge(obj,edge)
             
             x1  = edge % nodes(1) % node % x
             x2  = edge % nodes(2) % node % x
@@ -324,18 +324,18 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER                              :: k, cK, nID
-         REAL(KIND=RP)                        :: force(3), x1(3), x2(3)
-         CLASS(SMNode)              , POINTER :: node1 => NULL(), node2 => NULL()
-         CLASS(SMElement)           , POINTER :: e => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
-         CLASS(FTObject)            , POINTER :: obj => NULL()
+         INTEGER                             :: k, cK, nID
+         REAL(KIND=RP)                       :: force(3), x1(3), x2(3)
+         TYPE(SMNode)              , POINTER :: node1 => NULL(), node2 => NULL()
+         TYPE(SMElement)           , POINTER :: e => NULL()
+         TYPE(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)           , POINTER :: obj => NULL()
          
          iterator => mesh % elementsIterator
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             DO k = 1, 4 
                node1 => e % nodes(k) % node
                IF( HasFixedPosition( node1 ) )     CYCLE ! Is on boundary. 
@@ -372,7 +372,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)        , POINTER :: node => NULL()
+         TYPE (SMNode)        , POINTER :: node => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
          CLASS(SMCurve)       , POINTER :: c => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
@@ -382,7 +382,7 @@
          CALL nodeIterator % setToStart()
          DO WHILE ( .NOT.nodeIterator % isAtEnd() )
             obj => nodeIterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
 
             IF (node  %  activeStatus == INACTIVE)     THEN
                nodeAcceleration(:,node  %  id) = 0.0_RP

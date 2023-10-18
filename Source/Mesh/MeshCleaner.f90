@@ -186,7 +186,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement)           , POINTER :: currentElement  => NULL()
+         TYPE (SMElement)           , POINTER :: currentElement  => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
 !
@@ -202,7 +202,7 @@
 
          DO WHILE ( .NOT.elementIterator % isAtEnd() )
             obj => elementIterator % object()
-            CALL cast(obj,currentElement)
+            CALL castToSMElement(obj,currentElement)
 
             CALL DeleteElementIfDiamond( currentElement, mesh, errorCode )
 
@@ -258,9 +258,9 @@
          INTEGER, DIMENSION(4)       :: diagonalMap = [3,4,1,2]
          REAL(KIND=RP)               :: x1(3), x2(3), x(3)
 
-         CLASS(SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
-         CLASS(SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
-         CLASS(SMEdge)     , POINTER :: edge => NULL()
+         TYPE (SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
+         TYPE (SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
+         TYPE (SMEdge)     , POINTER :: edge => NULL()
          CLASS(FTObject)   , POINTER :: obj => NULL()
 
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes
@@ -453,7 +453,7 @@
 !!        ---------------
 !!
 !!         INTEGER                  :: k
-!!         CLASS(SMElement), POINTER :: e
+!!         TYPE(SMElement), POINTER :: e
 !!         REAL(KIND=RP)            :: theta
 !!
 !!        ----------------------------------------
@@ -483,7 +483,7 @@
 !        ---------------
 !
          TYPE (FTMutableObjectArray) , POINTER     :: badElements => NULL()
-         CLASS(SMElement)            , POINTER     :: e => NULL()
+         TYPE (SMElement)            , POINTER     :: e => NULL()
          CLASS(FTObject)             , POINTER     :: obj => NULL()
          REAL(KIND=RP)               , ALLOCATABLE :: shapeMeasures(:,:)
          LOGICAL                     , ALLOCATABLE :: badElementMeasure(:,:)
@@ -522,7 +522,7 @@
 
             DO k = 1, numberOfBadElements
                obj => badElements % objectAtIndex(k)
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
                CALL ComputeElementShapeMeasures2D( e, shapeMeasures(:,k) )
                CALL ExtractBadElementInfo( shapeMeasures(:,k), badElementMeasure(:,k) )
             END DO
@@ -533,7 +533,7 @@
 !
             DO k = 1, numberOfBadElements
                obj => badElements % objectAtIndex(k)
-               CALL cast(obj,e)
+               CALL castToSMElement(obj,e)
                IF( shapeMeasures(AREA_SIGN,k ) < 0.0_RP ) CALL MakeElement_RightHanded( e )
             END DO
 !
@@ -606,7 +606,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement) :: e
+         TYPE (SMElement) :: e
 !
 !        ---------------
 !        Local variables
@@ -649,9 +649,9 @@
          INTEGER                              :: j, k, nodeCount
          CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
          CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
-         CLASS(SMEDGE)              , POINTER :: currentEdge => NULL()
+         TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
          CLASS(SMElement)           , POINTER :: e => NULL()
-         CLASS(SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
+         TYPE (SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          TYPE (FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
@@ -686,7 +686,7 @@
 
                DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
                   obj => EdgeListIterator % object()
-                  CALL cast(obj,currentEdge)
+                  CALL castToSMEdge(obj,currentEdge)
                   IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
                      e   => currentEdge % elements(1) % element
 !               BUG: puts boundary points in the wrong place.
@@ -732,7 +732,7 @@
 
                DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
                   obj => EdgeListIterator % object()
-                  CALL cast(obj,currentEdge)
+                  CALL castToSMEdge(obj,currentEdge)
 
                   IF ( currentEdge % edgeType == ON_INTERFACE )     THEN
 
@@ -764,7 +764,7 @@
                CALL nodesIterator % setToStart()
                DO WHILE ( .NOT.nodesIterator % isAtEnd() )
                   obj => nodesIterator % object()
-                  CALL cast(obj,meshNode)
+                  CALL castToSMNode(obj,meshNode)
 !
 !              ------------------------------
 !              See it this is a boundary node
@@ -853,9 +853,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement), POINTER :: e => NULL(), eNbr => NULL()
+         TYPE (SMElement), POINTER :: e => NULL(), eNbr => NULL()
          CLASS(FTObject) , POINTER :: obj => NULL()
-         CLASS(SMNode)   , POINTER :: node => NULL()
+         TYPE (SMNode)   , POINTER :: node => NULL()
          REAL(KIND=RP)             :: angles(4)
          INTEGER                   :: numberOfBadElements
          INTEGER                   :: k, j, badNodeID
@@ -868,7 +868,7 @@
 
          DO k = 1, numberOfBadElements
             obj => badElements % objectAtIndex(k)
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             IF( e % remove )     CYCLE
 !
 !           -------------------------------------
@@ -974,7 +974,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement)          :: e
+         CLASS (SMElement), POINTER :: e
          TYPE (SMModel)  , POINTER :: model
 !
 !        ---------------
@@ -982,7 +982,7 @@
 !        ---------------
 !
          INTEGER, PARAMETER               :: CBE_ON_BOUNDARY = 1, CBE_OFF_BOUNDARY = 0
-         CLASS(SMNode)  , POINTER         :: sourceNode => NULL(), node => NULL()
+         CLASS (SMNode)  , POINTER         :: sourceNode => NULL(), node => NULL()
          TYPE(SMNodePtr)                  :: elementNodes(4)  !Temp container for this procedure
          INTEGER                          :: boundaryNodeCount
          INTEGER                          :: k, m, j
@@ -994,7 +994,7 @@
          CLASS(SMCurve)       , POINTER   :: c => NULL()
          CLASS(SMChainedCurve), POINTER   :: chain  => NULL()      ! Returned also so that it, too can be used.
          TYPE(SMNode)                     :: nodeCopy(4) ! Two extra but not a big deal.
-         CLASS(SMElement)     , POINTER   :: eTest => NULL()
+         TYPE (SMElement)     , POINTER   :: eTest => NULL()
          LOGICAL                          :: badArrayOriginal(6)      ! Node valence <= 6
          INTEGER                          :: nodeID
 
@@ -1138,7 +1138,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMElement), POINTER :: e
+         TYPE (SMElement), POINTER :: e
          TYPE(SMMesh)              :: mesh
          INTEGER                   :: errorCode
 !
@@ -1150,9 +1150,9 @@
          INTEGER                   :: k, j, id, idNbr, localIds(2)
          LOGICAL                   :: hasA3ValenceNode, isDiamond
          REAL(KIND=RP)             :: x(3), corners(3,4)
-         CLASS(SMElement), POINTER :: eNbr    => NULL()
+         TYPE (SMElement), POINTER :: eNbr    => NULL()
          CLASS(FTObject) , POINTER :: obj     => NULL()
-         CLASS(SMNode)   , POINTER :: newNode => NULL()
+         TYPE (SMNode)   , POINTER :: newNode => NULL()
          TYPE(SMNodePtr)           :: elementNodes(4)  !Temp container for this procedure
 !
 !        --------------------------------------------

@@ -43,7 +43,7 @@
 !
       SUBROUTINE ConstructNodesForTemplate1( self, rotation ) 
          IMPLICIT NONE 
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
          
          IF ( refinementType == REFINEMENT_3 )     THEN
@@ -68,7 +68,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER   :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -149,7 +149,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -217,7 +217,7 @@
 !
       SUBROUTINE ConstructQuadsForTemplate1( self, rotation )
          IMPLICIT NONE 
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
          
          IF ( refinementType == REFINEMENT_3 )     THEN
@@ -242,7 +242,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -411,7 +411,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -580,7 +580,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER      :: self
 !
 !        ---------------
 !        Local variables
@@ -619,7 +619,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -725,7 +725,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER       :: self
 !
 !        ---------------
 !        Local variables
@@ -758,7 +758,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -980,7 +980,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -1025,7 +1025,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -1173,7 +1173,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -1225,7 +1225,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: rotation
 !
 !        ---------------
@@ -1374,7 +1374,7 @@
 !
       SUBROUTINE ConstructNodesForTemplate4( self )
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER   :: self
          
          INTEGER                       :: i,j
          REAL(KIND=RP)                 :: x(3)
@@ -1399,7 +1399,7 @@
 !
       SUBROUTINE ConstructQuadsForTemplate4( self )
 !
-         CLASS(QuadTreeGrid), POINTER      :: self
+         TYPE(QuadTreeGrid), POINTER    :: self
          INTEGER                        :: i,j
        
 !

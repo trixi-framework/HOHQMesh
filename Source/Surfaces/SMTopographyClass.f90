@@ -99,7 +99,7 @@
       SUBROUTINE releaseBaseTopography(self)
          IMPLICIT NONE
          CLASS(SMTopography), POINTER :: self
-         CLASS(FTObject) , POINTER :: obj
+         CLASS(FTObject)    , POINTER :: obj
 
          IF(.NOT. ASSOCIATED(self)) RETURN
 
@@ -184,7 +184,7 @@
 !     -----------------------------------------------------
 !
          IMPLICIT NONE
-         CLASS(FTObject) , POINTER :: obj
+         CLASS(FTObject)    , POINTER :: obj
          CLASS(SMTopography), POINTER :: cast
 
          cast => NULL()
@@ -201,7 +201,7 @@
 !
       SUBROUTINE printTopographyDescription(self,iUnit)
          IMPLICIT NONE
-         INTEGER          :: iUnit
+         INTEGER             :: iUnit
          CLASS(SMTopography) :: self
          WRITE(iUnit,*) "Topography "
       END SUBROUTINE printTopographyDescription

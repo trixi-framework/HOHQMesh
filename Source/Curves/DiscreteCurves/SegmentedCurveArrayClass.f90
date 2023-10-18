@@ -189,7 +189,7 @@
 !
       SUBROUTINE ComputeCurvature( self )
       IMPLICIT NONE 
-      CLASS(SegmentedCurveArray)                   :: self
+      TYPE(SegmentedCurveArray)                    :: self
       INTEGER                                      :: j, N
       REAL(KIND=RP), DIMENSION(3)                  :: xp, xpp
       REAL(KIND=RP), DIMENSION(0:self % nSegments) :: dt

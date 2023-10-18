@@ -158,8 +158,8 @@
          INTEGER                               :: k, id
          CLASS(FTLinkedListIterator), POINTER  :: iterator => NULL()
          CLASS(FTObject)            , POINTER  :: obj      => NULL()
-         CLASS(SMNode)              , POINTER  :: node     => NULL()
-         CLASS(SMEdge)              , POINTER  :: edge     => NULL()
+         TYPE (SMNode)              , POINTER  :: node     => NULL()
+         TYPE (SMEdge)              , POINTER  :: edge     => NULL()
          REAL(KIND=RP)                         :: x(3)
 
          iterator => mesh % nodesIterator

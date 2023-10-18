@@ -68,7 +68,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMNode)  , POINTER :: currentNode => NULL()
+         TYPE (SMNode)  , POINTER :: currentNode => NULL()
          CLASS(FTObject), POINTER :: obj => NULL()
 !
 !        ------------------------------------------------------
@@ -79,7 +79,7 @@
          CALL allNodesIterator % setToStart()
          DO WHILE ( .NOT.allNodesIterator % isAtEnd() )
             obj => allNodesIterator % object()
-            CALL cast(obj,currentNode)
+            CALL castToSMNode(obj,currentNode)
             IF ( IsOnBoundaryCurve(currentNode) .AND. &
                  currentNode%distToBoundary == 0.0_RP )     THEN
                CALL boundaryNodesList % add(obj)

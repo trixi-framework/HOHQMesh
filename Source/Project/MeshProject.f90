@@ -144,7 +144,7 @@
          TYPE (SMModel)           , POINTER :: model    => NULL()
          TYPE (SMMesh)            , POINTER :: mesh     => NULL()
          TYPE (MeshSizer)         , POINTER :: sizer    => NULL()
-         CLASS(QuadTreeGrid)      , POINTER :: grid     => NULL()
+         TYPE (QuadTreeGrid)      , POINTER :: grid     => NULL()
          CLASS(MeshSmoother)      , POINTER :: smoother => NULL()
          TYPE(StructuredHexMesh)  , POINTER :: hexMesh  => NULL()
          TYPE(RunParameters)                :: runParams
@@ -615,7 +615,7 @@
 !        Local Variables
 !        ---------------
 !
-         CLASS(QuadTreeGrid), POINTER :: parent => NULL()
+         TYPE (QuadTreeGrid), POINTER :: parent => NULL()
          NULLIFY(parent)
 
          IF(ASSOCIATED(self % grid))      THEN

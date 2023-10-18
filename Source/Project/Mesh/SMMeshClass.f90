@@ -272,10 +272,10 @@
 !
          TYPE(FTSparseMatrix)       :: hashTable
          TYPE(FTLinkedListIterator) :: elementIterator
-         CLASS(SMEdge)   , POINTER  :: edge => NULL()
+         TYPE (SMEdge)   , POINTER  :: edge => NULL()
          CLASS(FTObject) , POINTER  :: obj => NULL()
-         CLASS(SMElement), POINTER  :: element => NULL()
-         CLASS(SMNode)   , POINTER  :: startNode => NULL(), endNode => NULL()
+         TYPE (SMElement), POINTER  :: element => NULL()
+         TYPE (SMNode)   , POINTER  :: startNode => NULL(), endNode => NULL()
 
          INTEGER                    :: nNodes
          INTEGER                    :: nodeIDs(4), endNodes(2)
@@ -290,7 +290,7 @@
 
          DO WHILE (.NOT.elementIterator % isAtEnd())
             obj => elementIterator % object()
-            CALL cast(obj,element)
+            CALL castToSMElement(obj,element)
 !
 !           -------------------
 !           Gather the node ids
@@ -315,7 +315,7 @@
 !                 ---------------------------------------------------
 !
                   obj => hashTable % objectForKeys(key1,key2)
-                  CALL cast(obj,edge)
+                  CALL castToSMEdge(obj,edge)
                   edge % elements(2) % element => element
                   CALL element % retain()
                   edge % elementSide(2) = k
@@ -370,9 +370,9 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(SMElement), POINTER   :: e    => NULL()
-         CLASS(SMNode)   , POINTER   :: node => NULL()
-         CLASS(SMEdge)   , POINTER   :: edge => NULL()
+         TYPE(SMElement), POINTER   :: e    => NULL()
+         TYPE(SMNode)   , POINTER   :: node => NULL()
+         TYPE(SMEdge)   , POINTER   :: edge => NULL()
 
          CLASS(FTLinkedList)        , POINTER :: list => NULL()
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
@@ -391,7 +391,7 @@
          CALL iterator % setToStart()
          DO WHILE( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
             node % activeStatus = REMOVE
             CALL iterator % movetoNext()
          END DO
@@ -407,7 +407,7 @@
          DO WHILE( .NOT.iterator % isAtEnd())
             obj       => iterator % object()
 
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
             IF ( e % remove )     THEN
                takeStep = .FALSE.
                CALL iterator % removeCurrentRecord()
@@ -434,7 +434,7 @@
                takeStep  =  .TRUE.
                obj       => iterator % object()
 
-               CALL cast(obj,edge)
+               CALL castToSMEdge(obj,edge)
                IF ( edge % remove )     THEN
                   takeStep = .FALSE.
                   CALL iterator % removeCurrentRecord()
@@ -459,7 +459,7 @@
             takeStep  =  .TRUE.
             obj       => iterator % object()
 
-            CALL cast(obj,node)
+            CALL castToSMNode(obj,node)
             IF ( node % activeStatus == REMOVE .OR. node % refCount() == 1 )     THEN
             ! Note that if refCount = 1 then this is the only place a node is referenced is in the
             ! node list. It should be removed since it is not used elsewhere.

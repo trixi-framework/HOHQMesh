@@ -53,7 +53,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER :: self
+         TYPE (QuadTreeGrid), POINTER :: self
          INTEGER                   :: rotation ! Used for all other templates, otherwise ignored
 
          SELECT CASE ( self % templateType )
@@ -88,7 +88,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER    :: self
+         TYPE (QuadTreeGrid), POINTER    :: self
          INTEGER                         :: rotation
 !
 !        ---------------
@@ -141,14 +141,14 @@
 !     Arguments
 !     ---------
 !
-      CLASS(QuadTreeGrid), POINTER :: self
+      TYPE (QuadTreeGrid), POINTER :: self
       INTEGER                   :: operation
 !
 !     ---------------
 !     Local variables
 !     ---------------
 !
-      CLASS(QuadTreeGrid), POINTER :: currentGrid
+      TYPE (QuadTreeGrid), POINTER :: currentGrid
       INTEGER                   :: level,k
       INTEGER                   :: iStart, iEnd, iStep
 !
@@ -245,7 +245,7 @@
       RECURSIVE SUBROUTINE Refine( self )
       IMPLICIT NONE
 
-      CLASS(QuadTreeGrid), POINTER :: self, newGrid
+      TYPE (QuadTreeGrid), POINTER :: self, newGrid
 
       INTEGER                      :: level, i, j, k, N, M
       INTEGER                      :: templateType, rotation
@@ -322,13 +322,13 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER :: self
+         TYPE (QuadTreeGrid), POINTER :: self
 !
 !        ---------------
 !        local variables
 !        ---------------
 !
-         CLASS(QuadTreeGrid), POINTER :: childGrid
+         TYPE (QuadTreeGrid), POINTER :: childGrid
          INTEGER , DIMENSION(3,4)  :: nodeLocs
 
          INTEGER        :: nodeLevel
@@ -380,7 +380,7 @@
 !
       RECURSIVE SUBROUTINE ConstructQuadsWithTemplates( self )
       IMPLICIT NONE
-      CLASS(QuadTreeGrid), POINTER :: self, grid
+      TYPE (QuadTreeGrid), POINTER :: self, grid
       INTEGER                   :: i, j, N, M
 
       N = self % N(1)
@@ -553,7 +553,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(QuadTreeGrid), POINTER :: self
+         TYPE (QuadTreeGrid), POINTER :: self
          INTEGER                      :: s
 !
 !        ---------------

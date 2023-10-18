@@ -112,7 +112,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary) :: dict
+         TYPE(FTValueDictionary) :: dict
 !
 !        ---------------
 !        Local variables
@@ -194,7 +194,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTValueDictionary) :: dict
+         TYPE(FTValueDictionary) :: dict
 !
 !        ---------------
 !        Local variables
@@ -271,7 +271,7 @@
 !        ---------
 !
          TYPE ( MeshProject )        :: project
-         CLASS( FTValueDictionary )  :: parametersDictionary
+         TYPE( FTValueDictionary )   :: parametersDictionary
          INTEGER                     :: pMutation
          REAL(KIND=RP)               :: h
 !
@@ -290,7 +290,7 @@
 
 
          TYPE(SMNodePtr)   , DIMENSION(:), ALLOCATABLE :: quadMeshNodes
-         CLASS(SMNode)                   , POINTER     :: currentNode
+         TYPE(SMNode)                    , POINTER     :: currentNode
          CLASS(FTObject)                 , POINTER     :: obj
 !
 !
@@ -443,7 +443,7 @@
          REAL(KIND=RP)             :: x(3), z, y(3)
          REAL(KIND=RP)             :: delta, eta, xi
          CLASS(FTObject) , POINTER :: obj
-         CLASS(SMElement), POINTER :: e
+         TYPE(SMElement), POINTER :: e
 !
 !        ------------------------------------------
 !        Extend the face points on the quad element
@@ -505,8 +505,8 @@
          INTEGER   :: flagMap(4) = [1,4,2,6]
 
 
-         CLASS(SMNode)                   , POINTER     :: node
-         CLASS(SMElement)                , POINTER     :: currentQuadElement
+         TYPE (SMNode)                   , POINTER     :: node
+         TYPE (SMElement)                , POINTER     :: currentQuadElement
          CLASS(FTObject)                 , POINTER     :: obj
 
          numberOfQuadElements = hex8Mesh % numberOfQuadElements

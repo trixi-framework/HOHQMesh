@@ -105,7 +105,7 @@
 !        ---------------
 !
          CLASS(FTObject)           , POINTER :: obj
-         CLASS(FTValueDictionary)  , POINTER :: generatorDict
+         TYPE(FTValueDictionary)   , POINTER :: generatorDict
          INTEGER                             :: algorithmChoice
          INTEGER                             :: numberOf3DGenerators
 !
@@ -187,7 +187,7 @@
 !        ---------------
 !
          CLASS(FTObject)           , POINTER     :: obj
-         CLASS(FTValueDictionary)  , POINTER     :: generatorDict
+         TYPE(FTValueDictionary)  , POINTER     :: generatorDict
          INTEGER                                 :: numberOfLayers
          CHARACTER(LEN=STRING_CONSTANT_LENGTH)   :: subdivisionsKey
          INTEGER                                 :: algorithmChoice = NONE
@@ -331,7 +331,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMMesh) :: mesh
+         TYPE(SMMesh) :: mesh
          INTEGER       :: pmutation
 !
 !        ---------------
@@ -339,7 +339,7 @@
 !        ---------------
 !
          CLASS(FTObject), POINTER  :: obj
-         CLASS(SMNode)  , POINTER  :: node
+         TYPE(SMNode)  , POINTER  :: node
          REAL(KIND=RP)             :: x(3)
 
          CALL mesh % nodesIterator % setToStart()
@@ -372,8 +372,8 @@
 !        ---------------
 !
          CLASS(FTObject) , POINTER  :: obj
-         CLASS(SMNode)   , POINTER  :: node
-         CLASS(SMElement), POINTER  :: e
+         TYPE (SMNode)   , POINTER  :: node
+         TYPE (SMElement), POINTER  :: e
          INTEGER                    :: i,j
 !
 !        -----------------------------
@@ -399,7 +399,7 @@
          DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
 
             obj => mesh % elementsIterator % object()
-            CALL cast(obj,e)
+            CALL castToSMElement(obj,e)
 
             DO j = 0, e % N
                DO i = 0, e % N

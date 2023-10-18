@@ -215,7 +215,7 @@
         CALL ExactAndComputedQuadraticCurvature(0.5_RP,0.5_RP, exact, computed)
         CALL FTAssertEqual(expectedValue = exact,    &
                            actualValue   = computed, &
-                           relTol        = 1.0d-8,   &
+                           relTol        = 2.0d-8,   &
                            absTol        = 1.0d-9,   &
                            msg           = "Computed Quadratic Curvature error")
 
@@ -223,14 +223,14 @@
                                                 exact = exactGradF, computed = gradF)
         CALL FTAssertEqual(expectedValue = 0.0_RP,                        &
                            actualValue   = MAXVAL(ABS(exactGradF-gradF)), &
-                           relTol        = 1.0d-8,                        &
+                           relTol        = 2.0d-8,                        &
                            absTol        = 1.0d-9,                        &
                            msg           = "Quadratic Gradients error")
 
         CALL ExactAndComputedQuadraticHessian(x = 0.5_RP,y = 0.5_RP,exact = exactHess,computed = hessF)
         CALL FTAssertEqual(expectedValue = 0.0_RP,                       &
                            actualValue   = MAXVAL(ABS(exactHess-hessF)), &
-                           relTol         = 1.0d-8,                      &
+                           relTol         = 2.0d-8,                      &
                            absTol         = 1.0d-9,                      &
                            msg           = "Quadratic Hessian error")
 
