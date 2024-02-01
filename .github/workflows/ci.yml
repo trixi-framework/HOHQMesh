@@ -130,7 +130,7 @@ jobs:
         with:
           update: true
           install: git base-devel mingw-w64-x86_64-toolchain
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: /opt/intel/oneapi
