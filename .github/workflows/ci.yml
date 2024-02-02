@@ -193,6 +193,8 @@ jobs:
           files: ./lcov.info
           flags: unittests
           name: codecov-umbrella
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }} # now required for public repos
       - name: Coveralls
         if: ${{ matrix.coverage }}
         uses: coverallsapp/github-action@master
