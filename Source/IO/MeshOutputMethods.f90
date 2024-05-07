@@ -367,7 +367,7 @@
          DO WHILE(.NOT.iterator % isAtEnd())
             obj => iterator % object()
             CALL castToSMNode(obj,node)
-            WRITE(iUnit, '(I0,3(", ", F18.13))') j, node % x
+            WRITE(iUnit, '(I0,3(", ", F20.12))') j, node % x
             CALL iterator % moveToNext()
             j = j + 1
          END DO
@@ -410,7 +410,7 @@
             DO k = 1, 4
                IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN
                   DO j = 0, N
-                     WRITE(iUnit, '(A3,3(F18.13))') "** ", e % boundaryInfo % x(:,j,k)
+                     WRITE(iUnit, '(A3,3(F20.12))') "** ", e % boundaryInfo % x(:,j,k)
                   END DO
                END IF
             END DO
