@@ -79,7 +79,7 @@
                             JACOBIAN_INDEX    = 5, MIN_ANGLE_INDEX    = 6, &
                             MAX_ANGLE_INDEX   = 7, AREA_SIGN          = 8
 
-      REAL(KIND=RP), PARAMETER, PRIVATE :: FUDGE_FACTOR_HIGH = 1.1_RP, FUDGE_FACTOR_LOW = 0.9
+      REAL(KIND=RP), PARAMETER, PRIVATE :: FUDGE_FACTOR_HIGH = 1.1_RP, FUDGE_FACTOR_LOW = 0.9_RP
 !
 !     ----------------------
 !     Quality measure arrays
