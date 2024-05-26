@@ -103,6 +103,8 @@
                                absTol        = tol/10.0_RP,    &
                                msg           = "Line evaluation error too large")
          END DO
+         
+         CALL FTAssert(test = line % curveIsStraight(), msg = "Line straightness")
          CALL destructLine(self = line)
 !
 !        -----------
@@ -129,6 +131,7 @@
                                absTol        = tol/10.0_RP,    &
                                msg           = "Circle evaluation error too large")
          END DO
+         CALL FTAssert(test = .NOT. circle % curveIsStraight(), msg = "Circle shouldn't be straight")
          CALL destructCircularArc(self = circle)
 !
 !        ------------------------------
@@ -141,6 +144,7 @@
                                                  curveName = "Parametric Curve",&
                                                  id        = 1)
          CALL FTAssert(test = .NOT.catch(), msg = "Equation has errors")
+         CALL FTAssert(test = .NOT. curve % curveIsStraight(), msg = "Curve shouldn't be straight")
 
          DO j = 1, 3
             t      = j*dt
@@ -188,6 +192,8 @@
                                absTol        = tol/10.0_RP,    &
                                msg           = "Spline error too large")
          END DO
+         CALL FTAssert(test = .NOT. spline % curveIsStraight(), msg = "Spline shouldn't be straight")
+         CALL DestructSplineCurve(spline)
 
       END SUBROUTINE TestCurves
 !

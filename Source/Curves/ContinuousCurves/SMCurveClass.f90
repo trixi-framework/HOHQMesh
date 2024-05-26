@@ -64,6 +64,7 @@
          PROCEDURE                  :: setCurveName
          PROCEDURE                  :: curveName
          PROCEDURE                  :: className => CurveClassName
+         PROCEDURE                  :: curveIsStraight
       END TYPE SMCurve
 !
 !     -------
@@ -418,6 +419,32 @@
          DistanceSquaredBetweenPoints = (z(1) - p(1))**2 + (z(2) - p(2))**2 &
                            - MIN((z(1)-p(1))*nHat(1) + (z(2) - p(2))*nHat(2),0.0d0)/directionPenalty
       END FUNCTION DistanceSquaredBetweenPoints
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION curveIsStraight(self)
+         USE Geometry, ONLY: AlmostEqual
+!
+!     -------------------------------------------------------------------------------
+!     To see if a curve is straight, we check to see if second derivative vanishes
+!     at an arbitrary point on the curve. This function will fail if there is an
+!     inflection point at that chosen point.
+!     -------------------------------------------------------------------------------
+!
+         IMPLICIT NONE  
+         CLASS(SMCurve) :: self
+         REAL(KIND=RP)  :: sec(3)
+         REAL(KIND=RP)  :: e
+         
+         sec = self % secondDerivativeAt(0.365_RP)
+         e   = MAXVAL(ABS(sec))
+         
+         curveIsStraight = .FALSE.
+         IF ( AlmostEqual(e,0.0_RP) )     THEN !Lies along the line
+               curveIsStraight = .TRUE. 
+         END IF
+
+      END FUNCTION curveIsStraight
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
