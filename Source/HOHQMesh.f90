@@ -88,6 +88,7 @@
 
          CLASS(FTObject)         , POINTER :: obj
          TYPE (FTValueDictionary), POINTER :: modelDict, controlDict
+         TYPE (SMCurve)          , POINTER :: symmetryCurve => NULL()
 !
 !        -----------------------------------------------------
 !        Initialize the project and check the integrity of the
@@ -114,6 +115,16 @@
 !
          CALL stopWatch % start()
             CALL GenerateQuadMesh(project, errorCode)
+!
+!           -----------------------------------------------------------
+!           Perform symmetric transform if there is a symmetry boundary
+!           -----------------------------------------------------------
+!
+            symmetryCurve => project % model % symmetryCurve()
+            IF ( ASSOCIATED(symmetryCurve) )     THEN
+               CALL ReflectMesh(project % mesh, symmetryCurve) 
+            END IF 
+            
          CALL stopwatch % stop()
          CALL trapExceptions !Abort on fatal exceptions
 

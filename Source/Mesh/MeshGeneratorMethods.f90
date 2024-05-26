@@ -2146,6 +2146,14 @@
 
       END SUBROUTINE Perform2DMeshTransformations
 !
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ReflectMesh( mesh, symmetryCurve)  
+         IMPLICIT NONE  
+         TYPE(SMMesh) , POINTER :: mesh
+         TYPE(SMCurve), POINTER :: symmetryCurve
+      END SUBROUTINE ReflectMesh
+!
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE ComputeElementFacePatch(e, quadMap, nodes, N)

@@ -92,6 +92,7 @@
          FINAL     :: destructModel
          PROCEDURE :: chainWithID
          PROCEDURE :: curveWithID => curveInModelWithID
+         PROCEDURE :: symmetryCurve
       END TYPE SMModel
 !
 !     ========
@@ -1503,5 +1504,35 @@
          END IF
 
       END FUNCTION curveInModelWithID
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      FUNCTION symmetryCurve(self)  RESULT(curve)
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         INTEGER                        :: curveID
+         CLASS(SMModel)                 :: self
+         CLASS(SMCurve)       , POINTER :: curve
+         CLASS(SMChainedCurve), POINTER :: chain
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER :: i
+         
+         NULLIFY(curve)
+         chain => self % outerBoundary
+         
+         DO i = 1, chain % COUNT() 
+            curve => chain % curveAtIndex(i) 
+            IF( curve % curveName() == "symmetry") RETURN 
+         END DO 
+         
+      END FUNCTION symmetryCurve
 
       END Module SMModelClass
