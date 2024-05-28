@@ -2152,6 +2152,11 @@
          IMPLICIT NONE  
          TYPE(SMMesh) , POINTER :: mesh
          TYPE(SMCurve), POINTER :: symmetryCurve
+!
+!        -------------------------------------------------
+!        Determine the mapping function for the reflection
+!        -------------------------------------------------
+!
       END SUBROUTINE ReflectMesh
 !
 !////////////////////////////////////////////////////////////////////////

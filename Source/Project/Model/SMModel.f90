@@ -1527,6 +1527,7 @@
          
          NULLIFY(curve)
          chain => self % outerBoundary
+         IF(.NOT. ASSOCIATED( chain)) RETURN
          
          DO i = 1, chain % COUNT() 
             curve => chain % curveAtIndex(i) 

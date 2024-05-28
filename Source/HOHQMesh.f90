@@ -122,7 +122,13 @@
 !
             symmetryCurve => project % model % symmetryCurve()
             IF ( ASSOCIATED(symmetryCurve) )     THEN
-               CALL ReflectMesh(project % mesh, symmetryCurve) 
+               IF ( symmetryCurve % curveIsStraight() )     THEN
+                  CALL ReflectMesh(project % mesh, symmetryCurve)
+               ELSE 
+                  CALL ThrowErrorExceptionOfType(poster = "HOHQMesh", &
+                            msg          = "Curve labeled as 'symmetry' is not straight. Ignoring...", &
+                            typ          = FT_ERROR_WARNING)
+               END IF 
             END IF 
             
          CALL stopwatch % stop()

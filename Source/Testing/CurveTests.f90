@@ -41,6 +41,7 @@
          USE TestSuiteManagerClass
          USE FTAssertions
          USE SharedExceptionManagerModule
+         USE LineReflectionModule
 !
 !        ----------------------------------------------------------------
 !        Instantiate and test for correctness the different curve classes
@@ -194,7 +195,22 @@
          END DO
          CALL FTAssert(test = .NOT. spline % curveIsStraight(), msg = "Spline shouldn't be straight")
          CALL DestructSplineCurve(spline)
-
+!
+!        ---------------------
+!        Test reflecting lines
+!        ---------------------
+!
+         CALL FTAssertEqual(expectedValue = 0.0_RP,                  &
+                            actualValue   = lineCoeffientTestError(),&
+                            relTol        = tol,                     &
+                            absTol        = tol/10.0_RP,             &
+                            msg           = "lineCoeffientTestError")
+         CALL FTAssertEqual(expectedValue = 0.0_RP,                  &
+                            actualValue   = lineReflectionTestError(),&
+                            relTol        = tol,                     &
+                            absTol        = tol/10.0_RP,             &
+                            msg           = "lineReflectionTestError")
+         
       END SUBROUTINE TestCurves
 !
 !////////////////////////////////////////////////////////////////////////
