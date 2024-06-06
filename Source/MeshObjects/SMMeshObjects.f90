@@ -287,7 +287,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE copyOfNodeType(source, copy)  
+      SUBROUTINE copyNodeType(source, copy)  
          IMPLICIT NONE  
          CLASS(SMNode), POINTER :: copy
          TYPE (SMNode)          :: source
@@ -303,7 +303,7 @@
          copy % bCurveSide      = source % bCurveSide     
          copy % nodeType        = source % nodeType       
          
-      END SUBROUTINE copyOfNodeType
+      END SUBROUTINE copyNodeType
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

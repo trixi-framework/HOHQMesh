@@ -2245,7 +2245,7 @@
 !        Local Variables
 !        ---------------
 !
-         REAL(KIND=RP)                       :: x0(3), x1(3)
+         REAL(KIND=RP)                       :: x0(3), x1(3), x(3)
          REAL(KIND=RP)                       :: a, b, c
          INTEGER                             :: nodeID, elemID
          INTEGER                             :: bCurveID
@@ -2294,20 +2294,22 @@
 
             CALL savedElements % add(obj)
             CALL release(obj)
-            
-            elemID = elemID + 1
-            CALL elemItr % MoveToNext()
 !
-!           --------------------
-!           Flag symmetry points
-!           --------------------
+!           -----------------------------------------------------
+!           Flag symmetry points and clear the associated edge as
+!           being a boundary anymore.
+!           -----------------------------------------------------
 !
             DO j = 1, 4 
                IF ( oldElement % boundaryInfo % bCurveName(j) == SYMMETRY_CURVE_NAME )     THEN
                   oldElement % nodes(edgeMap(1,j)) % node % bCurveID = bCurveID 
                   oldElement % nodes(edgeMap(2,j)) % node % bCurveID = bCurveID 
+                  oldElement % boundaryInfo % bCurveName(j) = NO_BC_STRING
                END IF 
             END DO
+            
+            elemID = elemID + 1
+            CALL elemItr % MoveToNext()
             
          END DO
 !
@@ -2317,7 +2319,7 @@
 !        ---------------------------------------------------
 !
          CALL deallocateNodeToElementConnections
-         !Ignore error code since this won't ReflectMesh wont be called otherwise.
+         !(Ignore error code since ReflectMesh won't be called otherwise.)
          CALL makeNodeToElementConnections(mesh, errorCode) 
          
          ALLOCATE(newNodes)
@@ -2342,7 +2344,7 @@
 !
                ALLOCATE(newNode)
                CALL newNode % init()
-               CALL copyOfNodeType(oldNode,newNode)
+               CALL copyNodeType(oldNode,newNode)
    
                newNode % x  = reflectAboutLine(oldNode % x, a, b, c)
                newNode % id = nodeID
@@ -2376,7 +2378,9 @@
 !        1. Adding the new nodes to the mesh's node list
 !        2. Making the flipped elements right handed
 !        3. Fixing the flipped element's boundaryInfo block due to #2
-!        4. Adding back the original elements to the mesh
+!        4. Flipping the element's face patch
+!        5. Adding back the original elements to the mesh
+!        6. Rebuild the edge list
 !        ---------------------------------------------------------------
 !
          CALL mesh % nodes % addObjectsFromList(newNodes)
@@ -2389,11 +2393,27 @@
             CALL castToSMElement(obj,e)
             CALL MakeElement_RightHanded(e)
             CALL MakeBoundaryInfoRightHanded(e % boundaryInfo, a, b, c)
+            IF ( ALLOCATED(e % xPatch) )     THEN
+               DO j = 0, UBOUND(e % xPatch,3) 
+                  DO i = 0, UBOUND(e % xPatch, 2)
+                     x = reflectAboutLine(e % xPatch(:,i,j),a,b,c)
+                     e % xPatch(:,i,j) = x
+                  END DO  
+               END DO 
+            END IF 
             
             CALL elemItr % moveToNext()
          END DO 
          
          CALL mesh % elements % addObjectsFromList(savedElements)
+         
+         CALL releaseFTLinkedListIterator(mesh % edgesIterator)
+         CALL releaseFTLinkedList(mesh % edges)
+         ALLOCATE(mesh % edges)
+         ALLOCATE(mesh % edgesIterator)
+         CALL mesh % edges % init()
+         CALL mesh % edgesIterator % initWithFTLinkedList(mesh % edges)
+         CALL buildEdgeList(mesh)
 !
 !        --------
 !        Clean up
@@ -2401,6 +2421,7 @@
 !
          CALL releaseFTLinkedList(newNodes)
          CALL releaseFTLinkedList(savedElements)
+         CALL deallocateNodeToElementConnections
          
       END SUBROUTINE ReflectMesh
 !
@@ -2570,7 +2591,7 @@
             CALL castToSMNode(obj,node)
 
             xFormed = PerformRotationTransform(x              = node % x, &
-                                             transformation = rotationTransformer)
+                                               transformation = rotationTransformer)
             node % x = xFormed
             CALL nodeIterator % moveToNext()
          END DO
@@ -2595,7 +2616,7 @@
             DO j = 0, N
                DO i = 0, N
                   xFormed = PerformRotationTransform(x              = e % xPatch(:,i,j), &
-                                                   transformation = rotationTransformer)
+                                                     transformation = rotationTransformer)
                   e % xPatch(:,i,j) = xFormed
                END DO
             END DO
@@ -2607,7 +2628,7 @@
             DO k = 1,4
                DO j = 0, N
                   xFormed = PerformRotationTransform(x              = e % boundaryInfo % x(:,j,k), &
-                                                   transformation = rotationTransformer)
+                                                     transformation = rotationTransformer)
                   e % boundaryInfo % x(:,j,k) = xFormed
                END DO
             END DO

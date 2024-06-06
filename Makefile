@@ -55,6 +55,7 @@ HOHQMeshMain.o \
 HOHQMesh.o \
 InterfaceElementMethods.o \
 InterpolationAndDerivatives.o \
+LineReflectionModule.o \
 LaplaceMeshSmoother.o \
 Mesh3DOutputMethods.o \
 MeshBoundaryMethods.o \
@@ -191,6 +192,7 @@ SMCurveClass.o \
 SMCircularArc.o \
 FTExceptionClass.o \
 SMLine.o \
+LineReflectionModule.o \
 ParametricEquationCurveClass.o \
 TestSuiteManagerClass.o \
 Assert.o \
@@ -372,6 +374,10 @@ SMModel.o \
 SMMeshClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Mesh/LaplaceMeshSmoother.f90
 
+LineReflectionModule.o : $(HOHQMESHPATH)/Source/Foundation/LineReflectionModule.f90 \
+SMConstants.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Foundation/LineReflectionModule.f90
+
 Mesh3DOutputMethods.o :$(HOHQMESHPATH)/Source/3DSource/Mesh3DOutputMethods.f90 \
 HexMeshObjects.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/3DSource/Mesh3DOutputMethods.f90
@@ -410,6 +416,7 @@ TransfiniteMapClass.o \
 Sizer.o \
 BoundaryEdgeCleaning.o \
 Geometry.o \
+LineReflectionModule.o \
 QuadTreeGridGenerator.o \
 MeshBoundaryMethods.o \
 CurveInterpolantClass.o \
