@@ -88,7 +88,7 @@
 
          CLASS(FTObject)         , POINTER :: obj
          TYPE (FTValueDictionary), POINTER :: modelDict, controlDict
-         TYPE (SMCurve)          , POINTER :: symmetryCurve => NULL()
+         CLASS(SMCurve)          , POINTER :: symmetryCurve => NULL()
 !
 !        -----------------------------------------------------
 !        Initialize the project and check the integrity of the

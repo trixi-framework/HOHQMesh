@@ -2041,6 +2041,86 @@
 
       END SUBROUTINE gatherElementBoundaryInfo
 !
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE MakeBoundaryInfoRightHanded(bInfo, a, b, c)  
+         USE LineReflectionModule
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (ElementBoundaryInfo) :: bInfo
+         REAL(KIND=RP)              :: a, b, c
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                    :: idSwap
+         CHARACTER(LEN=32)          :: strSwap
+         REAL(KIND=RP), ALLOCATABLE :: x(:,:,:)
+         INTEGER                    :: j, k, N
+!
+!        ---------------------
+!        Two nodes swap places
+!        ---------------------
+!
+         idSwap             = bInfo % nodeIDs(2)
+         bInfo % nodeIDs(2) = bInfo % nodeIDs(4)
+         bInfo % nodeIDs(4) = idSwap
+!
+!        --------------------------
+!        All four edges swap places
+!        --------------------------
+!
+         idSwap                = bInfo % bCurveFlag(2)
+         bInfo % bCurveFlag(2) = bInfo % bCurveFlag(3)
+         bInfo % bCurveFlag(3) = idSwap
+         
+         idSwap                = bInfo % bCurveFlag(1)
+         bInfo % bCurveFlag(1) = bInfo % bCurveFlag(4)
+         bInfo % bCurveFlag(4) = idSwap
+!
+!        --------------------------------
+!        All four edges swap places names
+!        --------------------------------
+!
+         strSwap               = bInfo % bCurveName(2)
+         bInfo % bCurveName(2) = bInfo % bCurveName(3)
+         bInfo % bCurveName(3) = strSwap
+         
+         strSwap               = bInfo % bCurveName(1)
+         bInfo % bCurveName(1) = bInfo % bCurveName(4)
+         bInfo % bCurveName(4) = strSwap
+!
+!        --------------------------------------------------------
+!        Boundary curves swap and change direction. At the same
+!        time, might as well perform the reflection on the points
+!        --------------------------------------------------------
+!
+         IF ( ALLOCATED(bInfo % x) )     THEN
+         
+            N = UBOUND(bInfo % x,2) 
+            ALLOCATE(x, source = bInfo % x)
+            
+            DO k = 1, 4 
+               DO j = 0,N 
+                  x(:,j,k) = reflectAboutLine(bInfo % x(:,N-j,k), a, b, c)
+               END DO 
+            END DO
+            
+            bInfo % x(:,:,4) = x(:,:,1)
+            bInfo % x(:,:,1) = x(:,:,4)
+            bInfo % x(:,:,3) = x(:,:,2)
+            bInfo % x(:,:,2) = x(:,:,3)
+
+         END IF 
+
+          
+      END SUBROUTINE MakeBoundaryInfoRightHanded
+!
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE CompleteElementConstruction(project)
@@ -2148,15 +2228,180 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ReflectMesh( mesh, symmetryCurve)  
-         IMPLICIT NONE  
-         TYPE(SMMesh) , POINTER :: mesh
-         TYPE(SMCurve), POINTER :: symmetryCurve
+      SUBROUTINE ReflectMesh( mesh, symmetryCurve)
+         USE ConnectionsModule
+         USE LineReflectionModule
+         USE MeshCleaner, ONLY: MakeElement_RightHanded
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(SMMesh)  , POINTER :: mesh
+         CLASS(SMCurve), POINTER :: symmetryCurve
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         REAL(KIND=RP)                       :: x0(3), x1(3)
+         REAL(KIND=RP)                       :: a, b, c
+         INTEGER                             :: nodeID, elemID
+         INTEGER                             :: bCurveID
+         INTEGER                             :: errorCode
+         CLASS(FTLinkedList)       , POINTER :: newNodes
+         CLASS(FTLinkedList)       , POINTER :: savedElements
+         TYPE(FTLinkedListIterator), POINTER :: nodeItr, elemItr
+         CLASS(FTObject)           , POINTER :: obj
+         CLASS(SMNode)             , POINTER :: oldNode, newNode
+         TYPE(SMElement)           , POINTER :: oldElement, newElement, e
+         INTEGER                             :: i, j
 !
 !        -------------------------------------------------
 !        Determine the mapping function for the reflection
 !        -------------------------------------------------
 !
+         x0 = symmetryCurve % positionAt(t = 0.0_RP)
+         x1 = symmetryCurve % positionAt(t = 1.0_RP)
+         CALL ComputeLineCoefs(x0,x1,a,b,c)
+         
+         bCurveID = symmetryCurve % id()
+!
+!        -----------------------------------------------------------
+!        Copy current elements to save for adding back into the mesh
+!        While we're at it, flag nodes along the symmetry boundary
+!        with the symmetry boundary ID, since corner points might
+!        be associated with another boundary.
+!        -----------------------------------------------------------
+!
+         ALLOCATE(savedElements)
+         CALL savedElements % init()
+         
+         elemItr => mesh % elementsIterator
+         elemID  = newElementID(mesh)
+         
+         CALL elemItr % setToStart()
+                  
+         DO WHILE(.NOT. elemItr % isAtEnd())
+            
+            obj => elemItr % object()
+            CALL castToSMElement(obj,oldElement)
+            
+            newElement => SMElementCopy(oldElement)
+            obj        => newElement
+            newElement % id = elemID
+
+            CALL savedElements % add(obj)
+            CALL release(obj)
+            
+            elemID = elemID + 1
+            CALL elemItr % MoveToNext()
+!
+!           --------------------
+!           Flag symmetry points
+!           --------------------
+!
+            DO j = 1, 4 
+               IF ( oldElement % boundaryInfo % bCurveName(j) == SYMMETRY_CURVE_NAME )     THEN
+                  oldElement % nodes(edgeMap(1,j)) % node % bCurveID = bCurveID 
+                  oldElement % nodes(edgeMap(2,j)) % node % bCurveID = bCurveID 
+               END IF 
+            END DO
+            
+         END DO
+!
+!        ---------------------------------------------------
+!        Copy nodes, except those along the symmetryCurve
+!        and reassign node pointers in the elements
+!        ---------------------------------------------------
+!
+         CALL deallocateNodeToElementConnections
+         !Ignore error code since this won't ReflectMesh wont be called otherwise.
+         CALL makeNodeToElementConnections(mesh, errorCode) 
+         
+         ALLOCATE(newNodes)
+         CALL newNodes % init()
+         
+         nodeItr => mesh % nodesIterator
+         nodeID  = newNodeID(mesh)
+         
+         CALL nodeItr % setToStart()
+         
+         DO WHILE( .NOT. nodeItr % isAtEnd() )
+         
+            obj => nodeItr % object()
+            CALL castToSMNode(obj,oldNode)
+!
+            IF ( oldNode % bCurveID /= bCurveID )     THEN !Skip over nodes along the symmetry axis
+!
+!              -----------------------------------------------------
+!              Make a new node that is the reflection of the old one
+!              and add it to the list.
+!              -----------------------------------------------------
+!
+               ALLOCATE(newNode)
+               CALL newNode % init()
+               CALL copyOfNodeType(oldNode,newNode)
+   
+               newNode % x  = reflectAboutLine(oldNode % x, a, b, c)
+               newNode % id = nodeID
+               nodeID       = nodeID + 1
+               
+               obj => newNode
+               CALL newNodes % add(obj)
+               CALL release(obj)
+!
+!              ---------------------------------------------------------------------
+!              Reassign pointers in the elements that use the oldNode to the newNode
+!              ---------------------------------------------------------------------
+!
+               DO i = 1, numElementsForNode(oldNode % id) 
+                  e => elementsForNodes(i, oldNode % id) % element
+                  DO j = 1, e % eType 
+                     IF ( ASSOCIATED(e % nodes(j) % node, oldNode) )     THEN
+                        e % nodes(j) % node => newNode 
+                        CALL newNode % retain()
+                     END IF 
+                  END DO 
+               END DO 
+               
+            END IF
+            
+            CALL nodeItr % moveToNext()
+         END DO 
+!
+!        ---------------------------------------------------------------
+!        Finish up by
+!        1. Adding the new nodes to the mesh's node list
+!        2. Making the flipped elements right handed
+!        3. Fixing the flipped element's boundaryInfo block due to #2
+!        4. Adding back the original elements to the mesh
+!        ---------------------------------------------------------------
+!
+         CALL mesh % nodes % addObjectsFromList(newNodes)
+         CALL releaseFTLinkedList(newNodes)
+         
+         CALL elemItr % setToStart()
+         DO WHILE(.NOT. elemItr % isAtEnd()) 
+         
+            obj => elemItr % object()
+            CALL castToSMElement(obj,e)
+            CALL MakeElement_RightHanded(e)
+            CALL MakeBoundaryInfoRightHanded(e % boundaryInfo, a, b, c)
+            
+            CALL elemItr % moveToNext()
+         END DO 
+         
+         CALL mesh % elements % addObjectsFromList(savedElements)
+!
+!        --------
+!        Clean up
+!        --------
+!
+         CALL releaseFTLinkedList(newNodes)
+         CALL releaseFTLinkedList(savedElements)
+         
       END SUBROUTINE ReflectMesh
 !
 !////////////////////////////////////////////////////////////////////////

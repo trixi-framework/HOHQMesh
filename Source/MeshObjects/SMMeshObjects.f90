@@ -481,6 +481,48 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      FUNCTION SMElementCopy(source) RESULT(copy)
+         IMPLICIT NONE  
+         TYPE(SMElement), POINTER :: source, copy
+         INTEGER                  :: j
+         
+         ALLOCATE(copy)
+         CALL copy % init()
+         
+         copy % eType  = source % eType
+         copy % remove = source % remove
+         copy % N      = source % N
+         copy % materialID = source % materialID
+         IF ( ALLOCATED(source % nodes) )     THEN
+            copy % nodes = source % nodes
+            DO j = 1, copy % eType 
+               CALL copy % nodes(j) % node % retain() 
+            END DO 
+         END IF 
+         CALL CopyBoundaryInfo(source % boundaryInfo,copy % boundaryInfo)
+         IF ( ALLOCATED(source % xPatch) )     THEN
+            copy % xPatch = source % xPatch 
+         END IF 
+         
+      END FUNCTION SMElementCopy
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE CopyBoundaryInfo(source,copy)  
+         IMPLICIT NONE
+         TYPE(ElementBoundaryInfo) :: source, copy
+
+         copy % nodeIDs = source % nodeIDs
+         copy % bCurveFlag = source % bCurveFlag
+         copy % bCurveName = source % bCurveName
+         IF ( ALLOCATED( source % x) )     THEN
+            copy % x = source % x 
+         END IF 
+          
+      END SUBROUTINE CopyBoundaryInfo
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
       SUBROUTINE destructElement(self) 
          IMPLICIT NONE  
          TYPE(SMElement) :: self
@@ -751,7 +793,7 @@
       SUBROUTINE ElementBoundaryInfoInit( self, N ) 
          IMPLICIT NONE
          TYPE(ElementBoundaryInfo) :: self
-         INTEGER                 :: N ! = polynomial order
+         INTEGER                   :: N ! = polynomial order
          
          ALLOCATE( self%x(3,0:N,4) )
          

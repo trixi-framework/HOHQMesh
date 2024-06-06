@@ -40,6 +40,7 @@
 !     ---------
 !
       INTEGER, PARAMETER :: SM_CURVE_NAME_LENGTH = 32
+      CHARACTER(LEN=SM_CURVE_NAME_LENGTH), PARAMETER :: SYMMETRY_CURVE_NAME = "symmetry"
 !
 !     ---------------------
 !     Base class definition
@@ -423,7 +424,7 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       LOGICAL FUNCTION curveIsStraight(self)
-         USE Geometry, ONLY: AlmostEqual
+         USE ProgramGlobals, ONLY: straightLineTol
 !
 !     -------------------------------------------------------------------------------
 !     To see if a curve is straight, we check to see if second derivative vanishes
@@ -440,7 +441,7 @@
          e   = MAXVAL(ABS(sec))
          
          curveIsStraight = .FALSE.
-         IF ( AlmostEqual(e,0.0_RP) )     THEN !Lies along the line
+         IF ( e <= straightLineTol )     THEN !Lies along the line
                curveIsStraight = .TRUE. 
          END IF
 

@@ -329,9 +329,7 @@
          IMPLICIT NONE
          TYPE(QuadTreeGrid)          :: self
          INTEGER                      :: i,j, N, M
-         CLASS(SMQuad)      , POINTER :: quad => NULL()
          TYPE (SMNode)      , POINTER :: node => NULL()
-         CLASS(FTObject)    , POINTER :: obj
 
          N = self % N(1)
          M = self % N(2)

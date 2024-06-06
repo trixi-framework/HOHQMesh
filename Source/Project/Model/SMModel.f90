@@ -1514,7 +1514,6 @@
 !        Arguments
 !        ---------
 !
-         INTEGER                        :: curveID
          CLASS(SMModel)                 :: self
          CLASS(SMCurve)       , POINTER :: curve
          CLASS(SMChainedCurve), POINTER :: chain
@@ -1524,14 +1523,18 @@
 !        ---------------
 !
          INTEGER :: i
+         CLASS(SMCurve)       , POINTER :: chainCurve
          
          NULLIFY(curve)
          chain => self % outerBoundary
          IF(.NOT. ASSOCIATED( chain)) RETURN
          
          DO i = 1, chain % COUNT() 
-            curve => chain % curveAtIndex(i) 
-            IF( curve % curveName() == "symmetry") RETURN 
+            chainCurve => chain % curveAtIndex(i) 
+            IF( chainCurve % curveName() == SYMMETRY_CURVE_NAME) THEN
+               curve => chainCurve
+               RETURN
+            END IF 
          END DO 
          
       END FUNCTION symmetryCurve
