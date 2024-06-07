@@ -112,7 +112,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      FUNCTION lineCoeffientTestError()  RESULT(e)
+      FUNCTION lineCoefficientTestError()  RESULT(e)
 !
 !        ---------------------------------------------------------
 !        Compute two points along a line ax+by+c = 0 and 
@@ -141,7 +141,7 @@
          
          e = MAX(ABS(r*a-aT), ABS(r*b-BT), ABS(r*c-cT))
 
-      END FUNCTION lineCoeffientTestError
+      END FUNCTION lineCoefficientTestError
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -171,7 +171,7 @@
       SUBROUTINE GetTestLineCoefficients(a,b,c)
 !
 !        -----------------------------------------------
-!        For testing purposes, set coeffients for a line
+!        For testing purposes, set Coefficients for a line
 !        ax+by+c = 0
 !        -----------------------------------------------
 !

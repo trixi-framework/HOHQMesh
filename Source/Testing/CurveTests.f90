@@ -201,10 +201,10 @@
 !        ---------------------
 !
          CALL FTAssertEqual(expectedValue = 0.0_RP,                  &
-                            actualValue   = lineCoeffientTestError(),&
+                            actualValue   = lineCoefficientTestError(),&
                             relTol        = tol,                     &
                             absTol        = tol/10.0_RP,             &
-                            msg           = "lineCoeffientTestError")
+                            msg           = "lineCoefficientTestError")
          CALL FTAssertEqual(expectedValue = 0.0_RP,                  &
                             actualValue   = lineReflectionTestError(),&
                             relTol        = tol,                     &

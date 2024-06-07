@@ -289,7 +289,7 @@
 ! 
       SUBROUTINE copyNodeType(source, copy)  
          IMPLICIT NONE  
-         CLASS(SMNode), POINTER :: copy
+         TYPE (SMNode), POINTER :: copy
          TYPE (SMNode)          :: source
          
          copy % x               = source % x              

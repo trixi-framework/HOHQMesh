@@ -2254,7 +2254,7 @@
          CLASS(FTLinkedList)       , POINTER :: savedElements
          TYPE(FTLinkedListIterator), POINTER :: nodeItr, elemItr
          CLASS(FTObject)           , POINTER :: obj
-         CLASS(SMNode)             , POINTER :: oldNode, newNode
+         TYPE(SMNode)              , POINTER :: oldNode, newNode
          TYPE(SMElement)           , POINTER :: oldElement, newElement, e
          INTEGER                             :: i, j
 !
