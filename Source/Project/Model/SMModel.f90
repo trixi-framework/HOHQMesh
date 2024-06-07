@@ -1508,6 +1508,12 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       FUNCTION symmetryCurve(self)  RESULT(curve)
+!
+!     ------------------------------------------------------------
+!     Returns the first curve in the outer boundary with the name 
+!     SYMMETRY_CURVE_NAME
+!     ------------------------------------------------------------
+!
          IMPLICIT NONE
 !
 !        ---------
@@ -1538,5 +1544,76 @@
          END DO 
          
       END FUNCTION symmetryCurve
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      FUNCTION allSymmetryCurvesAreColinear(self) RESULT(r)
+         USE LineReflectionModule
+         IMPLICIT NONE  
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMModel)  :: self
+         LOGICAL         ::r
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(SMCurve)       , POINTER :: firstCurve
+         CLASS(SMChainedCurve), POINTER :: chain
+         CLASS(SMCurve)       , POINTER :: chainCurve
+         INTEGER                        :: i, firstID
+         REAL(KIND=RP)                  :: a1, b1, c1
+         REAL(KIND=RP)                  :: a , b , c
+         REAL(KIND=RP)                  :: x0(3), x1(3)
+         
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         
+         r = .TRUE.
+         chain => self % outerBoundary
+         IF(.NOT. ASSOCIATED( chain)) RETURN
+         NULLIFY(firstCurve)
+         
+         DO i = 1, chain % COUNT() 
+            chainCurve => chain % curveAtIndex(i) 
+            
+            IF( chainCurve % curveName() == SYMMETRY_CURVE_NAME) THEN
+               
+               IF ( .NOT. curveIsStraight(chainCurve) )     THEN
+                  WRITE(str,'(A,i3,A)') "Symmetry curve ", i, " is not straight"
+                  CALL ThrowErrorExceptionOfType(poster = "allSymmetryCurvesAreColinear",&
+                                                 msg    = str                           , &
+                                                 typ    = FT_ERROR_WARNING)
+                  r = .FALSE.
+               END IF 
+           
+               IF ( .NOT. ASSOCIATED(firstCurve) )     THEN
+                  firstCurve => chainCurve
+                  firstID = firstCurve % id()
+                  x0 = firstCurve % positionAt(t = 0.0_RP)
+                  x1 = firstCurve % positionAt(t = 1.0_RP)
+                  CALL ComputeLineCoefs(x0,x1,a1,b1,c1)
+                  CYCLE
+               END IF
+
+               x0 = chainCurve % positionAt(t = 0.0_RP)
+               x1 = chainCurve % positionAt(t = 1.0_RP)
+               CALL ComputeLineCoefs(x0,x1,a,b,c)
+               
+               IF ( .NOT. linesAreColinear(a,b,c, a1,b1,c1) )     THEN
+                  WRITE(str,'(A,i3,i3,A)') "Symmetry curves ", firstID, i, " are not colinear"
+                  CALL ThrowErrorExceptionOfType(poster = "allSymmetryCurvesAreColinear",&
+                                                 msg    = str                           , &
+                                                 typ    = FT_ERROR_WARNING)
+                  r = .FALSE.
+               END IF 
+              
+            END IF 
+         END DO 
+          
+      END FUNCTION allSymmetryCurvesAreColinear
 
       END Module SMModelClass

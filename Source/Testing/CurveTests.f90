@@ -59,6 +59,7 @@
 !
          TYPE(SMLine)  :: line
          REAL(KIND=RP) :: xStart(3), xEnd(3), x(3)
+         REAL(KIND=RP) :: a,b,c, aT,bT,cT
 !
 !        -----------------------
 !        Circular arc definition
@@ -210,6 +211,17 @@
                             relTol        = tol,                     &
                             absTol        = tol/10.0_RP,             &
                             msg           = "lineReflectionTestError")
+!
+!        ----------------
+!        Test colinearity
+!        ----------------
+!
+         CALL GetTestLineCoefficients(a, b, c)
+         aT = 1.5_RP*a; bT = 1.5_RP*b; cT = 1.5_RP*c
+         CALL FTAssert(linesAreColinear(a,b,c,aT,bT,cT),msg = "Colinear lines are not colinear")
+         
+         aT = 1.5_RP*a; bT = 1.1_RP*b; cT = 1.75_RP*c
+         CALL FTAssert(.NOT. linesAreColinear(a,b,c,aT,bT,cT),msg = "Colinear lines are not colinear")
          
       END SUBROUTINE TestCurves
 !

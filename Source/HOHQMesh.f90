@@ -114,6 +114,7 @@
 !        -----------------
 !
          CALL stopWatch % start()
+         
             CALL GenerateQuadMesh(project, errorCode)
 !
 !           -----------------------------------------------------------
@@ -122,11 +123,11 @@
 !
             symmetryCurve => project % model % symmetryCurve()
             IF ( ASSOCIATED(symmetryCurve) )     THEN
-               IF ( symmetryCurve % curveIsStraight() )     THEN
+               IF ( allSymmetryCurvesAreColinear(project % model) )     THEN
                   CALL ReflectMesh(project % mesh, symmetryCurve)
                ELSE 
                   CALL ThrowErrorExceptionOfType(poster = "HOHQMesh", &
-                            msg          = "Curve labeled as 'symmetry' is not straight. Ignoring...", &
+                            msg          = "A symmetry curve is is not straight or colinear. Ignoring...", &
                             typ          = FT_ERROR_WARNING)
                END IF 
             END IF 

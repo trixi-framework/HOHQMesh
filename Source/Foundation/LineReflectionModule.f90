@@ -32,7 +32,9 @@
 !
    Module LineReflectionModule 
       USE SMConstants
-      IMPLICIT NONE  
+      IMPLICIT NONE
+      
+      REAL(KIND=RP), PRIVATE :: colinearTolerance = 1.0d-5
 !
 !  ========
    CONTAINS
@@ -90,7 +92,7 @@
 !
 !     -----------------------------------------
 !     Two points along the line ax + by + c = 0
-!     where the coefficents are defined in 
+!     where the coefficients are defined in 
 !     GetTestLineCoefficients. Used for testing
 !     -----------------------------------------
 !
@@ -142,6 +144,43 @@
          e = MAX(ABS(r*a-aT), ABS(r*b-BT), ABS(r*c-cT))
 
       END FUNCTION lineCoefficientTestError
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION linesAreColinear(a,b,c,at,bt,ct)
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         REAL(KIND=RP) :: a, b, c
+         REAL(KIND=RP) :: aT, bT, cT
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         REAL(KIND=RP) :: e, r1, r2, r
+ !
+!        ----------------------------------------------------
+!        The coefficients can be scaled differently, but must
+!        all have the same scale for two lines to be colinear
+!        ----------------------------------------------------
+!
+         r1 = MAX(ABS(at),ABS(bt),ABS(ct))
+         r2 = MAX(ABS(a),ABS(b),ABS(c))
+         r  = r1/r2
+         
+         e = MAX(ABS(r*a-aT), ABS(r*b-BT), ABS(r*c-cT))
+         
+         IF ( e < colinearTolerance )     THEN
+            linesAreColinear = .TRUE. 
+         ELSE 
+            linesAreColinear = .FALSE. 
+         END IF 
+        
+      END FUNCTION linesAreColinear
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
