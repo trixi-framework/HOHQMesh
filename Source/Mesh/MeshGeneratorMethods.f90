@@ -1948,8 +1948,8 @@
 !        Gather up boundary edge information
 !        -----------------------------------
 !
-         e % boundaryInfo%bCurveName = "---"
-         e % boundaryInfo%bCurveFlag = OFF
+         e % boundaryInfo % bCurveName = NO_BC_STRING
+         e % boundaryInfo % bCurveFlag = OFF
 
          DO k = 1, 4
             node1 => e % nodes(edgeMap(1,k)) % node
@@ -1969,7 +1969,7 @@
 !              -----------------------------------------------------------
 !
                e % boundaryInfo % bCurveFlag(k) = ON
-               IF( node1 % nodeType == ROW_SIDE )     THEN
+               IF( node2 % whereOnBoundary == 0.0_RP .OR. node2 % whereOnBoundary == 1.0_RP )     THEN
                   curveID(k)    = node1 % bCurveID
                   c             => model % curveWithID(node1 % bCurveID, chain)
                ELSE
@@ -1978,8 +1978,8 @@
                END IF
 
                e % boundaryInfo % bCurveName(k) = c % curveName()
-               tStart(k)            = node1 % gWhereOnBoundary
-               tEnd(k)              = node2 % gWhereOnBoundary
+               tStart(k)                        = node1 % gWhereOnBoundary
+               tEnd(k)                          = node2 % gWhereOnBoundary
 
             ELSE IF ( IsOnOuterBox(node1) .AND. IsOnOuterBox(node2) )     THEN
 !
@@ -2305,6 +2305,7 @@
                   oldElement % nodes(edgeMap(1,j)) % node % bCurveID = bCurveID 
                   oldElement % nodes(edgeMap(2,j)) % node % bCurveID = bCurveID 
                   oldElement % boundaryInfo % bCurveName(j) = NO_BC_STRING
+                  newElement % boundaryInfo % bCurveName(j) = NO_BC_STRING
                END IF 
             END DO
             
@@ -2367,7 +2368,6 @@
                      END IF 
                   END DO 
                END DO 
-               
             END IF
             
             CALL nodeItr % moveToNext()
