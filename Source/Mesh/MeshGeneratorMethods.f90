@@ -2105,7 +2105,12 @@
             N = UBOUND(bInfo % x,2) 
             ALLOCATE(x, source = bInfo % x)
             
-            DO k = 1, 4 
+            DO k = 1, 3, 2 
+               DO j = 0,N 
+                  x(:,j,k) = reflectAboutLine(bInfo % x(:,j,k), a, b, c)
+               END DO 
+            END DO
+            DO k = 2, 4, 2 
                DO j = 0,N 
                   x(:,j,k) = reflectAboutLine(bInfo % x(:,N-j,k), a, b, c)
                END DO 
@@ -2304,8 +2309,10 @@
                IF ( oldElement % boundaryInfo % bCurveName(j) == SYMMETRY_CURVE_NAME )     THEN
                   oldElement % nodes(edgeMap(1,j)) % node % bCurveID = bCurveID 
                   oldElement % nodes(edgeMap(2,j)) % node % bCurveID = bCurveID 
-                  oldElement % boundaryInfo % bCurveName(j) = NO_BC_STRING
-                  newElement % boundaryInfo % bCurveName(j) = NO_BC_STRING
+                  oldElement % boundaryInfo % bCurveName(j)          = NO_BC_STRING
+                  newElement % boundaryInfo % bCurveName(j)          = NO_BC_STRING
+                  oldElement % boundaryInfo % bCurveFlag(j)          = NONE
+                  newElement % boundaryInfo % bCurveFlag(j)          = NONE
                END IF 
             END DO
             
@@ -2364,6 +2371,7 @@
                   DO j = 1, e % eType 
                      IF ( ASSOCIATED(e % nodes(j) % node, oldNode) )     THEN
                         e % nodes(j) % node => newNode 
+                        e % boundaryInfo % nodeIDs(j) = newNode % id
                         CALL newNode % retain()
                      END IF 
                   END DO 
@@ -2391,8 +2399,14 @@
          
             obj => elemItr % object()
             CALL castToSMElement(obj,e)
-            CALL MakeElement_RightHanded(e)
-            CALL MakeBoundaryInfoRightHanded(e % boundaryInfo, a, b, c)
+            DO j = 1, e % eType 
+               e % boundaryInfo % nodeIDs(j) = e % nodes(j) % node % id 
+            END DO 
+            IF ( .NOT. elementIsRightHanded(e) )     THEN
+               CALL MakeElement_RightHanded(e)
+               CALL MakeBoundaryInfoRightHanded(e % boundaryInfo, a, b, c)
+            END IF 
+
             IF ( ALLOCATED(e % xPatch) )     THEN
                DO j = 0, UBOUND(e % xPatch,3) 
                   DO i = 0, UBOUND(e % xPatch, 2)

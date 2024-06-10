@@ -581,6 +581,46 @@
          END SELECT
          
       END SUBROUTINE castToSMElement
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      LOGICAL FUNCTION elementIsRightHanded(e)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(SMElement) :: e
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER         :: loop(6) = (/1,2,3,4,1,2/)
+         REAL(KIND=RP)   :: v1(3), v2(3)
+         REAL(KIND=RP)   :: p1(3), p2(3), p3(3)
+         REAL(KIND=RP)   :: s
+         INTEGER         :: k
+         
+         elementIsRightHanded = .true.
+         DO k = 1, 4
+            p1 = e % nodes(k)         % node % x
+            p2 = e % nodes(loop(k+1)) % node % x
+            p3 = e % nodes(loop(k+2)) % node % x
+            
+            v1 = p2 - p1
+            v2 = p3 - p2
+            
+            s  = v1(1)*v2(2) - v1(2)*v2(1)
+            
+            IF ( s < 0.0_RP )     THEN
+               elementIsRightHanded = .false.
+               EXIT
+            END IF
+            
+         END DO
+      END FUNCTION elementIsRightHanded
 !@mark -
 !
 !//////////////////////////////////////////////////////////////////////// 
