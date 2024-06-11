@@ -660,6 +660,7 @@ FTDataClass.o \
 SMChainedCurveClass.o \
 ParametricEquationCurveClass.o \
 DataFileTopographyClass.o \
+LineReflectionModule.o \
 SMConstants.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Project/Model/SMModel.f90
 
