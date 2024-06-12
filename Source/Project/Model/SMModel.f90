@@ -1529,15 +1529,18 @@
 !        ---------------
 !
          INTEGER :: i
-         CLASS(SMCurve)       , POINTER :: chainCurve
+         CLASS(SMCurve)        , POINTER :: chainCurve
+         CHARACTER(SM_CURVE_NAME_LENGTH) :: str
          
          NULLIFY(curve)
          chain => self % outerBoundary
          IF(.NOT. ASSOCIATED( chain)) RETURN
          
          DO i = 1, chain % COUNT() 
-            chainCurve => chain % curveAtIndex(i) 
-            IF( chainCurve % curveName() == SYMMETRY_CURVE_NAME) THEN
+            chainCurve => chain % curveAtIndex(i)
+            str = chainCurve % curveName()
+            CALL toLower(str)
+            IF( str == SYMMETRY_CURVE_NAME) THEN
                curve => chainCurve
                RETURN
             END IF 
@@ -1580,7 +1583,9 @@
          DO i = 1, chain % COUNT() 
             chainCurve => chain % curveAtIndex(i) 
             
-            IF( chainCurve % curveName() == SYMMETRY_CURVE_NAME) THEN
+            str = chainCurve % curveName()
+            CALL toLower(str)
+            IF( str == SYMMETRY_CURVE_NAME) THEN
                
                IF ( .NOT. curveIsStraight(chainCurve) )     THEN
                   WRITE(str,'(A,i3,A)') "Symmetry curve ", i, " is not straight"

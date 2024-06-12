@@ -2262,6 +2262,7 @@
          TYPE(SMNode)              , POINTER :: oldNode, newNode
          TYPE(SMElement)           , POINTER :: oldElement, newElement, e
          INTEGER                             :: i, j
+         CHARACTER(SM_CURVE_NAME_LENGTH)     :: str
 !
 !        -------------------------------------------------
 !        Determine the mapping function for the reflection
@@ -2305,8 +2306,10 @@
 !           being a boundary anymore.
 !           -----------------------------------------------------
 !
-            DO j = 1, 4 
-               IF ( oldElement % boundaryInfo % bCurveName(j) == SYMMETRY_CURVE_NAME )     THEN
+            DO j = 1, 4
+               str = oldElement % boundaryInfo % bCurveName(j)
+               CALL toLower(str)
+               IF ( str == SYMMETRY_CURVE_NAME )     THEN
                   oldElement % nodes(edgeMap(1,j)) % node % bCurveID = bCurveID 
                   oldElement % nodes(edgeMap(2,j)) % node % bCurveID = bCurveID 
                   oldElement % boundaryInfo % bCurveName(j)          = NO_BC_STRING
