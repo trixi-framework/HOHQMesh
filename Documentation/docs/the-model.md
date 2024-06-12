@@ -18,6 +18,11 @@ As an example, the model in Fig. 16 has one outer boundary - the outer triangle 
 ![B&M](https://user-images.githubusercontent.com/25242486/241190479-ba50d797-3bd9-41b1-bc38-03fc86f8c3da.png)
 <p align = "center"> Fig. 17. Mesh with interior interfaces bounded by circles.</p>
 
+The mesh generator generates unstructured meshes, and there is no reason in general why a mesh must be symmetric if the model is symmetric. Since symmetry can be a desirable feature, HOHQMesh allows one to define a symmetry boundary about which the mesh will be symmetric by setting boundary names as "symmetry". The symmetry boundary must be a straight line (no matter how that is defined, see below) and multiple symmetry boundaries must be co-linear. What HOHQMesh does is take a model and mesh it. Then, if one or more of the outer boundary curves are named "symmetry", that mesh will be reflected about the symmetry line and the result will be a perfectly symmetric mesh. An example is shown in Fig. 18.
+
+![NotREFL](images/Reflection.png)
+<p align = "center"> Fig. 18. A mesh (left) reflected about the red boundary line (right).</p>
+
 ## Boundary Curves<a name="BoundaryCurves"></a>
 
 
