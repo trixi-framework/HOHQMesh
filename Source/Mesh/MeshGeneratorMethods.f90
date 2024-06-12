@@ -2088,11 +2088,15 @@
 !        --------------------------------
 !
          strSwap               = bInfo % bCurveName(2)
+         IF(strSwap .ne. NO_BC_STRING) strSwap = TRIM(strSwap)  //"_R"
          bInfo % bCurveName(2) = bInfo % bCurveName(3)
+         IF(bInfo % bCurveName(2) .ne. NO_BC_STRING) bInfo % bCurveName(2) = TRIM(bInfo % bCurveName(2))//"_R"
          bInfo % bCurveName(3) = strSwap
          
          strSwap               = bInfo % bCurveName(1)
+         IF(strSwap .ne. NO_BC_STRING) strSwap = TRIM(strSwap)  //"_R"
          bInfo % bCurveName(1) = bInfo % bCurveName(4)
+         IF(bInfo % bCurveName(1) .ne. NO_BC_STRING) bInfo % bCurveName(1) = TRIM(bInfo % bCurveName(1))//"_R"
          bInfo % bCurveName(4) = strSwap
 !
 !        --------------------------------------------------------
