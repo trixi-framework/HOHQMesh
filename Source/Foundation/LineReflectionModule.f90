@@ -199,7 +199,7 @@
          x1 = [1.0_RP,1.5_RP,0.0_RP]
          CALL ComputeLineCoefs(x0,x1,a,b,c)
          
-         p  = [1.0,0.5,0.0]
+         p  = [1.0_RP,0.5_RP,0.0_RP]
          pr = reflectAboutLine(p,a,b,c)
          e = MAXVAL(ABS(pr-pre))
          
