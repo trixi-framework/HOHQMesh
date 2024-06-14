@@ -62,7 +62,7 @@
 !        Other
 !        -----
 !
-         CHARACTER(LEN=*), PARAMETER :: version           = "1.4.3-pre"
+         CHARACTER(LEN=*), PARAMETER :: version           = "1.5.0"
          LOGICAL                     :: test              = .FALSE.
          LOGICAL                     :: generateTest      = .FALSE.
          LOGICAL                     :: didGenerate3DMesh = .FALSE.
@@ -98,7 +98,7 @@
 
             CALL WritePlotFile(project, didGenerate3DMesh)
             CALL WriteMeshFile(project, didGenerate3DMesh)
-            
+
             str = project % runParams % statsFileName
             CALL toLower(str)
             IF ( str /= "none" )     THEN
