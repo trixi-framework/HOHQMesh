@@ -99,9 +99,9 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: MeshFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: plotFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
-         INTEGER                    :: meshFileFormat
-         INTEGER                    :: polynomialOrder
-         INTEGER                    :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
+         INTEGER                                 :: meshFileFormat
+         INTEGER                                 :: polynomialOrder
+         INTEGER                                 :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
       END TYPE RunParameters
       PRIVATE :: RunParameters
 

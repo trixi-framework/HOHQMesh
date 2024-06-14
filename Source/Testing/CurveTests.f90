@@ -41,6 +41,7 @@
          USE TestSuiteManagerClass
          USE FTAssertions
          USE SharedExceptionManagerModule
+         USE LineReflectionModule
 !
 !        ----------------------------------------------------------------
 !        Instantiate and test for correctness the different curve classes
@@ -58,6 +59,7 @@
 !
          TYPE(SMLine)  :: line
          REAL(KIND=RP) :: xStart(3), xEnd(3), x(3)
+         REAL(KIND=RP) :: a,b,c, aT,bT,cT
 !
 !        -----------------------
 !        Circular arc definition
@@ -103,6 +105,8 @@
                                absTol        = tol/10.0_RP,    &
                                msg           = "Line evaluation error too large")
          END DO
+         
+         CALL FTAssert(test = line % curveIsStraight(), msg = "Line straightness")
          CALL destructLine(self = line)
 !
 !        -----------
@@ -129,6 +133,7 @@
                                absTol        = tol/10.0_RP,    &
                                msg           = "Circle evaluation error too large")
          END DO
+         CALL FTAssert(test = .NOT. circle % curveIsStraight(), msg = "Circle shouldn't be straight")
          CALL destructCircularArc(self = circle)
 !
 !        ------------------------------
@@ -141,6 +146,7 @@
                                                  curveName = "Parametric Curve",&
                                                  id        = 1)
          CALL FTAssert(test = .NOT.catch(), msg = "Equation has errors")
+         CALL FTAssert(test = .NOT. curve % curveIsStraight(), msg = "Curve shouldn't be straight")
 
          DO j = 1, 3
             t      = j*dt
@@ -188,7 +194,35 @@
                                absTol        = tol/10.0_RP,    &
                                msg           = "Spline error too large")
          END DO
-
+         CALL FTAssert(test = .NOT. spline % curveIsStraight(), msg = "Spline shouldn't be straight")
+         CALL DestructSplineCurve(spline)
+!
+!        ---------------------
+!        Test reflecting lines
+!        ---------------------
+!
+         CALL FTAssertEqual(expectedValue = 0.0_RP,                  &
+                            actualValue   = lineCoefficientTestError(),&
+                            relTol        = tol,                     &
+                            absTol        = tol/10.0_RP,             &
+                            msg           = "lineCoefficientTestError")
+         CALL FTAssertEqual(expectedValue = 0.0_RP,                  &
+                            actualValue   = lineReflectionTestError(),&
+                            relTol        = tol,                     &
+                            absTol        = tol/10.0_RP,             &
+                            msg           = "lineReflectionTestError")
+!
+!        ----------------
+!        Test colinearity
+!        ----------------
+!
+         CALL GetTestLineCoefficients(a, b, c)
+         aT = 1.5_RP*a; bT = 1.5_RP*b; cT = 1.5_RP*c
+         CALL FTAssert(linesAreColinear(a,b,c,aT,bT,cT),msg = "Colinear lines are not colinear")
+         
+         aT = 1.5_RP*a; bT = 1.1_RP*b; cT = 1.75_RP*c
+         CALL FTAssert(.NOT. linesAreColinear(a,b,c,aT,bT,cT),msg = "Colinear lines are not colinear")
+         
       END SUBROUTINE TestCurves
 !
 !////////////////////////////////////////////////////////////////////////

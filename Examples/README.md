@@ -25,6 +25,7 @@ For this reason, we have reduced the storage requirements in the following ways:
    - Pill
    - Pond3D
    - SplineGeometry
+   - PacMan
 
    Those that do not have a counterpart have plot file examples in this directory.
 
@@ -62,6 +63,7 @@ they exercise.
 | **Spline Geometry**       | Free form domain defined as a spline               | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **SuperiorMain**          | Coastline of Lake                                  | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Square**                | Uniform Cartesian mesh                             | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **PacMan**                | A curved domain reflected about a line             | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
 
 ## Overview of 3D Examples
 

@@ -71,7 +71,7 @@ Just leave out any of the optional parameters if you want the default values to 
 
 ## Refinement Regions<a name="RefinementRegions"></a>
 ![Refinements](https://user-images.githubusercontent.com/3637659/121807868-46ae1680-cc56-11eb-8941-c9ad8d259da2.png)
-<p align = "center"> Fig. 16. Two refinement centers and a refinement line</p>
+<p align = "center"> Fig. 19. Two refinement centers and a refinement line</p>
 
 Manual scaling of the mesh size can be performed by including any combination of
 

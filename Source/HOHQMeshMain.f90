@@ -98,6 +98,7 @@
 
             CALL WritePlotFile(project, didGenerate3DMesh)
             CALL WriteMeshFile(project, didGenerate3DMesh)
+            
             str = project % runParams % statsFileName
             CALL toLower(str)
             IF ( str /= "none" )     THEN

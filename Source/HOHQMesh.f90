@@ -88,6 +88,7 @@
 
          CLASS(FTObject)         , POINTER :: obj
          TYPE (FTValueDictionary), POINTER :: modelDict, controlDict
+         CLASS(SMCurve)          , POINTER :: symmetryCurve => NULL()
 !
 !        -----------------------------------------------------
 !        Initialize the project and check the integrity of the
@@ -113,7 +114,24 @@
 !        -----------------
 !
          CALL stopWatch % start()
+         
             CALL GenerateQuadMesh(project, errorCode)
+!
+!           -----------------------------------------------------------
+!           Perform symmetric transform if there is a symmetry boundary
+!           -----------------------------------------------------------
+!
+            symmetryCurve => project % model % symmetryCurve()
+            IF ( ASSOCIATED(symmetryCurve) )     THEN
+               IF ( allSymmetryCurvesAreColinear(project % model) )     THEN
+                  CALL ReflectMesh(project % mesh, symmetryCurve)
+               ELSE 
+                  CALL ThrowErrorExceptionOfType(poster = "HOHQMesh", &
+                            msg          = "A symmetry curve is is not straight or colinear. Ignoring...", &
+                            typ          = FT_ERROR_WARNING)
+               END IF 
+            END IF 
+            
          CALL stopwatch % stop()
          CALL trapExceptions !Abort on fatal exceptions
 

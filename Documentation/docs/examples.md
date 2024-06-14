@@ -22,6 +22,7 @@ that can (like any of the examples) be modified at will.
 | SplineGeometry  | Free form domain defined as a spline  |:material-check: | :material-close: | :material-close: | :material-close: | :material-check: | :material-close: |:material-close: | :material-close:| :material-close:
 | Square  | Generation of a Cartesian mesh with no model  |:material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:
 | BoneAndMarrow  | Two embedded domains  |:material-check: | :material-close: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:
+| PacMan  | A symmetric mesh  |:material-check: | :material-close: | :material-close: | :material-check: | :material-close: | :material-check: | :material-close: | :material-close:| :material-close:
 
 There are also ten three dimensional examples that illustrate the different extrusion algorithms in the *Examples/3D* directory
 
