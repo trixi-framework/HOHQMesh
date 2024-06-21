@@ -62,7 +62,7 @@
 !        Other
 !        -----
 !
-         CHARACTER(LEN=*), PARAMETER :: version           = "1.5.1"
+         CHARACTER(LEN=*), PARAMETER :: version           = "1.5.2-pre"
          LOGICAL                     :: test              = .FALSE.
          LOGICAL                     :: generateTest      = .FALSE.
          LOGICAL                     :: didGenerate3DMesh = .FALSE.
