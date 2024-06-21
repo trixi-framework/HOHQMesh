@@ -44,7 +44,7 @@
          zEqn = z(t) =  0.0
    \end{PARAMETRIC_EQUATION_CURVE}
    \begin{END_POINTS_LINE}
-	 name = symmetry
+	 name = :symmetry
 	 xStart = [-1.0,0.3,0.0]
 	 xEnd   = [0.0,0.0,0.0]
    \end{END_POINTS_LINE}
