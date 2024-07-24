@@ -90,7 +90,7 @@ jobs:
             test_type: regular
             coverage: false
           # macOS
-          - os: macos-11
+          - os: macos-latest
             os_name: macos
             compiler: gfortran-10
             shell: bash
