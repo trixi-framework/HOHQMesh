@@ -89,7 +89,7 @@ The preprocessor HOPR [@HOPR] can also read and modify these meshes.
 
 HOHQMesh can be used with the graphical front end HOHQMesh.jl [@HOHQMESHJL:2022sb].
 
-#Acknowledgements
+# Acknowledgements
 
  This work was supported by a grant from the Simons Foundation (#426393, #961988, David Kopriva).
  
