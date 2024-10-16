@@ -1,6 +1,6 @@
 name: Spell Check
 
-on: [push, pull_request, workflow_dispatch]
+on: [pull_request, workflow_dispatch]
 
 jobs:
   typos-check:
@@ -11,5 +11,3 @@ jobs:
         uses: actions/checkout@v4
       - name: Check spelling
         uses: crate-ci/typos@v1.23.6
-        with:
-          files: paper.md
