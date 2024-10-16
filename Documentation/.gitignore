@@ -1,9 +1,0 @@
-# Documentation build directory
-site/
-
-# Processed files
-docs/index.md
-docs/authors.md
-docs/license.md
-docs/building-the-documentation.md
-*.bak
