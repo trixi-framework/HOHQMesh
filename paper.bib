@@ -1,0 +1,300 @@
+%% This BibTeX bibliography file was created using BibDesk.
+%% https://bibdesk.sourceforge.io/
+
+%% Created for David Kopriva at 2024-10-15 15:27:28 -0700
+
+
+%% Saved with string encoding Unicode (UTF-8)
+
+
+
+@webpage{HOHQMESHJL:2022sb,
+	date-added = {2024-10-15 15:25:55 -0700},
+	date-modified = {2024-10-15 15:27:19 -0700},
+	lastchecked = {October 15, 2024},
+	url = {https://github.com/trixi-framework/HOHQMesh.jl},
+	year = {2022}}
+
+@article{Martire:2021xt,
+	abstract = {{We introduce SPECFEM2D-DG, an open-source, time-domain, hybrid Galerkin software modelling the propagation of seismic and acoustic waves in coupled solid--fluid systems. For the solid part, the visco-elastic system from the routinely used SPECFEM2D software is used to simulate linear seismic waves subject to attenuation. For the fluid part, SPECFEM2D-DG includes two extensions to the acoustic part of SPECFEM2D, both relying on the Navier--Stokes equations to model high-frequency acoustics, infrasound and gravity waves in complex atmospheres. The first fluid extension, SPECFEM2D-DG-FNS, was introduced in 2017 by Brissaud, Martin, Garcia, and Komatitsch; it features a nonlinear Full Navier--Stokes (FNS) approach discretized with a discontinuous Galerkin numerical scheme. In this contribution, we focus only on introducing a second fluid extension, SPECFEM2D-DG-LNS, based on the same numerical method but rather relying on the Linear Navier--Stokes (LNS) equations. The three main modules of SPECFEM2D-DG all use the spectral element method (SEM). For both fluid extensions (FNS and LNS), two-way mechanical coupling conditions preserve the Riemann problem solution at the fluid--solid interface. Absorbing outer boundary conditions (ABCs) derived from the perfectly matched layers' approach is proposed for the LNS extension. The SEM approach supports complex topographies and unstructured meshes. The LNS equations allow the use of range-dependent atmospheric models, known to be crucial for the propagation of infrasound at regional scales. The LNS extension is verified using the method of manufactured solutions, and convergence is numerically characterized. The mechanical coupling conditions at the fluid--solid interface (between the LNS and elastodynamics systems of equations) are verified against theoretical reflection-transmission coefficients. The ABCs in the LNS extension are tested and prove to yield satisfactory energy dissipation. In an example case study, we model infrasonic waves caused by quakes occurring under various topographies; we characterize the acoustic scattering conditions as well as the apparent acoustic radiation pattern. Finally, we discuss the example case and conclude by describing the capabilities of this software. SPECFEM2D-DG is open-source and is freely available online on GitHub.}},
+	author = {Martire, L{\'e}o and Martin, R and Brissaud, Q and Garcia, R F},
+	date-added = {2024-10-15 15:11:18 -0700},
+	date-modified = {2024-10-15 15:11:35 -0700},
+	doi = {10.1093/gji/ggab308},
+	eprint = {https://academic.oup.com/gji/article-pdf/228/1/664/41787349/ggab308.pdf},
+	issn = {0956-540X},
+	journal = {Geophysical Journal International},
+	month = {08},
+	number = {1},
+	pages = {664-697},
+	title = {{SPECFEM2D-DG, an open-source software modelling mechanical waves in coupled solid--fluid systems: the linearized Navier--Stokes approach}},
+	url = {https://doi.org/10.1093/gji/ggab308},
+	volume = {228},
+	year = {2021},
+	bdsk-url-1 = {https://doi.org/10.1093/gji/ggab308}}
+
+@misc{ampuero2012spectral,
+	author = {Ampuero, Jean-Paul},
+	date-added = {2024-10-15 15:03:05 -0700},
+	date-modified = {2024-10-15 15:03:05 -0700},
+	title = {A Spectral Element Method tool for 2D wave propagation and earthquake source dynamics User's Guide},
+	year = {2012}}
+
+@article{schneiders2000algorithms,
+	author = {Schneiders, Robert},
+	date-added = {2024-10-15 14:59:36 -0700},
+	date-modified = {2024-10-15 14:59:36 -0700},
+	journal = {Proceedings of the VKI lecture series on computational fluid dynamic, VKI-LS},
+	title = {Algorithms for quadrilateral and hexahedral mesh generation},
+	volume = {4},
+	year = {2000}}
+
+@article{Sherwin:2002vx,
+	abstract = {Abstract The ability to construct suitable computational meshes is currently a significant limiting factor in the development of compact high-order algorithms in very complex geometries. Compact high-order algorithms such as spectral element or p-type finite element techniques offer the potential of high accuracy if the solution is smooth and a well-behaved mapping exists between the local sub-domains and a standard region. In this paper we address the problem of coupling high-order algorithms with unstructured mesh generation and CAD representation techniques. We present three complementary strategies to alleviate the problem of generation of elemental regions with singular elemental mappings. The first strategy investigates the influence of an anisometric parametric surface representation on the quality of high-order unstructured meshes. We show that a straightforward splitting of a standard linear mesh for use in a high-order method can lead to the generation of distorted, possibly invalid, meshes even for simple computational domains such as cubes. The second strategy uses hybrid meshes applying prismatic elements near curvilinear boundaries. In the third and final strategy we investigate the use of curvature driven surface discretization to incorporate higher-order information about the surface into the mesh generation. Using the computational reconstruction of the arterial bypass graft as an example computational domain we demonstrate how the combination of all three strategies leads to a valid high-order discretization of the computational domain. Copyright {\copyright} 2001 John Wiley \& Sons, Ltd.},
+	author = {Sherwin, S. J. and Peir{\'o}, J.},
+	date-added = {2024-10-14 17:04:29 -0700},
+	date-modified = {2024-10-14 17:04:39 -0700},
+	doi = {https://doi.org/10.1002/nme.397},
+	eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.397},
+	journal = {International Journal for Numerical Methods in Engineering},
+	keywords = {high-order surface representation, hybrid meshing, curvature based adaption, high-order elements},
+	number = {1},
+	pages = {207-223},
+	title = {Mesh generation in curvilinear domains using high-order elements},
+	url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.397},
+	volume = {53},
+	year = {2002},
+	bdsk-url-1 = {https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.397},
+	bdsk-url-2 = {https://doi.org/10.1002/nme.397}}
+
+@incollection{HOPR,
+	author = {F. Hindenlang and T. Bolemann and C-D. Munz},
+	booktitle = {IDIHOM: Industrialization of High-Order Methods-A Top-Down Approach},
+	date = {2015-01-01},
+	date-added = {2024-10-14 14:36:11 -0700},
+	date-modified = {2024-10-14 14:36:11 -0700},
+	pages = {133--152},
+	publisher = {Springer},
+	title = {Mesh Curving Techniques for High Order Discontinuous Galerkin Simulations},
+	year = {2015}}
+
+@inproceedings{goutal1999malpasset,
+	author = {Goutal, Nicole},
+	booktitle = {Proceedings of the 4th CADAM meeting, Zaragoza, Spain},
+	date-added = {2024-10-14 13:59:42 -0700},
+	date-modified = {2024-10-14 13:59:42 -0700},
+	pages = {18--19},
+	title = {The {M}alpasset dam failure. {A}n overview and test case definition},
+	year = {1999}}
+
+@article{hervouet1999malpasset,
+	author = {Hervouet, Jean-Michel and Petitjean, Alain},
+	date-added = {2024-10-14 13:59:15 -0700},
+	date-modified = {2024-10-14 13:59:15 -0700},
+	journal = {Journal of hydraulic research},
+	number = {6},
+	pages = {777--788},
+	publisher = {Taylor \& Francis},
+	title = {Malpasset dam-break revisited with two-dimensional computations},
+	volume = {37},
+	year = {1999}}
+
+@article{Bommes:2013lc,
+	abstract = {Triangle meshes have been nearly ubiquitous in computer graphics, and a large body of data structures and geometry processing algorithms based on them has been developed in the literature. At the same time, quadrilateral meshes, especially semi-regular ones, have advantages for many applications, and significant progress was made in quadrilateral mesh generation and processing during the last several years. In this survey we discuss the advantages and problems of techniques operating on quadrilateral meshes, including surface analysis and mesh quality, simplification, adaptive refinement, alignment with features, parametrisation and remeshing.},
+	address = {Chichester, GBR},
+	author = {Bommes, David and L\'{e}vy, Bruno and Pietroni, Nico and Puppo, Enrico and Silva, Claudio and Tarini, Marco and Zorin, Denis},
+	date-added = {2024-10-10 10:26:27 -0700},
+	date-modified = {2024-10-14 14:01:17 -0700},
+	doi = {10.1111/cgf.12014},
+	issn = {0167-7055},
+	issue_date = {September 2013},
+	journal = {Comput. Graph. Forum},
+	keywords = {quad mesh processing, quad mesh generation, mesh parametrization, languages, geometry processing, and systems, I.3.5[Computer Graphics]: Computational Geometry and Object Modeling-Geometric algorithms},
+	month = sep,
+	number = {6},
+	numpages = {26},
+	pages = {51--76},
+	publisher = {The Eurographs Association \& John Wiley \& Sons, Ltd.},
+	title = {Quad-Mesh Generation and Processing: A Survey},
+	url = {https://doi.org/10.1111/cgf.12014},
+	volume = {32},
+	year = {2013},
+	bdsk-url-1 = {https://doi.org/10.1111/cgf.12014}}
+
+@article{tromp2008spectral,
+	author = {Tromp, Jeroen and Komatitsch, Dimitri and Liu, Qinya and others},
+	date-added = {2024-10-10 10:24:09 -0700},
+	date-modified = {2024-10-10 10:24:09 -0700},
+	journal = {Communications in Computational Physics},
+	number = {1},
+	pages = {1--32},
+	title = {Spectral-element and adjoint methods in seismology},
+	volume = {3},
+	year = {2008}}
+
+@webpage{FLUXO,
+	date-added = {2024-10-10 09:43:03 -0700},
+	date-modified = {2024-10-10 09:44:16 -0700},
+	lastchecked = {Oct 10, 2024},
+	month = {Nov. 20},
+	url = {https://gitlab.com/project-fluxo/fluxo},
+	year = {2019}}
+
+@article{CANTWELL2015205,
+	abstract = {Nektar++ is an open-source software framework designed to support the development of high-performance scalable solvers for partial differential equations using the spectral/hp element method. High-order methods are gaining prominence in several engineering and biomedical applications due to their improved accuracy over low-order techniques at reduced computational cost for a given number of degrees of freedom. However, their proliferation is often limited by their complexity, which makes these methods challenging to implement and use. Nektar++ is an initiative to overcome this limitation by encapsulating the mathematical complexities of the underlying method within an efficient C++ framework, making the techniques more accessible to the broader scientific and industrial communities. The software supports a variety of discretisation techniques and implementation strategies, supporting methods research as well as application-focused computation, and the multi-layered structure of the framework allows the user to embrace as much or as little of the complexity as they need. The libraries capture the mathematical constructs of spectral/hp element methods, while the associated collection of pre-written PDE solvers provides out-of-the-box application-level functionality and a template for users who wish to develop solutions for addressing questions in their own scientific domains.
+Program summary
+Program title: Nektar++ Catalogue identifier: AEVV_v1_0 Program summary URL:http://cpc.cs.qub.ac.uk/summaries/AEVV_v1_0.html Program obtainable from: CPC Program Library, Queen's University, Belfast, N. Ireland Licensing provisions: MIT No. of lines in distributed program, including test data, etc.: 1052456 No. of bytes in distributed program, including test data, etc.: 42851367 Distribution format: tar.gz Programming language: C++. Computer: Any PC workstation or cluster. Operating system: Linux/UNIX, OS X, Microsoft Windows. RAM: 512 MB Classification: 12. External routines: Boost, FFTW, MPI, BLAS, LAPACK and METIS (www.cs.umn.edu) Nature of problem: The Nektar++ framework is designed to enable the discretisation and solution of time-independent or time-dependent partial differential equations. Solution method: Spectral/hp element method Running time: The tests provided take a few minutes to run. Runtime in general depends on mesh size and total integration time.},
+	author = {C.D. Cantwell and D. Moxey and A. Comerford and A. Bolis and G. Rocco and G. Mengaldo and D. {De Grazia} and S. Yakovlev and J.-E. Lombard and D. Ekelschot and B. Jordi and H. Xu and Y. Mohamied and C. Eskilsson and B. Nelson and P. Vos and C. Biotto and R.M. Kirby and S.J. Sherwin},
+	date-added = {2024-10-10 09:32:10 -0700},
+	date-modified = {2024-10-10 09:32:10 -0700},
+	doi = {https://doi.org/10.1016/j.cpc.2015.02.008},
+	issn = {0010-4655},
+	journal = {Computer Physics Communications},
+	keywords = {High-order finite elements, Spectral/ elements, Continuous Galerkin method, Discontinuous Galerkin method, FEM},
+	pages = {205-219},
+	title = {Nektar++: An open-source spectral/hp element framework},
+	url = {https://www.sciencedirect.com/science/article/pii/S0010465515000533},
+	volume = {192},
+	year = {2015},
+	bdsk-url-1 = {https://www.sciencedirect.com/science/article/pii/S0010465515000533},
+	bdsk-url-2 = {https://doi.org/10.1016/j.cpc.2015.02.008}}
+
+@article{BLACKBURN2019106804,
+	abstract = {Semtex enables direct numerical simulation (DNS) of the incompressible Navier--Stokes equations by coupling continuous-Galerkin nodal spectral element--Fourier spatial discretisation with semi-implicit temporal integration via a time-splitting scheme. Transport of a scalar quantity may be included. The analyst has a choice of Cartesian or cylindrical coordinate systems. Domain geometries and solutions may be two-dimensional with spectral element decomposition of arbitrary planar shapes, or made three-dimensional by extrusion along a spatially homogeneous direction in which Fourier expansions are employed. For three-dimensional solutions, MPI may be used to support parallel execution. Various body forces, including Boussinesq buoyancy and Coriolis terms may be added to the momentum equation to simulate e.g. the effects of stratification and thermal expansion or reference frame rotation. Parallel decomposition is performed in the Fourier dimension only, and two-dimensional elliptic systems in the plane are solved for the spectral element discretisation using direct (Cholesky) or iterative (conjugate-gradient) methods. Semtex includes a suite of additional tools for generating initial conditions and model configurations, for post processing and for analysis of model output.
+Program summary
+Program Title: Semtex Program Files doi: http://dx.doi.org/10.17632/65mz2szz5t.1 Code Ocean Capsule: https://doi.org/10.24433/CO.2589809.v1 Licensing provisions: GPLv2 Programming languages: C++, C, Fortran77 External routines: BLAS, LAPACK, yacc/bison, (optionally) MPI Nature of problem: Two- or three-dimensional incompressible Navier--Stokes in cylindrical and periodic Cartesian geometries with optional body forces. Two- or three-component velocity fields. Solution method: Continuous Galerkin nodal spectral element--Fourier spatial discretisation with semi-implicit time-splitting-based temporal integration of the nonlinear, viscous and pressure gradient terms in the Navier--Stokes equations via a projection method.},
+	author = {H.M. Blackburn and D. Lee and T. Albrecht and J. Singh},
+	date-added = {2024-10-10 09:31:26 -0700},
+	date-modified = {2024-10-10 09:31:26 -0700},
+	doi = {https://doi.org/10.1016/j.cpc.2019.05.015},
+	issn = {0010-4655},
+	journal = {Computer Physics Communications},
+	keywords = {Navier--Stokes, Spectral elements, Cylindrical coordinates, Direct numerical simulation},
+	pages = {106804},
+	title = {Semtex: A spectral element--Fourier solver for the incompressible Navier--Stokes equations in cylindrical or Cartesian coordinates},
+	url = {https://www.sciencedirect.com/science/article/pii/S0010465519301730},
+	volume = {245},
+	year = {2019},
+	bdsk-url-1 = {https://www.sciencedirect.com/science/article/pii/S0010465519301730},
+	bdsk-url-2 = {https://doi.org/10.1016/j.cpc.2019.05.015}}
+
+@article{KRAIS2021186,
+	abstract = {High order (HO) schemes are attractive candidates for the numerical solution of multiscale problems occurring in fluid dynamics and related disciplines. Among the HO discretization variants, discontinuous Galerkin schemes offer a collection of advantageous features which have lead to a strong increase in interest in them and related formulations in the last decade. The methods have matured sufficiently to be of practical use for a range of problems, for example in direct numerical and large eddy simulation of turbulence. However, in order to take full advantage of the potential benefits of these methods, all steps in the simulation chain must be designed and executed with HO in mind. Especially in this area, many commercially available closed-source solutions fall short. In this work, we therefore present the FLEXI framework, a HO consistent, open-source simulation tool chain for solving the compressible Navier--Stokes equations on CPU clusters. We describe the numerical algorithms and implementation details and give an overview of the features and capabilities of all parts of the framework. Beyond these technical details, we also discuss the important but often overlooked issues of code stability, reproducibility and user-friendliness. The benefits gained by developing an open-source framework are discussed, with a particular focus on usability for the open-source community. We close with sample applications that demonstrate the wide range of use cases and the expandability of FLEXI and an overview of current and future developments.},
+	author = {Nico Krais and Andrea Beck and Thomas Bolemann and Hannes Frank and David Flad and Gregor Gassner and Florian Hindenlang and Malte Hoffmann and Thomas Kuhn and Matthias Sonntag and Claus-Dieter Munz},
+	date-added = {2024-10-10 09:28:08 -0700},
+	date-modified = {2024-10-10 09:28:08 -0700},
+	doi = {https://doi.org/10.1016/j.camwa.2020.05.004},
+	issn = {0898-1221},
+	journal = {Computers & Mathematics with Applications},
+	keywords = {Discontinuous Galerkin, High order, Large eddy simulation, Computational fluid dynamics, Open-source software, Shock capturing},
+	note = {Development and Application of Open-source Software for Problems with Numerical PDEs},
+	pages = {186-219},
+	title = {FLEXI: A high order discontinuous Galerkin framework for hyperbolic--parabolic conservation laws},
+	url = {https://www.sciencedirect.com/science/article/pii/S0898122120302029},
+	volume = {81},
+	year = {2021},
+	bdsk-url-1 = {https://www.sciencedirect.com/science/article/pii/S0898122120302029},
+	bdsk-url-2 = {https://doi.org/10.1016/j.camwa.2020.05.004}}
+
+@article{schlottkelakemper2021purely,
+	author = {Schlottke-Lakemper, Michael and Winters, Andrew R and Ranocha, Hendrik and Gassner, Gregor J},
+	date-added = {2024-10-10 09:23:35 -0700},
+	date-modified = {2024-10-10 09:23:35 -0700},
+	doi = {10.1016/j.jcp.2021.110467},
+	eprint = {2008.10593},
+	eprintclass = {math.NA},
+	eprinttype = {arXiv},
+	journal = {Journal of Computational Physics},
+	month = {06},
+	pages = {110467},
+	publisher = {Elsevier},
+	title = {A purely hyperbolic discontinuous {G}alerkin approach for self-gravitating gas dynamics},
+	volume = {442},
+	year = {2021},
+	bdsk-url-1 = {https://doi.org/10.1016/j.jcp.2021.110467}}
+
+@article{FERRER2023108700,
+	abstract = {We present the latest developments of our High-Order Spectral Element Solver (Image 1), an open source high-order discontinuous Galerkin framework, capable of solving a variety of flow applications, including compressible flows (with or without shocks), incompressible flows, various RANS and LES turbulence models, particle dynamics, multiphase flows, and aeroacoustics. We provide an overview of the high-order spatial discretisation (including energy/entropy stable schemes) and anisotropic p-adaptation capabilities. The solver is parallelised using MPI and OpenMP showing good scalability for up to 1000 processors. Temporal discretisations include explicit, implicit, multigrid, and dual time-stepping schemes with efficient preconditioners. Additionally, we facilitate meshing and simulating complex geometries through a mesh-free immersed boundary technique. We detail the available documentation and the test cases included in the GitHub repository.
+Program summary
+Program Title: Image 1 CPC Library link to program files: https://doi.org/10.17632/738py2shk4.1 Developer's repository link: https://github.com/loganoz/horses3d. Licensing provisions: MIT Programming language: Fortran 2008 External routines/libraries: METIS, MPI, HDF5, MKL, PETSc (all are optional). Nature of problem: Image 1 is a high-order discontinuous Galerkin framework, capable of solving a variety of flow applications, including compressible flows (with or without shocks), incompressible flows, various RANS and LES turbulence models, particle dynamics, multiphase flows, and aeroacoustics. Solution method: high-order discontinuous Galerkin Spectral Element (DGSEM) and explicit/implicit time-steppers. Additional comments including restrictions and unusual features: Image 1 is a multiphysics environment where the compressible Navier-Stokes equations, the incompressible Navier--Stokes equations, the Cahn--Hilliard equation and entropy--stable variants are solved. Arbitrary high--order, p--anisotropic discretisations are used, including static and dynamic p--adaptation methods (feature-based and truncation error-based). Explicit and implicit time-steppers for steady and time-marching solutions are available, including efficient multigrid and preconditioners. Numerical and analytical Jacobian computations with a colouring algorithm have been implemented. Multiphase flows are solved using a diffuse interface model: Navier--Stokes/Cahn--Hilliard. Turbulent models implemented include RANS: Spalart-Allmaras and LES: Smagorinsky, Wale, Vreman; including wall models. Immersed boundary methods can be used, to avoid creating body fitted meshes. Acoustic propagation can be computed using Ffowcs-Williams and Hawkings models. Image 1 supports curvilinear, hexahedral, conforming meshes in GMSH, HDF5 and SpecMesh/HOHQMesh format. A hybrid CPU-based parallelisation strategy (shared and distributed memory) with OpenMP and MPI is followed.},
+	author = {E. Ferrer and G. Rubio and G. Ntoukas and W. Laskowski and O.A. Mari{\~n}o and S. Colombo and A. Mateo-Gab{\'\i}n and H. Marbona and F. {Manrique de Lara} and D. Huergo and J. Manzanero and A.M. Rueda-Ram{\'\i}rez and D.A. Kopriva and E. Valero},
+	date-added = {2024-10-10 09:20:55 -0700},
+	date-modified = {2024-10-14 14:00:46 -0700},
+	doi = {https://doi.org/10.1016/j.cpc.2023.108700},
+	issn = {0010-4655},
+	journal = {Computer Physics Communications},
+	keywords = {Navier-Stokes, Discontinuous Galerkin, High-order method, Multiphase, Aeroacoustics, Immersed boundary method},
+	pages = {108700},
+	title = {A high-order discontinuous Galerkin solver for flow simulations and multi-physics applications},
+	url = {https://www.sciencedirect.com/science/article/pii/S0010465523000450},
+	volume = {287},
+	year = {2023},
+	bdsk-url-1 = {https://www.sciencedirect.com/science/article/pii/S0010465523000450},
+	bdsk-url-2 = {https://doi.org/10.1016/j.cpc.2023.108700}}
+
+@misc{fischer2008nek5000,
+	author = {Fischer, Paul F and Lottes, James W and Kerkemeier, Stefan G},
+	date-added = {2024-10-10 09:02:05 -0700},
+	date-modified = {2024-10-10 09:02:05 -0700},
+	title = {nek5000 Web page},
+	year = {2008}}
+
+@article{Giraldo:2013bh,
+	abstract = { We derive an implicit-explicit (IMEX) formalism for the three-dimensional (3D) Euler equations that allow a unified representation of various nonhydrostatic flow regimes, including cloud resolving and mesoscale (flow in a 3D Cartesian domain) as well as global regimes (flow in spherical geometries). This general IMEX formalism admits numerous types of methods including single-stage multistep methods (e.g., Adams methods and backward difference formulas) and multistage single-step methods (e.g., additive Runge--Kutta methods). The significance of this result is that it allows a numerical model to reuse the same machinery for all classes of time-integration methods described in this work. We also derive two classes of IMEX methods, one-dimensional and 3D, and show that they achieve their expected theoretical rates of convergence regardless of the geometry (e.g., 3D box or sphere) and introduce a new second-order IMEX Runge--Kutta method that performs better than the other second-order methods considered. We then compare all the IMEX methods in terms of accuracy and efficiency for two types of geophysical fluid dynamics problems: buoyant convection and inertia-gravity waves. These results show that the high-order time-integration methods yield better efficiency particularly when high levels of accuracy are desired. },
+	author = {Giraldo, F. X. and Kelly, J. F. and Constantinescu, E. M.},
+	date-added = {2024-10-10 08:47:10 -0700},
+	date-modified = {2024-10-14 17:28:54 -0700},
+	doi = {10.1137/120876034},
+	eprint = {https://doi.org/10.1137/120876034},
+	journal = {SIAM Journal on Scientific Computing},
+	number = {5},
+	pages = {B1162-B1194},
+	title = {Implicit-Explicit Formulations of a Three-Dimensional Nonhydrostatic Unified Model of the Atmosphere (NUMA)},
+	url = {https://doi.org/10.1137/120876034},
+	volume = {35},
+	year = {2013},
+	bdsk-url-1 = {https://doi.org/10.1137/120876034}}
+
+@book{Karniadakis:2005fj,
+	author = {George Em Karniadakis and Spencer J. Sherwin},
+	date-added = {2024-10-10 08:42:26 -0700},
+	date-modified = {2024-10-10 08:42:26 -0700},
+	publisher = {Oxford University Press},
+	title = {Spectral/hp Element Methods for Computational Fluid Dynamics},
+	year = {2005}}
+
+@book{Hestahven:1008th,
+	author = {J.S. Hesthaven and T. Warburton},
+	date-added = {2024-10-10 08:41:53 -0700},
+	date-modified = {2024-10-10 08:41:53 -0700},
+	publisher = {Springer},
+	title = {Nodal Discontinuous {G}alerkin Methods: Algorithms, Analysis, and Applications},
+	year = {2008}}
+
+@book{Kopriva:2009nx,
+	author = {David A. Kopriva},
+	date-added = {2024-10-10 08:41:39 -0700},
+	date-modified = {2024-10-10 08:41:39 -0700},
+	month = {May},
+	publisher = {Springer},
+	series = {Scientific Computation},
+	title = {Implementing Spectral Methods for Partial Differential Equations},
+	year = {2009}}
+
+@book{Deville:2002fk,
+	author = {M.O. Deville and P.F. Fischer and E.H. Mund},
+	date-added = {2024-10-10 08:41:13 -0700},
+	date-modified = {2024-10-10 08:41:13 -0700},
+	publisher = {Cambridge University Press},
+	title = {High Order Methods for Incompressible Fluid Flow},
+	year = {2002}}
+
+@article{ainsworth2004,
+	Author = {Ainsworth, Mark},
+	Journal = {Journal of Computational Physics},
+	Number = {1},
+	Pages = {106--130},
+	Publisher = {Elsevier},
+	Title = {Dispersive and dissipative behaviour of high order discontinuous {G}alerkin finite element methods},
+	Volume = {198},
+	Year = {2004}}
