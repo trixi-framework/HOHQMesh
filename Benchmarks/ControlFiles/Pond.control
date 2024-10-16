@@ -1,0 +1,55 @@
+%
+% An example using a bottom topography
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/Pond3D.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/Pond3D.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/Pond3D.txt
+      test file name   = Benchmarks/BenchmarkData/Pond.txt
+      mesh file format = ISM
+      polynomial order = 3
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+   
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.75,0.75,0.75]
+   \end{BACKGROUND_GRID}
+
+   \begin{SIMPLE_EXTRUSION}
+      direction          = 3
+      height             = 3.0
+      subdivisions       = 4
+      start surface name = bottom
+      end surface name   = top
+   \end{SIMPLE_EXTRUSION}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+\begin{OUTER_BOUNDARY}
+	\begin{CIRCULAR_ARC}
+		 name        = circle
+		 units       = degrees
+		 center      = [0.0, 0,0,0.0]
+		 radius      = 4.0
+		 start angle = 0.0
+		 end angle   = 360.0
+	   \end{CIRCULAR_ARC}
+\end{OUTER_BOUNDARY}
+
+\begin{TOPOGRAPHY}
+	eqn = f(x,y) = 1.5*exp(-0.5*((x-1.0)^2 + (y-1.0)^2)) + 0.75*exp(-0.5*((x+1.0)^2 + (y+1.0)^2))
+        Sizing = OFF
+\end{TOPOGRAPHY}
+
+\end{MODEL}
+\end{FILE}

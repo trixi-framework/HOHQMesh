@@ -1,18 +1,19 @@
-# HOHQMesh
+# Compiling and Running HOHQMesh
+## Quick Introduction <a name="Compiling"></a>
+HOHQMesh is currently being distributed on gitHub. In that repository is a makefile, plus source, documentation (which contains this document) and a directory of examples.
 
-[![Docs-stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://trixi-framework.github.io/HOHQMesh)
-[![Build Status](https://github.com/trixi-framework/HOHQMesh/workflows/CI/badge.svg)](https://github.com/trixi-framework/HOHQMesh/actions?query=workflow%3ACI)
-[![Coveralls](https://coveralls.io/repos/github/trixi-framework/HOHQMesh/badge.svg?branch=main)](https://coveralls.io/github/trixi-framework/HOHQMesh?branch=main)
-[![Codecov](https://codecov.io/gh/trixi-framework/HOHQMesh/branch/main/graph/badge.svg)](https://codecov.io/gh/trixi-framework/HOHQMesh)
-[![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/licenses/MIT)
+HOHQMesh is written in fortran 2018. It is known to compile and run with `gfortran` on Mac/Linux/Windows and with `ifort` on Mac and Linux. At the time of this writing, HOHQMesh compiles, but does not run correctly, with the nFortran compiler from nvidia. Let us know if there are issues with other compilers, or more recent versions of those.
 
-<p align="center">
-  <img width="400px" src="https://user-images.githubusercontent.com/3637659/121870408-50418800-cd03-11eb-9187-dcafdf73bab2.png" />
-</p>
+The mesher has one dependency, FTObjectLibrary, which supplies the container classes and exception classes. It is also available on gitHub under a project of that name.
 
-**HOHQMesh**, the *High Order Hex-Quad Mesher*, is an open-source mesh generator
-that automatically creates quadrilateral/hexahedral meshes with high-order boundary
-information.
+The makefile is for gmake. Use it to compile the mesher.
+
+To build, edit the `Makefile` file as indicated in the header and move to
+ones favorite directory. Type
+```
+make
+```
+That will build HOHQMesh.
 
 ## Getting started
 
@@ -92,12 +93,27 @@ To mesh a control file, type
 where `-f` allows you to provide the path to the control file for which you want
 to create your mesh.
 
+To mesh a control file, type
 
-## Authors
-HOHQMesh was initiated by
-[David A. Kopriva](https://www.math.fsu.edu/~kopriva/), who is also the principal developer.
-The full list of contributors can be found in [AUTHORS.md](AUTHORS.md).
+```bash
+./HOHQMesh -f <pathToControlFile>
+```
+
+For example, to mesh the GingerbreadMan model in the Examples directory, type
+```bash
+./HOHQMesh -f Examples/2D/GingerbreadMan/GingerbreadMan.control
+```
 
 
-## License and contributing
-HOHQMesh is licensed under the MIT license (see [LICENSE.md](LICENSE.md)).
+The mesh and plot files will be created relative to the directory of the executable. For the moment, until things get really robust, diagnostic information can be printed as the program executes.
+
+Three more compiler flags are also defined:
+
+* **-version**		Gives the version number of the code
+* **-help**			Does nothing at the moment. Sorry. RTM.
+* **-verbose**		Determines whether progress messages are printed or not.
+
+Use these as usual, e.g.
+```bash
+./HOHQMesh -verbose -f Examples/2D/GingerbreadMan/GingerbreadMan.control
+```

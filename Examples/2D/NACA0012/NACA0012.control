@@ -1,0 +1,75 @@
+%
+%   This control file uses a model that has only an inner boundary. The outer
+%   boundary and the mesh size is given by the BackgroundGrid 
+%   block. The background grid size is ignored when a BackgroundGrid block 
+%   is present.
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/2D/NACA0012/NACA0012.mesh
+      plot file name   = Examples/2D/NACA0012/NACA0012.tec
+      stats file name  = Examples/2D/NACA0012/NACA0012.txt
+      mesh file format = ISM
+      polynomial order = 6
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+   
+   \begin{BACKGROUND_GRID}
+       x0 = [-20.0, -20.0,0.0]
+       dx = [2.0, 2.0,1.0]
+       N  = [20,20,20]
+   \end{BACKGROUND_GRID}
+
+    \begin{REFINEMENT_REGIONS}
+
+       \begin{REFINEMENT_CENTER}
+          type = smooth
+          x0   = [1.0,0.0,0.0]
+          h    = 0.10
+          w    = 0.15
+      \end{REFINEMENT_CENTER}
+
+      \begin{REFINEMENT_CENTER}
+          type = smooth
+          x0   = [0.0,0.0,0.0]
+          h    = 0.05
+          w    = 0.15
+      \end{REFINEMENT_CENTER}
+
+    \end{REFINEMENT_REGIONS}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 30
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+%
+%   The Model contains only the desired boundary curves
+%
+\begin{MODEL}
+    \begin{INNER_BOUNDARIES}
+    
+       \begin{CHAIN}
+           name = Airfoil
+           \begin{PARAMETRIC_EQUATION_CURVE}
+               name = AirfoilTop
+               xEqn = f(t) = (1 - t)^2
+               yEqn = f(t) = 0.6*(0.2969*(1-t) - 0.1260*(1-t)^2 - 0.3516*(1-t)^4 +0.2843*(1-t)^6-0.1036*(1-t)^8)
+               zEqn = f(t) = 0.0
+           \end{PARAMETRIC_EQUATION_CURVE}
+
+           \begin{PARAMETRIC_EQUATION_CURVE}
+               name = AirfoilBottom
+               xEqn = f(t) = t^2
+               yEqn = f(t) = -0.6*(0.2969*t - 0.1260*t^2 - 0.3516*t^4 +0.2843*t^6-0.1036*t^8)
+               zEqn = f(t) = 0.0
+           \end{PARAMETRIC_EQUATION_CURVE}
+       \end{CHAIN}
+       
+    \end{INNER_BOUNDARIES}
+
+\end{MODEL}
+\end{FILE}

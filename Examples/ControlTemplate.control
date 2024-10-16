@@ -1,0 +1,184 @@
+% =====================================================================================
+%
+%   This is a template for a HOHQMesh control file that includes all of the
+%   options. 
+%
+%   Blank lines and those that start with % are ignored. Indentation is also
+%   ignored.
+%
+%   Ordering of blocks is unimportant.
+%   Ordering or keys (lines in blocks) is unimportant
+%   Curve chains must be defined in order, and curves must connect.
+%   Spaces are significant in keys
+%
+% =====================================================================================
+%
+
+\begin{CONTROL_INPUT}
+%
+%  Plot and stats file names can be "none" if no output is desired. 
+%
+   \begin{RUN_PARAMETERS}
+      mesh file name   = 
+      plot file name   = 
+      stats file name  = 
+      mesh file format = ISM OR ISM-v2
+      polynomial order = 6
+      plot file format = skeleton OR sem
+   \end{RUN_PARAMETERS}
+   
+   \begin{BACKGROUND_GRID}
+       x0 = [ ,  ,0.0]
+       dx = [ ,  ,1.0]
+       N  = [ , , 1]
+   \end{BACKGROUND_GRID}
+%
+%    OR
+%
+   \begin{BACKGROUND_GRID}
+      background grid size = [ , ,0]
+   \end{BACKGROUND_GRID} 
+
+   \begin{REFINEMENT_REGIONS}
+
+       \begin{REFINEMENT_CENTER}
+          type = smooth
+          x0   = [ , , 0.0]
+          h    =  
+          w    =  
+      \end{REFINEMENT_CENTER}
+
+       \begin{REFINEMENT_LINE}
+          type = nonsmooth OR smooth
+          x0   = [ , , 0.0]
+          x1   = [ , , 0.0]
+          h    =  
+          w    =  
+       \end{REFINEMENT_LINE}
+
+    \end{REFINEMENT_REGIONS}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON (Optional)
+      smoothing type       = LinearAndCrossBarSpring (Preferred)
+      number of iterations = 30
+   \end{SPRING_SMOOTHER}
+%
+%   Add the following for 3D
+%
+    \begin{SWEEP_ALONG_CURVE}
+      algorithm                = Hanson 
+      subdivisions per segment = 
+      start surface name       =
+      end surface name         =
+   \end{SWEEP_ALONG_CURVE}
+%
+%   OR
+%
+    \begin{SIMPLE_ROTATION}
+      direction             = 1 OR 2 OR 3
+      rotation angle factor = 
+      subdivisions          = 
+      start surface name    =
+      end surface name      =
+   \end{SIMPLE_ROTATION}
+%
+%   OR
+%
+    \begin{SIMPLE_EXTRUSION}
+      direction          = 1 OR 2 OR 3
+      height             = 
+      subdivisions       = 
+      start surface name =
+      end surface name   =
+   \end{SIMPLE_EXTRUSION}
+
+\end{CONTROL_INPUT}
+%
+% ================================================================================== 
+%
+\begin{MODEL}
+%
+%   *** OUTER BOUNDARY DESCRIPTION ***
+%
+    \begin{OUTER_BOUNDARY}
+
+        \begin{PARAMETRIC_EQUATION_CURVE}
+           name =
+           xEqn = x(t) = 
+           yEqn = y(t) = 
+           zEqn = z(t) = 0.0
+        \end{PARAMETRIC_EQUATION_CURVE}
+
+       \begin{CIRCULAR_ARC}
+          name        =
+          units       = degrees OR radians (Optional)
+          center      = [ ,  ,0.0]
+          radius      =  
+          start angle =  
+          end angle   =  
+       \end{CIRCULAR_ARC}
+
+       \begin{END_POINTS_LINE}
+          name =
+          xStart = [ , ,0.0]
+          xEnd   = [ , ,0.0]
+       \end{END_POINTS_LINE}
+
+      \begin{SPLINE_CURVE}
+         name = outer
+         nKnots =
+         \begin{SPLINE_DATA}
+           0.000000000000000 0.000000000000000  0.000000000000000   0.0
+         \end{SPLINE_DATA}
+       \end{SPLINE_CURVE}
+
+     \end{OUTER_BOUNDARY}
+%
+%   *** INNER BOUNDARY DESCRIPTIONS ***
+%
+    \begin{INNER_BOUNDARIES}
+
+       \begin{CHAIN}
+          name =
+%
+%	  Add curves as in outer boundary
+%
+       \end{CHAIN}
+
+       \begin{CHAIN}
+          name =
+%
+%	  Add curves as in outer boundary
+%
+       \end{CHAIN}
+%
+%      Add as many chains as inner boundaries
+%      
+    \end{INNER_BOUNDARIES}
+%
+%    *** For 3D sweeping ***
+%
+     \begin{SWEEP_CURVE}
+        \begin{PARAMETRIC_EQUATION_CURVE}
+           name = 
+           xEqn = x(t) = 
+           yEqn = y(t) = 
+           zEqn = z(t) = 
+         \end{PARAMETRIC_EQUATION_CURVE}
+      \end{SWEEP_CURVE}
+
+      \begin{SWEEP_SCALE_FACTOR}
+           \begin{PARAMETRIC_EQUATION}
+              eqn = r(t) = 
+           \end{PARAMETRIC_EQUATION}
+      \end{SWEEP_SCALE_FACTOR}
+%
+%   *** For topography ***
+%
+    \begin{TOPOGRAPHY}
+       eqn = f(x,y) = 
+    \end{TOPOGRAPHY}
+
+\end{MODEL}
+

@@ -1,0 +1,62 @@
+%
+% Generates a mesh for a circular cylinder oriented in the x-direction
+% that is scaled along its length
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/3D/ScaledCylinder/CylinderScale.mesh
+      plot file name   = Examples/3D/ScaledCylinder/CylinderScale.tec
+      stats file name  = none
+      mesh file format = ISM
+      polynomial order = 4
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+   
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.25,0.25,0.25]
+   \end{BACKGROUND_GRID}
+
+    \begin{SWEEP_ALONG_CURVE}
+      algorithm                = Hanson
+      subdivisions per segment = 10
+      start surface name       = bottom
+      end surface name         = top
+   \end{SWEEP_ALONG_CURVE}
+
+    \begin{SPRING_SMOOTHER}
+       smoothing            = ON
+       smoothing type       = LinearAndCrossBarSpring
+       number of iterations = 15
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+     \begin{OUTER_BOUNDARY}
+        \begin{PARAMETRIC_EQUATION_CURVE}
+           name = circle
+           xEqn = x(t) = cos(2*pi*t)
+           yEqn = y(t) = sin(2*pi*t)
+           zEqn = z(t) = 0.0
+        \end{PARAMETRIC_EQUATION_CURVE}
+     \end{OUTER_BOUNDARY}
+
+     \begin{SWEEP_CURVE}
+         \begin{PARAMETRIC_EQUATION_CURVE}
+           name = straight2
+           xEqn = x(t) = 3.0 + 8*t
+           yEqn = y(t) = 2.0
+           zEqn = z(t) = 1.0
+        \end{PARAMETRIC_EQUATION_CURVE}
+     \end{SWEEP_CURVE}
+
+      \begin{SWEEP_SCALE_FACTOR}
+         \begin{PARAMETRIC_EQUATION}
+            eqn = r(t) = 1.0 + 2.5*t*(1.0-t)
+         \end{PARAMETRIC_EQUATION}
+      \end{SWEEP_SCALE_FACTOR}
+
+\end{MODEL}
+\end{FILE}

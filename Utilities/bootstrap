@@ -1,0 +1,8 @@
+#!/bin/bash
+set -exo pipefail
+
+# Clean out possibly existing FTObjectLibrary to ensure a clean bootstrap
+rm -rf Contrib/FTObjectLibrary
+
+# Clone FTObjectLibrary into Contrib
+git clone https://github.com/trixi-framework/FTObjectLibrary.git Contrib/FTObjectLibrary
