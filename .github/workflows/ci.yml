@@ -104,12 +104,6 @@ jobs:
           # macOS
           - os: macos-latest
             os_name: macos
-            compiler: gfortran-11
-            shell: bash
-            test_type: regular
-            coverage: false
-          - os: macos-latest
-            os_name: macos
             compiler: gfortran-12
             shell: bash
             test_type: regular
