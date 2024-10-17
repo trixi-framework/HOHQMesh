@@ -23,7 +23,7 @@ affiliations:
    index: 2
  - name: Department of Mathematics; Applied Mathematics, Linköping University, Sweden
    index: 3
- - name: High-Performance Scientific Computing, University of Augsburg, Germany
+ - name: Professor, High-Performance Scientific Computing & Centre for Advanced Analytics and Predictive Sciences, University of Augsburg, Germany
    index: 4
 date: 01 November 2024
 bibliography: paper.bib
