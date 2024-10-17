@@ -21,7 +21,7 @@ affiliations:
    index: 1
  - name: Adjunct Professor, San Diego State University, San Diego, CA, USA
    index: 2
- - name: Department of Mathematics; Applied Mathematics, Linköping University, Sweden
+ - name: Senior Associate Professor, Department of Mathematics; Applied Mathematics, Linköping University, Sweden
    index: 3
  - name: High-Performance Scientific Computing, University of Augsburg, Germany
    index: 4
@@ -92,5 +92,5 @@ HOHQMesh can be used with the graphical front end HOHQMesh.jl [@HOHQMESHJL:2022s
 # Acknowledgements
 
  This work was supported by a grant from the Simons Foundation (#426393, #961988, David Kopriva).
- 
+
 # References
