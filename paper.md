@@ -92,5 +92,7 @@ HOHQMesh can be used with the graphical front end HOHQMesh.jl [@HOHQMESHJL:2022s
 # Acknowledgements
 
  This work was supported by a grant from the Simons Foundation (#426393, #961988, David Kopriva).
+Michael Schlottke-Lakemper received funding through the DFG research unit FOR-5409 (project number
+463312734) and through a DFG individual grant (project number 528753982).
  
 # References
