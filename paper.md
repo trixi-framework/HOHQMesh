@@ -16,6 +16,9 @@ authors:
   - name: Michael Schlottke-Lakemper
     orcid: 0000-0002-3195-2536
     affiliation: 4
+  - name: Joseph A. Schoonover
+    orcid: 0000-0001-5650-7095
+    affiliation: 5
 affiliations:
  - name: Professor Emeritus, The Florida State University, Tallahassee, FL, USA
    index: 1
@@ -25,6 +28,8 @@ affiliations:
    index: 3
  - name: Professor, High-Performance Scientific Computing & Centre for Advanced Analytics and Predictive Sciences, University of Augsburg, Germany
    index: 4
+ - name: Research Software Engineer, Fluid Numerics, Hickory, NC, USA
+   index: 5
 date: 01 November 2024
 bibliography: paper.bib
 ---
