@@ -1,5 +1,5 @@
 ---
-title: 'HOHQMesh: An all Quadrilateral/Hexahedral Unstructured Mesh Generator for High order Elements'
+title: 'HOHQMesh: An all Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements'
 tags:
   - Mesh Generation
   - Spectral Element Methods
@@ -73,7 +73,7 @@ i7. A zoom of the western portion of the mesh is shown in Fig. \ref{fig:zoom}. T
 
 ![Western portion of the Reyran valley mesh\label{fig:zoom}](PaperFigs/malpasset-total-skeleton-zoom.png)
 
-![Spectral element conputation of the water heights at 1985s after the break of the Malpasset dam\label{fig:WaterHeight}](PaperFigs/malpasset_time_1985s.png)
+![Spectral element computation of the water heights at 1985s after the break of the Malpasset dam\label{fig:WaterHeight}](PaperFigs/malpasset_time_1985s.png)
 
 # Related Software
 
