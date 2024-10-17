@@ -94,6 +94,19 @@ where `-f` allows you to provide the path to the control file for which you want
 to create your mesh.
 
 
+## Referencing
+If you use HOHQMesh in your own research, please cite this repository as follows:
+```bibtex
+@misc{kopriva2024hohqmesh,
+  title={{HOHQM}esh: An all Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements},
+  author={Kopriva, David A and Schlottke-Lakemper, Michael and Winters, Andrew R},
+  year={2024},
+  howpublished={\url{https://github.com/trixi-framework/HOHQMesh}},
+  doi={10.5281/zenodo.TODO}
+}
+```
+
+
 ## Authors
 HOHQMesh was initiated by
 [David A. Kopriva](https://www.math.fsu.edu/~kopriva/), who is also the principal developer.
