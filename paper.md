@@ -19,17 +19,22 @@ authors:
   - name: Joseph A. Schoonover
     orcid: 0000-0001-5650-7095
     affiliation: 5
+- name: Hendrik Ranocha
+  orcid: 0000-0002-3456-2277
+  affiliation: 6
 affiliations:
  - name: Professor Emeritus, The Florida State University, Tallahassee, FL, USA
    index: 1
- - name: Adjunct Professor, San Diego State University, San Diego, CA, USA
+ - name: San Diego State University, San Diego, CA, USA
    index: 2
- - name: Senior Associate Professor, Department of Mathematics; Applied Mathematics, Linköping University, Sweden
+ - name: Department of Mathematics; Applied Mathematics, Linköping University, Sweden
    index: 3
- - name: Professor, High-Performance Scientific Computing & Centre for Advanced Analytics and Predictive Sciences, University of Augsburg, Germany
+ - name: High-Performance Scientific Computing & Centre for Advanced Analytics and Predictive Sciences, University of Augsburg, Germany
    index: 4
- - name: Research Software Engineer, Fluid Numerics, Hickory, NC, USA
+ - name: Fluid Numerics, Hickory, NC, USA
    index: 5
+- name: Institute of Mathematics, Johannes Gutenberg University Mainz, Germany
+   index: 6
 date: 01 November 2024
 bibliography: paper.bib
 ---
@@ -98,7 +103,9 @@ HOHQMesh can be used with the graphical front end HOHQMesh.jl [@HOHQMESHJL:2022s
 
 This work was supported by a grant from the Simons Foundation (#426393, #961988, David Kopriva).
 Andrew Winters was funded through Vetenskapsrådet, Sweden grant agreement 2020-03642 VR.
-Michael Schlottke-Lakemper received funding through the DFG research unit FOR-5409
-(project number 463312734) and through a DFG individual grant (project number 528753982).
+Michael Schlottke-Lakemper received funding through the 
+DFG (Deutsch Forschungsgemeinschaft, German Research Foundation)
+research unit FOR-5409 (project number 463312734).
+Michael Schlottke-Lakemper and Hendrik Ranocha were supported by a DFG individual grant (project number 528753982).
 
 # References
