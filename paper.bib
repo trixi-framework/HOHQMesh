@@ -1,19 +1,32 @@
 %% This BibTeX bibliography file was created using BibDesk.
 %% https://bibdesk.sourceforge.io/
 
-%% Created for David Kopriva at 2024-10-15 15:27:28 -0700
+%% Created for David Kopriva at 2024-10-18 16:54:49 -0700 
 
 
-%% Saved with string encoding Unicode (UTF-8)
+%% Saved with string encoding Unicode (UTF-8) 
 
 
 
-@webpage{HOHQMESHJL:2022sb,
+@misc{fischer2008nek5000,
+	author = {Fischer, Paul F and Lottes, James W and Kerkemeier, Stefan G},
+	date-added = {2024-10-18 16:50:45 -0700},
+	date-modified = {2024-10-18 16:54:48 -0700},
+	title = {NEK fast high-order scalable CFD NEK: Fast high-order scalable {CFD}},
+	url = {https://nek5000.mcs.anl.gov},
+	year = {2008}}
+
+@misc{HOHQMESHJL:2022sb,
+	author = {Andrew R. Winters and David A. Kopriva and Michael Schlottke-Lakemper and Hendrik Ranocha},
 	date-added = {2024-10-15 15:25:55 -0700},
-	date-modified = {2024-10-15 15:27:19 -0700},
+	date-modified = {2024-10-18 16:46:52 -0700},
+	keywords = {2021},
 	lastchecked = {October 15, 2024},
-	url = {https://github.com/trixi-framework/HOHQMesh.jl},
-	year = {2022}}
+	month = {May},
+	title = {HOHQMesh.jl: An Interactive Frontend for HOHQMesh},
+	url = {https://trixi-framework.github.io/HOHQMesh.jl},
+	year = {2022},
+	bdsk-url-1 = {https://github.com/trixi-framework/HOHQMesh.jl}}
 
 @article{Martire:2021xt,
 	abstract = {{We introduce SPECFEM2D-DG, an open-source, time-domain, hybrid Galerkin software modelling the propagation of seismic and acoustic waves in coupled solid--fluid systems. For the solid part, the visco-elastic system from the routinely used SPECFEM2D software is used to simulate linear seismic waves subject to attenuation. For the fluid part, SPECFEM2D-DG includes two extensions to the acoustic part of SPECFEM2D, both relying on the Navier--Stokes equations to model high-frequency acoustics, infrasound and gravity waves in complex atmospheres. The first fluid extension, SPECFEM2D-DG-FNS, was introduced in 2017 by Brissaud, Martin, Garcia, and Komatitsch; it features a nonlinear Full Navier--Stokes (FNS) approach discretized with a discontinuous Galerkin numerical scheme. In this contribution, we focus only on introducing a second fluid extension, SPECFEM2D-DG-LNS, based on the same numerical method but rather relying on the Linear Navier--Stokes (LNS) equations. The three main modules of SPECFEM2D-DG all use the spectral element method (SEM). For both fluid extensions (FNS and LNS), two-way mechanical coupling conditions preserve the Riemann problem solution at the fluid--solid interface. Absorbing outer boundary conditions (ABCs) derived from the perfectly matched layers' approach is proposed for the LNS extension. The SEM approach supports complex topographies and unstructured meshes. The LNS equations allow the use of range-dependent atmospheric models, known to be crucial for the propagation of infrasound at regional scales. The LNS extension is verified using the method of manufactured solutions, and convergence is numerically characterized. The mechanical coupling conditions at the fluid--solid interface (between the LNS and elastodynamics systems of equations) are verified against theoretical reflection-transmission coefficients. The ABCs in the LNS extension are tested and prove to yield satisfactory energy dissipation. In an example case study, we model infrasonic waves caused by quakes occurring under various topographies; we characterize the acoustic scattering conditions as well as the apparent acoustic radiation pattern. Finally, we discuss the example case and conclude by describing the capabilities of this software. SPECFEM2D-DG is open-source and is freely available online on GitHub.}},
@@ -73,11 +86,12 @@
 	date = {2015-01-01},
 	date-added = {2024-10-14 14:36:11 -0700},
 	date-modified = {2024-10-14 14:36:11 -0700},
+	doi = {10.1007/978-3-319-12886-3_8},
 	pages = {133--152},
 	publisher = {Springer},
 	title = {Mesh Curving Techniques for High Order Discontinuous Galerkin Simulations},
 	year = {2015},
-	doi={10.1007/978-3-319-12886-3_8}}
+	bdsk-url-1 = {https://doi.org/10.1007/978-3-319-12886-3_8}}
 
 @inproceedings{goutal1999malpasset,
 	author = {Goutal, Nicole},
@@ -92,6 +106,7 @@
 	author = {Hervouet, Jean-Michel and Petitjean, Alain},
 	date-added = {2024-10-14 13:59:15 -0700},
 	date-modified = {2024-10-14 13:59:15 -0700},
+	doi = {0.1080/00221689909498511},
 	journal = {Journal of hydraulic research},
 	number = {6},
 	pages = {777--788},
@@ -99,7 +114,7 @@
 	title = {Malpasset dam-break revisited with two-dimensional computations},
 	volume = {37},
 	year = {1999},
-	doi={0.1080/00221689909498511}}
+	bdsk-url-1 = {https://doi.org/0.1080/00221689909498511}}
 
 @article{Bommes:2013lc,
 	abstract = {Triangle meshes have been nearly ubiquitous in computer graphics, and a large body of data structures and geometry processing algorithms based on them has been developed in the literature. At the same time, quadrilateral meshes, especially semi-regular ones, have advantages for many applications, and significant progress was made in quadrilateral mesh generation and processing during the last several years. In this survey we discuss the advantages and problems of techniques operating on quadrilateral meshes, including surface analysis and mesh quality, simplification, adaptive refinement, alignment with features, parametrisation and remeshing.},
@@ -134,13 +149,16 @@
 	volume = {3},
 	year = {2008}}
 
-@webpage{FLUXO,
+@misc{FLUXO,
+	author = {Andres Rueda-Ramirez and Michael Schlottke-Lakemper and Gregor J. Gassner and Alexander Astanin and Andrew R. Winters},
 	date-added = {2024-10-10 09:43:03 -0700},
-	date-modified = {2024-10-10 09:44:16 -0700},
-	lastchecked = {Oct 10, 2024},
-	month = {Nov. 20},
-	url = {https://gitlab.com/project-fluxo/fluxo},
-	year = {2019}}
+	date-modified = {2024-10-18 16:42:01 -0700},
+	lastchecked = {Oct 18, 2024},
+	month = {January},
+	title = {DGSEM for General Advection-Diffusion Equations},
+	url = {https://github.com/project-fluxo/fluxo},
+	year = {2017},
+	bdsk-url-1 = {https://gitlab.com/project-fluxo/fluxo}}
 
 @article{CANTWELL2015205,
 	abstract = {Nektar++ is an open-source software framework designed to support the development of high-performance scalable solvers for partial differential equations using the spectral/hp element method. High-order methods are gaining prominence in several engineering and biomedical applications due to their improved accuracy over low-order techniques at reduced computational cost for a given number of degrees of freedom. However, their proliferation is often limited by their complexity, which makes these methods challenging to implement and use. Nektar++ is an initiative to overcome this limitation by encapsulating the mathematical complexities of the underlying method within an efficient C++ framework, making the techniques more accessible to the broader scientific and industrial communities. The software supports a variety of discretisation techniques and implementation strategies, supporting methods research as well as application-focused computation, and the multi-layered structure of the framework allows the user to embrace as much or as little of the complexity as they need. The libraries capture the mathematical constructs of spectral/hp element methods, while the associated collection of pre-written PDE solvers provides out-of-the-box application-level functionality and a template for users who wish to develop solutions for addressing questions in their own scientific domains.
@@ -216,20 +234,18 @@ Program Title: Semtex Program Files doi: http://dx.doi.org/10.17632/65mz2szz5t.1
 	bdsk-url-1 = {https://doi.org/10.1016/j.jcp.2021.110467}}
 
 @article{ranocha2022adaptive,
-  title={Adaptive numerical simulations with {T}rixi.jl:
-         {A} case study of {J}ulia for scientific computing},
-  author={Ranocha, Hendrik and Schlottke-Lakemper, Michael and Winters, Andrew Ross
-          and Faulhaber, Erik and Chan, Jesse and Gassner, Gregor},
-  journal={Proceedings of the JuliaCon Conferences},
-  volume={1},
-  number={1},
-  pages={77},
-  year={2022},
-  doi={10.21105/jcon.00077},
-  eprint={2108.06476},
-  eprinttype={arXiv},
-  eprintclass={cs.MS}
-}
+	author = {Ranocha, Hendrik and Schlottke-Lakemper, Michael and Winters, Andrew Ross and Faulhaber, Erik and Chan, Jesse and Gassner, Gregor},
+	doi = {10.21105/jcon.00077},
+	eprint = {2108.06476},
+	eprintclass = {cs.MS},
+	eprinttype = {arXiv},
+	journal = {Proceedings of the JuliaCon Conferences},
+	number = {1},
+	pages = {77},
+	title = {Adaptive numerical simulations with {T}rixi.jl: {A} case study of {J}ulia for scientific computing},
+	volume = {1},
+	year = {2022},
+	bdsk-url-1 = {https://doi.org/10.21105/jcon.00077}}
 
 @article{FERRER2023108700,
 	abstract = {We present the latest developments of our High-Order Spectral Element Solver (Image 1), an open source high-order discontinuous Galerkin framework, capable of solving a variety of flow applications, including compressible flows (with or without shocks), incompressible flows, various RANS and LES turbulence models, particle dynamics, multiphase flows, and aeroacoustics. We provide an overview of the high-order spatial discretisation (including energy/entropy stable schemes) and anisotropic p-adaptation capabilities. The solver is parallelised using MPI and OpenMP showing good scalability for up to 1000 processors. Temporal discretisations include explicit, implicit, multigrid, and dual time-stepping schemes with efficient preconditioners. Additionally, we facilitate meshing and simulating complex geometries through a mesh-free immersed boundary technique. We detail the available documentation and the test cases included in the GitHub repository.
@@ -249,13 +265,6 @@ Program Title: Image 1 CPC Library link to program files: https://doi.org/10.176
 	year = {2023},
 	bdsk-url-1 = {https://www.sciencedirect.com/science/article/pii/S0010465523000450},
 	bdsk-url-2 = {https://doi.org/10.1016/j.cpc.2023.108700}}
-
-@misc{fischer2008nek5000,
-	author = {Fischer, Paul F and Lottes, James W and Kerkemeier, Stefan G},
-	date-added = {2024-10-10 09:02:05 -0700},
-	date-modified = {2024-10-10 09:02:05 -0700},
-	title = {nek5000 Web page},
-	year = {2008}}
 
 @article{Giraldo:2013bh,
 	abstract = { We derive an implicit-explicit (IMEX) formalism for the three-dimensional (3D) Euler equations that allow a unified representation of various nonhydrostatic flow regimes, including cloud resolving and mesoscale (flow in a 3D Cartesian domain) as well as global regimes (flow in spherical geometries). This general IMEX formalism admits numerous types of methods including single-stage multistep methods (e.g., Adams methods and backward difference formulas) and multistage single-step methods (e.g., additive Runge--Kutta methods). The significance of this result is that it allows a numerical model to reuse the same machinery for all classes of time-integration methods described in this work. We also derive two classes of IMEX methods, one-dimensional and 3D, and show that they achieve their expected theoretical rates of convergence regardless of the geometry (e.g., 3D box or sphere) and introduce a new second-order IMEX Runge--Kutta method that performs better than the other second-order methods considered. We then compare all the IMEX methods in terms of accuracy and efficiency for two types of geophysical fluid dynamics problems: buoyant convection and inertia-gravity waves. These results show that the high-order time-integration methods yield better efficiency particularly when high levels of accuracy are desired. },
@@ -308,129 +317,124 @@ Program Title: Image 1 CPC Library link to program files: https://doi.org/10.176
 	year = {2002}}
 
 @article{ainsworth2004,
-	Author = {Ainsworth, Mark},
-	Journal = {Journal of Computational Physics},
-	Number = {1},
-	Pages = {106--130},
-	Publisher = {Elsevier},
-	Title = {Dispersive and dissipative behaviour of high order discontinuous {G}alerkin finite element methods},
-	Volume = {198},
-	Year = {2004}}
+	author = {Ainsworth, Mark},
+	journal = {Journal of Computational Physics},
+	number = {1},
+	pages = {106--130},
+	publisher = {Elsevier},
+	title = {Dispersive and dissipative behaviour of high order discontinuous {G}alerkin finite element methods},
+	volume = {198},
+	year = {2004}}
 
 @article{bezanson2017julia,
-  title={Julia: {A} Fresh Approach to Numerical Computing},
-  author={Bezanson, Jeff and Edelman, Alan and Karpinski, Stefan and
-          Shah, Viral B},
-  journal={SIAM Review},
-  volume={59},
-  number={1},
-  pages={65--98},
-  year={2017},
-  publisher={SIAM},
-  eprint={1411.1607},
-  eprinttype={arxiv},
-  eprintclass={cs.MS},
-  doi={10.1137/141000671}
-}
+	author = {Bezanson, Jeff and Edelman, Alan and Karpinski, Stefan and Shah, Viral B},
+	doi = {10.1137/141000671},
+	eprint = {1411.1607},
+	eprintclass = {cs.MS},
+	eprinttype = {arxiv},
+	journal = {SIAM Review},
+	number = {1},
+	pages = {65--98},
+	publisher = {SIAM},
+	title = {Julia: {A} Fresh Approach to Numerical Computing},
+	volume = {59},
+	year = {2017},
+	bdsk-url-1 = {https://doi.org/10.1137/141000671}}
 
-@webpage{TrixiSW,
+@misc{TrixiSW,
+	author = {Patrick Ersing and Andrew R. Winters and Michael Schlottke-Lakemper and Hendrik Ranocha},
+	date-modified = {2024-10-18 16:48:59 -0700},
 	lastchecked = {Oct 18, 2024},
-	month = {Apr. 24},
+	month = {April},
+	title = {Shallow water simulations with Trixi.jl},
 	url = {https://github.com/trixi-framework/TrixiShallowWater.jl},
-	year = {2024}}
+	year = {2023},
+	bdsk-url-1 = {https://github.com/trixi-framework/TrixiShallowWater.jl}}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% papers that use HOHQMeshes for their results. We can decide how many of these to keep...
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 @inproceedings{acosta2020simulation,
-  title={Simulation of pollutants transport in rivers and its effect on the dynamics of a species by a high order method},
-  author={Acosta-Minoli, CA and Carmona, PC and Mesa-Mazo, MJ},
-  booktitle={Journal of Physics: Conference Series},
-  volume={1671},
-  number={1},
-  pages={012015},
-  year={2020},
-  organization={IOP Publishing},
-  doi={10.1088/1742-6596/1671/1/012015}
-}
+	author = {Acosta-Minoli, CA and Carmona, PC and Mesa-Mazo, MJ},
+	booktitle = {Journal of Physics: Conference Series},
+	doi = {10.1088/1742-6596/1671/1/012015},
+	number = {1},
+	organization = {IOP Publishing},
+	pages = {012015},
+	title = {Simulation of pollutants transport in rivers and its effect on the dynamics of a species by a high order method},
+	volume = {1671},
+	year = {2020},
+	bdsk-url-1 = {https://doi.org/10.1088/1742-6596/1671/1/012015}}
 
 @article{ersing2024entropy,
-  title={An entropy stable discontinuous {G}alerkin method for the two-layer shallow water equations on curvilinear meshes},
-  author={Ersing, Patrick and Winters, Andrew R},
-  journal={Journal of Scientific Computing},
-  volume={98},
-  number={3},
-  pages={62},
-  year={2024},
-  publisher={Springer},
-  doi={10.1007/s10915-024-02451-2}
-}
+	author = {Ersing, Patrick and Winters, Andrew R},
+	doi = {10.1007/s10915-024-02451-2},
+	journal = {Journal of Scientific Computing},
+	number = {3},
+	pages = {62},
+	publisher = {Springer},
+	title = {An entropy stable discontinuous {G}alerkin method for the two-layer shallow water equations on curvilinear meshes},
+	volume = {98},
+	year = {2024},
+	bdsk-url-1 = {https://doi.org/10.1007/s10915-024-02451-2}}
 
 @article{ranocha2024robustness,
-  title={On the robustness of high-order upwind summation-by-parts methods for nonlinear conservation laws},
-  author={Ranocha, Hendrik and Winters, Andrew R and Schlottke-Lakemper, Michael and {\"O}ffner, Philipp and Glaubitz, Jan and Gassner, Gregor J},
-  journal={Journal of Computational Physics},
-  pages={113471},
-  year={2024},
-  publisher={Elsevier},
-  doi={10.1016/j.jcp.2024.113471}
-}
+	author = {Ranocha, Hendrik and Winters, Andrew R and Schlottke-Lakemper, Michael and {\"O}ffner, Philipp and Glaubitz, Jan and Gassner, Gregor J},
+	doi = {10.1016/j.jcp.2024.113471},
+	journal = {Journal of Computational Physics},
+	pages = {113471},
+	publisher = {Elsevier},
+	title = {On the robustness of high-order upwind summation-by-parts methods for nonlinear conservation laws},
+	year = {2024},
+	bdsk-url-1 = {https://doi.org/10.1016/j.jcp.2024.113471}}
 
 @article{winters2014high,
-  title={High-order local time stepping on moving {DG} spectral element meshes},
-  author={Winters, Andrew R and Kopriva, David A},
-  journal={Journal of Scientific Computing},
-  volume={58},
-  pages={176--202},
-  year={2014},
-  publisher={Springer},
-  doi={10.1007/s10915-013-9730-z}
-}
+	author = {Winters, Andrew R and Kopriva, David A},
+	doi = {10.1007/s10915-013-9730-z},
+	journal = {Journal of Scientific Computing},
+	pages = {176--202},
+	publisher = {Springer},
+	title = {High-order local time stepping on moving {DG} spectral element meshes},
+	volume = {58},
+	year = {2014},
+	bdsk-url-1 = {https://doi.org/10.1007/s10915-013-9730-z}}
 
 @article{kopriva2016geometry,
-  title={Geometry effects in nodal discontinuous {G}alerkin methods on curved elements that are provably stable},
-  author={Kopriva, David A and Gassner, Gregor J},
-  journal={Applied Mathematics and Computation},
-  volume={272},
-  pages={274--290},
-  year={2016},
-  publisher={Elsevier},
-  doi={10.1016/j.amc.2015.08.047}
-}
+	author = {Kopriva, David A and Gassner, Gregor J},
+	doi = {10.1016/j.amc.2015.08.047},
+	journal = {Applied Mathematics and Computation},
+	pages = {274--290},
+	publisher = {Elsevier},
+	title = {Geometry effects in nodal discontinuous {G}alerkin methods on curved elements that are provably stable},
+	volume = {272},
+	year = {2016},
+	bdsk-url-1 = {https://doi.org/10.1016/j.amc.2015.08.047}}
 
 @article{manzanero2020entropy,
-  title={Entropy--stable discontinuous {G}alerkin approximation with summation--by--parts property for the incompressible {N}avier--{S}tokes/{C}ahn--{H}illiard system},
-  author={Manzanero, Juan and Rubio, Gonzalo and Kopriva, David A and Ferrer, Esteban and Valero, Eusebio},
-  journal={Journal of Computational Physics},
-  volume={408},
-  pages={109363},
-  year={2020},
-  publisher={Elsevier},
-  doi={10.1016/j.jcp.2020.109363}
-}
+	author = {Manzanero, Juan and Rubio, Gonzalo and Kopriva, David A and Ferrer, Esteban and Valero, Eusebio},
+	doi = {10.1016/j.jcp.2020.109363},
+	journal = {Journal of Computational Physics},
+	pages = {109363},
+	publisher = {Elsevier},
+	title = {Entropy--stable discontinuous {G}alerkin approximation with summation--by--parts property for the incompressible {N}avier--{S}tokes/{C}ahn--{H}illiard system},
+	volume = {408},
+	year = {2020},
+	bdsk-url-1 = {https://doi.org/10.1016/j.jcp.2020.109363}}
 
-% This one I was not sure if we wanted to cite a preprint
 @online{eriksson2024laplacian,
-  title={Efficient discretization of the {L}aplacian on complex geometries},
-  author={Gustav Eriksson},
-  year={2024},
-  eprint={2404.09050},
-  eprinttype={arxiv},
-  eprintclass={math.NA},
-  doi={10.48550/arXiv.2404.09050}
-}
+	author = {Gustav Eriksson},
+	doi = {10.48550/arXiv.2404.09050},
+	eprint = {2404.09050},
+	eprintclass = {math.NA},
+	eprinttype = {arxiv},
+	title = {Efficient discretization of the {L}aplacian on complex geometries},
+	year = {2024},
+	bdsk-url-1 = {https://doi.org/10.48550/arXiv.2404.09050}}
 
-% This one with Guus, I am not sure if the 2D meshes came from HOHQMesh.
-% I do not think the 3D one is HOHQMesh because it does not look like it came from extrusion
 @article{klose2020assessing,
-  title={Assessing standard and kinetic energy conserving volume fluxes in discontinuous Galerkin formulations for marginally resolved Navier-Stokes flows},
-  author={Klose, Bjoern F and Jacobs, Gustaaf B and Kopriva, David A},
-  journal={Computers \& Fluids},
-  volume={205},
-  pages={104557},
-  year={2020},
-  publisher={Elsevier},
-  doi={10.1016/j.compfluid.2020.104557}
-}
+	author = {Klose, Bjoern F and Jacobs, Gustaaf B and Kopriva, David A},
+	doi = {10.1016/j.compfluid.2020.104557},
+	journal = {Computers \& Fluids},
+	pages = {104557},
+	publisher = {Elsevier},
+	title = {Assessing standard and kinetic energy conserving volume fluxes in discontinuous Galerkin formulations for marginally resolved Navier-Stokes flows},
+	volume = {205},
+	year = {2020},
+	bdsk-url-1 = {https://doi.org/10.1016/j.compfluid.2020.104557}}
