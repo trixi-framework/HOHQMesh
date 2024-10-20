@@ -60,7 +60,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to
-[David Kopriva](mailto:kopriva@math.fsu.edu)
+[David Kopriva](mailto:dkopriva@fsu.edu), [Andrew Winters](mailto:andrew.winters@liu.se),
 or any other of the principal developers responsible for enforcement listed in
 [AUTHORS.md](AUTHORS.md).
 All complaints will be reviewed and investigated promptly and fairly.
