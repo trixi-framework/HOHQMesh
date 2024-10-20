@@ -98,7 +98,7 @@ to create your mesh.
 If you use HOHQMesh in your own research, please cite this repository as follows:
 ```bibtex
 @misc{kopriva2024hohqmesh,
-  title={{HOHQM}esh: An all Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements},
+  title={{HOHQM}esh: An All Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements},
   author={Kopriva, David A and Winters, Andrew R and Schlottke-Lakemper, Michael
           and Schoonover, Joseph A and Ranocha, Hendrik},
   year={2024},
