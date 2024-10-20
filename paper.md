@@ -1,5 +1,5 @@
 ---
-title: 'HOHQMesh: An all Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements'
+title: 'HOHQMesh: An All Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements'
 tags:
   - Mesh Generation
   - Spectral Element Methods
