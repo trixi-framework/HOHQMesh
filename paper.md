@@ -115,5 +115,6 @@ Michael Schlottke-Lakemper received funding through the
 DFG (Deutsch Forschungsgemeinschaft, German Research Foundation)
 research unit FOR-5409 (project number 463312734).
 Michael Schlottke-Lakemper and Hendrik Ranocha were supported by a DFG individual grant (project number 528753982).
+Hendrik Ranocha was supported by the Daimler und Benz Stiftung (Daimler and Benz foundation, project number 32-10/22).
 
 # References
