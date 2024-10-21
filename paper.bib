@@ -25,17 +25,13 @@
   doi={10.5281/zenodo.13959058}
 }
 
-@misc{HOHQMESHJL:2022sb,
-	author = {Andrew R. Winters and David A. Kopriva and Michael Schlottke-Lakemper and Hendrik Ranocha},
-	date-added = {2024-10-15 15:25:55 -0700},
-	date-modified = {2024-10-18 16:46:52 -0700},
-	keywords = {2021},
-	lastchecked = {October 15, 2024},
-	month = {May},
-	title = {HOHQMesh.jl: An Interactive Frontend for HOHQMesh},
-	url = {https://trixi-framework.github.io/HOHQMesh.jl},
-	year = {2022},
-	bdsk-url-1 = {https://github.com/trixi-framework/HOHQMesh.jl}}
+@misc{kopriva2024hohqmeshjl,
+  title={{HOHQM}esh.jl: A Julia frontend to the Fortran-based HOHQMesh mesh generator for high order elements},
+  author={Kopriva, David A and Winters, Andrew R and Schlottke-Lakemper, Michael and Ranocha, Hendrik},
+  year={2024},
+  howpublished={\url{https://github.com/trixi-framework/HOHQMesh.jl}},
+  doi={10.5281/zenodo.13959071}
+}
 
 @article{Martire:2021xt,
 	abstract = {{We introduce SPECFEM2D-DG, an open-source, time-domain, hybrid Galerkin software modelling the propagation of seismic and acoustic waves in coupled solid--fluid systems. For the solid part, the visco-elastic system from the routinely used SPECFEM2D software is used to simulate linear seismic waves subject to attenuation. For the fluid part, SPECFEM2D-DG includes two extensions to the acoustic part of SPECFEM2D, both relying on the Navier--Stokes equations to model high-frequency acoustics, infrasound and gravity waves in complex atmospheres. The first fluid extension, SPECFEM2D-DG-FNS, was introduced in 2017 by Brissaud, Martin, Garcia, and Komatitsch; it features a nonlinear Full Navier--Stokes (FNS) approach discretized with a discontinuous Galerkin numerical scheme. In this contribution, we focus only on introducing a second fluid extension, SPECFEM2D-DG-LNS, based on the same numerical method but rather relying on the Linear Navier--Stokes (LNS) equations. The three main modules of SPECFEM2D-DG all use the spectral element method (SEM). For both fluid extensions (FNS and LNS), two-way mechanical coupling conditions preserve the Riemann problem solution at the fluid--solid interface. Absorbing outer boundary conditions (ABCs) derived from the perfectly matched layers' approach is proposed for the LNS extension. The SEM approach supports complex topographies and unstructured meshes. The LNS equations allow the use of range-dependent atmospheric models, known to be crucial for the propagation of infrasound at regional scales. The LNS extension is verified using the method of manufactured solutions, and convergence is numerically characterized. The mechanical coupling conditions at the fluid--solid interface (between the LNS and elastodynamics systems of equations) are verified against theoretical reflection-transmission coefficients. The ABCs in the LNS extension are tested and prove to yield satisfactory energy dissipation. In an example case study, we model infrasonic waves caused by quakes occurring under various topographies; we characterize the acoustic scattering conditions as well as the apparent acoustic radiation pattern. Finally, we discuss the example case and conclude by describing the capabilities of this software. SPECFEM2D-DG is open-source and is freely available online on GitHub.}},
