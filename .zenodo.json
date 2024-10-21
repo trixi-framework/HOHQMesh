@@ -1,0 +1,34 @@
+{
+    "description": "An All Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements",
+    "license": "MIT",
+    "title": "HOHQMesh",
+    "upload_type": "software",
+    "creators": [
+        {
+            "affiliation": "Department of Mathematics, Florida State University, USA",
+            "name": "Kopriva, David A.",
+            "orcid": "0000-0002-8076-0856"
+        },
+        {
+            "affiliation": "Department of Mathematics; Computational Mathematics, Linköping University, Sweden",
+            "name": "Winters, Andrew R.",
+            "orcid": "0000-0002-5902-1522"
+        },
+        {
+            "affiliation": "High-Performance Scientific Computing, University of Augsburg, Germany",
+            "name": "Schlottke-Lakemper, Michael",
+            "orcid": "0000-0002-3195-2536"
+        },
+        {
+            "affiliation": "Fluid Numerics, Hickory, NC, USA",
+            "name": "Schoonover, Joseph A.",
+            "orcid": "0000-0001-5650-7095"
+        },
+        {
+            "affiliation": "Numerical Mathematics, Johannes Gutenberg University Mainz, Germany",
+            "name": "Ranocha, Hendrik",
+            "orcid": "0000-0002-3456-2277"
+        }
+    ],
+    "access_right": "open"
+}
