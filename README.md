@@ -5,7 +5,7 @@
 [![Coveralls](https://coveralls.io/repos/github/trixi-framework/HOHQMesh/badge.svg?branch=main)](https://coveralls.io/github/trixi-framework/HOHQMesh?branch=main)
 [![Codecov](https://codecov.io/gh/trixi-framework/HOHQMesh/branch/main/graph/badge.svg)](https://codecov.io/gh/trixi-framework/HOHQMesh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/licenses/MIT)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.TODO.svg)](https://doi.org/10.5281/zenodo.TODO)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13959058.svg)](https://doi.org/10.5281/zenodo.13959058)
 
 <p align="center">
   <img width="400px" src="https://user-images.githubusercontent.com/3637659/121870408-50418800-cd03-11eb-9187-dcafdf73bab2.png" />
@@ -103,7 +103,7 @@ If you use HOHQMesh in your own research, please cite this repository as follows
           and Schoonover, Joseph A and Ranocha, Hendrik},
   year={2024},
   howpublished={\url{https://github.com/trixi-framework/HOHQMesh}},
-  doi={10.5281/zenodo.TODO}
+  doi={10.5281/zenodo.13959058}
 }
 ```
 
