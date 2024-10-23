@@ -103,8 +103,7 @@
             CHARACTER(len=*)     :: cName
             INTEGER              :: id
 
-            CALL self % initWithParametersNameAndID(
-                [0.0_RP, 0.0_RP, 0.0_RP], &
+            CALL self % initWithParametersNameAndID([0.0_RP, 0.0_RP, 0.0_RP], &
                 0.0_RP, 0.0_RP, &
                 0.0_RP, 2.0_RP*PI, &
                 0.0_RP, cName, id )
@@ -141,7 +140,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 !
-        FUNCTION positionOnEllipticArcAt(self,t) RESULT(t)
+        FUNCTION positionOnEllipticArcAt(self,t) RESULT(x)
             IMPLICIT NONE
             CLASS(SMEllipticArc) :: self
             REAL(KIND=RP)        :: t
