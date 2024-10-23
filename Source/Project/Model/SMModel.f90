@@ -1322,7 +1322,7 @@
          ELSE
             rotation = 0.0_RP
             CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&
-                                           msg = "No rotation found in elliptic arc curve definition. Setting rotation=0.0 as default", &
+                                           msg = "No rotation found in elliptic arc curve definition. Setting rotation=0.0", &
                                            typ = FT_ERROR_WARNING)
 
          END IF
