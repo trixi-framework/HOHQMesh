@@ -123,7 +123,7 @@ Another type of curve defines a circular arc. The angles can be defined either i
 	\begin{CIRCULAR_ARC}
 		name        = circle
 		units       = degrees
-		center      = [0.0,0,0,0.0]
+		center      = [0.0,0.0,0.0]
 		radius      = 4.0
 		start angle = 0.0
 		end angle   = 180.0
@@ -133,16 +133,16 @@ Another type of curve defines a circular arc. The angles can be defined either i
 
 The final type of curve defines an elliptic arc. The angles can be defined either in terms of degrees or radians. If the (optional) *units* keyword is not included, the default is radians. The x and y radii are specified seperately, and the (optional) *rotation* keyword may be passed to rotate the ellipse counterclockwise.
 
-	\begin{CIRCULAR_ARC}
+	\begin{ELLIPTIC_ARC}
 		name        = ellipse
 		units       = degrees
-		center      = [0.0,0,0,0.0]
+		center      = [0.0,0.0,0.0]
 		xRadius     = 4.0
 		yRadius     = 2.0
 		start angle = 0.0
 		end angle   = 180.0
 		rotation    = 45.0
-	\end{CIRCULAR_ARC}
+	\end{ELLIPTIC_ARC}
 
 ## Boundary Chains<a name="Chains"></a>
 
