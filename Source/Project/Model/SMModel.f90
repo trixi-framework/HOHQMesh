@@ -1195,7 +1195,7 @@
          CHARACTER(LEN=LINE_LENGTH)            :: units
          REAL(KIND=RP), DIMENSION(3)           :: center
          REAL(KIND=RP)                         :: xRadius, yRadius, startAngle, endAngle, rotation
-         CLASS(SMCircularArc)   , POINTER      :: cCurve => NULL()
+         CLASS(SMEllipticArc)   , POINTER      :: cCurve => NULL()
          CLASS(SMCurve)         , POINTER      :: curvePtr => NULL()
          CLASS(FTObject)        , POINTER      :: obj
 !
@@ -1317,8 +1317,9 @@
 !        --------
 !
          IF( ellipticArcBlockDict % containsKey(key = ELLIPTIC_ARC_ROTATION_KEY) )     THEN
-            curveName = ellipticArcBlockDict % stringValueForKey(key             = ELLIPTIC_ARC_ROTATION_KEY, &
+            inputLine = ellipticArcBlockDict % stringValueForKey(key             = ELLIPTIC_ARC_ROTATION_KEY, &
                                                           requestedLength = LINE_LENGTH)
+            rotation =  getRealValue(inputLine)
          ELSE
             rotation = 0.0_RP
             CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&

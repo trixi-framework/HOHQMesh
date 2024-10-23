@@ -147,20 +147,20 @@
 !        Test ellipse
 !        ------------
 !
-         CALL ellipse % initWithParametersNameAndID(center     = [1.1_RP,1.1_RP,0.0_RP], &
-                                                   xRadius     = 1.3_RP,                 &
-                                                   yRadius     = 2.6_RP,                 &
-                                                           startAngle  = 0.1_RP,                  &
-                                                           endAngle    = PI,                      &
-                                                           rotation    = PI*0.25,                 &
-                                                           cName       = "Ellipse",               &
-                                                           id          = 1)
+         CALL ellipse % initWithParametersNameAndID(center      = [1.1_RP,1.1_RP,0.0_RP], &
+                                                    xRadius     = 1.3_RP,                 &
+                                                    yRadius     = 2.6_RP,                 &
+                                                    startAngle  = 0.1_RP,                 &
+                                                    endAngle    = PI,                     &
+                                                    rotation    = PI*0.25,                &
+                                                    cName       = "Ellipse",              &
+                                                    id          = 1)
          DO j = 1,3
             t      = j*dt
             theta  = 0.1_RP + t*(PI - 0.1_RP)
             x      = ellipse % positionAt(t)
             xc     = 1.1_RP + 1.3_RP*COS(theta) - 2.6_RP*SIN(theta)
-            yc     = 1.1_RP + 1.3_RP*SIN(theta) + 2,6_RP*COS(theta)
+            yc     = 1.1_RP + 1.3_RP*SIN(theta) + 2.6_RP*COS(theta)
             xExact = [xc,yc,0.0_RP]
             e      = MAXVAL(ABS(x - xExact))
             CALL FTAssertEqual(expectedValue = 0.0_RP,         &
