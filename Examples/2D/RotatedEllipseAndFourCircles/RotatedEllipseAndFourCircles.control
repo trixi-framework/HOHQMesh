@@ -1,0 +1,84 @@
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/2D/RotatedEllipseAndFourCircles/RotatedEllipseAnd4Circles.mesh
+      plot file name   = Examples/2D/RotatedEllipseAndFourCircles/RotatedEllipseAnd4Circles.tec
+      stats file name  = Examples/2D/RotatedEllipseAndFourCircles/RotatedEllipseAnd4Circles.txt
+      mesh file format = ISM
+      polynomial order = 5
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.1,0.1,0.1]
+   \end{BACKGROUND_GRID}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 10
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+	\begin{OUTER_BOUNDARY}
+	   \begin{ELLIPTIC_ARC}
+		 name    = outer
+		 center  = [0.0,0.0,0.0]
+		 xRadius = 4
+		 yRadius = 2
+		 start angle = 0.0
+		 end angle = 360
+		 units = degrees
+		 rotation = 45.0
+	   \end{ELLIPTIC_ARC}
+	\end{OUTER_BOUNDARY}
+
+	\begin{INNER_BOUNDARIES}
+	
+	   \begin{CHAIN}
+	       name = Inner circle 1
+           	\begin{PARAMETRIC_EQUATION_CURVE}
+			name = Circle1
+			xEqn = f(t) = 0.3*cos(2*pi*t)
+			yEqn = f(t) = 0.5 + 0.3*sin(2*pi*t)
+		        zEqn = z(t) = 0.0
+		\end{PARAMETRIC_EQUATION_CURVE}
+	   \end{CHAIN}
+	   
+	   \begin{CHAIN}
+	       name = Inner circle 2
+           	\begin{PARAMETRIC_EQUATION_CURVE}
+			name = Circle2
+			xEqn = f(t) = -1.0 + 0.5*cos(2*pi*t)
+			yEqn = f(t) = 0.5*sin(2*pi*t)
+		        zEqn = z(t) = 0.0
+		\end{PARAMETRIC_EQUATION_CURVE}
+	   \end{CHAIN}
+	   
+	   \begin{CHAIN}
+	       name = Inner circle 3
+           	\begin{PARAMETRIC_EQUATION_CURVE}
+			name = Circle3
+			xEqn = f(t) = 1.0 + 0.2*cos(2*pi*t)
+			yEqn = f(t) = 0.2*sin(2*pi*t)
+		    zEqn = z(t) = 0.0
+		\end{PARAMETRIC_EQUATION_CURVE}
+	   \end{CHAIN}
+	   
+	   \begin{CHAIN}
+	       name = Inner circle 4
+           	\begin{PARAMETRIC_EQUATION_CURVE}
+			name = Circle4
+			xEqn = f(t) = 0.5 + 0.15*cos(2*pi*t)
+			yEqn = f(t) = 0.15*sin(2*pi*t) - 0.5
+		    zEqn = z(t) = 0.0
+		\end{PARAMETRIC_EQUATION_CURVE}
+	   \end{CHAIN}
+	   
+	\end{INNER_BOUNDARIES}
+
+\end{MODEL}
+\end{FILE}
