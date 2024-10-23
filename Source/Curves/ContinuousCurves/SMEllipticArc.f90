@@ -54,8 +54,8 @@
 !
             PROCEDURE :: initWithParametersNameAndID
             FINAL     :: destructEllipticArc
-            PROCEDURE :: positionAt       => positionOnEllipticArc
-            PROCEDURE :: tangentAt        => tangentOnEllipticArc
+            PROCEDURE :: positionAt       => positionOnEllipticArcAt
+            PROCEDURE :: tangentAt        => tangentOnEllipticArcAt
             PROCEDURE :: printDescription => printEllipticArcDescription
             PROCEDURE :: className        => EllipticArcClassName
         END TYPE SMEllipticArc
@@ -105,7 +105,7 @@
 
             CALL self % initWithParametersNameAndID(
                 [0.0_RP, 0.0_RP, 0.0_RP], &
-                0.0_RP, 0.0_RP &
+                0.0_RP, 0.0_RP, &
                 0.0_RP, 2.0_RP*PI, &
                 0.0_RP, cName, id )
 

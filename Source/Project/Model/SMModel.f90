@@ -1316,7 +1316,7 @@
 !        rotation
 !        --------
 !
-         IF( ellipticArcBlockDict % containsKey(key = 'rotation') )     THEN
+         IF( ellipticArcBlockDict % containsKey(key = ELLIPTIC_ARC_ROTATION_KEY) )     THEN
             curveName = ellipticArcBlockDict % stringValueForKey(key             = ELLIPTIC_ARC_ROTATION_KEY, &
                                                           requestedLength = LINE_LENGTH)
          ELSE
