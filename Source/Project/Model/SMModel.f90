@@ -40,6 +40,7 @@
       USE SMSplineCurveClass
       USE SMLineClass
       USE SMCircularArcClass
+      USE SMEllipticArcClass
       USE CurveSweepClass
       USE FTValueDictionaryClass
       USE ErrorTypesModule
@@ -574,7 +575,11 @@
 
             CASE (CIRCULAR_ARC_CONTROL_KEY)
 
-               CALL ImportCircularArcEquationBlock(self = self, chain = chain, arcBlockDict = curveDict)
+               CALL ImportCircularArcEquationBlock(self = self, chain = chain, circularArcBlockDict = curveDict)
+
+            CASE (ELLIPTIC_ARC_CONTROL_KEY)
+
+               CALL ImportEllipticArcEquationBlock(self = self, chain = chain, ellipticArcBlockDict = curveDict)
 
             CASE DEFAULT
                CALL ThrowErrorExceptionOfType(poster = "ConstructCurve",&
@@ -1020,7 +1025,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ImportCircularArcEquationBlock( self, chain, arcBlockDict )
+      SUBROUTINE ImportCircularArcEquationBlock( self, chain, circularArcBlockDict )
          IMPLICIT NONE
 !
 !        ---------
@@ -1029,7 +1034,7 @@
 !
          CLASS(SMModel)                    :: self
          CLASS(SMChainedCurve)   , POINTER :: chain
-         CLASS(FTValueDictionary), POINTER :: arcBlockDict
+         CLASS(FTValueDictionary), POINTER :: circularArcBlockDict
 !
 !        ---------------
 !        Local variables
@@ -1061,8 +1066,8 @@
 !        Get the data
 !        ------------
 !
-         IF( arcBlockDict % containsKey(key = 'name') )     THEN
-            curveName = arcBlockDict % stringValueForKey(key             = "name", &
+         IF( circularArcBlockDict % containsKey(key = 'name') )     THEN
+            curveName = circularArcBlockDict % stringValueForKey(key             = "name", &
                                                           requestedLength = SM_CURVE_NAME_LENGTH)
          ELSE
             curveName = "circularArc"
@@ -1076,8 +1081,8 @@
 !        Start Angle
 !        -----------
 !
-         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_START_ANGLE_KEY) )     THEN
-            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_START_ANGLE_KEY, &
+         IF( circularArcBlockDict % containsKey(key = CIRCULAR_ARC_START_ANGLE_KEY) )     THEN
+            inputLine = circularArcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_START_ANGLE_KEY, &
                                                           requestedLength = LINE_LENGTH)
             startAngle = getRealValue(inputLine)
          ELSE
@@ -1091,8 +1096,8 @@
 !        End Angle
 !        ---------
 !
-         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_END_ANGLE_KEY) )     THEN
-            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_END_ANGLE_KEY, &
+         IF( circularArcBlockDict % containsKey(key = CIRCULAR_ARC_END_ANGLE_KEY) )     THEN
+            inputLine = circularArcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_END_ANGLE_KEY, &
                                                           requestedLength = LINE_LENGTH)
             endAngle = getRealValue(inputLine)
          ELSE
@@ -1107,8 +1112,8 @@
 !        -----------
 !
          units = "radians"
-         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_UNITS_KEY) )     THEN
-            units = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_UNITS_KEY, &
+         IF( circularArcBlockDict % containsKey(key = CIRCULAR_ARC_UNITS_KEY) )     THEN
+            units = circularArcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_UNITS_KEY, &
                                                           requestedLength = LINE_LENGTH)
          END IF
 !
@@ -1116,8 +1121,8 @@
 !        Radius
 !        ------
 !
-         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_RADIUS_KEY) )     THEN
-            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_RADIUS_KEY, &
+         IF( circularArcBlockDict % containsKey(key = CIRCULAR_ARC_RADIUS_KEY) )     THEN
+            inputLine = circularArcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_RADIUS_KEY, &
                                                           requestedLength = LINE_LENGTH)
             radius = getRealValue(inputLine)
          ELSE
@@ -1131,8 +1136,8 @@
 !        Center
 !        ------
 !
-         IF( arcBlockDict % containsKey(key = CIRCULAR_ARC_CENTER_KEY) )     THEN
-            inputLine = arcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_CENTER_KEY, &
+         IF( circularArcBlockDict % containsKey(key = CIRCULAR_ARC_CENTER_KEY) )     THEN
+            inputLine = circularArcBlockDict % stringValueForKey(key              = CIRCULAR_ARC_CENTER_KEY, &
                                                           requestedLength = LINE_LENGTH)
             center = GetRealArray(inputLine)
          ELSE
@@ -1167,6 +1172,189 @@
          CALL release(obj)
 
       END SUBROUTINE ImportCircularArcEquationBlock
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ImportEllipticArcEquationBlock( self, chain, ellipticArcBlockDict )
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMModel)                    :: self
+         CLASS(SMChainedCurve)   , POINTER :: chain
+         CLASS(FTValueDictionary), POINTER :: ellipticArcBlockDict
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CHARACTER(LEN=LINE_LENGTH)            :: inputLine = " "
+         CHARACTER(LEN=SM_CURVE_NAME_LENGTH)   :: curveName
+         CHARACTER(LEN=LINE_LENGTH)            :: units
+         REAL(KIND=RP), DIMENSION(3)           :: center
+         REAL(KIND=RP)                         :: xRadius, yRadius, startAngle, endAngle, rotation
+         CLASS(SMCircularArc)   , POINTER      :: cCurve => NULL()
+         CLASS(SMCurve)         , POINTER      :: curvePtr => NULL()
+         CLASS(FTObject)        , POINTER      :: obj
+!
+!        ------------------------------------------------
+         INTERFACE
+            FUNCTION GetRealArray( inputLine ) RESULT(x)
+               USE SMConstants
+               IMPLICIT NONE
+               REAL(KIND=RP), DIMENSION(3) :: x
+               CHARACTER ( LEN = * ) :: inputLine
+            END FUNCTION GetRealArray
+         END INTERFACE
+!        ________________________________________________
+!
+         REAL(KIND=RP), EXTERNAL :: getRealValue
+!
+!        ------------
+!        Get the data
+!        ------------
+!
+         IF( ellipticArcBlockDict % containsKey(key = 'name') )     THEN
+            curveName = ellipticArcBlockDict % stringValueForKey(key             = "name", &
+                                                          requestedLength = SM_CURVE_NAME_LENGTH)
+         ELSE
+            curveName = "ellipticArc"
+            CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&
+                                           msg = "No name found in elliptic arc curve definition. Using 'ellipticArc' as default", &
+                                           typ = FT_ERROR_WARNING)
+
+         END IF
+!
+!        -----------
+!        Start Angle
+!        -----------
+!
+         IF( ellipticArcBlockDict % containsKey(key = ELLIPTIC_ARC_START_ANGLE_KEY) )     THEN
+            inputLine = ellipticArcBlockDict % stringValueForKey(key              = ELLIPTIC_ARC_START_ANGLE_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            startAngle = getRealValue(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&
+                                           msg    = "No start angle in elliptic arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN
+         END IF
+!
+!        ---------
+!        End Angle
+!        ---------
+!
+         IF( ellipticArcBlockDict % containsKey(key = ELLIPTIC_ARC_END_ANGLE_KEY) )     THEN
+            inputLine = ellipticArcBlockDict % stringValueForKey(key              = ELLIPTIC_ARC_END_ANGLE_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            endAngle = getRealValue(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&
+                                           msg    = "No end angle in elliptic arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN
+         END IF
+!
+!        -----------
+!        Angle Units
+!        -----------
+!
+         units = "radians"
+         IF( ellipticArcBlockDict % containsKey(key = ELLIPTIC_ARC_UNITS_KEY) )     THEN
+            units = ellipticArcBlockDict % stringValueForKey(key              = ELLIPTIC_ARC_UNITS_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+         END IF
+!
+!        -------
+!        xRadius
+!        -------
+!
+         IF( ellipticArcBlockDict % containsKey(key = ELLIPTIC_ARC_X_RADIUS_KEY) )     THEN
+            inputLine = ellipticArcBlockDict % stringValueForKey(key              = ELLIPTIC_ARC_X_RADIUS_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            xRadius = getRealValue(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&
+                                           msg    = "No xRadius in elliptic arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN
+         END IF
+!
+!        -------
+!        yRadius
+!        -------
+!
+         IF( ellipticArcBlockDict % containsKey(key = ELLIPTIC_ARC_Y_RADIUS_KEY) )     THEN
+            inputLine = ellipticArcBlockDict % stringValueForKey(key              = ELLIPTIC_ARC_Y_RADIUS_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            yRadius = getRealValue(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&
+                                           msg    = "No yRadius in elliptic arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN
+         END IF
+!
+!        ------
+!        Center
+!        ------
+!
+         IF( ellipticArcBlockDict % containsKey(key = ELLIPTIC_ARC_CENTER_KEY) )     THEN
+            inputLine = ellipticArcBlockDict % stringValueForKey(key              = ELLIPTIC_ARC_CENTER_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+            center = GetRealArray(inputLine)
+         ELSE
+            CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&
+                                           msg    = "No center in elliptic arc curve definition.", &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN
+         END IF
+!
+!        --------
+!        rotation
+!        --------
+!
+         IF( ellipticArcBlockDict % containsKey(key = 'rotation') )     THEN
+            curveName = ellipticArcBlockDict % stringValueForKey(key             = ELLIPTIC_ARC_ROTATION_KEY, &
+                                                          requestedLength = LINE_LENGTH)
+         ELSE
+            rotation = 0.0_RP
+            CALL ThrowErrorExceptionOfType(poster = "ImportEllipticArcEquationBlock",&
+                                           msg = "No rotation found in elliptic arc curve definition. Setting rotation=0.0 as default", &
+                                           typ = FT_ERROR_WARNING)
+
+         END IF
+!
+!        ----------------
+!        Create the curve
+!        ----------------
+!
+         IF ( units == "degrees" )     THEN
+            startAngle = startAngle*DEGREES_TO_RADIANS
+            endAngle   = endAngle  *DEGREES_TO_RADIANS
+            rotation   = rotation  *DEGREES_TO_RADIANS 
+         END IF
+
+         ALLOCATE(cCurve)
+         CALL cCurve % initWithParametersNameAndID(center     = center,        &
+                                                   xRadius    = xRadius,       &
+                                                   yRadius    = yRadius,       &
+                                                   startAngle = startAngle,    &
+                                                   endAngle   = endAngle,      &
+                                                   rotation   = rotation,      &
+                                                   cName      = curveName,     &
+                                                   id = self % curveCount + 1)
+
+         !SMEllipticArc does not throw exceptions on init
+
+         curvePtr => cCurve
+         CALL chain  % addCurve(curvePtr)
+         obj => cCurve
+         CALL release(obj)
+
+      END SUBROUTINE ImportEllipticArcEquationBlock
 !
 !///////////////////////////////////////////////////////////////////////
 !

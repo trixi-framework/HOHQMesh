@@ -86,6 +86,7 @@ SMChainedCurveClass.o \
 SMCircularArc.o \
 SMConstants.o \
 SMCurveClass.o \
+SMEllipticArc.o \
 SMLine.o \
 SMMeshClass.o \
 SMMeshObjects.o \
@@ -191,6 +192,7 @@ SMConstants.o \
 SMCurveClass.o \
 SMCircularArc.o \
 FTExceptionClass.o \
+SMEllipticArc.o \
 SMLine.o \
 LineReflectionModule.o \
 ParametricEquationCurveClass.o \
@@ -617,6 +619,12 @@ SMConstants.o \
 FTObjectClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMCurveClass.f90
 
+SMEllipticArc.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMEllipticArc.f90 \
+SMCurveClass.o \
+SMConstants.o \
+ProgramGlobals.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMEllipticArc.f90
+
 SMLine.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMLine.f90 \
 SMCurveClass.o \
 SMConstants.o
@@ -655,6 +663,7 @@ SMSplineCurveClass.o \
 FTLinkedListClass.o \
 Encoder.o \
 SMCircularArc.o \
+SMEllipticArc.o \
 FTExceptionClass.o \
 FTDataClass.o \
 SMChainedCurveClass.o \

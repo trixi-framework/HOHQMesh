@@ -55,7 +55,7 @@
          PROCEDURE :: positionAt       => positionOnCircularArcAt
          PROCEDURE :: tangentAt        => tangentOnCircularArcAt
          PROCEDURE :: printDescription => printCircularArcDescription
-         PROCEDURE :: className        => ArcClassName
+         PROCEDURE :: className        => CircularArcClassName
       END TYPE SMCircularArc
       
       CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CIRCULAR_ARC_CONTROL_KEY      = "CIRCULAR_ARC"
@@ -185,7 +185,7 @@
 !>        PRINT *,  obj % className()
 !>        if( obj % className = "CircularArc")
 !>
-      FUNCTION ArcClassName(self)  RESULT(s)
+      FUNCTION CircularArcClassName(self)  RESULT(s)
          IMPLICIT NONE  
          CLASS(SMCircularArc)                       :: self
          CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH) :: s
@@ -193,6 +193,6 @@
          s = "CircularArc"
          IF( self % refCount() >= 0 ) CONTINUE 
  
-      END FUNCTION ArcClassName
+      END FUNCTION CircularArcClassName
  
       END Module SMCircularArcClass

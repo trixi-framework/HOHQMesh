@@ -34,6 +34,7 @@
          USE SMConstants
          USE SMCurveClass
          USE SMCircularArcClass
+         USE SMEllipticArcClass
          USE SMParametricEquationCurveClass
          USE SMSplineCurveClass
          USE SMTopographyClass
@@ -67,6 +68,12 @@
 !
          TYPE(SMCircularArc) :: circle
          REAL(KIND=RP)       :: xc, yc, zc, theta
+!
+!        -----------------------
+!        Elliptic arc definition
+!        -----------------------
+!
+         TYPE(SMEllipticArc) :: ellipse
 !
 !        ------------------------------
 !        Parametric Equation definition
@@ -135,6 +142,35 @@
          END DO
          CALL FTAssert(test = .NOT. circle % curveIsStraight(), msg = "Circle shouldn't be straight")
          CALL destructCircularArc(self = circle)
+!
+!        ------------
+!        Test ellipse
+!        ------------
+!
+         CALL ellipse % initWithParametersNameAndID(center     = [1.1_RP,1.1_RP,0.0_RP], &
+                                                   xRadius     = 1.3_RP,                 &
+                                                   yRadius     = 2.6_RP,                 &
+                                                   startAngle = 0.1_RP,                  &
+                                                   endAngle   = PI,                      &
+                                                   rotation   = PI*0.25,                 &
+                                                   cName      = "Ellipse",               &
+                                                   id         = 1)
+         DO j = 1,3
+            t      = j*dt
+            theta  = 0.1_RP + t*(PI - 0.1_RP)
+            x      = ellipse % positionAt(t)
+            xc     = 1.1_RP + 1.3_RP*COS(theta) - 2.6_RP*SIN(theta)
+            yc     = 1.1_RP + 1.3_RP*SIN(theta) + 2,6_RP*COS(theta)
+            xExact = [xc,yc,0.0_RP]
+            e      = MAXVAL(ABS(x - xExact))
+            CALL FTAssertEqual(expectedValue = 0.0_RP,         &
+                               actualValue   = e,              &
+                               relTol        = tol,            &
+                               absTol        = tol/10.0_RP,    &
+                               msg           = "Ellipse evaluation error too large")
+         END DO
+         CALL FTAssert(test = .NOT. ellipse % curveIsStraight(), msg = "Ellipse shouldn't be straight")
+         CALL destructEllipticArc(self = ellipse)
 !
 !        ------------------------------
 !        Parametric equation curve test
