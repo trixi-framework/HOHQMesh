@@ -118,7 +118,7 @@ where the x,y,z values of the point are specified in the array denoted as [x,y,z
 
 ### Circular Arc Curve<a name="CircularArc"></a>
 
-The final type of curve defines a circular arc. The angles can be defined either in terms of degrees or radians. If the (optional) *units* keyword is not included, the default is radians.
+Another type of curve defines a circular arc. The angles can be defined either in terms of degrees or radians. If the (optional) *units* keyword is not included, the default is radians.
 
 	\begin{CIRCULAR_ARC}
 		name        = circle
@@ -127,6 +127,21 @@ The final type of curve defines a circular arc. The angles can be defined either
 		radius      = 4.0
 		start angle = 0.0
 		end angle   = 180.0
+	\end{CIRCULAR_ARC}
+
+### Elliptic Arc Curve<a name="EllipticArc"></a>
+
+The final type of curve defines an elliptic arc. The angles can be defined either in terms of degrees or radians. If the (optional) *units* keyword is not included, the default is radians. The x and y radii are specified seperately, and the (optional) *rotation* keyword may be passed to rotate the ellipse counterclockwise.
+
+	\begin{CIRCULAR_ARC}
+		name        = ellipse
+		units       = degrees
+		center      = [0.0,0,0,0.0]
+		xRadius     = 4.0
+		yRadius     = 2.0
+		start angle = 0.0
+		end angle   = 180.0
+		rotation    = 45.0
 	\end{CIRCULAR_ARC}
 
 ## Boundary Chains<a name="Chains"></a>
