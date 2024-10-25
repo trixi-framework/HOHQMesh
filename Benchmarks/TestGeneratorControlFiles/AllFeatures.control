@@ -129,10 +129,10 @@
 	       units       = degrees
 	       center      = [-6.0,8.0,0.0]
 	       xRadius     = 2.0
-          yRadius     = 1.0
+               yRadius     = 1.0
 	       start angle = 0.0
 	       end angle   = 360.0
-          rotation    = 45.0
+               rotation    = 45.0
         \end{ELLIPTIC_ARC}
       \end{CHAIN}
 %
