@@ -69,12 +69,12 @@
 	    \end{CHAIN}
 	   
 		\begin{CHAIN}
-	      name = Inner circle 4
-          \begin{PARAMETRIC_EQUATION_CURVE}
+	         name = Inner circle 4
+                 \begin{PARAMETRIC_EQUATION_CURVE}
 			name = Circle4
 			xEqn = f(t) = 0.5 + 0.15*cos(2*pi*t)
 			yEqn = f(t) = 0.15*sin(2*pi*t) - 0.5
-		    zEqn = z(t) = 0.0
+		        zEqn = z(t) = 0.0
 		  \end{PARAMETRIC_EQUATION_CURVE}
 		\end{CHAIN}
 
