@@ -60,11 +60,11 @@
 	   
 	    \begin{CHAIN}
 	      name = Inner circle 3
-          \begin{PARAMETRIC_EQUATION_CURVE}
+                 \begin{PARAMETRIC_EQUATION_CURVE}
 			name = Circle3
 			xEqn = f(t) = 1.0 + 0.2*cos(2*pi*t)
 			yEqn = f(t) = 0.2*sin(2*pi*t)
-		    zEqn = z(t) = 0.0
+		        zEqn = z(t) = 0.0
 		  \end{PARAMETRIC_EQUATION_CURVE}
 	    \end{CHAIN}
 	   
