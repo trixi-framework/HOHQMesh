@@ -52,7 +52,7 @@
             CONTAINS
 !           ========
 !
-            PROCEDURE :: initWithParametersNameAndID => initWithParametersNameAndID_SMEllipticArc
+            PROCEDURE :: initWithParametersNameAndID!  => initWithParametersNameAndID_SMEllipticArc
             FINAL     :: destructEllipticArc
             PROCEDURE :: positionAt       => positionOnEllipticArcAt
             PROCEDURE :: tangentAt        => tangentOnEllipticArcAt
@@ -75,7 +75,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-        SUBROUTINE initWithParametersNameAndID_SMEllipticArc( self, center, xRadius, yRadius, &
+        SUBROUTINE initWithParametersNameAndID( self, center, xRadius, yRadius, &
                     startAngle, endAngle, rotation, cName, id )
             IMPLICIT NONE
             CLASS(SMEllipticArc) :: self
@@ -94,7 +94,7 @@
             self % endAngle = endAngle
             self % rotation = rotation
             
-        END SUBROUTINE initWithParametersNameAndID_SMEllipticArc
+        END SUBROUTINE initWithParametersNameAndID
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

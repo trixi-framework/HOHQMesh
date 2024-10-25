@@ -121,9 +121,11 @@
 !        -----------
 !
          CALL circle % initWithParametersNameAndID(center     = [1.1_RP,1.1_RP,0.0_RP], &
-                                                   radius     = 1.3_RP,                 &
+                                                   xRadius    = 1.3_RP,                 &
+                                                   yRadius    = 1.3_RP,                 &
                                                    startAngle = 0.1_RP,                 &
                                                    endAngle   = PI,                     &
+                                                   rotation   = 0.0_RP,                 &
                                                    cName      = "Circle",               &
                                                    id         = 1)
          DO j = 1,3

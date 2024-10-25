@@ -1158,9 +1158,11 @@
 
          ALLOCATE(cCurve)
          CALL cCurve % initWithParametersNameAndID(center     = center,        &
-                                                   radius     = radius,        &
+                                                   xRadius     = radius,        &
+                                                   yRadius     = radius,        &
                                                    startAngle = startAngle,    &
                                                    endAngle   = endAngle,      &
+                                                   rotation   = 0.0_RP,        &
                                                    cName      = curveName,     &
                                                    id = self % curveCount + 1)
 

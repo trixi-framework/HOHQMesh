@@ -607,6 +607,7 @@ FTLinkedListClass.o
 SMCircularArc.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMCircularArc.f90 \
 SMCurveClass.o \
 SMConstants.o \
+SMEllipticArc.o \
 ProgramGlobals.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMCircularArc.f90
 
