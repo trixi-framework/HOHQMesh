@@ -7,7 +7,7 @@ that can (like any of the examples) be modified at will.
 
 | Name        | Description                          | Outer | Inner | Chain | Parametric Eqn | Spline | Line | Circular Arc | Elliptic Arc | Refinement Center | Refinement Line |
 | ------------|--------------------------------------|-------|-------|-------|----------------|--------|------|--------------|--------------|-------------------|-----------------|
-| AllFeatures  | A triangle with three holes  |:material-check: | :material-check:3 | :material-check: | :material-check: | :material-check: | :material-check: | :material-check: | :material-check: | :material-check:| :material-check:|
+| AllFeatures  | A triangle with four holes  |:material-check: | :material-check:4 | :material-check: | :material-check: | :material-check: | :material-check: | :material-check: | :material-check: | :material-check:| :material-check:|
 | BoneAndMarrow  | Two embedded domains  |:material-check: | :material-close: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:|
 | BoxWithRefinement | A square domain with a refined mesh  | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-close: | :material-check: | :material-check: |
 | CavityRamp  | A cavity domain with a sloping ramp on the exit side  |:material-check: | :material-close: | :material-check: | :material-close: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close:| :material-close:|
