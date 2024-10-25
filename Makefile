@@ -7,7 +7,7 @@ FC = gfortran
 HOHQMESHPATH = .
 FTOLPATH = $(HOHQMESHPATH)/Contrib/FTObjectLibrary
 
-FFLAGS = -cpp -O
+FFLAGS = -cpp -O -g -fbacktrace
 ##########################
 # Object Files for build #
 ##########################
@@ -83,7 +83,6 @@ SimpleSweep.o \
 Sizer.o \
 SizerControls.o \
 SMChainedCurveClass.o \
-SMCircularArc.o \
 SMConstants.o \
 SMCurveClass.o \
 SMEllipticArc.o \
@@ -190,7 +189,6 @@ InterpolationAndDerivatives.o
 CurveTests.o : $(HOHQMESHPATH)/Source/Testing/CurveTests.f90 \
 SMConstants.o \
 SMCurveClass.o \
-SMCircularArc.o \
 FTExceptionClass.o \
 SMEllipticArc.o \
 SMLine.o \
@@ -604,12 +602,6 @@ FTLinkedListClass.o \
 FTLinkedListClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMChainedCurveClass.f90
 
-SMCircularArc.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMCircularArc.f90 \
-SMCurveClass.o \
-SMConstants.o \
-ProgramGlobals.o
-	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMCircularArc.f90
-
 SMConstants.o :$(HOHQMESHPATH)/Source/Foundation/SMConstants.f90
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Foundation/SMConstants.f90
 
@@ -662,7 +654,6 @@ SMTopographyClass.o \
 SMSplineCurveClass.o \
 FTLinkedListClass.o \
 Encoder.o \
-SMCircularArc.o \
 SMEllipticArc.o \
 FTExceptionClass.o \
 FTDataClass.o \

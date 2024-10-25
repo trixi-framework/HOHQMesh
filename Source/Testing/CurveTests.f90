@@ -33,7 +33,6 @@
       SUBROUTINE TestCurves
          USE SMConstants
          USE SMCurveClass
-         USE SMCircularArcClass
          USE SMEllipticArcClass
          USE SMParametricEquationCurveClass
          USE SMSplineCurveClass
@@ -63,17 +62,12 @@
          REAL(KIND=RP) :: a,b,c, aT,bT,cT
 !
 !        -----------------------
-!        Circular arc definition
-!        -----------------------
-!
-         TYPE(SMCircularArc) :: circle
-         REAL(KIND=RP)       :: xc, yc, zc, theta
-!
-!        -----------------------
 !        Elliptic arc definition
 !        -----------------------
 !
          TYPE(SMEllipticArc) :: ellipse
+         TYPE(SMEllipticArc) :: circle
+         REAL(KIND=RP)       :: xc, yc, zc, theta
 !
 !        ------------------------------
 !        Parametric Equation definition
@@ -121,7 +115,7 @@
 !        -----------
 !
          CALL circle % initWithParametersNameAndID(center     = [1.1_RP,1.1_RP,0.0_RP], &
-                                                   radius     = 1.3_RP,                 &
+                                                   radius    = 1.3_RP,                  &
                                                    startAngle = 0.1_RP,                 &
                                                    endAngle   = PI,                     &
                                                    cName      = "Circle",               &
@@ -141,7 +135,7 @@
                                msg           = "Circle evaluation error too large")
          END DO
          CALL FTAssert(test = .NOT. circle % curveIsStraight(), msg = "Circle shouldn't be straight")
-         CALL destructCircularArc(self = circle)
+         CALL destructEllipticArc(self = circle)
 !
 !        ------------
 !        Test ellipse
