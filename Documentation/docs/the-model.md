@@ -8,10 +8,10 @@ The two dimensional domain to be meshed can be bounded by at most one exterior b
 
 If no model block is included at all, then a purely Cartesian mesh will be created using parameters set in the control file.
 
-As an example, the model in Fig. 16 has one outer boundary - the outer triangle - and three inner boundaries whose interiors are exterior to the mesh.
+As an example, the model in Fig. 16 has one outer boundary - the outer triangle - and four inner boundaries whose interiors are exterior to the mesh.
 
-![AllFeatures](https://user-images.githubusercontent.com/3637659/121807794-f3d45f00-cc55-11eb-9284-af5f4eed2c87.png)
-<p align = "center"> Fig. 16. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, and circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve (<em>Examples/2D/AllFeatures</em>).</p>
+![AllFeatures](images/AllFeatures.png)
+<p align = "center"> Fig. 16. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve, and an ellipse definted by an `ELLIPTIC_ARC` curve. (<em>Examples/2D/AllFeatures</em>).</p>
 
  It is also possible to include interface boundaries whose interiors are also meshed. This allows one to force element boundaries along curves and to assign different material properties to each region bounded by them. The property is named by the innermost boundary in which an element lies. An example of a domain with two interface boundaries is shown in Fig. 17. **Right now, interface curves must be defined in the model definition from outer to inner to properly assign material names**. Thus, the innermost circle in Fig. 17 is defined after its enclosing circle. This restriction can be removed by adding code to test whether a given curve lies within another.
 
