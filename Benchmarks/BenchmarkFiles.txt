@@ -20,3 +20,4 @@ Benchmarks/ControlFiles/Box3D.control
 Benchmarks/ControlFiles/Box3DRotated.control
 Benchmarks/ControlFiles/BoneAndMarrow.control
 Benchmarks/ControlFiles/PacMan.control
+Benchmarks/ControlFiles/RotatedEllipseWithSubregions.control

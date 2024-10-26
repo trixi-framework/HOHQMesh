@@ -52,7 +52,10 @@
             CONTAINS
 !           ========
 !
-            PROCEDURE :: initWithParametersNameAndID => initWithParametersNameAndID_SMEllipticArc
+            GENERIC :: initWithParametersNameAndID  => initWithParametersNameAndID_SMEllipticArc, &
+                                                       initWithParametersNameAndID_SMCircularArc
+            PROCEDURE, PRIVATE :: initWithParametersNameAndID_SMEllipticArc
+            PROCEDURE, PRIVATE :: initWithParametersNameAndID_SMCircularArc
             FINAL     :: destructEllipticArc
             PROCEDURE :: positionAt       => positionOnEllipticArcAt
             PROCEDURE :: tangentAt        => tangentOnEllipticArcAt
@@ -60,14 +63,20 @@
             PROCEDURE :: className        => EllipticArcClassName
         END TYPE SMEllipticArc
 
-        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_CONTROL_KEY     = "ELLIPTIC_ARC"
-        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_X_RADIUS_KEY    = "xRadius"
-        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_Y_RADIUS_KEY    = "yRadius"
-        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_CENTER_KEY      = "center"
-        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_UNITS_KEY       = "units"
-        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_START_ANGLE_KEY = "start angle"
-        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_END_ANGLE_KEY   = "end angle"
-        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_ROTATION_KEY    = "rotation"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_CONTROL_KEY      = "ELLIPTIC_ARC"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_X_RADIUS_KEY     = "xRadius"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_Y_RADIUS_KEY     = "yRadius"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_CENTER_KEY       = "center"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_UNITS_KEY        = "units"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_START_ANGLE_KEY  = "start angle"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_END_ANGLE_KEY    = "end angle"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: ELLIPTIC_ARC_ROTATION_KEY     = "rotation"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CIRCULAR_ARC_CONTROL_KEY      = "CIRCULAR_ARC"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CIRCULAR_ARC_RADIUS_KEY       = "radius"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CIRCULAR_ARC_CENTER_KEY       = "center"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CIRCULAR_ARC_UNITS_KEY        = "units"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CIRCULAR_ARC_START_ANGLE_KEY  = "start angle"
+        CHARACTER(LEN=STRING_CONSTANT_LENGTH), PARAMETER :: CIRCULAR_ARC_END_ANGLE_KEY    = "end angle"
 !
 !       ========
         CONTAINS
@@ -95,6 +104,28 @@
             self % rotation = rotation
             
         END SUBROUTINE initWithParametersNameAndID_SMEllipticArc
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+        SUBROUTINE initWithParametersNameAndID_SMCircularArc( self, center, radius, &
+                startAngle, endAngle,cName, id )
+        IMPLICIT NONE
+        CLASS(SMEllipticArc) :: self
+        CHARACTER(LEN=*)     :: cName
+        INTEGER              :: id
+        REAL(KIND=RP)        :: center(3), radius
+        REAL(KIND=RP)        :: startAngle, endAngle
+
+        CALL self % SMCurve % initWithNameAndID(cName, id)
+        
+        self % center = center
+        self % xRadius = radius
+        self % yRadius = radius
+        self % startAngle = startAngle
+        self % endAngle = endAngle
+        self % rotation = 0.0_RP
+        
+    END SUBROUTINE initWithParametersNameAndID_SMCircularArc
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

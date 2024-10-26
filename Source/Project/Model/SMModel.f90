@@ -39,7 +39,6 @@
       USE SMParametricEquationCurveClass
       USE SMSplineCurveClass
       USE SMLineClass
-      USE SMCircularArcClass
       USE SMEllipticArcClass
       USE CurveSweepClass
       USE FTValueDictionaryClass
@@ -1045,7 +1044,7 @@
          CHARACTER(LEN=LINE_LENGTH)            :: units
          REAL(KIND=RP), DIMENSION(3)           :: center
          REAL(KIND=RP)                         :: radius, startAngle, endAngle
-         CLASS(SMCircularArc)   , POINTER      :: cCurve => NULL()
+         CLASS(SMEllipticArc)   , POINTER      :: cCurve => NULL()
          CLASS(SMCurve)         , POINTER      :: curvePtr => NULL()
          CLASS(FTObject)        , POINTER      :: obj
 !

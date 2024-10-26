@@ -4,6 +4,7 @@
       mesh file name   = Benchmarks/MeshFiles/Benchmarks/RotatedEllipseWithSubregions.mesh
       plot file name   = Benchmarks/PlotFiles/Benchmarks/RotatedEllipseWithSubregions.tec
       stats file name  = Benchmarks/StatsFiles/Benchmarks/RotatedEllipseWithSubregions.txt
+	  test file name   = Benchmarks/BenchmarkData/RotatedEllipseWithSubregions.txt
       mesh file format = ISM
       polynomial order = 5
       plot file format = skeleton
