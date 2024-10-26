@@ -67,7 +67,7 @@
 !
          TYPE(SMEllipticArc) :: ellipse
          TYPE(SMEllipticArc) :: circle
-         REAL(KIND=RP)       :: xc, yc, zc, theta
+         REAL(KIND=RP)       :: xc, yc, zc, theta, phi
 !
 !        ------------------------------
 !        Parametric Equation definition
