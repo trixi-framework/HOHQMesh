@@ -115,7 +115,7 @@
 !        -----------
 !
          CALL circle % initWithParametersNameAndID(center     = [1.1_RP,1.1_RP,0.0_RP], &
-                                                   radius    = 1.3_RP,                  &
+                                                   radius     = 1.3_RP,                 &
                                                    startAngle = 0.1_RP,                 &
                                                    endAngle   = PI,                     &
                                                    cName      = "Circle",               &
@@ -271,10 +271,10 @@
          REAL(KIND=RP) :: exact, computed
 
         CALL ExactAndComputedSphereCurvature(0.5_RP,0.5_RP, exact, computed)
-        CALL FTAssertEqual(expectedValue = exact,     &
-                           actualValue   = computed,  &
-                           relTol         = 2.0d-8,   &
-                           absTol         = 2.0d-9,   &
+        CALL FTAssertEqual(expectedValue = exact,    &
+                           actualValue   = computed, &
+                           relTol        = 2.0d-8,   &
+                           absTol        = 2.0d-9,   &
                            msg           = "Computed Sphere Curvature error")
 
         CALL ExactAndComputedQuadraticCurvature(0.5_RP,0.5_RP, exact, computed)
