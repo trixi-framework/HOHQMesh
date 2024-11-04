@@ -129,21 +129,6 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-        SUBROUTINE initDefaultEllipse( self, cName, id )
-            IMPLICIT NONE
-            CLASS(SMEllipticArc) :: self
-            CHARACTER(len=*)     :: cName
-            INTEGER              :: id
-
-            CALL self % initWithParametersNameAndID([0.0_RP, 0.0_RP, 0.0_RP], &
-                0.0_RP, 0.0_RP, &
-                0.0_RP, 2.0_RP*PI, &
-                0.0_RP, cName, id )
-
-        END SUBROUTINE initDefaultEllipse
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
         SUBROUTINE destructEllipticArc(self)
             IMPLICIT NONE
             TYPE(SMEllipticArc) :: self
