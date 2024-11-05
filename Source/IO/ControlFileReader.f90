@@ -66,6 +66,8 @@
 !               PARAMETRIC_EQUATION_CURVE
 !               SPLINE_CURVE
 !               END_POINTS_LINE
+!               CIRCULAR_ARC
+!               ELLIPTIC_ARC
 !
 !      The INNER_BOUNDARIES dictionary contains the keys
 !         TYPE
@@ -80,6 +82,7 @@
 !                SPLINE_CURVE
 !                END_POINTS_LINE
 !                CIRCULAR_ARC
+!                ELLIPTIC_ARC
 !
 !      A PARAMETRIC_EQUATION_CURVE dictionary contains the keys
 !         TYPE
@@ -115,6 +118,18 @@
 !         radius
 !         start angle
 !         end angle
+!
+!      An ELLIPTIC_ARC block contains
+!
+!         TYPE
+!         name
+!         units
+!         center
+!         xRadius
+!         yRadius
+!         start angle
+!         end angle
+!         rotation
 !
 !      REFINEMENT_REGIONS dictionary contains the keys
 !         TYPE
