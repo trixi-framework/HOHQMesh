@@ -133,7 +133,6 @@
         IMPLICIT NONE
         CLASS(SMLine) :: self
         INTEGER       :: iUnit
-        OPEN(iUnit, STATUS='SCRATCH')
         WRITE(iUnit,'(A)') "SMLine Object"
         IF(self % refCount() >= 0)     CONTINUE 
      END SUBROUTINE printLineDescription

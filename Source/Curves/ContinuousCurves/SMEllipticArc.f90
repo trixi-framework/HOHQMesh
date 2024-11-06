@@ -197,7 +197,6 @@
             IMPLICIT NONE
             CLASS(SMEllipticArc) :: self
             INTEGER              :: iUnit
-            OPEN(iUnit, STATUS='SCRATCH')
             WRITE(iUnit,'(A)') "SMEllipticArc Object"
             IF(self % refCount() >= 0) CONTINUE
         END SUBROUTINE printEllipticArcDescription

@@ -109,8 +109,10 @@
          
          CALL FTAssert(test = line % curveIsStraight(), msg = "Line straightness")
          CALL destructLine(self = line)
-         CALL printLineDescription(self = line, iUnit = iUnit)
-         CALL TestPrintDescription("SMLine Object", iUnit)
+         OPEN(iUnit, STATUS='SCRATCH')
+            CALL printLineDescription(self = line, iUnit = iUnit)
+            CALL TestPrintDescription("SMLine Object", iUnit)
+         CLOSE(iUnit)
 !
 !        -----------
 !        Test circle
@@ -168,8 +170,10 @@
          END DO
          CALL FTAssert(test = .NOT. ellipse % curveIsStraight(), msg = "Ellipse shouldn't be straight")
          CALL destructEllipticArc(self = ellipse)
-         CALL printEllipticArcDescription(self = ellipse, iUnit = iUnit)
-         CALL TestPrintDescription("SMEllipticArc Object", iUnit)
+         OPEN(iUnit, STATUS='SCRATCH')
+            CALL printEllipticArcDescription(self = ellipse, iUnit = iUnit)
+            CALL TestPrintDescription("SMEllipticArc Object", iUnit)
+         CLOSE(iUnit)
 !
 !        ------------------------------
 !        Parametric equation curve test
