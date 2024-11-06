@@ -316,11 +316,12 @@
       SUBROUTINE TestPrintDescription(description, iUnit)
          USE FTAssertions
          IMPLICIT NONE
-         INTEGER            :: diffCheck = 0
+         INTEGER            :: diffCheck
          INTEGER            :: iUnit, k
          CHARACTER(len=*)   :: description
          CHARACTER(len=100) :: fileLine
 
+         diffCheck = 0
          REWIND(iUnit)
          READ(iUnit, '(A)') fileLine
          IF (LEN_TRIM(fileLine) /= LEN_TRIM(description)) THEN
