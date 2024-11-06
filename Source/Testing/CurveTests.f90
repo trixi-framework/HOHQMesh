@@ -109,7 +109,7 @@
          
          CALL FTAssert(test = line % curveIsStraight(), msg = "Line straightness")
          CALL destructLine(self = line)
-         OPEN(iUnit, STATUS='SCRATCH')
+         OPEN(NEWUNIT = iUnit, STATUS='SCRATCH')
             CALL printLineDescription(self = line, iUnit = iUnit)
             CALL TestPrintDescription("SMLine Object", iUnit)
          CLOSE(iUnit)
@@ -170,7 +170,7 @@
          END DO
          CALL FTAssert(test = .NOT. ellipse % curveIsStraight(), msg = "Ellipse shouldn't be straight")
          CALL destructEllipticArc(self = ellipse)
-         OPEN(iUnit, STATUS='SCRATCH')
+         OPEN(NEWUNIT = iUnit, STATUS='SCRATCH')
             CALL printEllipticArcDescription(self = ellipse, iUnit = iUnit)
             CALL TestPrintDescription("SMEllipticArc Object", iUnit)
          CLOSE(iUnit)
@@ -336,7 +336,5 @@
                             actualValue   = diffCheck,                                         &
                             msg           = "Description not writing correctly; should be:" // &
                             ACHAR(10) // "       " // description)
-         diffCheck = 0
-         iUnit = iUnit + 1
 
       END SUBROUTINE TestPrintDescription
