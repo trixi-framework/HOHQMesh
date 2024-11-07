@@ -15,7 +15,7 @@ and for a single,
    [Contributor. Description]: #
 </div>
 
-The Contributor is who submitted the mesh. For now Contributor. Description are in comments. If someone knows how to add captions to the plots, and acknowlegements for
+The Contributor is who submitted the mesh. For now Contributor. Description are in comments. If someone knows how to add captions to the plots, and acknowledgements for
 who contributed them, that would be nice to have those added and use these for the caption.
 
 At some point these figures should be moved out of the repo to where the other figures are located.
