@@ -24,7 +24,7 @@ At some point these figures should be moved out of the repo to where the other f
 
 # A HOHQMesh Mesh Gallery
 
-Please add interesting contributions!
+Please submit interesting contributions!
 
 ## Exterior Domains
 
