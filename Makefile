@@ -83,9 +83,9 @@ SimpleSweep.o \
 Sizer.o \
 SizerControls.o \
 SMChainedCurveClass.o \
-SMCircularArc.o \
 SMConstants.o \
 SMCurveClass.o \
+SMEllipticArc.o \
 SMLine.o \
 SMMeshClass.o \
 SMMeshObjects.o \
@@ -189,8 +189,8 @@ InterpolationAndDerivatives.o
 CurveTests.o : $(HOHQMESHPATH)/Source/Testing/CurveTests.f90 \
 SMConstants.o \
 SMCurveClass.o \
-SMCircularArc.o \
 FTExceptionClass.o \
+SMEllipticArc.o \
 SMLine.o \
 LineReflectionModule.o \
 ParametricEquationCurveClass.o \
@@ -602,12 +602,6 @@ FTLinkedListClass.o \
 FTLinkedListClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMChainedCurveClass.f90
 
-SMCircularArc.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMCircularArc.f90 \
-SMCurveClass.o \
-SMConstants.o \
-ProgramGlobals.o
-	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMCircularArc.f90
-
 SMConstants.o :$(HOHQMESHPATH)/Source/Foundation/SMConstants.f90
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Foundation/SMConstants.f90
 
@@ -616,6 +610,12 @@ ProgramGlobals.o \
 SMConstants.o \
 FTObjectClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMCurveClass.f90
+
+SMEllipticArc.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMEllipticArc.f90 \
+SMCurveClass.o \
+SMConstants.o \
+ProgramGlobals.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMEllipticArc.f90
 
 SMLine.o :$(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMLine.f90 \
 SMCurveClass.o \
@@ -654,7 +654,7 @@ SMTopographyClass.o \
 SMSplineCurveClass.o \
 FTLinkedListClass.o \
 Encoder.o \
-SMCircularArc.o \
+SMEllipticArc.o \
 FTExceptionClass.o \
 FTDataClass.o \
 SMChainedCurveClass.o \

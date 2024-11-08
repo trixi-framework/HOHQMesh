@@ -108,7 +108,7 @@
 %     Using Circular Arc
 %
       \begin{CHAIN}
-		name = Arc
+		name = Circular Arc
         \begin{CIRCULAR_ARC}
 	       name        = InnerCircle1
 	       units       = degrees
@@ -117,6 +117,22 @@
 	       start angle = 0.0
 	       end angle   = 360.0
         \end{CIRCULAR_ARC}
+      \end{CHAIN}
+%
+%     Using Elliptic Arc
+%
+      \begin{CHAIN}
+		name = Elliptic Arc
+        \begin{ELLIPTIC_ARC}
+	       name        = InnerEllipse1
+	       units       = degrees
+	       center      = [-6.0,8.0,0.0]
+	       xRadius     = 2.0
+               yRadius     = 1.0
+	       start angle = 0.0
+	       end angle   = 360.0
+               rotation    = 45.0
+        \end{ELLIPTIC_ARC}
       \end{CHAIN}
 %
 %      Using parametric equation curve

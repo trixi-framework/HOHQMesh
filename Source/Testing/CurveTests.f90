@@ -33,7 +33,7 @@
       SUBROUTINE TestCurves
          USE SMConstants
          USE SMCurveClass
-         USE SMCircularArcClass
+         USE SMEllipticArcClass
          USE SMParametricEquationCurveClass
          USE SMSplineCurveClass
          USE SMTopographyClass
@@ -52,6 +52,7 @@
          REAL(KIND=RP)                           :: xExact(3)
          INTEGER                                 :: j
          REAL(KIND=RP)                           :: dt = 0.2_RP, t, e, tol = 1.0d-5
+         INTEGER                                 :: iUnit = 200
 !
 !        ---------------
 !        Line definition
@@ -62,11 +63,12 @@
          REAL(KIND=RP) :: a,b,c, aT,bT,cT
 !
 !        -----------------------
-!        Circular arc definition
+!        Elliptic arc definition
 !        -----------------------
 !
-         TYPE(SMCircularArc) :: circle
-         REAL(KIND=RP)       :: xc, yc, zc, theta
+         TYPE(SMEllipticArc) :: ellipse
+         TYPE(SMEllipticArc) :: circle
+         REAL(KIND=RP)       :: xc, yc, zc, theta, phi
 !
 !        ------------------------------
 !        Parametric Equation definition
@@ -83,7 +85,6 @@
 !
          REAL(KIND=RP)       :: r(7), xA(7), yA(7), zA(7)
          TYPE(SMSplineCurve) :: spline
-
 !
 !        ---------
 !        Test Line
@@ -108,6 +109,10 @@
          
          CALL FTAssert(test = line % curveIsStraight(), msg = "Line straightness")
          CALL destructLine(self = line)
+         OPEN(NEWUNIT = iUnit, STATUS='SCRATCH')
+            CALL printLineDescription(self = line, iUnit = iUnit)
+            CALL TestPrintDescription("SMLine Object", iUnit)
+         CLOSE(iUnit)
 !
 !        -----------
 !        Test circle
@@ -134,7 +139,41 @@
                                msg           = "Circle evaluation error too large")
          END DO
          CALL FTAssert(test = .NOT. circle % curveIsStraight(), msg = "Circle shouldn't be straight")
-         CALL destructCircularArc(self = circle)
+         CALL destructEllipticArc(self = circle)
+!
+!        ------------
+!        Test ellipse
+!        ------------
+!
+         CALL ellipse % initWithParametersNameAndID(center      = [1.1_RP,1.1_RP,0.0_RP], &
+                                                    xRadius     = 1.3_RP,                 &
+                                                    yRadius     = 2.6_RP,                 &
+                                                    startAngle  = 0.1_RP,                 &
+                                                    endAngle    = PI,                     &
+                                                    rotation    = PI*0.25_RP,             &
+                                                    cName       = "Ellipse",              &
+                                                    id          = 1)
+         DO j = 1,3
+            t      = j*dt
+            theta  = 0.1_RP + t*(PI - 0.1_RP)
+            phi    = PI*0.25_RP
+            x      = ellipse % positionAt(t)
+            xc     = 1.1_RP + 1.3_RP*COS(theta)*COS(phi) - 2.6_RP*SIN(theta)*SIN(phi)
+            yc     = 1.1_RP + 1.3_RP*COS(theta)*SIN(phi) + 2.6_RP*SIN(theta)*COS(phi)
+            xExact = [xc,yc,0.0_RP]
+            e      = MAXVAL(ABS(x - xExact))
+            CALL FTAssertEqual(expectedValue = 0.0_RP,         &
+                               actualValue   = e,              &
+                               relTol        = tol,            &
+                               absTol        = tol/10.0_RP,    &
+                               msg           = "Ellipse evaluation error too large")
+         END DO
+         CALL FTAssert(test = .NOT. ellipse % curveIsStraight(), msg = "Ellipse shouldn't be straight")
+         CALL destructEllipticArc(self = ellipse)
+         OPEN(NEWUNIT = iUnit, STATUS='SCRATCH')
+            CALL printEllipticArcDescription(self = ellipse, iUnit = iUnit)
+            CALL TestPrintDescription("SMEllipticArc Object", iUnit)
+         CLOSE(iUnit)
 !
 !        ------------------------------
 !        Parametric equation curve test
@@ -240,10 +279,10 @@
          REAL(KIND=RP) :: exact, computed
 
         CALL ExactAndComputedSphereCurvature(0.5_RP,0.5_RP, exact, computed)
-        CALL FTAssertEqual(expectedValue = exact,     &
-                           actualValue   = computed,  &
-                           relTol         = 2.0d-8,   &
-                           absTol         = 2.0d-9,   &
+        CALL FTAssertEqual(expectedValue = exact,    &
+                           actualValue   = computed, &
+                           relTol        = 2.0d-8,   &
+                           absTol        = 2.0d-9,   &
                            msg           = "Computed Sphere Curvature error")
 
         CALL ExactAndComputedQuadraticCurvature(0.5_RP,0.5_RP, exact, computed)
@@ -264,8 +303,39 @@
         CALL ExactAndComputedQuadraticHessian(x = 0.5_RP,y = 0.5_RP,exact = exactHess,computed = hessF)
         CALL FTAssertEqual(expectedValue = 0.0_RP,                       &
                            actualValue   = MAXVAL(ABS(exactHess-hessF)), &
-                           relTol         = 2.0d-8,                      &
-                           absTol         = 1.0d-9,                      &
+                           relTol        = 2.0d-8,                       &
+                           absTol        = 1.0d-9,                       &
                            msg           = "Quadratic Hessian error")
 
       END SUBROUTINE TestGaussianCurvature
+!
+!     ---------------------
+!     Test printDescription
+!     ---------------------
+!
+      SUBROUTINE TestPrintDescription(description, iUnit)
+         USE FTAssertions
+         IMPLICIT NONE
+         INTEGER            :: diffCheck
+         INTEGER            :: iUnit, k
+         CHARACTER(len=*)   :: description
+         CHARACTER(len=100) :: fileLine
+
+         diffCheck = 0
+         REWIND(iUnit)
+         READ(iUnit, '(A)') fileLine
+         IF (LEN_TRIM(fileLine) /= LEN_TRIM(description)) THEN
+            diffCheck = diffCheck + 1
+         ELSE
+            DO k = 1, MIN(LEN_TRIM(fileLine), LEN_TRIM(description))
+               IF (fileLine(k:k) /= description(k:k)) THEN
+                  diffCheck = diffCheck + 1
+               END IF
+            END DO
+         END IF
+         CALL FTAssertEqual(expectedValue = 0,                                                 &
+                            actualValue   = diffCheck,                                         &
+                            msg           = "Description not writing correctly; should be:" // &
+                            ACHAR(10) // "       " // description)
+
+      END SUBROUTINE TestPrintDescription

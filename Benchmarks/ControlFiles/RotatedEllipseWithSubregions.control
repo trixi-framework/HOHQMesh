@@ -1,0 +1,147 @@
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/RotatedEllipseWithSubregions.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/RotatedEllipseWithSubregions.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/RotatedEllipseWithSubregions.txt
+      test file name   = Benchmarks/BenchmarkData/RotatedEllipseWithSubregions.txt
+      mesh file format = ISM
+      polynomial order = 5
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.1,0.1,0.1]
+   \end{BACKGROUND_GRID}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 10
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+	\begin{OUTER_BOUNDARY}
+	  \begin{ELLIPTIC_ARC}
+		name    = outer
+		center  = [0.0,0.0,0.0]
+		xRadius = 4
+		yRadius = 2
+		start angle = 0.0
+		end angle = 360.0
+		rotation = 45.0
+		units = degrees
+	  \end{ELLIPTIC_ARC}
+	\end{OUTER_BOUNDARY}
+
+	\begin{INNER_BOUNDARIES}
+	
+	    \begin{CHAIN}
+	      name = Inner circle 1
+          \begin{PARAMETRIC_EQUATION_CURVE}
+			name = Circle1
+			xEqn = f(t) = 0.3*cos(2*pi*t)
+			yEqn = f(t) = 0.5 + 0.3*sin(2*pi*t)
+		    zEqn = z(t) = 0.0
+		  \end{PARAMETRIC_EQUATION_CURVE}
+	    \end{CHAIN}
+	   
+	    \begin{CHAIN}
+	      name = Inner circle 2
+          \begin{PARAMETRIC_EQUATION_CURVE}
+			name = Circle2
+			xEqn = f(t) = -1.0 + 0.5*cos(2*pi*t)
+			yEqn = f(t) = 0.5*sin(2*pi*t)
+		    zEqn = z(t) = 0.0
+		  \end{PARAMETRIC_EQUATION_CURVE}
+	    \end{CHAIN}
+	   
+	    \begin{CHAIN}
+	      name = Inner circle 3
+          \begin{PARAMETRIC_EQUATION_CURVE}
+			name = Circle3
+			xEqn = f(t) = 1.0 + 0.2*cos(2*pi*t)
+			yEqn = f(t) = 0.2*sin(2*pi*t)
+		    zEqn = z(t) = 0.0
+		  \end{PARAMETRIC_EQUATION_CURVE}
+	    \end{CHAIN}
+	   
+		\begin{CHAIN}
+	      name = Inner circle 4
+          \begin{PARAMETRIC_EQUATION_CURVE}
+			name = Circle4
+			xEqn = f(t) = 0.5 + 0.15*cos(2*pi*t)
+			yEqn = f(t) = 0.15*sin(2*pi*t) - 0.5
+		    zEqn = z(t) = 0.0
+		  \end{PARAMETRIC_EQUATION_CURVE}
+		\end{CHAIN}
+
+	    \begin{CHAIN}
+		  name = Inner Half Ellipse 1
+		  \begin{ELLIPTIC_ARC}
+			name    = Ellipse1
+			center  = [1.5,1.5,0.0]
+			xRadius = 1.0
+			yRadius = 0.5
+			start angle = -180.0
+			end angle = 0.0
+			rotation = 0.0
+			units = degrees
+	   	  \end{ELLIPTIC_ARC}
+		  \begin{END_POINTS_LINE}
+			name = E1
+			xStart = [2.5,1.5,0.0]
+			xEnd   = [0.5,1.5,0.0]
+  		  \end{END_POINTS_LINE}
+	    \end{CHAIN}
+
+		\begin{CHAIN}
+		  name = Inner Half Ellipse 2
+		  \begin{ELLIPTIC_ARC}
+			name    = Ellipse2
+			center  = [1.5,2.0,0.0]
+			xRadius = 1.0
+			yRadius = 0.5
+			start angle = 0.0
+			end angle = 3.14159265358979323846
+			rotation = 0.0
+			units = radians
+	   	  \end{ELLIPTIC_ARC}
+		  \begin{END_POINTS_LINE}
+			name = E2
+			xStart = [0.5,2.0,0.0]
+			xEnd   = [2.5,2.0,0.0]
+  		  \end{END_POINTS_LINE}
+	    \end{CHAIN}
+
+		\begin{CHAIN}
+		  name = Inner Third Ellipse
+		  \begin{ELLIPTIC_ARC}
+			name    = Ellipse3
+			center  = [-2.0,-2.0,0.0]
+			xRadius = 0.5
+			yRadius = 1.0
+			start angle = 0.0
+			end angle = 90.0
+			rotation = 0.0
+			units = degrees
+	   	  \end{ELLIPTIC_ARC}
+		  \begin{END_POINTS_LINE}
+			name = E3
+			xStart = [-2.0,-1.0,0.0]
+			xEnd   = [-2.0,-2.0,0.0]
+  		  \end{END_POINTS_LINE}
+		  \begin{END_POINTS_LINE}
+			name = E4
+			xStart = [-2.0,-2.0,0.0]
+			xEnd   = [-1.5,-2.0,0.0]
+  		  \end{END_POINTS_LINE}
+	    \end{CHAIN}
+	   
+	\end{INNER_BOUNDARIES}
+
+\end{MODEL}
+\end{FILE}
