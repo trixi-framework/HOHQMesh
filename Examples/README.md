@@ -21,13 +21,13 @@ For this reason, we have reduced the storage requirements in the following ways:
    - HalfCircleArc
    - HalfCircleExtruded
    - HalfCircleRotated
+   - Malpasset
    - NACA0012
+   - PacMan
    - Pill
    - Pond3D
-   - SplineGeometry
-   - PacMan
-   - Malpasset
    - RotatedEllipseWithSubregions
+   - SplineGeometry
 
    Those that do not have a counterpart have plot file examples in this directory.
 
