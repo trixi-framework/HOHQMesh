@@ -97,3 +97,9 @@ Please submit interesting contributions!
 	<img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/9f4996ce1f3cc94f2dc0a537135c8d696e61de20/gallery/julia-letters.png?raw=true" width="48%" />
   [Andrew R. Winters. Julia logo]: #
 </div>
+
+### Julia Logo create by Andrew R. Winters
+
+![julia-logo](https://github.com/trixi-framework/HOHQMesh_examples/blob/9f4996ce1f3cc94f2dc0a537135c8d696e61de20/gallery/julia-letters.png?raw=true)
+
+<iframe width="720" height="405" src="https://www.youtube.com/embed/1yr0RDx7M5g?si=9P6U9RLqFegN2oUc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
