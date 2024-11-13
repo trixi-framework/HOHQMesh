@@ -24,7 +24,10 @@ At some point these figures should be moved out of the repo to where the other f
 
 # A HOHQMesh Mesh Gallery
 
-Please submit interesting contributions!
+Please submit interesting contributions by uploading images to
+[this repo](https://github.com/trixi-framework/HOHQMesh_examples)
+and then updating the gallery page
+[here](https://github.com/trixi-framework/HOHQMesh/blob/main/Documentation/docs/Gallery.md)!
 
 ## Exterior Domains
 
