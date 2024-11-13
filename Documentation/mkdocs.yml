@@ -60,3 +60,4 @@ extra_javascript:
 
 extra_css:
   - css/video.css
+  - css/gallery.css

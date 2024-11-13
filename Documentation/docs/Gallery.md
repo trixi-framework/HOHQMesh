@@ -42,6 +42,44 @@ Please submit interesting contributions!
   <!---[Andrew R. Winters. NACA6412 Airfoil from https://github.com/cfsengineering/GMSH-Airfoil-2D]: #-->
 </div>
 
+<div class="gallery-two-columns">
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/9df4021e865fcdb600a8a25ce2a37938a1e99523/gallery/cylinder-flow-small.png?raw=true"/>
+      <figcaption>
+         Contributor?. Cylinder with a wake region
+       </figcaption>
+    </figure>
+  </div>
+
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/naca0012-small.png?raw=true"/>
+      <figcaption>
+        David A. Kopriva. NACA0012 Airfoil
+      </figcaption>
+  </div>
+</div>
+
+<div class="gallery-two-columns">
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/three-element-30p30n-small.png?raw=true"/>
+      <figcaption>
+         Andrew R. Winters. <a href="http://www.ae.metu.edu.tr/tuncer/ae546/multi/" target="_blank" rel="noopener noreferrer">Three element Airfoil</a>
+       </figcaption>
+    </figure>
+  </div>
+
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/naca6412-small.png?raw=true"/>
+      <figcaption>
+        Andrew R. Winters. <a href="https://github.com/cfsengineering/GMSH-Airfoil-2D" target="_blank" rel="noopener noreferrer">NACA6412 Airfoil</a>
+      </figcaption>
+  </div>
+</div>
+
 ## Coastlines
 
 <div align="center">
@@ -55,6 +93,44 @@ Please submit interesting contributions!
   <!---[Joe Schoonover. East coast of the US]: #-->
   <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/malpasset-small.png?raw=true" width="48%" />
   <!---[Andrew R. Winters.  Reyran river valley down to the Mediterranean sea]: #-->
+</div>
+
+<div class="gallery-two-columns">
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/indian-ocean-small.png?raw=true"/>
+      <figcaption>
+         David A. Kopriva. Indian Ocean
+       </figcaption>
+    </figure>
+  </div>
+
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/SuperiorFull-small.png?raw=true"/>
+      <figcaption>
+        David A. Kopriva. Lake Superior
+      </figcaption>
+  </div>
+</div>
+
+<div class="gallery-two-columns">
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/east-coast-us-2d-small.png?raw=true"/>
+      <figcaption>
+         Joe Schoonover. East coast of the US
+       </figcaption>
+    </figure>
+  </div>
+
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/malpasset-small.png?raw=true"/>
+      <figcaption>
+        Andrew R. Winters. Reyran river valley down to the Mediterranean sea
+      </figcaption>
+  </div>
 </div>
 
 ## Embedded
