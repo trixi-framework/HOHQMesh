@@ -1,6 +1,6 @@
 # HOHQMesh Examples
 
-There are seventeen two-dimensional and ten three-dimensional examples included in the repository
+There are nineteen two-dimensional and ten three-dimensional examples included in the repository
 both for the user to run and to visualize models and meshes that use the features of HOHQMesh,
 and for developers to compare changes as algorithms are added or changed.
 
@@ -60,14 +60,14 @@ they exercise.
 | **Half Circle**           | Upper half circle                                  | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
 | **Indian Ocean**          | Complex domain with islands and inlets             | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **KT3 Element**           | Three element Karman-Treffitz airfoil              | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Malpasset**             | Scene of the Maslpasset Dam failure                | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Malpasset**             | Scene of the Malpasset Dam failure                 | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **NACA0012**              | Standard Airfoil geometry                          | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | **PacMan**                | A curved domain reflected about a line             | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
 | **Pill**                  | Oblong domain with interior circles                | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
 | **RotatedEllipseWithSubregions** | Multiple ellipses and arcs                  | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Spline Geometry**       | Free form domain defined as a spline               | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Square**                | Uniform Cartesian mesh                             | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **SuperiorMain**          | Coastline of Lake                                  | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **SuperiorMain**          | Coastline of Lake Superior                         | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ## Overview of 3D Examples
 
