@@ -46,7 +46,7 @@ This makes it possible to mesh airfoil type geometries.
 <p align = "center"> Fig. 5. Mesh for a three element Karman-Trefftz airfoil (<em>Examples/2D/KT3Element</em>)</p>
 
 Local refinement can be added manually, either at a point or along a line.
-![AllFeatures](https://user-images.githubusercontent.com/3637659/121807794-f3d45f00-cc55-11eb-9284-af5f4eed2c87.png)
+![AllFeatures](https://github.com/user-attachments/assets/2f12ca1c-8a20-4c7d-98e6-9d619562a34d)
 <p align = "center"> Fig. 6. Mesh showing manual refinement along a line and at a point (<em>Examples/2D/AllFeatures</em>)</p>
 
 Truly complex geometries can be meshed, as shown in the following coastline models. Refinement around features is automatic.
