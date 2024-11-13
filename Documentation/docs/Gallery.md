@@ -174,9 +174,9 @@ and then updating the gallery page
 
   <div class="gallery-column">
     <figure>
-      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/mt-st-helens-perspective-small.png?raw=true"/>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/jack-o-lantern-small.png?raw=true"/>
       <figcaption>
-         jack-o-lantern-small (Garrett Byrd)
+        Jack o'Lantern  (Garrett Byrd)
       </figcaption>
   </div>
 </div>
