@@ -1,6 +1,6 @@
 # Examples
 
-HOHQMesh comes with 18 example control, mesh, and plot files for two-dimensional meshes found in the *Examples/2D* directory. These examples illustrate the use of the the control and model features, and the resulting meshes and plot files.
+HOHQMesh comes with 19 example control, mesh, and plot files for two-dimensional meshes found in the *Examples/2D* directory. These examples illustrate the use of the the control and model features, and the resulting meshes and plot files.
 
 Also included in the Examples directory is a control template: ControlTemplate.control,
 that can (like any of the examples) be modified at will.
@@ -19,6 +19,7 @@ that can (like any of the examples) be modified at will.
 | Indian Ocean  | Complex domain with islands and inlets  |:material-check: | :material-check:3 | :material-close: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:|
 | KT3Element  | Three element Karman-Trefftz airfoil  |:material-close: | :material-check:3 | :material-close: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:|
 | Lake Superior  | Complex domain with islands  |:material-check: | :material-check:2 | :material-close: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:|
+| Malpasset  | Region of Malpasset Dam failure  |:material-check: | :material-close: | :material-close: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close: | :material-close:| :material-close:|
 | NACA0012  | Standard Airfoil geometry  |:material-close: | :material-check: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close: | :material-close: | :material-check:| :material-close:|
 | PacMan  | A symmetric mesh  |:material-check: | :material-close: | :material-close: | :material-check: | :material-close: | :material-check: | :material-close: | :material-close: | :material-close:| :material-close:|
 | Pill  | Oblong domain with interior circles  |:material-check: | :material-check:3 | :material-check: | :material-close: | :material-close: | :material-close: |:material-close: | :material-close: | :material-close:| :material-close:|
