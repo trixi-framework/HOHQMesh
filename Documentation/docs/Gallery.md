@@ -221,6 +221,35 @@ and then updating the gallery page
 
 ## Applications
 
+<!-- Wavy wall channel Mach 2 compressible flow over a cylinder -->
+<div class="responsive-video">
+  <iframe width="720" height="405" src="https://www.youtube.com/embed/Q3Pi41gbOkI?si=E_Qp0OXEmJuGpwLJ&rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+
+<br/>
+
+<!-- Mach 3 compressible flow over a cylinder (long version) -->
+<div class="responsive-video">
+  <iframe width="720" height="405" src="https://www.youtube.com/embed/w0A9X38cSe4?si=8w33rc-TfvcwAnb3&rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+
+<br/>
+
+<!-- Shallow water in a circular pond -->
+<div class="responsive-video">
+  <iframe width="720" height="405" src="https://www.youtube.com/embed/RAXU5BURyKQ?si=vQNkMLmFe0CJmk0k&rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+
+<br/>
+
+<!-- Acoustic wave scattering from five cylinders -->
+<div class="responsive-video">
+  <iframe width="720" height="405" src="https://www.youtube.com/embed/2v5KYdK7VLA?si=-xkTTjyZWA8loTBu&rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+
+<br/>
+
+<!-- Inverse acoustic wave propagation -->
 <div class="responsive-video">
   <iframe width="720" height="405" src="https://www.youtube.com/embed/1yr0RDx7M5g?si=9P6U9RLqFegN2oUc&rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 </div>
