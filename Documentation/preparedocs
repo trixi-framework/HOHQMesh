@@ -9,6 +9,7 @@ cp README.md docs/building-the-documentation.md
 
 sed -i.bak "s/\[AUTHORS.md\](AUTHORS.md)/the [Authors](authors.md) section/" docs/index.md
 sed -i.bak "s/\[LICENSE.md\](LICENSE.md)/the [License](license.md) section/" docs/index.md
+sed -i.bak "s/\[gallery\](Documentation\/Docs\/Gallery.md)/\[gallery\](Gallery.md)/" docs/index.md
 sed -i.bak "s/\[LICENSE.md\](LICENSE.md)/the [License](license.md) section/" docs/authors.md
 sed -i.bak "s/\[AUTHORS.md\](AUTHORS.md)/[Authors](authors.md)/" docs/license.md
 

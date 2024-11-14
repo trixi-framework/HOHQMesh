@@ -20,8 +20,7 @@ theme:
 copyright: Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/main/AUTHORS.md">The HOHQMesh Authors</a>
 nav:
   - Home: 'index.md'
-  - Authors: 'authors.md'
-  - License: 'license.md'
+  - Gallery: 'Gallery.md'
   - User Guide:
     - Introduction: 'introduction.md'
     - The Model: 'the-model.md'
@@ -39,6 +38,8 @@ nav:
     - Adding a New Test: 'adding-a-new-test.md'
     - Releasing a New Version: 'releasing-a-new-version.md'
     - Updating Spack Packages: 'updating-spack-packages.md'
+  - Authors: 'authors.md'
+  - License: 'license.md'
 
 # Additional settings
 # * support for MathJax: https://squidfunk.github.io/mkdocs-material/reference/mathjax/
@@ -52,8 +53,11 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.superfences
 
-
 extra_javascript:
   - javascripts/config.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+extra_css:
+  - css/video.css
+  - css/gallery.css
