@@ -13,7 +13,8 @@
 
 **HOHQMesh**, the *High Order Hex-Quad Mesher*, is an open-source mesh generator
 that automatically creates quadrilateral/hexahedral meshes with high-order boundary
-information. To get an impression of what kind of meshes HOHQMesh can generate, please see the [gallery](Documentation/docs/Gallery.md).
+information. To get an impression of what kind of meshes HOHQMesh can generate,
+please see the [gallery](https://trixi-framework.github.io/HOHQMesh/Gallery/).
 
 ## Getting started
 
