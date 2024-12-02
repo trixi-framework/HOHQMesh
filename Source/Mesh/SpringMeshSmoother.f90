@@ -205,7 +205,7 @@
          DEALLOCATE( nodeVelocity )
 !
 !        --------------------------------------------------------------------
-!        The boundary nodes have been moved. Find their parametrized location
+!        The boundary nodes have been moved. Find their parameterized location
 !        along their respective boundaries
 !        --------------------------------------------------------------------
 !
