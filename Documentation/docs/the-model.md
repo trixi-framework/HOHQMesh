@@ -26,7 +26,7 @@ The mesh generator generates unstructured meshes, and there is no reason in gene
 ## Boundary Curves<a name="BoundaryCurves"></a>
 
 
-Boundaries include the outer boundary, any number of inner boundaries, and interface boundaries that mark material or other separations. No boundary can cross another boundary. Boundary curves are constructed as closed chains of parametrized curves, with the parameter in the interval [0,1], oriented counter-clockwise. The chains can have one or more segments as seen in Fig. 15. In Fig. 15a the outer boundary is constructed from six curves, whereas in Fig. 15b it is bounded by a single one. The inner boundaries in Fig. 15a are a single circle and a square constructed by a chain of four lines. In Fig. 16, the outer triangle is constructed as a chain of straight lines defined as `END_POINTS_LINE`s.
+Boundaries include the outer boundary, any number of inner boundaries, and interface boundaries that mark material or other separations. No boundary can cross another boundary. Boundary curves are constructed as closed chains of parameterized curves, with the parameter in the interval [0,1], oriented counter-clockwise. The chains can have one or more segments as seen in Fig. 15. In Fig. 15a the outer boundary is constructed from six curves, whereas in Fig. 15b it is bounded by a single one. The inner boundaries in Fig. 15a are a single circle and a square constructed by a chain of four lines. In Fig. 16, the outer triangle is constructed as a chain of straight lines defined as `END_POINTS_LINE`s.
 
 A curve is defined by a block
 
