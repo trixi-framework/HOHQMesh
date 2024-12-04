@@ -149,7 +149,6 @@
       SUBROUTINE ReadCommandLineArguments(version, test, generateTest, controlFileName, path)
          USE CommandLineReader
          USE ProgramGlobals
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
 !
 !        ---------
@@ -162,13 +161,13 @@
 
 
          IF ( CommandLineArgumentIsPresent("-version") )     THEN
-            PRINT *, "HOMesh Version ", version
+            PRINT *, "HOHQMesh Version ", version
             STOP
          END IF
 
          IF ( CommandLineArgumentIsPresent("-help") )     THEN
-            WRITE(stderr,*)  "No help available yet. Sorry!"
-            ERROR STOP "No help available"
+            CALL PrintHelpMessage()
+            STOP
          END IF
 
          test = .false.
@@ -201,3 +200,33 @@
          END IF
 
       END SUBROUTINE ReadCommandLineArguments
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE PrintHelpMessage()
+         USE, INTRINSIC :: iso_fortran_env, only : OUTPUT_UNIT
+         IMPLICIT NONE
+         WRITE(OUTPUT_UNIT,*) "HOHQMesh Help..."
+         WRITE(OUTPUT_UNIT,*) "Invocation:"
+         WRITE(OUTPUT_UNIT,*) "	./HOHQMesh [options]"
+         WRITE(OUTPUT_UNIT,*) "Options:"
+         WRITE(OUTPUT_UNIT,*) "-help"
+         WRITE(OUTPUT_UNIT,*) "	Prints this message. For the user manual, "
+         WRITE(OUTPUT_UNIT,*) "	see https://trixi-framework.github.io/HOHQMesh/."
+         WRITE(OUTPUT_UNIT,*) "-version"
+         WRITE(OUTPUT_UNIT,*) "	Prints the current version number of the software."
+         WRITE(OUTPUT_UNIT,*) "-f <ControlFileName>"
+         WRITE(OUTPUT_UNIT,*) "	Generates a mesh using the control file <ControlFileName>."
+         WRITE(OUTPUT_UNIT,*) "-verbose"
+         WRITE(OUTPUT_UNIT,*) "	Log the meshing progress to the screen."
+         WRITE(OUTPUT_UNIT,*) "-test"
+         WRITE(OUTPUT_UNIT,*) "	Runs the test sequence"
+         WRITE(OUTPUT_UNIT,*) "-path <path>"
+         WRITE(OUTPUT_UNIT,*) "	Use to specify location of the HOHQMesh directory for the test sequence."
+         WRITE(OUTPUT_UNIT,*) "-sLimit n"
+         WRITE(OUTPUT_UNIT,*) "	Increase the number of subdivisions allowed to 2^n. Default is n = 8."
+         WRITE(OUTPUT_UNIT,*) "-generateTest"
+         WRITE(OUTPUT_UNIT,*) "	Generates a test mesh using the control file. "
+         WRITE(OUTPUT_UNIT,*) "	See https://trixi-framework.github.io/HOHQMesh/adding-a-new-test/"
+
+      END SUBROUTINE PrintHelpMessage
