@@ -108,7 +108,7 @@ where the `.mesh` file stores the actual mesh, the `.tec` file is a Tecplot-comp
 visualization file, and the `.txt` file contains statistical information on the mesh
 quality.
 
-The Tecplot file can be visualized, e.g., using the open source software
+The Tecplot file can be visualized, e.g., using the open-source software
 [ParaView](https://www.paraview.org), which has a built-in Tecplot reader. In the case of
 the gingerbread man, the resulting mesh should look like the example found in the
 [online mesh gallery](https://trixi-framework.github.io/HOHQMesh/Gallery/#just-for-fun).
