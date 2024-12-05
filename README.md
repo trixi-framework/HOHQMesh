@@ -58,6 +58,15 @@ before proceeding, which will download the `FTObjectLibrary` sources for you.
 This step is required only once.
 
 ### Building
+There are two ways to build HOHQMesh from source: Using plain `make` or by using
+[CMake](https://cmake.org/). The `make`-based build is conceptually simpler but only works
+as an in-source build, thus populating your HOHQMesh root directory with build artifacts.
+The CMake-based build is slightly more involved but also allows you to do out-of-source
+builds.
+
+HOHQMesh is tested to run with the `gfortran` and `ifort` compilers. We recommend the `gfortran` compiler. Our experience on the test suite is that it runs about 50% slower with the `ifort` compiler.
+
+#### Using plain `make`
 Enter the HOHQMesh directory and execute
 ```shell
 make
@@ -74,7 +83,41 @@ For example, to build HOHQMesh specifically with the Fortran compiler
 make -j 4 FC=gfortran-10
 ```
 
-HOHQMesh is tested to run with the `gfortran` and `ifort` compilers. We recommend the `gfortran` compiler. Our experience on the test suite is that it runs about 50% slower with the `ifort` compiler.
+#### Using CMake
+For a CMake-based build, you first need to build the 
+[FTObjectLibrary](https://github.com/trixi-framework/FTObjectLibrary), install it, and then
+build HOHQMesh itself. If you followed the steps for obtaining the sources
+[above](#obtaining-the-sources), all required files are already present.
+
+For convenience, we will assume that you are executing the following from within the
+HOHQMesh root directory. However, after modifying the paths appropriately, you can use these
+steps also from anywhere else:
+```shell
+# Build and install FTObjectLibrary
+mkdir build-ftol && cd build-ftol
+cmake ../Contrib/FTObjectLibrary/ -DCMAKE_INSTALL_PREFIX=../install
+cmake --build .
+cmake --install .
+cd ..
+
+# Build and install HOHQMesh
+mkdir build-hm && cd build-hm
+CMAKE_PREFIX_PATH=../install cmake .. -DCMAKE_INSTALL_PREFIX=../install
+cmake --build .
+cmake --install .
+cd ..
+
+# Copy HOHQMesh executable to root directory
+cp install/bin/HOHQMesh .
+```
+The HOHQMesh executable can be moved around freely and does not rely on any other files in
+the install prefix (which can thus be deleted safely if so desired).
+
+By default, HOHQMesh (and FTObjectLibrary) will be built by the standard Fortran compiler
+configured for CMake.  The compiler choice can be overridden by setting the environment
+variable `FC=<pathToCompiler>` when invoking the configure step of CMake, e.g.,
+```FC=gfortran-10 cmake ..`.
+
 
 ### Testing
 After building HOHQMesh, you can verify that everything works as expected by

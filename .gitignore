@@ -23,6 +23,11 @@ CVS
 HOHQMesh
 HOHQMesh.exe
 
+# CMake builds
+build-ftol
+build-hm
+install
+
 # test output files
 Benchmarks/MeshFiles/Tests/*
 Benchmarks/PlotFiles/Tests/*
