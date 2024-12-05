@@ -102,9 +102,9 @@ To get a list of the command line options available in HOHQMesh, type
 
 
 ## Documentation
-The full documentation on how to use HOHQMesh, including the preparation of input files and
-the visualization of the resulting mesh files, can be found
-[here](https://trixi-framework.github.io/HOHQMesh).
+Complete details on how to use HOHQMesh, including the preparation of input files,
+the different formats of the resulting mesh files, and visualization instructions, can be found
+[in the online documentation](https://trixi-framework.github.io/HOHQMesh).
 
 
 ## Referencing
