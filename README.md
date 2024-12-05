@@ -94,6 +94,12 @@ To mesh a control file, type
 where `-f` allows you to provide the path to the control file for which you want
 to create your mesh.
 
+### Getting help
+To get a list of the command line options available in HOHQMesh, type
+```bash
+./HOHQMesh -help
+```
+
 
 ## Documentation
 The full documentation on how to use HOHQMesh, including the preparation of input files and
