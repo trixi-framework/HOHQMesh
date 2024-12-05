@@ -173,11 +173,6 @@
             STOP
          END IF
 
-         IF ( CommandLineArgumentIsPresent("-h") )     THEN
-            CALL PrintHelpMessage(OUTPUT_UNIT)
-            STOP
-         END IF
-
          IF ( CommandLineArgumentIsPresent("--help") )     THEN
             CALL PrintHelpMessage(OUTPUT_UNIT)
             STOP
@@ -240,7 +235,7 @@
          WRITE(iUnit,*) "Invocation:"
          WRITE(iUnit,*) "	./HOHQMesh [options]"
          WRITE(iUnit,*) "Options:"
-         WRITE(iUnit,*) "-help or --help or -h"
+         WRITE(iUnit,*) "-help or --help"
          WRITE(iUnit,*) "	Prints this message. For the user manual, "
          WRITE(iUnit,*) "	see https://trixi-framework.github.io/HOHQMesh/."
          WRITE(iUnit,*) "-version"

@@ -123,7 +123,7 @@
           
           substringLength = MIN(argumentLength,LEN_TRIM(argument))
           IF ( TRIM(arg) == TRIM(argument) .OR.&
-               TRIM(arg) == argument(1:substringLength) )      THEN
+               TRIM(arg) == argument(1:substringLength) )      THEN !Allows partial command
              CommandLineArgumentIsPresent = .true.
              lastArgumentID = i
              RETURN
