@@ -95,6 +95,12 @@ where `-f` allows you to provide the path to the control file for which you want
 to create your mesh.
 
 
+## Documentation
+The full documentation on how to use HOHQMesh, including the preparation of input files and
+the visualization of the resulting mesh files, can be found
+[here](https://trixi-framework.github.io/HOHQMesh).
+
+
 ## Referencing
 If you use HOHQMesh in your own research, please cite this repository as follows:
 ```bibtex
