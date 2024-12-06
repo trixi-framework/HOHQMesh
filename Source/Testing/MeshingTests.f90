@@ -73,7 +73,7 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath, path, str
       INTEGER                                 :: k, fUnit, nControlFiles
       EXTERNAL                                :: TestCurves, TestGaussianCurvature
-      EXTERNAL                                :: TestBiCubicInterpolation
+      EXTERNAL                                :: TestBiCubicInterpolation, MiscTests
       LOGICAL                                 :: exst
       CHARACTER(LEN=ERROR_MESSAGE_LENGTH)     :: msg
 !
@@ -92,6 +92,7 @@
       CALL testSuite % addTestSubroutineWithName(TestCurves,"Curve evaluation tests")
       CALL testSuite % addTestSubroutineWithName(TestGaussianCurvature,"Gaussian Curvature evaluation tests")
       CALL testSuite % addTestSubroutineWithName(TestBiCubicInterpolation,"BiCubic Interpolation tests")
+      CALL testSuite % addTestSubroutineWithName(MiscTests,"Miscellaneous Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...
@@ -396,3 +397,18 @@
       END SUBROUTINE GatherTestFileData
 
    END Module MeshingTests
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE MiscTests  
+         USE TestSuiteManagerClass
+         USE FTAssertions
+         IMPLICIT NONE  
+         INTEGER :: iUnit, s
+         
+         OPEN(NEWUNIT = iUnit, STATUS='SCRATCH', IOSTAT = s)
+            CALL FTAssertEqual(expectedValue = 0,actualValue = s,msg = "Scratch file not opening")
+            CALL PrintHelpMessage(iUnit)
+         CLOSE(iUnit)
+
+      END SUBROUTINE MiscTests

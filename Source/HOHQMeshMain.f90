@@ -147,57 +147,121 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE ReadCommandLineArguments(version, test, generateTest, controlFileName, path)
+         USE, INTRINSIC :: iso_fortran_env, only : OUTPUT_UNIT
          USE CommandLineReader
          USE ProgramGlobals
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName, path
-         CHARACTER(LEN=*)                        :: version
-         LOGICAL                                 :: test, generateTest
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)     :: controlFileName, path
+         CHARACTER(LEN=*)                            :: version
+         LOGICAL                                     :: test, generateTest
+         INTEGER                                     :: argCount
 
+         argCount = COMMAND_ARGUMENT_COUNT()
+!
+!        ------------------------------------------
+!        Ensure that there is at least one argument
+!        ------------------------------------------
+!
+         IF(argCount .eq. 0)   THEN
+            WRITE(OUTPUT_UNIT,*) "Command line argument error"
+            CALL PrintHelpMessage(OUTPUT_UNIT)
+            ERROR STOP "Error in command line argument (see `-help` for a list of available options)"
+         END IF
 
          IF ( CommandLineArgumentIsPresent("-version") )     THEN
-            PRINT *, "HOMesh Version ", version
+            PRINT *, "HOHQMesh Version ", version
             STOP
          END IF
 
          IF ( CommandLineArgumentIsPresent("-help") )     THEN
-            WRITE(stderr,*)  "No help available yet. Sorry!"
-            ERROR STOP "No help available"
+            CALL PrintHelpMessage(OUTPUT_UNIT)
+            STOP
+         END IF
+
+         IF ( CommandLineArgumentIsPresent("--help") )     THEN
+            CALL PrintHelpMessage(OUTPUT_UNIT)
+            STOP
          END IF
 
          test = .false.
          IF ( CommandLineArgumentIsPresent("-test") )     THEN
             test = .true.
+            argCount = argCount - 1
          END IF
 
          generateTest = .false.
          IF ( CommandLineArgumentIsPresent("-generateTest") )     THEN
             generateTest = .true.
+            argCount = argCount - 1
          END IF
 
          printMessage = .false.
          IF ( CommandLineArgumentIsPresent("-verbose") )     THEN
             printMessage = .true.
+            argCount = argCount - 1
          END IF
 
          controlFileName = "none"
          IF ( CommandLineArgumentIsPresent(argument = "-f") )     THEN
             controlFileName = StringValueForArgument(argument = "-f")
+            argCount = argCount - 2
          END IF
 
          path = ""
          IF ( CommandLineArgumentIsPresent(argument = "-path") )     THEN
             path = StringValueForArgument(argument = "-path")
+            argCount = argCount - 2
          END IF
 
          IF ( CommandLineArgumentIsPresent(argument = "-sLimit") )     THEN
             maxLevelLimit = IntegerValueForArgument(argument = "-sLimit")
+            argCount = argCount - 2
+         END IF
+!
+!        ---------------------------------------
+!        See if there are any uncaught arguments
+!        ---------------------------------------
+!
+         IF(argCount .ne. 0)   THEN
+            WRITE(OUTPUT_UNIT,*) "Command line argument error"
+            CALL PrintHelpMessage(OUTPUT_UNIT)
+            ERROR STOP "Error in command line argument (see `-help` for a list of available options)"
          END IF
 
       END SUBROUTINE ReadCommandLineArguments
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE PrintHelpMessage(iUnit)
+         IMPLICIT NONE
+         INTEGER :: iUnit
+         
+         WRITE(iUnit,*) "HOHQMesh Help..."
+         WRITE(iUnit,*) "Invocation:"
+         WRITE(iUnit,*) "	./HOHQMesh [options]"
+         WRITE(iUnit,*) "Options:"
+         WRITE(iUnit,*) "-help or --help"
+         WRITE(iUnit,*) "	Prints this message. For the user manual, "
+         WRITE(iUnit,*) "	see https://trixi-framework.github.io/HOHQMesh/."
+         WRITE(iUnit,*) "-version"
+         WRITE(iUnit,*) "	Prints the current version number of the software."
+         WRITE(iUnit,*) "-f <ControlFileName>"
+         WRITE(iUnit,*) "	Generates a mesh using the control file <ControlFileName>."
+         WRITE(iUnit,*) "-verbose"
+         WRITE(iUnit,*) "	Log the meshing progress to the screen."
+         WRITE(iUnit,*) "-test"
+         WRITE(iUnit,*) "	Runs the test sequence"
+         WRITE(iUnit,*) "-path <path>"
+         WRITE(iUnit,*) "	Use to specify location of the HOHQMesh directory for the test sequence."
+         WRITE(iUnit,*) "-sLimit n"
+         WRITE(iUnit,*) "	Increase the number of subdivisions allowed to 2^n. Default is n = 8."
+         WRITE(iUnit,*) "-generateTest"
+         WRITE(iUnit,*) "	Generates a test mesh using the control file. "
+         WRITE(iUnit,*) "	See https://trixi-framework.github.io/HOHQMesh/adding-a-new-test/"
+
+      END SUBROUTINE PrintHelpMessage
