@@ -94,6 +94,37 @@ To mesh a control file, type
 where `-f` allows you to provide the path to the control file for which you want
 to create your mesh.
 
+For example, if you are inside the HOHQMesh root directory, you can run
+```shell
+./HOHQMESH -f Examples/2D/GingerbreadMan/GingerbreadMan.control
+```
+to generate a mesh for a gingerbread man geometry. This will produce three files,
+```
+Examples/2D/GingerbreadMan/GingerbreadManMesh.mesh
+Examples/2D/GingerbreadMan/GingerbreadManPlot.tec
+Examples/2D/GingerbreadMan/GingerbreadManStats.txt
+```
+where the `.mesh` file stores the actual mesh, the `.tec` file is a Tecplot-compatible
+visualization file, and the `.txt` file contains statistical information on the mesh
+quality.
+
+The Tecplot file can be visualized, e.g., using the open-source software
+[ParaView](https://www.paraview.org), which has a built-in Tecplot reader. In the case of
+the gingerbread man, the resulting mesh should look like the example found in the
+[online mesh gallery](https://trixi-framework.github.io/HOHQMesh/Gallery/#just-for-fun).
+
+### Getting help
+To get a list of the command line options available in HOHQMesh, type
+```bash
+./HOHQMesh -help
+```
+
+
+## Documentation
+Complete details on how to use HOHQMesh, including the preparation of input files,
+the different formats of the resulting mesh files, and visualization instructions, can be found
+[in the online documentation](https://trixi-framework.github.io/HOHQMesh).
+
 
 ## Referencing
 If you use HOHQMesh in your own research, please cite this repository as follows:
