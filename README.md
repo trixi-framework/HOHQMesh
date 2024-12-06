@@ -28,9 +28,11 @@ the sources and compile HOHQMesh yourself.
 
 ### Prerequisites
 To build and install HOHQMesh, you need the following tools:
+
 * A Fortran compiler (we recommend [GFortran](https://gcc.gnu.org/fortran/))
 * [GNU Make](https://www.gnu.org/software/make/)
 * [CMake](https://cmake.org/) (optional; only for CMake-based builds)
+
 Building on Linux and macOS should be straightforward, building on Windows requires
 [MSYS2](https://www.msys2.org/).
 
