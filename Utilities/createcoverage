@@ -15,5 +15,8 @@ lcov --directory . --exclude '*/FTObjectLibrary/*' --zerocounters
 # Run tests
 ./HOHQMesh -test
 
+# Exercise command line arguments
+./Utilities/exercisecommandlineargs
+
 # Process coverage
 lcov --directory . --exclude '*/FTObjectLibrary/*' --capture --output-file lcov.info

@@ -162,6 +162,16 @@
          INTEGER                                     :: argCount
 
          argCount = COMMAND_ARGUMENT_COUNT()
+!
+!        ------------------------------------------
+!        Ensure that there is at least one argument
+!        ------------------------------------------
+!
+         IF(argCount .eq. 0)   THEN
+            WRITE(OUTPUT_UNIT,*) "Command line argument error"
+            CALL PrintHelpMessage(OUTPUT_UNIT)
+            ERROR STOP "Error in command line argument (see `-help` for a list of available options)"
+         END IF
 
          IF ( CommandLineArgumentIsPresent("-version") )     THEN
             PRINT *, "HOHQMesh Version ", version

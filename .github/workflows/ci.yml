@@ -195,6 +195,10 @@ jobs:
         if: ${{ matrix.test_type == 'regular' }}
         run: |
           ./HOHQMesh -test
+      - name: Exercise command line arguments
+        if: ${{ matrix.test_type == 'regular' }}
+        run: |
+          ./Utilities/exercisecommandlineargs
       - name: Run memory checks with Valgrind (only Linux)
         if: ${{ matrix.os_name == 'linux' && matrix.test_type == 'valgrind' }}
         run: |
