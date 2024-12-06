@@ -111,7 +111,7 @@ cd ..
 cp install/bin/HOHQMesh .
 ```
 The HOHQMesh executable can be moved around freely and does not rely on any other files in
-the install prefix or in the build direcotires (which can thus be deleted safely if so desired).
+the install prefix or in the build directories (which can thus be deleted safely if so desired).
 
 By default, HOHQMesh (and FTObjectLibrary) will be built by the standard Fortran compiler
 configured for CMake.  The compiler choice can be overridden by setting the environment
