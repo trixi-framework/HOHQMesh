@@ -126,7 +126,7 @@ the install prefix or in the build directories (which can thus be deleted safely
 By default, HOHQMesh (and FTObjectLibrary) will be built by the standard Fortran compiler
 configured for CMake.  The compiler choice can be overridden by setting the environment
 variable `FC=<pathToCompiler>` when invoking the configure step of CMake, e.g.,
-```FC=gfortran-10 cmake ..`.
+`FC=gfortran-10 cmake ..`.
 
 
 ### Testing
