@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Fail fast and verbosely
+set -eox pipefail
+
+./HOHQMesh -version
+./HOHQMesh --help
+./HOHQMesh -help
+./HOHQMesh -verbose -f Examples/2D/GingerbreadMan/GingerbreadMan.control -sLimit 8
+./HOHQMesh || true # will fail
+./HOHQMesh -this-does-not-exist || true # will fail
