@@ -26,6 +26,14 @@ FreeBSD. If you would like to use HOHQMesh directly from the command line,
 please continue reading the next sections for instructions on how to obtain
 the sources and compile HOHQMesh yourself.
 
+### Prerequisites
+To build and install HOHQMesh, you need the following tools:
+* A Fortran compiler (we recommend [GFortran](https://gcc.gnu.org/fortran/))
+* [GNU Make](https://www.gnu.org/software/make/)
+* [CMake](https://cmake.org/) (optional; only for CMake-based builds)
+Building on Linux and macOS should be straightforward, building on Windows requires
+[MSYS2](https://www.msys2.org/).
+
 
 ### Install with Spack
 You can install HOHQMesh using the [Spack package manager](https://spack.io).
