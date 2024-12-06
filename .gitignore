@@ -46,3 +46,5 @@ HOHQMesh-*.tar.gz
 # version information
 VERSION
 Documentation/docs/.vscode/settings.json
+
+paper.pdf
