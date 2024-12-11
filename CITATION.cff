@@ -1,0 +1,57 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Kopriva
+  given-names: David A.
+  orcid: "https://orcid.org/0000-0002-8076-0856"
+- family-names: Winters
+  given-names: Andrew R.
+  orcid: "https://orcid.org/0000-0002-5902-1522"
+- family-names: Schlottke-Lakemper
+  given-names: Michael
+  orcid: "https://orcid.org/0000-0002-3195-2536"
+- family-names: Schoonover
+  given-names: Joseph A.
+  orcid: "https://orcid.org/0000-0001-5650-7095"
+- family-names: Ranocha
+  given-names: Hendrik
+  orcid: "https://orcid.org/0000-0002-3456-2277"
+contact:
+- family-names: Winters
+  given-names: Andrew R.
+  orcid: "https://orcid.org/0000-0002-5902-1522"
+doi: 10.5281/zenodo.14342391
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Kopriva
+    given-names: David A.
+    orcid: "https://orcid.org/0000-0002-8076-0856"
+  - family-names: Winters
+    given-names: Andrew R.
+    orcid: "https://orcid.org/0000-0002-5902-1522"
+  - family-names: Schlottke-Lakemper
+    given-names: Michael
+    orcid: "https://orcid.org/0000-0002-3195-2536"
+  - family-names: Schoonover
+    given-names: Joseph A.
+    orcid: "https://orcid.org/0000-0001-5650-7095"
+  - family-names: Ranocha
+    given-names: Hendrik
+    orcid: "https://orcid.org/0000-0002-3456-2277"
+  date-published: 2024-12-11
+  doi: 10.21105/joss.07476
+  issn: 2475-9066
+  issue: 104
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 7476
+  title: "HOHQMesh: An All Quadrilateral/Hexahedral Unstructured Mesh
+    Generator for High Order Elements"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.07476"
+  volume: 9
+title: "HOHQMesh: An All Quadrilateral/Hexahedral Unstructured Mesh
+  Generator for High Order Elements"
+
