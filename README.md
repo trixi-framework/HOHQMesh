@@ -5,6 +5,7 @@
 [![Coveralls](https://coveralls.io/repos/github/trixi-framework/HOHQMesh/badge.svg?branch=main)](https://coveralls.io/github/trixi-framework/HOHQMesh?branch=main)
 [![Codecov](https://codecov.io/gh/trixi-framework/HOHQMesh/branch/main/graph/badge.svg)](https://codecov.io/gh/trixi-framework/HOHQMesh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/licenses/MIT)
+[![JOSS](https://joss.theoj.org/papers/10.21105/joss.07476/status.svg)](https://doi.org/10.21105/joss.07476)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13959058.svg)](https://doi.org/10.5281/zenodo.13959058)
 
 <p align="center">
@@ -180,9 +181,24 @@ the different formats of the resulting mesh files, and visualization instruction
 
 
 ## Referencing
-If you use HOHQMesh in your own research, please cite this repository as follows:
+If you use HOHQMesh in your own research, please cite the following article:
 ```bibtex
-@misc{kopriva2024hohqmesh,
+@article{kopriva2024hohqmesh:joss,
+  title={{HOHQM}esh: An All Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements},
+  author={David A. Kopriva and Andrew R. Winters and Michael Schlottke-Lakemper
+          and Joseph A. Schoonover and Hendrik Ranocha},
+  year={2024},
+  journal={Journal of Open Source Software},
+  doi={10.21105/joss.07476},
+  volume = {9},
+  number = {104},
+  pages = {7476},
+  publisher = {The Open Journal}
+}
+```
+In addition, you can also directly refer to this repository as
+```bibtex
+@misc{kopriva2024hohqmesh:repo,
   title={{HOHQM}esh: An All Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements},
   author={Kopriva, David A and Winters, Andrew R and Schlottke-Lakemper, Michael
           and Schoonover, Joseph A and Ranocha, Hendrik},
