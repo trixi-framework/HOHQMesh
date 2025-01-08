@@ -47,13 +47,13 @@ jobs:
             shell: bash
             test_type: valgrind
             coverage: false
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             os_name: linux
             compiler: gfortran-10
             shell: bash
             test_type: regular
             coverage: true
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             os_name: linux
             compiler: gfortran-10
             shell: bash
