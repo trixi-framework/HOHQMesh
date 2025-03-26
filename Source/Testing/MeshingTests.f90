@@ -72,7 +72,7 @@
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:)
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath, path, str
       INTEGER                                 :: k, fUnit, nControlFiles
-      EXTERNAL                                :: TestCurves, TestGaussianCurvature
+      EXTERNAL                                :: TestCurves, TestPrincipalCurvature
       EXTERNAL                                :: TestBiCubicInterpolation, MiscTests
       LOGICAL                                 :: exst
       CHARACTER(LEN=ERROR_MESSAGE_LENGTH)     :: msg
@@ -90,7 +90,7 @@
 !     -------------------
 !
       CALL testSuite % addTestSubroutineWithName(TestCurves,"Curve evaluation tests")
-      CALL testSuite % addTestSubroutineWithName(TestGaussianCurvature,"Gaussian Curvature evaluation tests")
+      CALL testSuite % addTestSubroutineWithName(TestPrincipalCurvature,"Principal Curvature evaluation tests")
       CALL testSuite % addTestSubroutineWithName(TestBiCubicInterpolation,"BiCubic Interpolation tests")
       CALL testSuite % addTestSubroutineWithName(MiscTests,"Miscellaneous Tests")
 !
