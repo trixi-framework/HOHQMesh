@@ -1,5 +1,5 @@
 %
-% Example of sweeping a circlular 2D mesh along a complex curve.
+% Example of sweeping a circular 2D mesh along a complex curve.
 % The parallel transport algorithm is applied to the sweep to 
 % minimize twisting of the mesh. Change "Hanson" to "none"
 % to see what happens without rotation minimization.
