@@ -186,7 +186,7 @@ block. Any number of curves can be chained together. The chain itself is also gi
 		\end{PARAMETRIC_EQUATION_CURVE}
 	\end{CHAIN}
 
-Again, the indentation is for readability only, as is the line spacing between the blocks. (Blank lines and lines starting with “%” are ignored.) Also remember that the chain is defined counter-clockwise, and the curves within the chain must be ordered and oriented properly. Chains cannot be chained together. Rem: The use of `PARAMETRIC_EQUATION_CURVE`s in this example predates the addition of the `END_POINTS_LINE` curves, which would bew simpler to use here.
+Again, the indentation is for readability only, as is the line spacing between the blocks. (Blank lines and lines starting with “%” are ignored.) Also remember that the chain is defined counter-clockwise, and the curves within the chain must be ordered and oriented properly. Chains cannot be chained together. Rem: The use of `PARAMETRIC_EQUATION_CURVE`s in this example predates the addition of the `END_POINTS_LINE` curves, which would be simpler to use here.
 
 ## The Model Definition<a name="TheModel"></a>
 The model (there is at most one) defines the region that is to be meshed. It is marked by
