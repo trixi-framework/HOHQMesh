@@ -266,12 +266,12 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE TestGaussianCurvature
+      SUBROUTINE TestPrincipalCurvature
          USE SMConstants
          USE TestSuiteManagerClass
          USE FTAssertions
          USE SharedExceptionManagerModule
-         USE GaussianCurvatureModule
+         USE PrincipalCurvatureModule
          IMPLICIT NONE
 
          REAL(KIND=RP) :: gradF(2), exactGradF(2)
@@ -285,7 +285,7 @@
                            absTol        = 2.0d-9,   &
                            msg           = "Computed Sphere Curvature error")
 
-        CALL ExactAndComputedQuadraticCurvature(0.5_RP,0.5_RP, exact, computed)
+        CALL ExactAndComputedHyParCurvature(0.5_RP,0.5_RP, exact, computed)
         CALL FTAssertEqual(expectedValue = exact,    &
                            actualValue   = computed, &
                            relTol        = 2.0d-8,   &
@@ -307,7 +307,7 @@
                            absTol        = 1.0d-9,                       &
                            msg           = "Quadratic Hessian error")
 
-      END SUBROUTINE TestGaussianCurvature
+      END SUBROUTINE TestPrincipalCurvature
 !
 !     ---------------------
 !     Test printDescription

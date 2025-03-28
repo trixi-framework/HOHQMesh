@@ -33,7 +33,7 @@
       Module SMTopographyClass
       USE SMConstants
       USE FTObjectClass
-      USE GaussianCurvatureModule
+      USE PrincipalCurvatureModule
       IMPLICIT NONE
 !
 !     ---------
@@ -57,9 +57,9 @@
 !
          PROCEDURE, NON_OVERRIDABLE :: initTopography
          FINAL                      :: destructBaseTopography
-         PROCEDURE                  :: printDescription   => printTopographyDescription
-         PROCEDURE                  :: heightAt => heightAtTopography
-         PROCEDURE                  :: gaussianCurvatureAt => gaussianCurvatureBaseAt
+         PROCEDURE                  :: printDescription     => printTopographyDescription
+         PROCEDURE                  :: heightAt             => heightAtTopography
+         PROCEDURE                  :: principalCurvatureAt => principalCurvatureBaseAt
       END TYPE SMTopography
 !
 !     -------
@@ -122,7 +122,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-     REAL(KIND=RP) FUNCTION gaussianCurvatureBaseAt(self, t)
+     REAL(KIND=RP) FUNCTION principalCurvatureBaseAt(self, t)
         IMPLICIT NONE
         CLASS(SMTopography) :: self
         REAL(KIND=RP)       :: t(2)
@@ -133,7 +133,7 @@
 !
 !       -----------------------------------------------------------------------
 !       Compute Grad and Hessian here directly rather than use the routines
-!       in GaussianCurvature to cut down on the number of function evaluations.
+!       in PrincipalCurvature to cut down on the number of function evaluations.
 !       -----------------------------------------------------------------------
 !
         x  = self % heightAt(t)
@@ -156,24 +156,9 @@
         hessian(1,2) = 0.25_RP*(xpyp(3) - xmyp(3) - xpym(3) + xmym(3))/gc_dx2
         hessian(2,1) = hessian(1,2)
 
-        gaussianCurvatureBaseAt = GaussianCurvatureWithDerivs(gradF, hessian)
-        gaussianCurvatureBaseAt = ABS(gaussianCurvatureBaseAt) !Can be negative
-!
-!       -------------------------------------------------------------------
-!       The Gaussian curvature will be zero if the curvature is zero in one
-!       of the two tangential directions. In that case, use the curvature
-!       along the gradient direction.
-!       -------------------------------------------------------------------
-!
-        nrmGradF2 = gradF(1)**2 + gradF(2)**2
-        nHat      = gradF/(SQRT(nrMGradF2) + 1.0d-12) ! Regularize the gradient
-        deriv2    = nHat(1)*(nHat(1)*hessian(1,1) + nHat(2)*hessian(1,2)) + &
-                    nHat(2)*(nHat(2)*hessian(2,2) + nHat(1)*hessian(1,2))
-        radInv    = ABS(deriv2/(1.0_RP + nrmGradF2)**1.5_RP)
+        principalCurvatureBaseAt = principalCurvatureWithDerivs(gradF, hessian)
 
-        gaussianCurvatureBaseAt = MAX(gaussianCurvatureBaseAt, radInv)
-
-     END FUNCTION gaussianCurvatureBaseAt
+     END FUNCTION principalCurvatureBaseAt
 !
 !////////////////////////////////////////////////////////////////////////
 !

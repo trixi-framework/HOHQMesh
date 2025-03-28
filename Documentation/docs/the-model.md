@@ -18,7 +18,7 @@ As an example, the model in Fig. 16 has one outer boundary - the outer triangle 
 ![B&M](https://user-images.githubusercontent.com/25242486/241190479-ba50d797-3bd9-41b1-bc38-03fc86f8c3da.png)
 <p align = "center"> Fig. 17. Mesh with interior interfaces bounded by circles.</p>
 
-The mesh generator generates unstructured meshes, and there is no reason in general why a mesh must be symmetric if the model is symmetric. Since symmetry can be a desirable feature, HOHQMesh allows one to define a symmetry boundary about which the mesh will be symmetric by setting boundary names as ":symmetry" (with a colon, so as not to interfere with some other use of the name). The symmetry boundary must be a straight line (no matter how that is defined, see below) and multiple symmetry boundaries must be co-linear. What HOHQMesh does is take a model and mesh it. Then, if one or more of the outer boundary curves are named ":symmetry", that mesh will be reflected about the symmetry line and the result will be a perfectly symmetric mesh. An example is shown in Fig. 18. If the curve designated as ":symmetry" is not straight, or if any of multiple lines so designated are not co-linear, then an error is poseted and the mesh will not be reflected.
+The mesh generator generates unstructured meshes, and there is no reason in general why a mesh must be symmetric if the model is symmetric. Since symmetry can be a desirable feature, HOHQMesh allows one to define a symmetry boundary about which the mesh will be symmetric by setting boundary names as ":symmetry" (with a colon, so as not to interfere with some other use of the name). The symmetry boundary must be a straight line (no matter how that is defined, see below) and multiple symmetry boundaries must be co-linear. What HOHQMesh does is take a model and mesh it. Then, if one or more of the outer boundary curves are named ":symmetry", that mesh will be reflected about the symmetry line and the result will be a perfectly symmetric mesh, to within rounding error. An example is shown in Fig. 18. If the curve designated as ":symmetry" is not straight, or if any of multiple lines so designated are not co-linear, then an error is posted and the mesh will not be reflected.
 
 ![NotREFL](https://github.com/trixi-framework/HOHQMesh/assets/25242486/5e145806-1acb-43c4-b712-ea6eeb703c64)
 <p align = "center"> Fig. 18. A mesh (left) reflected about the red boundary line (right).</p>
@@ -36,12 +36,13 @@ A curve is defined by a block
 
 It is given a name so that boundary conditions can be applied segment-by-segment to a chain.
 
-Currently there are four types of curves that can be defined:
+Currently there are five types of curves that can be defined:
 
 *  Curves defined by equation components.
 *  Cubic spline interpolants of a set of nodal points.
 *  Straight lines between two points.
 *  Circular arcs.
+*  Elliptic arcs.
 
 Fig. 16 is an example that uses all four curve-type definitions (<em>Examples/2D/AllFeatures</em>).
 
@@ -60,7 +61,7 @@ Curves can be defined by strings that define the equations for the (x,y,z) compo
 
 The first line defines the name, followed by the x- , y- and z- equation definitions. **Right now, only two-dimensional meshes in the x-y plane can be generated, so the z=0 equation must be set this way**. The example block defines a closed circular curve of radius 14 named “circle”. The indenting is optional, as is the ordering of the keys within the block. The keywords are “name”, “xEqn”, etc. and must be spelled correctly or an error will be posted when the model is read in. The zEqn keyword line is optional and can be left out.
 
-The equations can be any legal representations of an equation as is standard in most computer languages. The first part, before the equals sign defines the parameter variable, in this case, *t*. On the right hand side is the formula that defines the curve. Exponentiation is defined as in BASIC, like *t^2*. For convenience, the constant **pi** is defined. Like BASIC, literals are defined as double precision values. There are no integer quantities. Standard functions like sin, cos, tan, atan, log, log10, exp, etc. are also available for use.
+The equations can be any legal representations of an equation as is standard in most computer languages. The first part, before the equals sign defines the parameter variable, in this case, *t*. On the right hand side is the formula that defines the curve. Exponentiation is defined as in BASIC, like *t^2*. For convenience, the constant **pi** is defined. Like BASIC, number literals are defined as double precision values. There are no integer quantities. Standard functions like sin, cos, tan, atan, log, log10, exp, etc. are also available for use.
 
 ### The Spline Curve Definition<a name="Spline"></a>
 The second type of curve is the `SPLINE_CURVE` type, which fits a cubic spline to a set of knots at given parameter values. The parameterization does not have to be uniform. An example of a spline-defined curve is
@@ -185,7 +186,7 @@ block. Any number of curves can be chained together. The chain itself is also gi
 		\end{PARAMETRIC_EQUATION_CURVE}
 	\end{CHAIN}
 
-Again, the indentation is for readability only, as is the line spacing between the blocks. (Blank lines and lines starting with “%” are ignored.) Also remember that the chain is defined counter-clockwise, and the curves within the chain must be ordered and oriented properly. Chains cannot be chained together.
+Again, the indentation is for readability only, as is the line spacing between the blocks. (Blank lines and lines starting with “%” are ignored.) Also remember that the chain is defined counter-clockwise, and the curves within the chain must be ordered and oriented properly. Chains cannot be chained together. Rem: The use of `PARAMETRIC_EQUATION_CURVE`s in this example predates the addition of the `END_POINTS_LINE` curves, which would be simpler to use here.
 
 ## The Model Definition<a name="TheModel"></a>
 The model (there is at most one) defines the region that is to be meshed. It is marked by
@@ -223,7 +224,7 @@ Interface boundaries, unlike interior boundaries, do not create holes in model d
 ###Example
 
 As an example, the following defines a model that has a single circular outer boundary and three inner circular boundaries. Two of the curves are defined within a CHAIN (even though there is only a single curve within each). One of them is standalone. Note that *between* the blocks, comments can be inserted starting with “%”. As usual, indentation is for the reader’s eyes only.
-
+Rem: This example also predates the addition of the `CIRCULAR_ARC` curve definition, which could be used to define the circles instead.
 
 	\begin{MODEL}
 		\begin{OUTER_BOUNDARY}

@@ -49,21 +49,33 @@ The data file will have the number of nodes as the first line, followed by the d
 Defining a Straight Line:
 
       \begin{END_POINTS_LINE}
-	 	name   = <name>
-	 	xStart = [x,y,0]
+	 	   name   = <name>
+	 	   xStart = [x,y,0]
            xEnd   = [x,y,0]
       \end{END_POINTS_LINE}
 
 Defining a Circular Arc:
 
       \begin{CIRCULAR_ARC}
-	 	name 		 = <name>
-		units 	 =degrees/radians(Optional.Default:radians)
-	 	center 	 = [x,y,0]
-           radius 	 = r
-		start angle = Tstart
-		end angle   = Tend
+	 	   name 	 = <name>
+		   units 	 = degrees/radians(Optional.Default:radians)
+	 	   center 	 = [x,y,0.0]
+          radius 	 = r
+		   start angle = Tstart
+		   end angle   = Tend
       \end{CIRCULAR_ARC}
+Defining an Elliptic Arc:
+
+		  \begin{ELLIPTIC_ARC}
+			   name    = <name>
+			   center  = [x, y, 0.0]
+			   xRadius = rX
+			   yRadius = rY
+			   start angle = Tstart
+			   end angle   = Tend
+		      units 	   = degrees/radians (Optional. Default:radians)
+		      rotation     = <angle> (Optional. Default 0.0)
+	   	  \end{ELLIPTIC_ARC}
 
 Chaining curves:
 

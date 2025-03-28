@@ -71,7 +71,7 @@
          FINAL     :: destructDFTopography
          PROCEDURE :: heightAt => positionOnDFTopographyAt
          PROCEDURE :: printDescription => printDFDescription
-         PROCEDURE :: gaussianCurvatureAt => gaussianCurvatureFromInterp
+         PROCEDURE :: principalCurvatureAt => principalCurvatureFromInterp
       END TYPE SMTopographyFromFile
 !
 !     ========
@@ -212,9 +212,9 @@
             self % box(BBOX_BOTTOM) = -0.01_RP 
          END IF
 !
-!        -------------------------------------------------------------
-!        Compute gaussian curvature for bottom topography size control
-!        -------------------------------------------------------------
+!        --------------------------------------------------------------
+!        Compute principal curvature for bottom topography size control
+!        --------------------------------------------------------------
 !
          NULLIFY( self % curvature)
          
@@ -223,7 +223,7 @@
             ALLOCATE( self % curvature)
             DO k = 1,ny
                DO j = 1,nx
-                  z_values(j, k) = GaussianCurvatureBaseAt(self, [x_values(j), y_values(k)])
+                  z_values(j, k) = principalCurvatureBaseAt(self, [x_values(j), y_values(k)])
                END DO ! j
             END DO ! k
 !
@@ -308,23 +308,23 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      REAL(KIND=RP) FUNCTION gaussianCurvatureFromInterp(self, t)  
+      REAL(KIND=RP) FUNCTION principalCurvatureFromInterp(self, t)  
          IMPLICIT NONE  
          CLASS(SMTopographyFromFile) :: self
          REAL(KIND=RP)               :: t(2)
          CHARACTER(LEN=ERROR_MESSAGE_LENGTH)  :: msg
          
-         gaussianCurvatureFromInterp = 0.0_RP
+         principalCurvatureFromInterp = 0.0_RP
          IF ( .NOT. Point_IsInsideBox([t(1),t(2),0.0_RP],self % box) )     THEN
             WRITE(msg, *)"Interpolation point ()", t(1), t(2) ,") is outside of data bounding box: ", self % box(1:4)
-            CALL ThrowErrorExceptionOfType(poster = "gaussianCurvatureFromInterp", &
+            CALL ThrowErrorExceptionOfType(poster = "principalCurvatureFromInterp", &
                                            msg    = msg, &
                                            typ    = FT_ERROR_WARNING)
             RETURN
          END IF 
-         gaussianCurvatureFromInterp = self % curvature % valueAt(t)
+         principalCurvatureFromInterp = self % curvature % valueAt(t)
          
-      END FUNCTION gaussianCurvatureFromInterp
+      END FUNCTION principalCurvatureFromInterp
 !
 !////////////////////////////////////////////////////////////////////////
 !

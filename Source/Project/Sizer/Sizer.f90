@@ -345,7 +345,7 @@
                x(2) = xMin(2) + j*dx(2)
                DO i = 0, nX(1)
                   x(1) = xMin(1) + i*dx(1)
-                  hMin = MIN( hMin, 1.0_RP/SQRT(sizer % topography % gaussianCurvatureAt(x)) )
+                  hMin = MIN( hMin, 1.0_RP/SQRT(sizer % topography % principalCurvatureAt(x)) )
                   IF(hMin < SIZE_FACTOR*dX(1)) EXIT TLoop
                END DO
             END DO TLoop
