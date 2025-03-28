@@ -44,7 +44,7 @@
 !         REAL(KIND=RP) :: hessF(2,2)
 !
 !    The first takes the gradient and Hessian at the point (x,y) and
-!    returns the result. Use this if the gradient and hessian can
+!    returns the result. Use this if the gradient and Hessian can
 !    be computed externally.
 !
 ! (2) PrincipalCurvature(f, x, y)
