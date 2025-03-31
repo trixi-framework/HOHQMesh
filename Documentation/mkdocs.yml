@@ -20,6 +20,7 @@ theme:
 copyright: Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/main/AUTHORS.md">The HOHQMesh Authors</a>
 nav:
   - Home: 'index.md'
+  - Workflow Tools: 'WorkflowTools.md'
   - Gallery: 'Gallery.md'
   - User Guide:
     - Introduction: 'introduction.md'
