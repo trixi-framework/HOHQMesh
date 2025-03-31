@@ -46,7 +46,7 @@ FTStackClass.o \
 FTStringSetClass.o \
 FTValueClass.o \
 FTValueDictionaryClass.o \
-GaussianCurvature.o \
+PrincipalCurvature.o \
 Geometry.o \
 Geometry3D.o \
 Hash.o \
@@ -314,9 +314,9 @@ FTValueClass.o \
 FTDictionaryClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(FTOLPATH)/Source/FTObjects/FTValueDictionaryClass.f90
 
-GaussianCurvature.o :$(HOHQMESHPATH)/Source/Surfaces/GaussianCurvature.f90 \
+PrincipalCurvature.o :$(HOHQMESHPATH)/Source/Surfaces/PrincipalCurvature.f90 \
 SMConstants.o
-	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/GaussianCurvature.f90
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/PrincipalCurvature.f90
 
 Geometry.o :$(HOHQMESHPATH)/Source/Foundation/Geometry.f90 \
 SMConstants.o \
@@ -672,7 +672,7 @@ Geometry.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/ContinuousCurves/SMSplineCurveClass.f90
 
 SMTopographyClass.o :$(HOHQMESHPATH)/Source/Surfaces/SMTopographyClass.f90 \
-GaussianCurvature.o \
+PrincipalCurvature.o \
 SMConstants.o \
 FTObjectClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Surfaces/SMTopographyClass.f90

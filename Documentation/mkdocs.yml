@@ -31,6 +31,7 @@ nav:
     - Pre-made Examples: 'examples.md'
     - Compiling and Running HOHQMesh: 'compiling-and-running-hohqmesh.md'
     - Appendix: 'appendix.md'
+  - Workflow Tools: 'WorkflowTools.md'
   - 'For Developers':
     - How HOHQMesh Works: 'how-hohqmesh-works.md'
     - Assumptions and Algorithms: 'assumptions-and-algorithms.md'
