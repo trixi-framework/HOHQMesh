@@ -20,7 +20,6 @@ theme:
 copyright: Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/main/AUTHORS.md">The HOHQMesh Authors</a>
 nav:
   - Home: 'index.md'
-  - Workflow Tools: 'WorkflowTools.md'
   - Gallery: 'Gallery.md'
   - User Guide:
     - Introduction: 'introduction.md'
@@ -32,6 +31,7 @@ nav:
     - Pre-made Examples: 'examples.md'
     - Compiling and Running HOHQMesh: 'compiling-and-running-hohqmesh.md'
     - Appendix: 'appendix.md'
+  - Workflow Tools: 'WorkflowTools.md'
   - 'For Developers':
     - How HOHQMesh Works: 'how-hohqmesh-works.md'
     - Assumptions and Algorithms: 'assumptions-and-algorithms.md'
