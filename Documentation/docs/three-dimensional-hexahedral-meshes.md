@@ -123,8 +123,8 @@ Alternatively, the bottom topography data can be read in from a file, e.g.,
         \end{TOPOGRAPHY}
 
 From this data a bicubic interpolation is used to compute the bottom topography information.
-Currently this strategy of bottom topography extrusion relies on gridded data. The data file is assumed to come as separate lists of the x coordinate points, the
-y coordinate points, and the z coordinate points where the grid data is ordered slice-by-slice in the y direction. Below a small example is provided to clarify the
+Currently this strategy of bottom topography extrusion relies on gridded data. The data file is assumed to come as separate lists of the x coordinate points, with length $n$, the
+y coordinate points, with length $m$, and the z coordinate points where the grid data is ordered slice-by-slice in the y direction, with size $m \times n$. Below a small example is provided to clarify the
 data file format
 
      ! Header with the number of points in the x and y direction
@@ -141,12 +141,14 @@ data file format
      z1,1
      z2,1
      ...
-     z75,1
+     z50,1
      z1,2
      ...
-     z75,2
+     z50,2
      ...
-     z75,50
+     z1,75
+     ...
+     z50,75
 
 ![MtStHelens](https://user-images.githubusercontent.com/25242486/157440694-b8f1d9d5-adbf-4f5b-9de0-f89f675c584f.png)
 <p align = "center"> Fig. 25. Simple Extrusion of a rectangular mesh with a mountain bottom topography read in from a file</p>
