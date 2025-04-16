@@ -11,7 +11,7 @@ To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order bounda
 
 - Tell it how to mesh the model with a [`CONTROL_INPUT`](the-control-input.md) section to control the meshing process by
   - Setting [run parameters](the-control-input.md#RunParameters) that specify where to write the results, specify the mesh and plot file formats and the polynomial order of the boundary curves
-  - Setting [background grid](the-control-input.md#BackgroundGrid) size to specify the larges element size desired
+  - Setting [background grid](the-control-input.md#BackgroundGrid) size to specify the largest element size desired
   - Setting how the mesh should be [smoothed](the-control-input.md#Smoother)
   - Defining optional [refinement regions](the-control-input.md#RefinementRegions) to allow manual refinement of the mesh to emphasize specific regions not indicated by the boundary curves or topography.
 
