@@ -3,6 +3,8 @@ At the present time, HOHQMesh is designed to generate quadrilateral meshes in ge
 
 ![Meshables](https://user-images.githubusercontent.com/3637659/121807852-3302b000-cc56-11eb-93a9-e9c2e1b4ede8.png)
 <p align = "center"> Fig. 15. Meshable regions</p>
+## Boundaries<a name="Boundaries"></a>
+
 
 The two dimensional domain to be meshed can be bounded by at most one exterior boundary curve (which can be composed of a chain of curves), as in 15(a) and 15(b), above, and any number of interior boundary curves that either create holes or interfaces along which element edges are forced to lie. For purely external problems, a rectangular outer boundary can be implicitly included, as shown in 15(c).
 
@@ -13,10 +15,14 @@ As an example, the model in Fig. 16 has one outer boundary - the outer triangle 
 ![AllFeatures](https://github.com/user-attachments/assets/2f12ca1c-8a20-4c7d-98e6-9d619562a34d)
 <p align = "center"> Fig. 16. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve, and an ellipse defined by an `ELLIPTIC_ARC` curve. (<em>Examples/2D/AllFeatures</em>).</p>
 
+### Internal Boundaries<a name="Interfaces"></a>
+
  It is also possible to include interface boundaries whose interiors are also meshed. This allows one to force element boundaries along curves and to assign different material properties to each region bounded by them. The property is named by the innermost boundary in which an element lies. An example of a domain with two interface boundaries is shown in Fig. 17. **Right now, interface curves must be defined in the model definition from outer to inner to properly assign material names**. Thus, the innermost circle in Fig. 17 is defined after its enclosing circle. This restriction can be removed by adding code to test whether a given curve lies within another.
 
 ![B&M](https://user-images.githubusercontent.com/25242486/241190479-ba50d797-3bd9-41b1-bc38-03fc86f8c3da.png)
 <p align = "center"> Fig. 17. Mesh with interior interfaces bounded by circles.</p>
+
+### Symmetric Meshes<a name="Symmetry"></a>
 
 The mesh generator generates unstructured meshes, and there is no reason in general why a mesh must be symmetric if the model is symmetric. Since symmetry can be a desirable feature, HOHQMesh allows one to define a symmetry boundary about which the mesh will be symmetric by setting boundary names as ":symmetry" (with a colon, so as not to interfere with some other use of the name). The symmetry boundary must be a straight line (no matter how that is defined, see below) and multiple symmetry boundaries must be co-linear. What HOHQMesh does is take a model and mesh it. Then, if one or more of the outer boundary curves are named ":symmetry", that mesh will be reflected about the symmetry line and the result will be a perfectly symmetric mesh, to within rounding error. An example is shown in Fig. 18. If the curve designated as ":symmetry" is not straight, or if any of multiple lines so designated are not co-linear, then an error is posted and the mesh will not be reflected.
 

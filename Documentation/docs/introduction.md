@@ -1,3 +1,30 @@
+
+# TL;DR. What you can do with HOHQMesh<a name="ExampleMeshes"></a>
+
+To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you
+
+- Define a [`MODEL`](the-model.md#TheModel) consisting of
+	- An optional closed outer [boundary curve](the-model.md#Boundaries) made up of one or a chain of curved segments defined by primitives like straight [line segments](the-model.md#EndPointsLine), [circular arcs](the-model.md#CircularArc), [elliptic arcs](the-model.md#ParametricEqn), [splines](the-model.md#Spline), or [equations](the-model.md#ParametricEqn)
+	- Zero or more closed inner boundary curves defined in the same way
+	- Zero or more internal boundary curves that define boundaries for multiple material applications
+	- An optional bottom [topography](three-dimensional-hexahedral-meshes.md#Topography) defined either in functional form or from a file to use to [refine](three-dimensional-hexahedral-meshes#SizingTopography) a 2D mesh around bottom features. (For example for shallow water equation computations.)
+
+- Tell it how to mesh the model with a [`CONTROL_INPUT`](the-control-input.md) section to control the meshing process by
+  - Setting [run parameters](the-control-input.md#RunParameters) that specify where to write the results, specify the mesh and plot file formats and the polynomial order of the boundary curves
+  - Setting [background grid](the-control-input.md#BackgroundGrid) size to specify the larges element size desired
+  - Setting how the mesh should be [smoothed](the-control-input.md#Smoother)
+  - Defining optional [refinement regions](the-control-input.md#RefinementRegions) to allow manual refinement of the mesh to emphasize specific regions not indicated by the boundary curves or topography.
+
+HOHQMesh will automatically generate a mesh with curved elements sized according to the geometry, like the curvature of the boundary curves and bottom topography, and the distance between boundary curves. It will generate a mesh that is symmetric about a symmetry line if segments of the outer boundary are defined as [symmetry boundaries](the-model.md#Symmetry).
+
+Additionally, you can generate an all [hexahedral](three-dimensional-hexahedral-meshes) mesh by extruding a quadrilateral mesh by
+
+- [Simple extrusion](three-dimensional-hexahedral-meshes#Extrusion) along a coordinate direction
+- [Simple rotation](three-dimensional-hexahedral-meshes#Rotation) about an axis
+- [Sweeping](three-dimensional-hexahedral-meshes#Sweeping) a quadrilateral mesh along a curve and optionally [scaling](three-dimensional-hexahedral-meshes#Scaling) the width along the way
+
+In hexahedral mesh you can have the bottom of the hexahedral mesh follow a prescibed [topography](three-dimensional-hexahedral-meshes#Topography) defined in functional form or from data. The mesh can also be [sized](three-dimensional-hexahedral-meshes#SizingTopography) according to the curvature of the bottom topography.
+
 # Introduction
 
 Multidomain spectral methods, of which spectral element methods (SEMs) are a subclass, were introduced by Patera  (for elliptic and parabolic equations) and by Kopriva (for hyperbolic systems) to increase the efficiency of spectral methods and to apply them to complex geometries. Although somewhat controversial at the time -- questions were raised whether it was wise to not use the highest order polynomial possible  for a given number of degrees of freedom -- the methods have become so commonly used within the community that the updated book by Canuto et al.  is subtitled  “Fundamentals in Single Domains.”
