@@ -101,59 +101,12 @@ The equation for the scaling is scalar `PARAMETRIC_EQUATION` (as opposed to a `P
 ![Pond](https://user-images.githubusercontent.com/3637659/121807861-40b83580-cc56-11eb-8d97-388924e08dee.png)
 <p align = "center"> Fig. 24. Simple Extrusion of a semi-circular mesh with bottom topography</p>
 
-The bottom of a three dimensional mesh can vary in height according to a bottom topogaphy. The topography can be used to size either a 2D or a 3D mesh. One defines the topogrphy in the `MODEL` block.
-
-Bottom topography can be defined in one of two ways:
+The bottom of a three dimensional mesh can vary in height according to a bottom topography. One defines the topography in the [`MODEL`](the-model.md) block in one of two ways:
 
 * By supplying a functional form, f(x,y)
 * By supplying gridded data in a file
 
-### Topography from a Functional Form
-The simplest way to define the bottom topography is with an equation in a `TOPOGRAPHY` block, e.g.,
-
-        \begin{TOPOGRAPHY}
-           eqn = h(x,y) = x^2 + y^2
-           sizing = ON \or\ OFF
-        \end{TOPOGRAPHY}
-
-The height function takes two arguments, which are the physical x-y coordinates, unlike the parametric coordinates that define boundary curves. Fig. 24 above shows an example of such a bottom topography.
-
-### Topography from Data
-
-Alternatively, the bottom topography data can be read in from a file, e.g.,
-
-        \begin{TOPOGRAPHY}
-           data file = path/to/bottom_data.txt
-           sizing = ON \or\ OFF
-        \end{TOPOGRAPHY}
-
-From this data a bicubic interpolation is used to compute the bottom topography information.
-Currently this strategy of bottom topography extrusion relies on gridded data. The data file is assumed to come as separate lists of the x coordinate points, with length $n$, the
-y coordinate points, with length $m$, and the z coordinate points where the grid data is ordered slice-by-slice in the y direction, with size $m \times n$. Below a small example is provided to clarify the
-data file format
-
-     ! Header with the number of points in the x and y direction
-      75 50
-     ! x node values
-     x1
-     ...
-     x75
-     ! y node values
-     y1
-     ...
-     y50
-     ! z node values
-     z1,1
-     z2,1
-     ...
-     z50,1
-     z1,2
-     ...
-     z50,2
-     ...
-     z1,75
-     ...
-     z50,75
+See the [`MODEL`](the-model.md) section for details. Fig. 24 above shows an example of a bottom topography set with a bottom function, while Figs. 25 and 26 use data to describe Mt. St. Helens. 
 
 ![MtStHelens](https://user-images.githubusercontent.com/25242486/157440694-b8f1d9d5-adbf-4f5b-9de0-f89f675c584f.png)
 <p align = "center"> Fig. 25. Simple Extrusion of a rectangular mesh with a mountain bottom topography read in from a file</p>
@@ -173,4 +126,4 @@ in a TOPOGRAPHY block, e.g.
            sizing = ON
         \end{TOPOGRAPHY}
 
-the sizer will size the grid along the bottom according to the curvature of the topography for a 3D mesh. An example is shown in Fig. 26. If only a two dimensional mesh is requested, then it is sized according to the curvature, but does not changes the z-values of the 2D mesh, the result looking like the top of Fig. 26.
+the sizer will size the grid along the bottom according to the curvature of the topography for a 3D mesh. An example is shown in Fig. 26. If only a two dimensional mesh is requested, then it is sized according to the curvature, but the z-values of the 2D mesh are not changed, the result looking like the top of Fig. 26.

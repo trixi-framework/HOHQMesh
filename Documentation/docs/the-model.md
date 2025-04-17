@@ -195,6 +195,78 @@ block. Any number of curves can be chained together. The chain itself is also gi
 
 Again, the indentation is for readability only, as is the line spacing between the blocks. (Blank lines and lines starting with “%” are ignored.) Also remember that the chain is defined counter-clockwise, and the curves within the chain must be ordered and oriented properly. Chains cannot be chained together. Rem: The use of `PARAMETRIC_EQUATION_CURVE`s in this example predates the addition of the `END_POINTS_LINE` curves, which would be simpler to use here.
 
+## Bottom Topography
+
+Bottom topography can also be added to the model. The most obvious use is when generating three dimensional meshes, where the bottom follows a given profile. But topography can also be used to size the mesh, which is useful for the solution of two-dimensional shallow water flows.
+
+Bottom topography can be defined in one of two ways:
+
+* By supplying a functional form, f(x,y)
+* By supplying gridded data in a file
+
+### Topography from a Functional Form
+The simplest way to define the bottom topography is with an equation in a `TOPOGRAPHY` block, e.g.,
+
+        \begin{TOPOGRAPHY}
+           eqn = h(x,y) = x^2 + y^2
+           sizing = ON \or\ OFF (Optional)
+        \end{TOPOGRAPHY}
+
+The height function takes two arguments, which are the physical x-y coordinates, unlike the parametric coordinates that define boundary curves. The `sizing` key is optional, with the default being `OFF`.
+
+### Topography from Data
+
+Alternatively, the bottom topography data can be read in from a file, e.g.,
+
+        \begin{TOPOGRAPHY}
+           data file = path/to/bottom_data.txt
+           sizing = ON \or\ OFF (Optional)
+        \end{TOPOGRAPHY}
+ The `sizing` key is optional, with the default being `OFF`.
+ 
+From this data, a bicubic interpolation is used to compute the bottom topography information.
+Currently this strategy of bottom topography extrusion relies on *gridded data*. The data file is assumed to come as separate lists of the x coordinate points, with length $n$, the
+y coordinate points, with length $m$, and the z coordinate points where the grid data is ordered slice-by-slice in the y direction, with size $m \times n$. Below a small example is provided to clarify the
+data file format
+
+     ! Header with the number of points in the x and y direction
+      75 50
+     ! x node values
+     x1
+     ...
+     x75
+     ! y node values
+     y1
+     ...
+     y50
+     ! z node values
+     z1,1
+     z2,1
+     ...
+     z50,1
+     z1,2
+     ...
+     z50,2
+     ...
+     z1,75
+     ...
+     z50,75
+
+### Sizing the Mesh with Bottom Topography<a name="SizingTopography"></a>
+
+When
+
+		sizing = ON
+
+in a TOPOGRAPHY block, e.g.
+
+        \begin{TOPOGRAPHY}
+           eqn    = h(x,y) = x^2 + y^2
+           sizing = ON
+        \end{TOPOGRAPHY}
+
+a two-dimensional mesh is sized according to the curvature of the topography, but does not change the z values of the mesh. For an example, see the top portion of [Fig. 26](three-dimensional-hexahedral-meshes.md#SizingTopography).
+
 ## The Model Definition<a name="TheModel"></a>
 The model (there is at most one) defines the region that is to be meshed. It is marked by
 
@@ -228,7 +300,27 @@ Interior interface boundary curves are defined inside the `INTERFACE_BOUNDARIES`
 
 Interface boundaries, unlike interior boundaries, do not create holes in model domain or the mesh. _Interface boundaries that are contained (embedded) in other interface boundaries must be defined within the block in order from outer to inner to properly define the material names_. The ordering of interface boundaries that are not embedded in another is not important. (Additions to HOHQMesh to remove this restriction will require code to determine whether or not a given curve is embedded within another, and has not yet been implemented. HOHQMesh essentially uses a painters algorithm to specify the material names.) If interface curves are not being used to delineate material boundaries (i.e. for mesh alignment alone and not with the ISM-MM mesh file format), then the ordering is unimportant.
 
-###Example
+Bottom topography, if any, is defined in the `MODEL` inside a `TOPOGRAPHY` block, for either 2D (for sizing purposes) or 3D (to vary the bottom elevation) meshes,
+
+	\begin{TOPOGRAPHY}
+	...
+	\end{TOPOGRAPHY}
+
+Two types of blocks are relevant only to three-dimensional meshes. They are the
+
+	\begin{SWEEP_CURVE}
+		...
+	\end{SWEEP_CURVE}
+
+which defines the curve along which a 3D sweep is made. The second is  a scale factor
+
+	\begin{SWEEP_SCALE_FACTOR}
+		...
+	\end{SWEEP_SCALE_FACTOR}
+
+which allows the size of the mesh to vary along a sweep curve. Details on what these blocks do can be found in the [3D Meshing](three-dimensional-hexahedral-meshes.md) section.
+
+### Example
 
 As an example, the following defines a model that has a single circular outer boundary and three inner circular boundaries. Two of the curves are defined within a CHAIN (even though there is only a single curve within each). One of them is standalone. Note that *between* the blocks, comments can be inserted starting with “%”. As usual, indentation is for the reader’s eyes only.
 Rem: This example also predates the addition of the `CIRCULAR_ARC` curve definition, which could be used to define the circles instead.
