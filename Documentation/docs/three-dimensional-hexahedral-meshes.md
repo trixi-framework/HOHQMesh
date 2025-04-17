@@ -1,5 +1,5 @@
 # Three Dimensional Hexahedral Meshes
-HOHQMesh can also generate 3D hexahedral meshes by extruding or sweeping a two dimensional mesh. Topography can also be added to the bottom of the domain either through a functional form or from data supplied through a file. Finally, when bottom topography is present, the mesh along the bottom can be sized according to the bottom curvature.
+HOHQMesh can also generate 3D hexahedral meshes by extruding or sweeping a two dimensional mesh. Topography can also be added to the bottom of the domain either through a functional form or from data supplied through a file. Finally, when bottom topography is present, the mesh along the bottom can be sized according to the bottom curvature for either 2D or 3D meshes.
 
 To tell the mesher that you want a hex mesh, you add an algorithm block to the `CONTROL_INPUT` block for how the 3D extrusion will be done. Currently there are three:
 
@@ -101,52 +101,12 @@ The equation for the scaling is scalar `PARAMETRIC_EQUATION` (as opposed to a `P
 ![Pond](https://user-images.githubusercontent.com/3637659/121807861-40b83580-cc56-11eb-8d97-388924e08dee.png)
 <p align = "center"> Fig. 24. Simple Extrusion of a semi-circular mesh with bottom topography</p>
 
-When using the `SIMPLE_EXTRUSION` algorithm, bottom topography can be defined in one of two ways:
+The bottom of a three dimensional mesh can vary in height according to a bottom topography. One defines the topography in the [`MODEL`](the-model.md) block in one of two ways:
 
 * By supplying a functional form, f(x,y)
 * By supplying gridded data in a file
 
-### Topography from a Functional Form
-The simplest way to define the bottom topography is with an equation in a `TOPOGRAPHY` block, e.g.,
-
-        \begin{TOPOGRAPHY}
-           eqn = h(x,y) = x^2 + y^2
-        \end{TOPOGRAPHY}
-
-The height function takes two arguments, which are the physical x-y coordinates, unlike the parametric coordinates that define boundary curves. Fig. 24 above shows an example of such a bottom topography.
-
-### Topography from Data
-Alternatively, the bottom topography data can be read in from a file, e.g.,
-
-        \begin{TOPOGRAPHY}
-           data file = path/to/bottom_data.txt
-        \end{TOPOGRAPHY}
-
-From this data a bicubic interpolation is used to compute the bottom topography information.
-Currently this strategy of bottom topography extrusion relies on gridded data. The data file is assumed to come as separate lists of the x coordinate points, the
-y coordinate points, and the z coordinate points where the grid data is ordered slice-by-slice in the y direction. Below a small example is provided to clarify the
-data file format
-
-     ! Header with the number of points in the x and y direction
-      75 50
-     ! x node values
-     x1
-     ...
-     x75
-     ! y node values
-     y1
-     ...
-     y50
-     ! z node values
-     z1,1
-     z2,1
-     ...
-     z75,1
-     z1,2
-     ...
-     z75,2
-     ...
-     z75,50
+See the [`MODEL`](the-model.md) section for details. Fig. 24 above shows an example of a bottom topography set with a bottom function, while Figs. 25 and 26 use data to describe Mt. St. Helens. 
 
 ![MtStHelens](https://user-images.githubusercontent.com/25242486/157440694-b8f1d9d5-adbf-4f5b-9de0-f89f675c584f.png)
 <p align = "center"> Fig. 25. Simple Extrusion of a rectangular mesh with a mountain bottom topography read in from a file</p>
@@ -155,17 +115,15 @@ data file format
 ![SeaMountWithSizing](https://user-images.githubusercontent.com/85404032/160676054-d5f12eee-4f2b-4674-8861-1d131e9e8493.png)
 <p align = "center"> Fig. 26. Simple Extrusion of a semi-circular mesh with a bottom topography and local refinement depending on its curvature</p>
 
-Finally, the grid can be sized along the bottom by adding the command
+When
 
 		sizing = ON
 
-to any TOPOGRAPHY block, e.g
+in a TOPOGRAPHY block, e.g.
 
-		\begin{TOPOGRAPHY}
-		   data file = path/to/bottom_data.txt
-		   sizing    = ON
-		\end{TOPOGRAPHY}
+        \begin{TOPOGRAPHY}
+           eqn    = h(x,y) = x^2 + y^2
+           sizing = ON
+        \end{TOPOGRAPHY}
 
-It can also be turned `OFF', or the line deleted, to not size the bottom.
-
-The sizer will then size the grid along the bottom according to the curvature of the topography. An example is shown in Fig. 26.
+the sizer will size the grid along the bottom according to the curvature of the topography for a 3D mesh. An example is shown in Fig. 26. If only a two dimensional mesh is requested, then it is sized according to the curvature, but the z-values of the 2D mesh are not changed, the result looking like the top of Fig. 26.
