@@ -197,9 +197,9 @@ Again, the indentation is for readability only, as is the line spacing between t
 
 ## Bottom Topography
 
-Bottom topography can also be added to the model. The most obvious use is when generating three dimensional meshes, where the bottom follows a given profile. But topography can also be used to size the mesh, which is useful for the solution of two-dimensional shallow water flows.
+A bottom topography can also be added to the model. The most obvious use is when generating three dimensional meshes, where the bottom follows a given profile. But topography can also be used to size the mesh, which is useful for the solution of two-dimensional shallow water flows.
 
-Bottom topography can be defined in one of two ways:
+A bottom topography can be defined in one of two ways:
 
 * By supplying a functional form, f(x,y)
 * By supplying gridded data in a file
@@ -222,6 +222,7 @@ Alternatively, the bottom topography data can be read in from a file, e.g.,
            data file = path/to/bottom_data.txt
            sizing = ON \or\ OFF (Optional)
         \end{TOPOGRAPHY}
+        
  The `sizing` key is optional, with the default being `OFF`.
  
 From this data, a bicubic interpolation is used to compute the bottom topography information.

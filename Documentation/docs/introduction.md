@@ -1,7 +1,7 @@
 
 # TL;DR. What you can do with HOHQMesh<a name="WhatToDo"></a>
 
-To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you
+To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you use a [control file](the-controlfile.md) to
 
 - Define a [`MODEL`](the-model.md#TheModel) consisting of
 	- An optional closed outer [boundary curve](the-model.md#Boundaries) made up of one or a chain of curved segments defined by primitives like straight [line segments](the-model.md#EndPointsLine), [circular arcs](the-model.md#CircularArc), [elliptic arcs](the-model.md#ParametricEqn), [splines](the-model.md#Spline), or [equations](the-model.md#ParametricEqn)
@@ -11,7 +11,7 @@ To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order bounda
 
 - Tell it how to mesh the model with a [`CONTROL_INPUT`](the-control-input.md) section to control the meshing process by
   - Setting [run parameters](the-control-input.md#RunParameters) that specify where to write the results, specify the mesh and plot file formats and the polynomial order of the boundary curves
-  - Setting [background grid](the-control-input.md#BackgroundGrid) size to specify the largest element size desired
+  - Setting a [background grid](the-control-input.md#BackgroundGrid) size to specify the largest element size desired
   - Setting how the mesh should be [smoothed](the-control-input.md#Smoother)
   - Defining optional [refinement regions](the-control-input.md#RefinementRegions) to allow manual refinement of the mesh to emphasize specific regions not indicated by the boundary curves or topography.
 
@@ -23,7 +23,7 @@ Additionally, you can generate an all [hexahedral](three-dimensional-hexahedral-
 - [Simple rotation](three-dimensional-hexahedral-meshes.md#Rotation) about an axis
 - [Sweeping](three-dimensional-hexahedral-meshes.md#Sweeping) a quadrilateral mesh along a curve and optionally [scaling](three-dimensional-hexahedral-meshes.md#Scaling) the width along the way
 
-In hexahedral mesh you can have the bottom of the hexahedral mesh follow a prescibed [topography](three-dimensional-hexahedral-meshes.md#Topography) defined in functional form or from data. The mesh can also be [sized](three-dimensional-hexahedral-meshes.md#SizingTopography) according to the curvature of the bottom topography.
+One can have the bottom of a hexahedral mesh follow a prescribed [topography](three-dimensional-hexahedral-meshes.md#Topography) defined in functional form or from data. A 3D mesh can also be [sized](three-dimensional-hexahedral-meshes.md#SizingTopography) according to the curvature of the bottom topography.
 
 # Introduction
 

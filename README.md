@@ -16,9 +16,10 @@
 that automatically creates quadrilateral/hexahedral meshes with high-order boundary
 information. To get an impression of what kind of meshes HOHQMesh can generate,
 please see the [gallery](https://trixi-framework.github.io/HOHQMesh/Gallery/).
-# TL;DR. What you can do with HOHQMesh<a name="WhatToDo"></a>
 
-To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you
+# What you can do with HOHQMesh<a name="WhatToDo"></a>
+
+To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you use a [control file](Documentation/docs/the-controlfile.md) to
 
 - Define a [`MODEL`](Documentation/docs/the-model.md#TheModel) consisting of
 	- An optional closed outer [boundary curve](Documentation/docs/the-model.md#Boundaries) made up of one or more connected curved segments defined by primitives like straight [line segments](Documentation/docs/the-model.md#EndPointsLine), [circular arcs](Documentation/docs/the-model.md#CircularArc), [elliptic arcs](Documentation/docs/the-model.md#ParametricEqn), [splines](Documentation/docs/the-model.md#Spline), or [equations](Documentation/docs/the-model.md#ParametricEqn)
@@ -26,9 +27,9 @@ To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order bounda
 	- Zero or more internal boundary curves that define boundaries for multiple material applications
 	- An optional bottom [topography](Documentation/docs/three-dimensional-hexahedral-meshes.md#Topography) defined either in functional form or from a file to use to [refine](Documentation/docs/the-model.md.md#SizingTopography) a 2D mesh around bottom features. (For example for shallow water equation computations.)
 
-- Tell it how to mesh the model with a [`CONTROL_INPUT`](Documentation/docs/the-control-input.md) section to control the meshing process by
+- Tell it how to mesh the model with a [`CONTROL_INPUT`](Documentation/docs/the-control-input.md) section by
   - Setting [run parameters](Documentation/docs/the-control-input.md#RunParameters) that specify where to write the results, specify the mesh and plot file formats and set the polynomial order of the boundary curves
-  - Setting [background grid](Documentation/docs/the-control-input.md#BackgroundGrid) size to specify the largest element size desired
+  - Setting a [background grid](Documentation/docs/the-control-input.md#BackgroundGrid) size to specify the largest element size desired
   - Setting how the mesh should be [smoothed](Documentation/docs/the-control-input.md#Smoother)
   - Defining optional [refinement regions](Documentation/docs/the-control-input.md#RefinementRegions) to allow manual refinement of the mesh to emphasize specific regions not indicated by the boundary curves or topography.
 
@@ -40,7 +41,7 @@ Additionally, you can generate an all [hexahedral](Documentation/docs/three-dime
 - [Simple rotation](Documentation/docs/three-dimensional-hexahedral-meshes.md#Simple-Rotation) about an axis
 - [Sweeping](Documentation/docs/three-dimensional-hexahedral-meshes.md#Sweeping) a quadrilateral mesh along a curve and optionally [scaling](Documentation/docs/three-dimensional-hexahedral-meshes.md#Scaling) the width along the way
 
-In a hexahedral mesh you can have the bottom of the hexahedral mesh follow a prescribed [topography](Documentation/docs/three-dimensional-hexahedral-meshes.md#Topography) defined in functional form or from data. The mesh can also be [sized](Documentation/docs/three-dimensional-hexahedral-meshes.md#Sizing-the-Mesh-along-Bottom-Topography) according to the curvature of the bottom topography.
+One can have the bottom of a hexahedral mesh follow a prescribed [topography](Documentation/docs/three-dimensional-hexahedral-meshes.md#Topography) defined in functional form or from data. A 3D mesh can also be [sized](Documentation/docs/three-dimensional-hexahedral-meshes.md#Sizing-the-Mesh-along-Bottom-Topography) according to the curvature of the bottom topography.
 
 ## Getting started
 
@@ -53,6 +54,7 @@ please continue reading the next sections for instructions on how to obtain
 the sources and compile HOHQMesh yourself.
 
 ### Prerequisites
+
 To build and install HOHQMesh, you need the following tools:
 
 * A Fortran compiler (we recommend [GFortran](https://gcc.gnu.org/fortran/))
@@ -64,6 +66,7 @@ Building on Linux and macOS should be straightforward, building on Windows requi
 
 
 ### Install with Spack
+
 You can install HOHQMesh using the [Spack package manager](https://spack.io).
 To install the HOHQMesh with Spack,
 ```
@@ -79,6 +82,7 @@ spack load hohqmesh
 
 
 ### Obtaining the sources
+
 You can download the
 [latest HOHQMesh release](https://github.com/trixi-framework/HOHQMesh/releases/latest)
 from GitHub. Make sure to get the tarball named `HOHQMesh-vVERSION.tar.gz`, as
@@ -128,6 +132,7 @@ build HOHQMesh itself. If you followed the steps for obtaining the sources
 For convenience, we will assume that you are executing the following from within the
 HOHQMesh root directory. However, after modifying the paths appropriately, you can use these
 steps also from anywhere else:
+
 ```shell
 # Build and install FTObjectLibrary
 mkdir build-ftol && cd build-ftol
@@ -146,6 +151,7 @@ cd ..
 # Copy HOHQMesh executable to root directory
 cp install/bin/HOHQMesh .
 ```
+
 The HOHQMesh executable can be moved around freely and does not rely on any other files in
 the install prefix or in the build directories (which can thus be deleted safely if so desired).
 
@@ -155,7 +161,7 @@ variable `FC=<pathToCompiler>` when invoking the configure step of CMake, e.g.,
 `FC=gfortran-10 cmake ..`.
 
 
-### Testing
+## Testing
 After building HOHQMesh, you can verify that everything works as expected by
 running the internal test suite. To execute the tests, type
 ```bash
@@ -165,7 +171,7 @@ where `<pathToBenchmarks>` is the path to the HOHQMesh directory. If you are
 inside the HOHQMesh directory, you can also omit the `-path` option, as it
 defaults to `.`.
 
-### Generating a mesh
+## Generating a mesh
 To mesh a control file, type
 ```bash
 ./HOHQMesh -f <pathToControlFile>
@@ -192,7 +198,7 @@ The Tecplot file can be visualized, e.g., using the open-source software
 the gingerbread man, the resulting mesh should look like the example found in the
 [online mesh gallery](https://trixi-framework.github.io/HOHQMesh/Gallery/#just-for-fun).
 
-### Getting help
+## Getting help
 To get a list of the command line options available in HOHQMesh, type
 ```bash
 ./HOHQMesh -help

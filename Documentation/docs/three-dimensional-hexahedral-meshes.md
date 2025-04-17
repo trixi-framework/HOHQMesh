@@ -1,5 +1,5 @@
 # Three Dimensional Hexahedral Meshes
-HOHQMesh can also generate 3D hexahedral meshes by extruding or sweeping a two dimensional mesh. Topography can also be added to the bottom of the domain either through a functional form or from data supplied through a file. Finally, when bottom topography is present, the mesh along the bottom can be sized according to the bottom curvature for either 2D or 2D meshes.
+HOHQMesh can also generate 3D hexahedral meshes by extruding or sweeping a two dimensional mesh. Topography can also be added to the bottom of the domain either through a functional form or from data supplied through a file. Finally, when bottom topography is present, the mesh along the bottom can be sized according to the bottom curvature for either 2D or 3D meshes.
 
 To tell the mesher that you want a hex mesh, you add an algorithm block to the `CONTROL_INPUT` block for how the 3D extrusion will be done. Currently there are three:
 

@@ -73,7 +73,7 @@ Just leave out any of the optional parameters if you want the default values to 
 ![Refinements](https://user-images.githubusercontent.com/3637659/121807868-46ae1680-cc56-11eb-8941-c9ad8d259da2.png)
 <p align = "center"> Fig. 19. Two refinement centers and a refinement line</p>
 
-Mesh sizing is done automatically according to the curvature of boundary curves and the curvature of a bottom topography that can be supplied. See the section on [topography](three-dimensional-hexahedral-meshes.md#SizingTopography) for more information on the latter.
+Mesh sizing is done automatically according to the curvature of boundary curves and the curvature of a bottom topography that can be supplied. See the section on [topography](the-model.md#SizingTopography) for more information on the latter.
 
 Manual scaling of the mesh size can be performed by including any combination of
 
