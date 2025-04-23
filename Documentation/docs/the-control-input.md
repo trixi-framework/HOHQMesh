@@ -73,6 +73,8 @@ Just leave out any of the optional parameters if you want the default values to 
 ![Refinements](https://user-images.githubusercontent.com/3637659/121807868-46ae1680-cc56-11eb-8941-c9ad8d259da2.png)
 <p align = "center"> Fig. 19. Two refinement centers and a refinement line</p>
 
+Mesh sizing is done automatically according to the curvature of boundary curves and the curvature of a bottom topography that can be supplied. See the section on [topography](the-model.md#SizingTopography) for more information on the latter.
+
 Manual scaling of the mesh size can be performed by including any combination of
 
 * Refinement Centers
@@ -127,7 +129,7 @@ Refinement regions are defined within a `REFINEMENT_REGIONS` block, e.g.
 
 The ordering of the blocks within the `REFINEMENT_REGIONS` block is arbitrary.
 
-### Base Material Definition<a name="BaseMaterialDefinition"></a>
+## Base Material Definition<a name="BaseMaterialDefinition"></a>
 
 If the ISM-MM mesh file format is requested to produce multiple material meshes, the material name for a given region is given by the name of the curve bounding it, except for the outermost region. For the outermost region it is necessary to set the background material name in a `MATERIALS` block, e.g.
 
