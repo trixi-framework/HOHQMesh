@@ -19,13 +19,13 @@ please see the [gallery](https://trixi-framework.github.io/HOHQMesh/Gallery/).
 
 # What you can do with HOHQMesh<a name="WhatToDo"></a>
 
-To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you use a [control file](Documentation/docs/the-controlfile.md) to
+To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you use a [control file](Documentation/docs/the-control-file.md) to
 
 - Define a [`MODEL`](Documentation/docs/the-model.md#TheModel) consisting of
 	- An optional closed outer [boundary curve](Documentation/docs/the-model.md#Boundaries) made up of one or more connected curved segments defined by primitives like straight [line segments](Documentation/docs/the-model.md#EndPointsLine), [circular arcs](Documentation/docs/the-model.md#CircularArc), [elliptic arcs](Documentation/docs/the-model.md#ParametricEqn), [splines](Documentation/docs/the-model.md#Spline), or [equations](Documentation/docs/the-model.md#ParametricEqn)
 	- Zero or more closed inner boundary curves defined in the same way
 	- Zero or more internal boundary curves that define boundaries for multiple material applications
-	- An optional bottom [topography](Documentation/docs/three-dimensional-hexahedral-meshes.md#Topography) defined either in functional form or from a file to use to [refine](Documentation/docs/the-model.md.md#SizingTopography) a 2D mesh around bottom features. (For example for shallow water equation computations.)
+	- An optional bottom [topography](Documentation/docs/three-dimensional-hexahedral-meshes.md#Topography) defined either in functional form or from a file to use to [refine](Documentation/docs/the-model.md#SizingTopography) a 2D mesh around bottom features. (For example for shallow water equation computations.)
 
 - Tell it how to mesh the model with a [`CONTROL_INPUT`](Documentation/docs/the-control-input.md) section by
   - Setting [run parameters](Documentation/docs/the-control-input.md#RunParameters) that specify where to write the results, specify the mesh and plot file formats and set the polynomial order of the boundary curves
@@ -124,7 +124,7 @@ make -j 4 FC=gfortran-10
 ```
 
 #### Using CMake
-For a CMake-based build, you first need to build the 
+For a CMake-based build, you first need to build the
 [FTObjectLibrary](https://github.com/trixi-framework/FTObjectLibrary), install it, and then
 build HOHQMesh itself. If you followed the steps for obtaining the sources
 [above](#obtaining-the-sources), all required files are already present.
