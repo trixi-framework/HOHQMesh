@@ -1,7 +1,7 @@
 
 # TL;DR. What you can do with HOHQMesh<a name="WhatToDo"></a>
 
-To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you use a [control file](the-controlfile.md) to
+To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you use a [control file](the-control-file.md) to
 
 - Define a [`MODEL`](the-model.md#TheModel) consisting of
 	- An optional closed outer [boundary curve](the-model.md#Boundaries) made up of one or a chain of curved segments defined by primitives like straight [line segments](the-model.md#EndPointsLine), [circular arcs](the-model.md#CircularArc), [elliptic arcs](the-model.md#ParametricEqn), [splines](the-model.md#Spline), or [equations](the-model.md#ParametricEqn)
