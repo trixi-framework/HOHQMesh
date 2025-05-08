@@ -90,7 +90,7 @@
 !        Misc
 !        ----
 !
-         INTEGER :: BACKGROUND_MATERIAL_ID = 1
+         INTEGER :: BACKGROUND_MATERIAL_ID = 0
 !
 !        -----------
 !        Preferences

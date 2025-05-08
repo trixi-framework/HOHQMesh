@@ -159,7 +159,7 @@
          CHARACTER(LEN=*)          :: fName
          INTEGER                   :: N ! The polynomial order of the boundaries.
          INTEGER                   :: version !version number of the ISM format.
-         CHARACTER(LEN=*)          :: materialNameForID(:)
+         CHARACTER(LEN=*)          :: materialNameForID(0:)
 !
 !        ---------------
 !        Local Variables

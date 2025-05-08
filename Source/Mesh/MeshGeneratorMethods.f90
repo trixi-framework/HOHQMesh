@@ -263,7 +263,7 @@
 
       IF ( model % numberOfInterfaceCurves > 0 )     THEN
 
-            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(numberOfBoundaries))
+            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:numberOfBoundaries))
             mesh % materialNameForID = project % backgroundMaterialName
 
             iterator => model % interfaceBoundariesIterator
