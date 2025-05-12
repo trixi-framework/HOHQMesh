@@ -21,6 +21,7 @@ copyright: Copyright &copy; 2010 - present <a href="https://github.com/trixi-fra
 nav:
   - Home: 'index.md'
   - Gallery: 'Gallery.md'
+  - ChangeLog: 'News.md'
   - User Guide:
     - Introduction: 'introduction.md'
     - The Model: 'the-model.md'

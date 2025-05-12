@@ -17,7 +17,7 @@ that automatically creates quadrilateral/hexahedral meshes with high-order bound
 information. To get an impression of what kind of meshes HOHQMesh can generate,
 please see the [gallery](https://trixi-framework.github.io/HOHQMesh/Gallery/).
 
-# What you can do with HOHQMesh<a name="WhatToDo"></a>
+## What you can do with HOHQMesh<a name="WhatToDo"></a>
 
 To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you use a [control file](Documentation/docs/the-control-file.md) to
 
@@ -42,6 +42,10 @@ Additionally, you can generate an all [hexahedral](Documentation/docs/three-dime
 - [Sweeping](Documentation/docs/three-dimensional-hexahedral-meshes.md#Sweeping) a quadrilateral mesh along a curve and optionally [scaling](Documentation/docs/three-dimensional-hexahedral-meshes.md#Scaling) the width along the way
 
 One can have the bottom of a hexahedral mesh follow a prescribed [topography](Documentation/docs/three-dimensional-hexahedral-meshes.md#Topography) defined in functional form or from data. A 3D mesh can also be [sized](Documentation/docs/three-dimensional-hexahedral-meshes.md#Sizing-the-Mesh-along-Bottom-Topography) according to the curvature of the bottom topography.
+
+## News
+
+News about HOHQMesh can be found [here](Documentation/docs/News.md).
 
 ## Getting started
 
