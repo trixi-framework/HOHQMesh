@@ -1,0 +1,18 @@
+.gallery-two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: end; /* to align at bottom */
+}
+.gallery-column {
+  padding: 3px;
+}
+.gallery-column figure {
+  margin: 0; /* Remove any default margin around an object */
+}
+.gallery-column img {
+  width: 100%;
+}
+.gallery-column figcaption {
+  margin: 0; /* Remove any default margin around an object */
+}
