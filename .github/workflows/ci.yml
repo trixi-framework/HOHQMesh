@@ -116,12 +116,6 @@ jobs:
           # macOS
           - os: macos-latest
             os_name: macos
-            compiler: gfortran-12
-            shell: bash
-            test_type: regular
-            coverage: false
-          - os: macos-latest
-            os_name: macos
             compiler: gfortran-13
             shell: bash
             test_type: regular
@@ -129,6 +123,12 @@ jobs:
           - os: macos-latest
             os_name: macos
             compiler: gfortran-14
+            shell: bash
+            test_type: regular
+            coverage: false
+          - os: macos-latest
+            os_name: macos
+            compiler: gfortran-15
             shell: bash
             test_type: regular
             coverage: false
