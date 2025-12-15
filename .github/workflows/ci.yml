@@ -116,12 +116,6 @@ jobs:
           # macOS
           - os: macos-latest
             os_name: macos
-            compiler: gfortran-12
-            shell: bash
-            test_type: regular
-            coverage: false
-          - os: macos-latest
-            os_name: macos
             compiler: gfortran-13
             shell: bash
             test_type: regular
@@ -129,6 +123,12 @@ jobs:
           - os: macos-latest
             os_name: macos
             compiler: gfortran-14
+            shell: bash
+            test_type: regular
+            coverage: false
+          - os: macos-latest
+            os_name: macos
+            compiler: gfortran-15
             shell: bash
             test_type: regular
             coverage: false
@@ -145,7 +145,7 @@ jobs:
         shell: ${{ matrix.shell }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       # - name: Add msbuild to PATH
       #   if: ${{ matrix.os_name == 'windows-latest' }}
       #   uses: microsoft/setup-msbuild@v1.0.2
