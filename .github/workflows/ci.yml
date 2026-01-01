@@ -154,7 +154,7 @@ jobs:
         with:
           update: true
           install: git base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc-fortran
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         id: cache
         with:
           path: /opt/intel/oneapi
