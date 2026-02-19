@@ -362,7 +362,7 @@
                                          N       = N )
                      DO jj = 0, N
                         DO ii = 0, N
-                           WRITE(iUnit, '(A3,3(F18.13))') "** ", faceX(:,ii,jj)
+                           WRITE(iUnit, '(A3,3(1X, F18.13))') "** ", faceX(:,ii,jj)
                         END DO
                      END DO
                   END IF
