@@ -1,0 +1,1796 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://trixi-framework.github.io/HOHQMesh/the-model/">
+      
+      
+        <link rel="prev" href="../introduction/">
+      
+      
+        <link rel="next" href="../the-control-input/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/TrixiInside_small_transparent.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>The Model - HOHQMesh</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../css/video.css">
+    
+      <link rel="stylesheet" href="../css/gallery.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#the-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="HOHQMesh" class="md-header__button md-logo" aria-label="HOHQMesh" data-md-component="logo">
+      
+  <img src="../images/TrixiInside_small_transparent.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HOHQMesh
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              The Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trixi-framework/HOHQMesh" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="HOHQMesh" class="md-nav__button md-logo" aria-label="HOHQMesh" data-md-component="logo">
+      
+  <img src="../images/TrixiInside_small_transparent.png" alt="logo">
+
+    </a>
+    HOHQMesh
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trixi-framework/HOHQMesh" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../News/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ChangeLog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundaries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Boundaries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#internal-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal Boundaries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#symmetric-meshes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Symmetric Meshes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#boundary-curves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundary Curves
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Boundary Curves">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-parametric-equation-curve-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Parametric Equation Curve Definition.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-spline-curve-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Spline Curve Definition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpoints-line-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints Line Definition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#circular-arc-curve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Circular Arc Curve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elliptic-arc-curve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Elliptic Arc Curve
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#boundary-chains" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundary Chains
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bottom-topography" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bottom Topography
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Bottom Topography">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topography-from-a-functional-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topography from a Functional Form
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topography-from-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topography from Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sizing-the-mesh-with-bottom-topography" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sizing the Mesh with Bottom Topography
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Model Definition
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Model Definition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-control-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Control Input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../three-dimensional-hexahedral-meshes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Three Dimensional Hexahedral Meshes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-control-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Control File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TheISMMeshFileFormats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The HOHQMesh Mesh File Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pre-made Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compiling-and-running-hohqmesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compiling and Running HOHQMesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../appendix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WorkflowTools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For Developers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    For Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-hohqmesh-works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How HOHQMesh Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assumptions-and-algorithms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assumptions and Algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../building-the-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Building the Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adding-a-new-test/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a New Test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing-a-new-version/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing a New Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../updating-spack-packages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updating Spack Packages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundaries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Boundaries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#internal-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal Boundaries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#symmetric-meshes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Symmetric Meshes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#boundary-curves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundary Curves
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Boundary Curves">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-parametric-equation-curve-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Parametric Equation Curve Definition.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-spline-curve-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Spline Curve Definition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endpoints-line-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints Line Definition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#circular-arc-curve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Circular Arc Curve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elliptic-arc-curve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Elliptic Arc Curve
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#boundary-chains" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundary Chains
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bottom-topography" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bottom Topography
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Bottom Topography">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topography-from-a-functional-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topography from a Functional Form
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topography-from-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topography from Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sizing-the-mesh-with-bottom-topography" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sizing the Mesh with Bottom Topography
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Model Definition
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Model Definition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="the-model">The Model<a class="headerlink" href="#the-model" title="Permanent link">&para;</a></h1>
+<p>At the present time, HOHQMesh is designed to generate quadrilateral meshes in general two dimensional geometries like those shown below in Fig. 15, and extrusions thereof to get three dimensional hex meshes.</p>
+<p><img alt="Meshables" src="https://user-images.githubusercontent.com/3637659/121807852-3302b000-cc56-11eb-93a9-e9c2e1b4ede8.png" /></p>
+<p align = "center"> Fig. 15. Meshable regions</p>
+
+<h2 id="boundaries">Boundaries<a name="Boundaries"></a><a class="headerlink" href="#boundaries" title="Permanent link">&para;</a></h2>
+<p>The two dimensional domain to be meshed can be bounded by at most one exterior boundary curve (which can be composed of a chain of curves), as in 15(a) and 15(b), above, and any number of interior boundary curves that either create holes or interfaces along which element edges are forced to lie. For purely external problems, a rectangular outer boundary can be implicitly included, as shown in 15(c).</p>
+<p>If no model block is included at all, then a purely Cartesian mesh will be created using parameters set in the control file.</p>
+<p>As an example, the model in Fig. 16 has one outer boundary - the outer triangle - and four inner boundaries whose interiors are exterior to the mesh.</p>
+<p><img alt="AllFeatures" src="https://github.com/user-attachments/assets/2f12ca1c-8a20-4c7d-98e6-9d619562a34d" /></p>
+<p align = "center"> Fig. 16. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve, and an ellipse defined by an `ELLIPTIC_ARC` curve. (<em>Examples/2D/AllFeatures</em>).</p>
+
+<h3 id="internal-boundaries">Internal Boundaries<a name="Interfaces"></a><a class="headerlink" href="#internal-boundaries" title="Permanent link">&para;</a></h3>
+<p>It is also possible to include interface boundaries whose interiors are also meshed. This allows one to force element boundaries along curves and to assign different material properties to each region bounded by them. The property is named by the innermost boundary in which an element lies. An example of a domain with two interface boundaries is shown in Fig. 17. <strong>Right now, interface curves must be defined in the model definition from outer to inner to properly assign material names</strong>. Thus, the innermost circle in Fig. 17 is defined after its enclosing circle. This restriction can be removed by adding code to test whether a given curve lies within another.</p>
+<p><img alt="B&amp;M" src="https://user-images.githubusercontent.com/25242486/241190479-ba50d797-3bd9-41b1-bc38-03fc86f8c3da.png" /></p>
+<p align = "center"> Fig. 17. Mesh with interior interfaces bounded by circles.</p>
+
+<h3 id="symmetric-meshes">Symmetric Meshes<a name="Symmetry"></a><a class="headerlink" href="#symmetric-meshes" title="Permanent link">&para;</a></h3>
+<p>The mesh generator generates unstructured meshes, and there is no reason in general why a mesh must be symmetric if the model is symmetric. Since symmetry can be a desirable feature, HOHQMesh allows one to define a symmetry boundary about which the mesh will be symmetric by setting boundary names as ":symmetry" (with a colon, so as not to interfere with some other use of the name). The symmetry boundary must be a straight line (no matter how that is defined, see below) and multiple symmetry boundaries must be co-linear. What HOHQMesh does is take a model and mesh it. Then, if one or more of the outer boundary curves are named ":symmetry", that mesh will be reflected about the symmetry line and the result will be a perfectly symmetric mesh, to within rounding error. An example is shown in Fig. 18. If the curve designated as ":symmetry" is not straight, or if any of multiple lines so designated are not co-linear, then an error is posted and the mesh will not be reflected.</p>
+<p><img alt="NotREFL" src="https://github.com/trixi-framework/HOHQMesh/assets/25242486/5e145806-1acb-43c4-b712-ea6eeb703c64" /></p>
+<p align = "center"> Fig. 18. A mesh (left) reflected about the red boundary line (right).</p>
+
+<h2 id="boundary-curves">Boundary Curves<a name="BoundaryCurves"></a><a class="headerlink" href="#boundary-curves" title="Permanent link">&para;</a></h2>
+<p>Boundaries include the outer boundary, any number of inner boundaries, and interface boundaries that mark material or other separations. No boundary can cross another boundary. Boundary curves are constructed as closed chains of parameterized curves, with the parameter in the interval [0,1], oriented counter-clockwise. The chains can have one or more segments as seen in Fig. 15. In Fig. 15a the outer boundary is constructed from six curves, whereas in Fig. 15b it is bounded by a single one. The inner boundaries in Fig. 15a are a single circle and a square constructed by a chain of four lines. In Fig. 16, the outer triangle is constructed as a chain of straight lines defined as <code>END_POINTS_LINE</code>s.</p>
+<p>A curve is defined by a block</p>
+<pre><code>\begin{curve_type}
+    ...
+\end{curve_type}
+</code></pre>
+<p>It is given a name so that boundary conditions can be applied segment-by-segment to a chain.</p>
+<p>Currently there are five types of curves that can be defined:</p>
+<ul>
+<li>Curves defined by equation components.</li>
+<li>Cubic spline interpolants of a set of nodal points.</li>
+<li>Straight lines between two points.</li>
+<li>Circular arcs.</li>
+<li>Elliptic arcs.</li>
+</ul>
+<p>Fig. 16 is an example that uses all four curve-type definitions (<em>Examples/2D/AllFeatures</em>).</p>
+<p>The architecture is designed for developers to easily add curve definitions in the future by creating subclasses of the SMCurveClass.</p>
+<h3 id="the-parametric-equation-curve-definition">The Parametric Equation Curve Definition.<a name="ParametricEqn"></a><a class="headerlink" href="#the-parametric-equation-curve-definition" title="Permanent link">&para;</a></h3>
+<p>Curves can be defined by strings that define the equations for the (x,y,z) components of the curve using the <code>PARAMETRIC_EQUATION_CURVE</code> type. An example block for this kind of curve is</p>
+<pre><code>\begin{PARAMETRIC_EQUATION_CURVE}
+    name = circle
+    xEqn = x(t) = 14.0*cos(2*pi*t)
+    yEqn = y(t) = 14.0*sin(2*pi*t)
+    zEqn = z(t) = 0.0
+\end{PARAMETRIC_EQUATION_CURVE}
+</code></pre>
+<p>The first line defines the name, followed by the x- , y- and z- equation definitions. <strong>Right now, only two-dimensional meshes in the x-y plane can be generated, so the z=0 equation must be set this way</strong>. The example block defines a closed circular curve of radius 14 named “circle”. The indenting is optional, as is the ordering of the keys within the block. The keywords are “name”, “xEqn”, etc. and must be spelled correctly or an error will be posted when the model is read in. The zEqn keyword line is optional and can be left out.</p>
+<p>The equations can be any legal representations of an equation as is standard in most computer languages. The first part, before the equals sign defines the parameter variable, in this case, <em>t</em>. On the right hand side is the formula that defines the curve. Exponentiation is defined as in BASIC, like <em>t^2</em>. For convenience, the constant <strong>pi</strong> is defined. Like BASIC, number literals are defined as double precision values. There are no integer quantities. Standard functions like sin, cos, tan, atan, log, log10, exp, etc. are also available for use.</p>
+<h3 id="the-spline-curve-definition">The Spline Curve Definition<a name="Spline"></a><a class="headerlink" href="#the-spline-curve-definition" title="Permanent link">&para;</a></h3>
+<p>The second type of curve is the <code>SPLINE_CURVE</code> type, which fits a cubic spline to a set of knots at given parameter values. The parameterization does not have to be uniform. An example of a spline-defined curve is</p>
+<pre><code>\begin{SPLINE_CURVE}
+    name = SplineBoundaryCurve
+    nKnots = 9
+    \begin{SPLINE_DATA}
+        0.000000000000000 -3.50000000000000  3.50000000000000 0.0
+        3.846153846153846E-002 -3.20000000000000  5.00000000000 0.0
+        7.692307692307693E-002 -2.00000000000000  6.00000000000 0.0
+        0.769230769230769  0.000000000000000 -1.00000000000000 0.0
+        0.807692307692308 -1.00000000000000 -1.00000000000000 0.0
+        0.846153846153846 -2.00000000000000 -0.800000000000000 0.0
+        0.884615384615385 -2.50000000000000  0.000000000000000 0.0
+        0.923076923076923 -3.00000000000000  1.00000000000000 0.0
+        1.00000000000000 -3.50000000000000  3.50000000000000 0.0
+    \end{SPLINE_DATA}
+\end{SPLINE_CURVE}
+</code></pre>
+<p>As before, the first line after the \begin is the name of the curve. It is followed by the number of nodes in the spline. The data columns that follow are the nodes given by t<sub>j</sub>,x<sub>j</sub>,y<sub>j</sub>,z<sub>j</sub>. This particular spline is closed, so the location of the last node is the same as the first. Again, the z<sub>j</sub> values must currently be zero to ensure that curves are in the x-y plane.</p>
+<p>The spline data can get rather large, so there is an option to read it from an external file. To read from a file, the <code>SPLINE_CURVE</code> block is</p>
+<pre><code>\begin{SPLINE_CURVE}
+    name = SplineBoundaryCurve
+    file = `pathToFile`
+\end{SPLINE_CURVE}
+</code></pre>
+<p>The data file will have the number of nodes as the first line, followed by the data, e.g.</p>
+<pre><code>    9
+    0.000000000000000 -3.50000000000000  3.50000000000000 0.0
+    3.846153846153846E-002 -3.20000000000000  5.00000000000 0.0
+    7.692307692307693E-002 -2.00000000000000  6.00000000000 0.0
+    0.769230769230769  0.000000000000000 -1.00000000000000 0.0
+    0.807692307692308 -1.00000000000000 -1.00000000000000 0.0
+    0.846153846153846 -2.00000000000000 -0.800000000000000 0.0
+    0.884615384615385 -2.50000000000000  0.000000000000000 0.0
+    0.923076923076923 -3.00000000000000  1.00000000000000 0.0
+    1.00000000000000 -3.50000000000000  3.50000000000000 0.0
+</code></pre>
+<p>An example where the curve data is read from a file can be found in Examples/2D/EastCoastUS.</p>
+<h3 id="endpoints-line-definition">Endpoints Line Definition<a name="EndPointsLine"></a><a class="headerlink" href="#endpoints-line-definition" title="Permanent link">&para;</a></h3>
+<p>The next type of curve is the <code>END_POINTS_LINE</code> type that takes two end points and puts a straight line between them. An example is</p>
+<pre><code>\begin{END_POINTS_LINE}
+    name   = B1
+    xStart = [0.0,1.0,0.0]
+    xEnd   = [2.0,1.0,0.0]
+\end{END_POINTS_LINE}
+</code></pre>
+<p>where the x,y,z values of the point are specified in the array denoted as [x,y,z]. For now, the z component must be 0.0.</p>
+<h3 id="circular-arc-curve">Circular Arc Curve<a name="CircularArc"></a><a class="headerlink" href="#circular-arc-curve" title="Permanent link">&para;</a></h3>
+<p>Another type of curve defines a circular arc. The angles can be defined either in terms of degrees or radians. If the (optional) <em>units</em> keyword is not included, the default is radians.</p>
+<pre><code>\begin{CIRCULAR_ARC}
+    name        = circle
+    units       = degrees
+    center      = [0.0,0.0,0.0]
+    radius      = 4.0
+    start angle = 0.0
+    end angle   = 180.0
+\end{CIRCULAR_ARC}
+</code></pre>
+<h3 id="elliptic-arc-curve">Elliptic Arc Curve<a name="EllipticArc"></a><a class="headerlink" href="#elliptic-arc-curve" title="Permanent link">&para;</a></h3>
+<p>The final type of curve defines an elliptic arc. The angles can be defined either in terms of degrees or radians. If the (optional) <em>units</em> keyword is not included, the default is radians. The x and y radii are specified separately, and the (optional) <em>rotation</em> keyword may be passed to rotate the ellipse counterclockwise.</p>
+<pre><code>\begin{ELLIPTIC_ARC}
+    name        = ellipse
+    units       = degrees
+    center      = [0.0,0.0,0.0]
+    xRadius     = 4.0
+    yRadius     = 2.0
+    start angle = 0.0
+    end angle   = 180.0
+    rotation    = 45.0
+\end{ELLIPTIC_ARC}
+</code></pre>
+<h2 id="boundary-chains">Boundary Chains<a name="Chains"></a><a class="headerlink" href="#boundary-chains" title="Permanent link">&para;</a></h2>
+<p>To allow complex boundary curves and to allow different portions of a boundary to have different boundary conditions applied, curves can be chained together into a closed curve. A chain is defined by curves specified (in order) within a</p>
+<pre><code>\begin{CHAIN}
+...
+\end{CHAIN}
+</code></pre>
+<p>block. Any number of curves can be chained together. The chain itself is also given a name. An example of a chain that defines the boundary of a unit square is</p>
+<pre><code>\begin{CHAIN}
+    name = UnitSquare
+    \begin{PARAMETRIC_EQUATION_CURVE}
+        name = bottom
+        xEqn = f(t) = t
+        yEqn = f(t) = 0
+        zEqn = f(t) = 0
+    \end{PARAMETRIC_EQUATION_CURVE}
+
+    \begin{PARAMETRIC_EQUATION_CURVE}
+        name = right
+        xEqn = f(t) = 1
+        yEqn = f(t) = t
+        zEqn = f(t) = 0
+    \end{PARAMETRIC_EQUATION_CURVE}
+
+    \begin{PARAMETRIC_EQUATION_CURVE}
+        name = top
+        xEqn = f(t) = 1-t
+        yEqn = f(t) = 1
+        zEqn = f(t) = 0
+    \end{PARAMETRIC_EQUATION_CURVE}
+
+    \begin{PARAMETRIC_EQUATION_CURVE}
+        name = bottom
+        xEqn = f(t) = 0
+        yEqn = f(t) = 1-t
+        zEqn = f(t) = 0
+    \end{PARAMETRIC_EQUATION_CURVE}
+\end{CHAIN}
+</code></pre>
+<p>Again, the indentation is for readability only, as is the line spacing between the blocks. (Blank lines and lines starting with “%” are ignored.) Also remember that the chain is defined counter-clockwise, and the curves within the chain must be ordered and oriented properly. Chains cannot be chained together. Rem: The use of <code>PARAMETRIC_EQUATION_CURVE</code>s in this example predates the addition of the <code>END_POINTS_LINE</code> curves, which would be simpler to use here.</p>
+<h2 id="bottom-topography">Bottom Topography<a class="headerlink" href="#bottom-topography" title="Permanent link">&para;</a></h2>
+<p>A bottom topography can also be added to the model. The most obvious use is when generating three dimensional meshes, where the bottom follows a given profile. But topography can also be used to size the mesh, which is useful for the solution of two-dimensional shallow water flows.</p>
+<p>A bottom topography can be defined in one of two ways:</p>
+<ul>
+<li>By supplying a functional form, f(x,y)</li>
+<li>By supplying gridded data in a file</li>
+</ul>
+<h3 id="topography-from-a-functional-form">Topography from a Functional Form<a class="headerlink" href="#topography-from-a-functional-form" title="Permanent link">&para;</a></h3>
+<p>The simplest way to define the bottom topography is with an equation in a <code>TOPOGRAPHY</code> block, e.g.,</p>
+<pre><code>    \begin{TOPOGRAPHY}
+       eqn = h(x,y) = x^2 + y^2
+       sizing = ON \or\ OFF (Optional)
+    \end{TOPOGRAPHY}
+</code></pre>
+<p>The height function takes two arguments, which are the physical x-y coordinates, unlike the parametric coordinates that define boundary curves. The <code>sizing</code> key is optional, with the default being <code>OFF</code>.</p>
+<h3 id="topography-from-data">Topography from Data<a class="headerlink" href="#topography-from-data" title="Permanent link">&para;</a></h3>
+<p>Alternatively, the bottom topography data can be read in from a file, e.g.,</p>
+<pre><code>    \begin{TOPOGRAPHY}
+       data file = path/to/bottom_data.txt
+       sizing = ON \or\ OFF (Optional)
+    \end{TOPOGRAPHY}
+</code></pre>
+<p>The <code>sizing</code> key is optional, with the default being <code>OFF</code>.</p>
+<p>From this data, a bicubic interpolation is used to compute the bottom topography information.
+Currently this strategy of bottom topography extrusion relies on <em>gridded data</em>. The data file is assumed to come as separate lists of the x coordinate points, with length <span class="arithmatex">\(n\)</span>, the
+y coordinate points, with length <span class="arithmatex">\(m\)</span>, and the z coordinate points where the grid data is ordered slice-by-slice in the y direction, with size <span class="arithmatex">\(m \times n\)</span>. Below a small example is provided to clarify the
+data file format</p>
+<pre><code> ! Header with the number of points in the x and y direction
+  75 50
+ ! x node values
+ x1
+ ...
+ x75
+ ! y node values
+ y1
+ ...
+ y50
+ ! z node values
+ z1,1
+ z2,1
+ ...
+ z50,1
+ z1,2
+ ...
+ z50,2
+ ...
+ z1,75
+ ...
+ z50,75
+</code></pre>
+<h3 id="sizing-the-mesh-with-bottom-topography">Sizing the Mesh with Bottom Topography<a name="SizingTopography"></a><a class="headerlink" href="#sizing-the-mesh-with-bottom-topography" title="Permanent link">&para;</a></h3>
+<p>When</p>
+<pre><code>    sizing = ON
+</code></pre>
+<p>in a TOPOGRAPHY block, e.g.</p>
+<pre><code>    \begin{TOPOGRAPHY}
+       eqn    = h(x,y) = x^2 + y^2
+       sizing = ON
+    \end{TOPOGRAPHY}
+</code></pre>
+<p>a two-dimensional mesh is sized according to the curvature of the topography, but does not change the z values of the mesh. For an example, see the top portion of <a href="../three-dimensional-hexahedral-meshes/#SizingTopography">Fig. 26</a>.</p>
+<h2 id="the-model-definition">The Model Definition<a name="TheModel"></a><a class="headerlink" href="#the-model-definition" title="Permanent link">&para;</a></h2>
+<p>The model (there is at most one) defines the region that is to be meshed. It is marked by</p>
+<pre><code>\begin{MODEL}
+...
+\end{MODEL}
+</code></pre>
+<p>If the control file does not contain a model block, a Cartesian mesh will be generated.</p>
+<p>The model contains at most one outer boundary chain and any number of inner boundary chains. The outer boundary chain (if there is one) is defined by</p>
+<pre><code>\begin{OUTER_BOUNDARY}
+...
+\end{OUTER_BOUNDARY}
+</code></pre>
+<p>Within the <code>OUTER_BOUNDARY</code> block is a list of boundary curves that form a chain. There is no need to explicitly chain (by way of <code>\begin{CHAIN}</code>...<code>\end{CHAIN}</code>) the curves for the outer boundary, as that is implied.</p>
+<p>Inner boundaries (if any) are defined within the block</p>
+<pre><code>\begin{INNER_BOUNDARIES}
+...
+\end{INNER_BOUNDARIES}
+</code></pre>
+<p>Within this block one defines as many curves or <code>CHAIN</code>s as there are inner boundaries. The order in which the <code>CHAIN</code>s or curves are defined is not important. Use a CHAIN if you want to chain multiple curves together to create a single inner boundary. Outside of a chain, a curve will define a single inner boundary by itself. Note that a standalone curve must close on itself.</p>
+<p>Interior interface boundary curves are defined inside the <code>INTERFACE_BOUNDARIES</code> block, as if they are interior boundaries,</p>
+<pre><code>\begin{INTERFACE_BOUNDARIES}
+...
+\end{INTERFACE_BOUNDARIES}
+</code></pre>
+<p>Interface boundaries, unlike interior boundaries, do not create holes in model domain or the mesh. <em>Interface boundaries that are contained (embedded) in other interface boundaries must be defined within the block in order from outer to inner to properly define the material names</em>. The ordering of interface boundaries that are not embedded in another is not important. (Additions to HOHQMesh to remove this restriction will require code to determine whether or not a given curve is embedded within another, and has not yet been implemented. HOHQMesh essentially uses a painters algorithm to specify the material names.) If interface curves are not being used to delineate material boundaries (i.e. for mesh alignment alone and not with the ISM-MM mesh file format), then the ordering is unimportant.</p>
+<p>Bottom topography, if any, is defined in the <code>MODEL</code> inside a <code>TOPOGRAPHY</code> block, for either 2D (for sizing purposes) or 3D (to vary the bottom elevation) meshes,</p>
+<pre><code>\begin{TOPOGRAPHY}
+...
+\end{TOPOGRAPHY}
+</code></pre>
+<p>Two types of blocks are relevant only to three-dimensional meshes. They are the</p>
+<pre><code>\begin{SWEEP_CURVE}
+    ...
+\end{SWEEP_CURVE}
+</code></pre>
+<p>which defines the curve along which a 3D sweep is made. The second is  a scale factor</p>
+<pre><code>\begin{SWEEP_SCALE_FACTOR}
+    ...
+\end{SWEEP_SCALE_FACTOR}
+</code></pre>
+<p>which allows the size of the mesh to vary along a sweep curve. Details on what these blocks do can be found in the <a href="../three-dimensional-hexahedral-meshes/">3D Meshing</a> section.</p>
+<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
+<p>As an example, the following defines a model that has a single circular outer boundary and three inner circular boundaries. Two of the curves are defined within a CHAIN (even though there is only a single curve within each). One of them is standalone. Note that <em>between</em> the blocks, comments can be inserted starting with “%”. As usual, indentation is for the reader’s eyes only.
+Rem: This example also predates the addition of the <code>CIRCULAR_ARC</code> curve definition, which could be used to define the circles instead.</p>
+<pre><code>\begin{MODEL}
+    \begin{OUTER_BOUNDARY}
+        \begin{PARAMETRIC_EQUATION_CURVE}
+            name = outer
+            xEqn = x(t) = 14.0*cos(2*pi*t)
+            yEqn = y(t) = 14.0*sin(2*pi*t)
+            zEqn = z(t) = 0.0
+        \end{PARAMETRIC_EQUATION_CURVE}
+    \end{OUTER_BOUNDARY}
+%
+%   Inner boundaries, if any, are any number of chains
+%   of curves. Each inner boundary is defined within a CHAIN.
+%
+    \begin{INNER_BOUNDARIES}
+        \begin{CHAIN}
+            name = Boundary 1
+            \begin{PARAMETRIC_EQUATION_CURVE}
+                name = Circle1
+                xEqn = f(t) = -10.25 + 0.2*cos(2*pi*t)
+                yEqn = f(t) = 3.0 + 0.2*sin(2*pi*t)
+                zEqn = z(t) = 0.0
+            \end{PARAMETRIC_EQUATION_CURVE}
+        \end{CHAIN}
+
+        \begin{PARAMETRIC_EQUATION_CURVE}
+            name = Circle2
+            xEqn = f(t) = -5.1 + 1.0*cos(2*pi*t)
+            yEqn = f(t) = 1.0*sin(2*pi*t) - 4.1
+            zEqn = z(t) = 0.0
+        \end{PARAMETRIC_EQUATION_CURVE}
+
+       \begin{CHAIN}
+         name = Boundary 3
+            \begin{PARAMETRIC_EQUATION_CURVE}
+            name = Circle3
+            xEqn = f(t) = -12.0 + 0.5*cos(2*pi*t)
+            yEqn = f(t) = 0.5*sin(2*pi*t) - 0.5
+            zEqn = z(t) = 0.0
+          \end{PARAMETRIC_EQUATION_CURVE}
+        \end{CHAIN}
+    \end{INNER_BOUNDARIES}
+\end{MODEL}
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/main/AUTHORS.md">The HOHQMesh Authors</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "navigation.sections"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/config.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

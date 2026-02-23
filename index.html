@@ -1,0 +1,1665 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://trixi-framework.github.io/HOHQMesh/">
+      
+      
+      
+        <link rel="next" href="Gallery/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="images/TrixiInside_small_transparent.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>HOHQMesh</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="css/video.css">
+    
+      <link rel="stylesheet" href="css/gallery.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#hohqmesh" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="HOHQMesh" class="md-header__button md-logo" aria-label="HOHQMesh" data-md-component="logo">
+      
+  <img src="images/TrixiInside_small_transparent.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HOHQMesh
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trixi-framework/HOHQMesh" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="HOHQMesh" class="md-nav__button md-logo" aria-label="HOHQMesh" data-md-component="logo">
+      
+  <img src="images/TrixiInside_small_transparent.png" alt="logo">
+
+    </a>
+    HOHQMesh
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trixi-framework/HOHQMesh" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-can-do-with-hohqmesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What you can do with HOHQMesh
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#news" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        News
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting started
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-with-spack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install with Spack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#obtaining-the-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Obtaining the sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#building" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-plain-make" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using plain make
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-cmake" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using CMake
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generating-a-mesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generating a mesh
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting help
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referencing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#license-and-contributing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        License and contributing
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="News/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ChangeLog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="the-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="the-control-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Control Input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="three-dimensional-hexahedral-meshes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Three Dimensional Hexahedral Meshes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="the-control-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Control File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="TheISMMeshFileFormats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The HOHQMesh Mesh File Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pre-made Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="compiling-and-running-hohqmesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compiling and Running HOHQMesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="appendix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="WorkflowTools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For Developers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    For Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="how-hohqmesh-works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How HOHQMesh Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="assumptions-and-algorithms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assumptions and Algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="building-the-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Building the Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="adding-a-new-test/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a New Test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="releasing-a-new-version/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing a New Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="updating-spack-packages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updating Spack Packages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="authors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-can-do-with-hohqmesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What you can do with HOHQMesh
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#news" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        News
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting started
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-with-spack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install with Spack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#obtaining-the-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Obtaining the sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#building" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-plain-make" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using plain make
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-cmake" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using CMake
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generating-a-mesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generating a mesh
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting help
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referencing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#license-and-contributing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        License and contributing
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="hohqmesh">HOHQMesh<a class="headerlink" href="#hohqmesh" title="Permanent link">&para;</a></h1>
+<p><a href="https://trixi-framework.github.io/HOHQMesh"><img alt="Docs-stable" src="https://img.shields.io/badge/docs-stable-blue.svg" /></a>
+<a href="https://github.com/trixi-framework/HOHQMesh/actions?query=workflow%3ACI"><img alt="Build Status" src="https://github.com/trixi-framework/HOHQMesh/workflows/CI/badge.svg" /></a>
+<a href="https://coveralls.io/github/trixi-framework/HOHQMesh?branch=main"><img alt="Coveralls" src="https://coveralls.io/repos/github/trixi-framework/HOHQMesh/badge.svg?branch=main" /></a>
+<a href="https://codecov.io/gh/trixi-framework/HOHQMesh"><img alt="Codecov" src="https://codecov.io/gh/trixi-framework/HOHQMesh/branch/main/graph/badge.svg" /></a>
+<a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-success.svg" /></a>
+<a href="https://doi.org/10.21105/joss.07476"><img alt="JOSS" src="https://joss.theoj.org/papers/10.21105/joss.07476/status.svg" /></a>
+<a href="https://doi.org/10.5281/zenodo.13959058"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.13959058.svg" /></a></p>
+<p align="center">
+  <img width="400px" src="https://user-images.githubusercontent.com/3637659/121870408-50418800-cd03-11eb-9187-dcafdf73bab2.png" />
+</p>
+
+<p><strong>HOHQMesh</strong>, the <em>High Order Hex-Quad Mesher</em>, is an open-source mesh generator
+that automatically creates quadrilateral/hexahedral meshes with high-order boundary
+information. To get an impression of what kind of meshes HOHQMesh can generate,
+please see the <a href="https://trixi-framework.github.io/HOHQMesh/Gallery/">gallery</a>.</p>
+<h2 id="what-you-can-do-with-hohqmesh">What you can do with HOHQMesh<a name="WhatToDo"></a><a class="headerlink" href="#what-you-can-do-with-hohqmesh" title="Permanent link">&para;</a></h2>
+<p>To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order boundary elements you use a <a href="the-control-file/">control file</a> to</p>
+<ul>
+<li>
+<p>Define a <a href="the-model/#TheModel"><code>MODEL</code></a> consisting of</p>
+<ul>
+<li>An optional closed outer <a href="the-model/#Boundaries">boundary curve</a> made up of one or more connected curved segments defined by primitives like straight <a href="the-model/#EndPointsLine">line segments</a>, <a href="the-model/#CircularArc">circular arcs</a>, <a href="the-model/#ParametricEqn">elliptic arcs</a>, <a href="the-model/#Spline">splines</a>, or <a href="the-model/#ParametricEqn">equations</a></li>
+<li>Zero or more closed inner boundary curves defined in the same way</li>
+<li>Zero or more internal boundary curves that define boundaries for multiple material applications</li>
+<li>An optional bottom <a href="three-dimensional-hexahedral-meshes/#Topography">topography</a> defined either in functional form or from a file to use to <a href="the-model/#SizingTopography">refine</a> a 2D mesh around bottom features. (For example for shallow water equation computations.)</li>
+</ul>
+</li>
+<li>
+<p>Tell it how to mesh the model with a <a href="the-control-input/"><code>CONTROL_INPUT</code></a> section by</p>
+</li>
+<li>Setting <a href="the-control-input/#RunParameters">run parameters</a> that specify where to write the results, specify the mesh and plot file formats and set the polynomial order of the boundary curves</li>
+<li>Setting a <a href="the-control-input/#BackgroundGrid">background grid</a> size to specify the largest element size desired</li>
+<li>Setting how the mesh should be <a href="the-control-input/#Smoother">smoothed</a></li>
+<li>Defining optional <a href="the-control-input/#RefinementRegions">refinement regions</a> to allow manual refinement of the mesh to emphasize specific regions not indicated by the boundary curves or topography.</li>
+</ul>
+<p>HOHQMesh will automatically generate a mesh with curved elements sized according to the geometry, like the curvature of the boundary curves and bottom topography, and the distance between boundary curves. It will generate a mesh that is symmetric about a symmetry line if segments of the outer boundary are defined as <a href="the-model/#Symmetric-Meshes">symmetry boundaries</a>.</p>
+<p>Additionally, you can generate an all <a href="three-dimensional-hexahedral-meshes">hexahedral</a> mesh from the two-dimensional mesh by extruding a quadrilateral mesh by</p>
+<ul>
+<li><a href="three-dimensional-hexahedral-meshes/#Simple-Extrusion">Simple extrusion</a> along a coordinate direction</li>
+<li><a href="three-dimensional-hexahedral-meshes/#Simple-Rotation">Simple rotation</a> about an axis</li>
+<li><a href="three-dimensional-hexahedral-meshes/#Sweeping">Sweeping</a> a quadrilateral mesh along a curve and optionally <a href="three-dimensional-hexahedral-meshes/#Scaling">scaling</a> the width along the way</li>
+</ul>
+<p>One can have the bottom of a hexahedral mesh follow a prescribed <a href="three-dimensional-hexahedral-meshes/#Topography">topography</a> defined in functional form or from data. A 3D mesh can also be <a href="three-dimensional-hexahedral-meshes/#Sizing-the-Mesh-along-Bottom-Topography">sized</a> according to the curvature of the bottom topography.</p>
+<h2 id="news">News<a class="headerlink" href="#news" title="Permanent link">&para;</a></h2>
+<p>News about HOHQMesh can be found <a href="News/">here</a>.</p>
+<h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<p>HOHQMesh can be used via
+<a href="https://github.com/trixi-framework/HOHQMesh.jl">HOHQMesh.jl</a>, a
+<a href="https://julialang.org">Julia</a> package that provides an interface to HOHQMesh and that
+supplies precompiled executables for Linux, macOS, Windows, and
+FreeBSD. If you would like to use HOHQMesh directly from the command line,
+please continue reading the next sections for instructions on how to obtain
+the sources and compile HOHQMesh yourself.</p>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<p>To build and install HOHQMesh, you need the following tools:</p>
+<ul>
+<li>A Fortran compiler (we recommend <a href="https://gcc.gnu.org/fortran/">GFortran</a>)</li>
+<li><a href="https://www.gnu.org/software/make/">GNU Make</a></li>
+<li><a href="https://cmake.org/">CMake</a> (optional; only for CMake-based builds)</li>
+</ul>
+<p>Building on Linux and macOS should be straightforward, building on Windows requires
+<a href="https://www.msys2.org/">MSYS2</a>.</p>
+<h3 id="install-with-spack">Install with Spack<a class="headerlink" href="#install-with-spack" title="Permanent link">&para;</a></h3>
+<p>You can install HOHQMesh using the <a href="https://spack.io">Spack package manager</a>.
+To install the HOHQMesh with Spack,
+<div class="highlight"><pre><span></span><code>git clone https://github.com/spack/spack.git ~/spack
+source ~/spack/share/spack/setup-env.sh
+spack install hohqmesh@main
+</code></pre></div>
+This will install HOHQMesh and all of its dependencies (including FTObjectLibrary) from source code.
+Once installed, HOHQMesh can be added to your environment using
+<div class="highlight"><pre><span></span><code>spack load hohqmesh
+</code></pre></div></p>
+<h3 id="obtaining-the-sources">Obtaining the sources<a class="headerlink" href="#obtaining-the-sources" title="Permanent link">&para;</a></h3>
+<p>You can download the
+<a href="https://github.com/trixi-framework/HOHQMesh/releases/latest">latest HOHQMesh release</a>
+from GitHub. Make sure to get the tarball named <code>HOHQMesh-vVERSION.tar.gz</code>, as
+it already contains the required sources for the
+<a href="https://github.com/trixi-framework/FTObjectLibrary">FTObjectLibrary</a>
+dependency, and unpack it with <code>tar xf HOHQMesh-vVERSION.tar.gz</code>.
+Alternatively, you can build HOHQMesh directly from the latest sources in the
+<code>main</code> branch. In this case, you need enter the clone directory and execute
+<div class="highlight"><pre><span></span><code>./Utilities/bootstrap
+</code></pre></div>
+before proceeding, which will download the <code>FTObjectLibrary</code> sources for you.
+This step is required only once.</p>
+<h3 id="building">Building<a class="headerlink" href="#building" title="Permanent link">&para;</a></h3>
+<p>There are two ways to build HOHQMesh from source: Using plain <code>make</code> or by using
+<a href="https://cmake.org/">CMake</a>. The <code>make</code>-based build is conceptually simpler but only works
+as an in-source build, thus populating your HOHQMesh root directory with build artifacts.
+The CMake-based build is slightly more involved but also allows you to do out-of-source
+builds.</p>
+<p>HOHQMesh is tested to run with the <code>gfortran</code> and <code>ifort</code> compilers. We recommend the <code>gfortran</code> compiler. Our experience on the test suite is that it runs about 50% slower with the <code>ifort</code> compiler.</p>
+<h4 id="using-plain-make">Using plain <code>make</code><a class="headerlink" href="#using-plain-make" title="Permanent link">&para;</a></h4>
+<p>Enter the HOHQMesh directory and execute
+<div class="highlight"><pre><span></span><code>make
+</code></pre></div>
+This will build HOHQMesh using the <code>gfortran</code> compiler by default.
+The compiler choice can be overridden by passing <code>FC=&lt;pathToCompiler&gt;</code> to
+<code>make</code>.
+You can further pass the <code>-jN</code> option to <code>make</code> (with <code>N</code> being a non-negative
+integer), which will use <code>N</code> parallel processes.</p>
+<p>For example, to build HOHQMesh specifically with the Fortran compiler
+<code>gfortran-10</code> and with 4 parallel processes, execute
+<div class="highlight"><pre><span></span><code>make<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="nv">FC</span><span class="o">=</span>gfortran-10
+</code></pre></div></p>
+<h4 id="using-cmake">Using CMake<a class="headerlink" href="#using-cmake" title="Permanent link">&para;</a></h4>
+<p>For a CMake-based build, you first need to build the
+<a href="https://github.com/trixi-framework/FTObjectLibrary">FTObjectLibrary</a>, install it, and then
+build HOHQMesh itself. If you followed the steps for obtaining the sources
+<a href="#obtaining-the-sources">above</a>, all required files are already present.</p>
+<p>For convenience, we will assume that you are executing the following from within the
+HOHQMesh root directory. However, after modifying the paths appropriately, you can use these
+steps also from anywhere else:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Build and install FTObjectLibrary</span>
+mkdir<span class="w"> </span>build-ftol<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build-ftol
+cmake<span class="w"> </span>../Contrib/FTObjectLibrary/<span class="w"> </span>-DCMAKE_INSTALL_PREFIX<span class="o">=</span>../install
+cmake<span class="w"> </span>--build<span class="w"> </span>.
+cmake<span class="w"> </span>--install<span class="w"> </span>.
+<span class="nb">cd</span><span class="w"> </span>..
+
+<span class="c1"># Build and install HOHQMesh</span>
+mkdir<span class="w"> </span>build-hm<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build-hm
+<span class="nv">CMAKE_PREFIX_PATH</span><span class="o">=</span>../install<span class="w"> </span>cmake<span class="w"> </span>..<span class="w"> </span>-DCMAKE_INSTALL_PREFIX<span class="o">=</span>../install
+cmake<span class="w"> </span>--build<span class="w"> </span>.
+cmake<span class="w"> </span>--install<span class="w"> </span>.
+<span class="nb">cd</span><span class="w"> </span>..
+
+<span class="c1"># Copy HOHQMesh executable to root directory</span>
+cp<span class="w"> </span>install/bin/HOHQMesh<span class="w"> </span>.
+</code></pre></div>
+<p>The HOHQMesh executable can be moved around freely and does not rely on any other files in
+the install prefix or in the build directories (which can thus be deleted safely if so desired).</p>
+<p>By default, HOHQMesh (and FTObjectLibrary) will be built by the standard Fortran compiler
+configured for CMake.  The compiler choice can be overridden by setting the environment
+variable <code>FC=&lt;pathToCompiler&gt;</code> when invoking the configure step of CMake, e.g.,
+<code>FC=gfortran-10 cmake ..</code>.</p>
+<h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
+<p>After building HOHQMesh, you can verify that everything works as expected by
+running the internal test suite. To execute the tests, type
+<div class="highlight"><pre><span></span><code>./HOHQMesh<span class="w"> </span>-test<span class="w"> </span>-path<span class="w"> </span>&lt;pathToBenchmarks&gt;
+</code></pre></div>
+where <code>&lt;pathToBenchmarks&gt;</code> is the path to the HOHQMesh directory. If you are
+inside the HOHQMesh directory, you can also omit the <code>-path</code> option, as it
+defaults to <code>.</code>.</p>
+<h2 id="generating-a-mesh">Generating a mesh<a class="headerlink" href="#generating-a-mesh" title="Permanent link">&para;</a></h2>
+<p>To mesh a control file, type
+<div class="highlight"><pre><span></span><code>./HOHQMesh<span class="w"> </span>-f<span class="w"> </span>&lt;pathToControlFile&gt;
+</code></pre></div>
+where <code>-f</code> allows you to provide the path to the control file for which you want
+to create your mesh.</p>
+<p>For example, if you are inside the HOHQMesh root directory, you can run
+<div class="highlight"><pre><span></span><code>./HOHQMESH<span class="w"> </span>-f<span class="w"> </span>Examples/2D/GingerbreadMan/GingerbreadMan.control
+</code></pre></div>
+to generate a mesh for a gingerbread man geometry. This will produce three files,
+<div class="highlight"><pre><span></span><code>Examples/2D/GingerbreadMan/GingerbreadManMesh.mesh
+Examples/2D/GingerbreadMan/GingerbreadManPlot.tec
+Examples/2D/GingerbreadMan/GingerbreadManStats.txt
+</code></pre></div>
+where the <code>.mesh</code> file stores the actual mesh, the <code>.tec</code> file is a Tecplot-compatible
+visualization file, and the <code>.txt</code> file contains statistical information on the mesh
+quality.</p>
+<p>The Tecplot file can be visualized, e.g., using the open-source software
+<a href="https://www.paraview.org">ParaView</a>, which has a built-in Tecplot reader. In the case of
+the gingerbread man, the resulting mesh should look like the example found in the
+<a href="https://trixi-framework.github.io/HOHQMesh/Gallery/#just-for-fun">online mesh gallery</a>.</p>
+<h2 id="getting-help">Getting help<a class="headerlink" href="#getting-help" title="Permanent link">&para;</a></h2>
+<p>To get a list of the command line options available in HOHQMesh, type
+<div class="highlight"><pre><span></span><code>./HOHQMesh<span class="w"> </span>-help
+</code></pre></div></p>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
+<p>Complete details on how to use HOHQMesh, including the preparation of input files,
+the different formats of the resulting mesh files, and visualization instructions, can be found
+<a href="https://trixi-framework.github.io/HOHQMesh">in the online documentation</a>.</p>
+<h2 id="referencing">Referencing<a class="headerlink" href="#referencing" title="Permanent link">&para;</a></h2>
+<p>If you use HOHQMesh in your own research, please cite the following article:
+<div class="highlight"><pre><span></span><code><span class="nc">@article</span><span class="p">{</span><span class="nl">kopriva2024hohqmesh:joss</span><span class="p">,</span>
+<span class="w">  </span><span class="na">title</span><span class="p">=</span><span class="s">{{HOHQM}esh: An All Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">author</span><span class="p">=</span><span class="s">{David A. Kopriva and Andrew R. Winters and Michael Schlottke-Lakemper</span>
+<span class="s">          and Joseph A. Schoonover and Hendrik Ranocha}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">year</span><span class="p">=</span><span class="s">{2024}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">journal</span><span class="p">=</span><span class="s">{Journal of Open Source Software}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">doi</span><span class="p">=</span><span class="s">{10.21105/joss.07476}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">volume</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{9}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">number</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{104}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">pages</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{7476}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">publisher</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{The Open Journal}</span>
+<span class="p">}</span>
+</code></pre></div>
+In addition, you can also directly refer to this repository as
+<div class="highlight"><pre><span></span><code><span class="nc">@misc</span><span class="p">{</span><span class="nl">kopriva2024hohqmesh:repo</span><span class="p">,</span>
+<span class="w">  </span><span class="na">title</span><span class="p">=</span><span class="s">{{HOHQM}esh: An All Quadrilateral/Hexahedral Unstructured Mesh Generator for High Order Elements}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">author</span><span class="p">=</span><span class="s">{Kopriva, David A and Winters, Andrew R and Schlottke-Lakemper, Michael</span>
+<span class="s">          and Schoonover, Joseph A and Ranocha, Hendrik}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">year</span><span class="p">=</span><span class="s">{2024}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">howpublished</span><span class="p">=</span><span class="s">{\url{https://github.com/trixi-framework/HOHQMesh}}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">doi</span><span class="p">=</span><span class="s">{10.5281/zenodo.13959058}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h2 id="authors">Authors<a class="headerlink" href="#authors" title="Permanent link">&para;</a></h2>
+<p>HOHQMesh was initiated by
+<a href="https://www.math.fsu.edu/~kopriva/">David A. Kopriva</a>, who is also the principal developer.
+The full list of contributors can be found in the <a href="authors/">Authors</a> section.</p>
+<h2 id="license-and-contributing">License and contributing<a class="headerlink" href="#license-and-contributing" title="Permanent link">&para;</a></h2>
+<p>HOHQMesh is licensed under the MIT license (see the <a href="license/">License</a> section).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/main/AUTHORS.md">The HOHQMesh Authors</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.top", "navigation.sections"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="javascripts/config.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

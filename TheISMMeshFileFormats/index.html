@@ -1,0 +1,1443 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://trixi-framework.github.io/HOHQMesh/TheISMMeshFileFormats/">
+      
+      
+        <link rel="prev" href="../the-control-file/">
+      
+      
+        <link rel="next" href="../examples/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/TrixiInside_small_transparent.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>The HOHQMesh Mesh File Formats - HOHQMesh</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../css/video.css">
+    
+      <link rel="stylesheet" href="../css/gallery.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#the-hohqmesh-mesh-file-formats" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="HOHQMesh" class="md-header__button md-logo" aria-label="HOHQMesh" data-md-component="logo">
+      
+  <img src="../images/TrixiInside_small_transparent.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HOHQMesh
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              The HOHQMesh Mesh File Formats
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trixi-framework/HOHQMesh" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="HOHQMesh" class="md-nav__button md-logo" aria-label="HOHQMesh" data-md-component="logo">
+      
+  <img src="../images/TrixiInside_small_transparent.png" alt="logo">
+
+    </a>
+    HOHQMesh
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trixi-framework/HOHQMesh" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../News/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ChangeLog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-control-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Control Input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../three-dimensional-hexahedral-meshes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Three Dimensional Hexahedral Meshes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-control-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Control File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The HOHQMesh Mesh File Formats
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The HOHQMesh Mesh File Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ism" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ISM
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ISM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additions-for-ism-v2-and-ism-mm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additions for ISM-v2 and ISM-MM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#abaqus-mesh-file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ABAQUS mesh file format
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pre-made Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compiling-and-running-hohqmesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compiling and Running HOHQMesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../appendix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WorkflowTools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For Developers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    For Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-hohqmesh-works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How HOHQMesh Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assumptions-and-algorithms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assumptions and Algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../building-the-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Building the Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adding-a-new-test/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a New Test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing-a-new-version/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing a New Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../updating-spack-packages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updating Spack Packages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ism" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ISM
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ISM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additions-for-ism-v2-and-ism-mm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additions for ISM-v2 and ISM-MM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#abaqus-mesh-file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ABAQUS mesh file format
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="the-hohqmesh-mesh-file-formats">The HOHQMesh Mesh File Formats<a class="headerlink" href="#the-hohqmesh-mesh-file-formats" title="Permanent link">&para;</a></h1>
+<p>HOHQMesh currently can write in four mesh file formats, ISM, ISM-v2, ISM-MM, and Abaqus.
+The ISM format was developed for the book "Implementing Spectral Methods: Algorithms for Scientists
+and Engineers" by David A. Kopriva and it supplies all the information needed to define high order
+curved elements of a spectral element mesh. Over time the format has evolved, with version ISM-v2
+and ISM-MM added to include edge information and to handle multiple materials, respectively. The <a href="https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm">Abaqus mesh file format</a> is common in the finite element community.</p>
+<h2 id="ism">ISM<a class="headerlink" href="#ism" title="Permanent link">&para;</a></h2>
+<p>The ISM mesh file format can define either Quad or Hex elements. Quad elements are defined as in ISM and shown in Fig. 27 below.</p>
+<p><img alt="QuadElement" src="https://user-images.githubusercontent.com/25242486/195528246-aebbff54-8654-4aa9-8327-3259a11f2957.png" /></p>
+<p align = "center"> Fig. 27. The Quad element definition with corner nodes (circles) and sides (squares)  in their standard ordering.</p>
+
+<p>Hex elements are defined in a standard finite element topology.</p>
+<p><img alt="HexElement" src="https://user-images.githubusercontent.com/25242486/195528290-fe4ce34a-f1ee-4c8e-855d-4a93f88ec5c7.png" /></p>
+<p align = "center"> Fig. 28. The Hex element definition with corner nodes (circles) and faces (squares), in their standard ordering.</p>
+
+<p>The ISM format includes (corner) nodes and element connectivity, with additional edge interpolation data to define high order boundary information. It can define either 2D Quad elements or 3D Hex elements; however, at the present time, there is no header to define the element type. Rather, that information is inferred from the number of nodes that define the corners.</p>
+<p>The top level view of the ISM file format is</p>
+<pre><code>Header
+List of Nodes
+List of Elements
+</code></pre>
+<p>The header consists of one line if the format is ISM, two lines for the others. The first line for all but the ISM format include the mesh format type. The other line of the header specifies the size of the mesh and the order of the polynomial that is used to define boundary curves.</p>
+<pre><code>#nodes  #elements  polynomialOrder
+</code></pre>
+<p>The list of nodes includes the (x,y,z) locations of the #nodes nodes in an ordered list</p>
+<pre><code>x1 y1 z1
+x2 y2 z2
+.
+.
+.
+xN yN zN
+</code></pre>
+<p>The list of elements is an ordered list of element blocks,</p>
+<pre><code>elementBlock1
+elementBlock2
+.
+.
+.
+elementBlockN
+</code></pre>
+<p>Each element block includes enough information to define a spectral element. Each block has</p>
+<pre><code>node IDs of the four/eight corners [+ material name, if ISM-MM]
+Boundary flags for the sides/faces (0 = straight/flat, 1 = curved)
+Interpolation values for the curved sides
+Boundary names for sides/faces
+</code></pre>
+<p>The node IDs are the IDs (as determined by their location in the node list) of the nodes defined in the Node block. Additional values used for Hex elements are shown in square brackets.</p>
+<pre><code>node1 node2 node3 node4 [node5 node6 node7 node8] [materialName]
+</code></pre>
+<p>The boundary flags are defined similarly,</p>
+<pre><code>bf1 bf2 bf3 bf4 [b5 b6]
+</code></pre>
+<p>where the boundary numbering is defined in Figs. 24 and 25 above.</p>
+<p>For each element boundary curve (or boundary face) for which the boundary flag = 1, a list of nodal values (x,y,z) is specified in order. The knots are assumed defined at the reversed Chebyshev Gauss-Lobatto points, <span class="arithmatex">\(t_j = -\cos(j \pi /N)\)</span>. For Quad elements the boundary curve blocks are the nodal values</p>
+<pre><code>x1,y1,z1
+x2,y2,z2
+.
+.
+.
+xN,yN,zN
+</code></pre>
+<p>For Hex elements, each block defines a surface patch, see below.</p>
+<p>The last line of the element block lists names of the physical boundaries associated with a side/face.</p>
+<pre><code>name1 name2 name3 name4 [name5 name6]
+</code></pre>
+<p>Interior (element-to-element) boundaries are denoted by --- (three dashes) to indicate no name.</p>
+<h3 id="algorithm">Algorithm<a class="headerlink" href="#algorithm" title="Permanent link">&para;</a></h3>
+<p>An algorithm for reading a quad mesh can therefore be written as</p>
+<pre><code>Read nNodes nElements pOrder
+For n = 1 to nNodes
+    Read x[n] y[n] z[n]
+End
+For n = 1 to nElements
+    Read (nodeID[k,n], k = 1,...,4), [materialName]
+    Read (bFlag[k,n], k = 1,...,4)
+    For k = 1 to 4
+        If bFlag(k) = 1 then
+            For i = 0 to pOrder
+                Read x[i,k,n] y[i,k,n] z[i,k,n]
+            End
+        End
+    End
+    Read (bName[k,n], k = 1,...,4)
+End
+</code></pre>
+<p>In this case, the index <span class="arithmatex">\(i\)</span> corresponds to the first coordinate direction and <span class="arithmatex">\(j\)</span> the second along the face.</p>
+<p>The Hex element block is similar, except that the faces are defined with nodes at the two-dimensional tensor-product of the Chebyshev Gauss-Lobatto points.</p>
+<pre><code>Read nNodes nElements pOrder
+For n = 1 to nNodes
+    Read x[n] y[n] z[n]
+End
+For n = 1 to nElements
+    Read (nodeID[k,n], k = 1,...,8), [materialName]
+    Read (bFlag[k,n], k = 1,...,6)
+    For k = 1 to 6
+        If bFlag(k) = 1 then
+            For j = 0 to pOrder
+                For i = 0 to pOrder
+                   Read x[i,j,k,n] y[i,j,k,n] z[i,j,k,n]
+                End
+            End
+        End
+    End
+    Read (bName[k,n], k = 1,...,6)
+End
+</code></pre>
+<p>If there are still questions, the source code for writing the mesh files can be found in <code>WriteISMMeshFile</code> in the file <code>MeshOutputMethods.f90</code> and <code>WriteISMHexMeshFile</code> in the file <code>Mesh3DOutputMethods.f90</code>.</p>
+<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
+<p>As a concrete example, we present the mesh file for a circular domain with five elements, shown in Fig. 8.15 of the book "Implementing Spectral Methods", reproduced below.</p>
+<p><img alt="SEMPoisson2DMesh" src="https://user-images.githubusercontent.com/25242486/195528317-bb536e54-66df-4f9a-9417-819a09a25bc6.png" /></p>
+<p align = "center"> Fig. 29. The Quad mesh for a circle for whose mesh file is shown below.</p>
+
+<p>The mesh has five elements with eight corner nodes. The outer boundary (called "outer") is eighth order, so it has nine points defined for each curve.</p>
+<pre><code> 8 5 8                                     &lt;- #Nodes #Elements Polynomial Order
+0.7000000000000000 -0.7000000000000000 0.0 &lt;- Node 1 corner node location
+1.4142135623730951 -1.4142135623730949 0.0
+0.7000000000000000 0.7000000000000000 0.0
+1.4142135623730951 1.4142135623730949 0.0
+-0.7000000000000000 0.7000000000000000 0.0
+-1.4142135623730949 1.4142135623730951 0.0
+-1.4142135623730954 -1.4142135623730949 0.0
+-0.7000000000000000 -0.7000000000000000 0.0 &lt;- Node 8 corner node location
+1 2 4 3                                     &lt;- First element block, node IDs
+0 1 0 0                                     &lt;- Side 2 is curved, others are straight
+1.4142135623730951 -1.4142135623730949 0.0  &lt;- Start of interpolant nodes for side 2
+1.4961851763911174 -1.3271887273283636 0.0
+1.6994209839390670 -1.0544990845645972 0.0
+1.9103423681217324 -0.5921081291107658 0.0
+2.0000000000000000 0.0000000000000000 0.0
+1.9103423681217324 0.5921081291107657 0.0
+1.6994209839390670 1.0544990845645972 0.0
+1.4961851763911171 1.3271887273283638 0.0
+1.4142135623730951 1.4142135623730949 0.0 &lt;- End of interpolation nodes for side 2
+--- outer --- ---                         &lt;- Side 2 is named outer, others are interior sides
+5 3 4 6                                   &lt;- Start of Element 2 block
+0 0 1 0
+-1.4142135623730949 1.4142135623730951 0.0
+-1.3271887273283636 1.4961851763911174 0.0
+-1.0544990845645970 1.6994209839390670 0.0
+-0.5921081291107656 1.9103423681217324 0.0
+0.0000000000000000 2.0000000000000000 0.0
+0.5921081291107658 1.9103423681217324 0.0
+1.0544990845645974 1.6994209839390668 0.0
+1.3271887273283638 1.4961851763911169 0.0
+1.4142135623730951 1.4142135623730949 0.0
+--- outer --- ---
+7 8 5 6
+0 0 0 1
+-1.4142135623730954 -1.4142135623730949 0.0
+-1.4961851763911174 -1.3271887273283636 0.0
+-1.6994209839390670 -1.0544990845645970 0.0
+-1.9103423681217326 -0.5921081291107655 0.0
+-2.0000000000000000 0.0000000000000000 0.0
+-1.9103423681217324 0.5921081291107659 0.0
+-1.6994209839390668 1.0544990845645974 0.0
+-1.4961851763911169 1.3271887273283638 0.0
+-1.4142135623730949 1.4142135623730951 0.0
+--- --- --- outer
+7 2 1 8
+1 0 0 0
+-1.4142135623730954 -1.4142135623730949 0.0
+-1.3271887273283640 -1.4961851763911169 0.0
+-1.0544990845645983 -1.6994209839390662 0.0
+-0.5921081291107669 -1.9103423681217322 0.0
+0.0000000000000000 -2.0000000000000000 0.0
+0.5921081291107663 -1.9103423681217322 0.0
+1.0544990845645961 -1.6994209839390677 0.0
+1.3271887273283627 -1.4961851763911180 0.0
+1.4142135623730949 -1.4142135623730954 0.0
+8 1 3 5
+0 0 0 0                                 &lt;- Interior box, no curve values follow
+--- --- --- ---
+</code></pre>
+<h2 id="additions-for-ism-v2-and-ism-mm">Additions for ISM-v2 and ISM-MM<a name="ISMv-2"></a><a class="headerlink" href="#additions-for-ism-v2-and-ism-mm" title="Permanent link">&para;</a></h2>
+<p>The ISM-v2 and ISM-MM formats adds edge information to the ISM mesh file.</p>
+<p>The first line of the mesh file will state that fact, that is, if the first line is ISM-V2 then it will have the edge information.</p>
+<p>Line 1:</p>
+<pre><code>ISM-V2
+</code></pre>
+<p>The second line now also includes the number of edges in the mesh as follows:</p>
+<pre><code>#nodes, #edges, #elements, polynomial order of boundary edges
+</code></pre>
+<p>The edges are read immediately after the nodes. For each edge the following are listed:</p>
+<pre><code>start node ID, end node ID, element ID on left, element ID on right, side of left element, side of right element
+</code></pre>
+<p>These are the quantities that are computed in Alg. 148 of "Implementing Spectral Methods". If the edge is a boundary edge, then the second side element will be ID = 0 and the side of that element will be 0. If the sides have indices that increase in opposite directions, then the last column in the data will be negative.</p>
+<h2 id="abaqus-mesh-file-format">ABAQUS mesh file format<a name="ABAQUS"></a><a class="headerlink" href="#abaqus-mesh-file-format" title="Permanent link">&para;</a></h2>
+<p>The <a href="https://abaqus-docs.mit.edu/2017/English/SIMACAEMODRefMap/simamod-c-model.htm">Abaqus mesh file format</a> is common in the finite element community. The ABAQUS mesh file should use the <code>.inp</code> extension. The standard Abaqus format includes a list of node data and a list of element connectivity information. In this sense it is similar to the ISM format without high-order boundary information. The standard Abaqus format encodes a straight sided (linear) mesh.</p>
+<p>Herein, we describe an extended version to the ABAQUS format, divided into two parts. The first parts includes the standard Abaqus node and element lists. The second part encodes the high-order boundary information and naming information created by HOHQMesh. This second set of information is output in such a way that it will be ignored by standard ABAQUS file parsers, but the information is available if desired. For example, a <code>.inp</code> mesh file created by HOHQMesh can be parsed into <a href="https://github.com/trixi-framework/Trixi.jl">Trixi.jl</a> to create high-order curved AMR meshes.</p>
+<p>First, we describe the linear mesh skeleton encoded in the standard Abaqus format. For this example we use a quadrilateral mesh with 122 corner nodes and 103 elements:</p>
+<pre><code>*Heading
+ File created by HOHQMesh
+*NODE
+1, x1, y1, z1
+2, x2, y2, z2
+.
+.
+.
+122, x122, y122, z122
+*ELEMENT, type=CPS4, ELSET=Surface1
+1, 1, 2, 9, 8
+2, 2, 3, 10, 9
+.
+.
+.
+103, 7, 122, 87, 8
+</code></pre>
+<p>Note that the first column in the node or element list is used for indexing purposes. The four other indices in each line of the <code>*ELEMENT</code> list
+are the corner IDs that dictate the element connectivity. These corner IDs are listed to guarantee right-handed element just as with the ISM format.
+The Abaqus element type <code>CPS4</code> corresponds to a quadrilateral element. For the three-dimensional variant of this mesh file output we use</p>
+<pre><code>*ELEMENT, type=C3D8, ELSET=Volume1
+</code></pre>
+<p>where <code>C3D8</code> corresponds to a hexahedron.</p>
+<p>The standard Abaqus file format can be used to create a straight-sided mesh. The high-order boundary information and curvature
+generated by HOHQMesh is output in the second portion of this mesh file. We demarcate between the two portions of the mesh file with the comment
+line</p>
+<pre><code>** ***** HOHQMesh boundary information ***** **
+</code></pre>
+<p>In the Abaqus format anything prefaced with <code>**</code> is treated as a comment and is ignored by an ABAQUS file parser. Therefore, all the HOHQMesh
+information output in the second portion of the mesh file is prefaced with <code>**</code> to act as an Abaqus comment. After the above comment line the mesh
+file gives the polynomial degree of the boundary curves in the mesh. Then, this mesh file format closely resembles the ISM format albeit slightly reordered. First, there is a list of the element connectivity, curved edge checks, and polynomial interpolant information after which comes the list of boundary names.</p>
+<p>The order of the boundary names is a final difference in the mesh format. The Abaqus format and libraries that use it (e.g. <a href="https://github.com/cburstedde/p4est"><code>p4est</code></a>) require the boundary labels in a particular order. In general, we can think of a quadrilateral element to have sides labeled</p>
+<pre><code>                      +y
+               -----------------
+               |               |
+               | ^ y           |
+            -x | |             | +x
+               | |             |
+               | ---&gt; x        |
+               -----------------
+                       -y
+</code></pre>
+<p>For this mesh file output the boundary labels are reordered to adopt the order convention of <code>-x +x -y +y</code>. For comparison, the default HOHQMesh
+ordering used by ISM or ISM-v2 gives the boundary labels in the order <code>-y +x +y -x</code>. Similarly, the boundary names are reordered for the 3D HOHQMesh output to adopt the convention <code>-x +x -y +y -z +z</code> compared to the ISM formatting of 3D boundary names which is <code>-y +y -z +x +z -x</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/main/AUTHORS.md">The HOHQMesh Authors</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "navigation.sections"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/config.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
