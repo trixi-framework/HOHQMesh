@@ -410,7 +410,7 @@
             DO k = 1, 4
                IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN
                   DO j = 0, N
-                     WRITE(iUnit, '(A3,3(F20.12))') "** ", e % boundaryInfo % x(:,j,k)
+                     WRITE(iUnit, '(A3,3(1X,F20.12))') "** ", e % boundaryInfo % x(:,j,k)
                   END DO
                END IF
             END DO
