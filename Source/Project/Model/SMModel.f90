@@ -61,7 +61,8 @@
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INNER_BOUNDARIES_BLOCK_KEY     = "INNER_BOUNDARIES"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INTERFACE_BOUNDARIES_BLOCK_KEY = "INTERFACE_BOUNDARIES"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
-
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: H1NORM_KEY                     = "H1Norm"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: L2NORM_KEY                     = "L2Norm"
 !
 !     ---------------------
 !     Class type definition
@@ -381,11 +382,17 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedList)       , POINTER :: curveList
-         CLASS(FTObject)           , POINTER :: obj
-         CLASS(FTValueDictionary)  , POINTER :: blockDict
-         TYPE(FTLinkedListIterator)          :: iterator
-
+         CLASS(FTLinkedList)       , POINTER     :: curveList
+         CLASS(FTObject)           , POINTER     :: obj
+         CLASS(FTValueDictionary)  , POINTER     :: blockDict
+         TYPE(FTLinkedListIterator)              :: iterator
+         
+         CALL SetChainOptimizationParameters(curveChain, curveDict)
+!
+!        ---------------------------------
+!        Construct the curves in the chain
+!        ---------------------------------
+!
          obj       => curveDict % objectForKey(key = "LIST")
          curveList => linkedListFromObject(obj)
          CALL iterator % initWithFTLinkedList(list = curveList)
@@ -461,6 +468,7 @@
                ALLOCATE(chain)
                CALL chain % initChainWithNameAndID(chainName,0)
                CALL ConstructCurve(self, chain, ibDict )
+               CALL SetChainOptimizationParameters(chain, ibDict)
 
             ELSE
                chainDict => ibDict !This is just an alias
@@ -483,6 +491,7 @@
                   curveDict => valueDictionaryFromObject(obj)
 
                   CALL ConstructCurve(self, chain, curveDict )
+                  CALL SetChainOptimizationParameters(chain, chainDict)
 
                   CALL listOfCurvesIterator % moveToNext()
                END DO
@@ -524,6 +533,66 @@
          CALL release(self = obj)
 
       END SUBROUTINE ConstructInnerBoundaries
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE SetChainOptimizationParameters(curveChain, curveDict)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTValueDictionary), POINTER :: curveDict
+         CLASS(SMChainedCurve)   , POINTER :: curveChain
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+!
+         curveChain % optimization = NONE
+         IF ( curveDict % containsKey(CHAIN_OPTIMIZATION_KEY) )     THEN
+            str = curveDict % stringValueForKey(CHAIN_OPTIMIZATION_KEY)
+            SELECT CASE ( str )
+               CASE( H1NORM_KEY ) 
+                  curveChain % optimization = H1_NORM
+               CASE( L2NORM_KEY )
+                  curveChain % optimization = L2_NORM
+               CASE DEFAULT
+                  curveChain % optimization = NONE
+            END SELECT 
+         END IF
+         
+         IF ( curveChain % optimization /= NONE )     THEN
+         
+            IF ( curveDict % containsKey(CHAIN_CONTINUITY_KEY) )     THEN
+               curveChain % continuity = curveDict % integerValueForKey(CHAIN_CONTINUITY_KEY) 
+            ELSE 
+               curveChain % continuity = 0
+               str = "Optimization continuity key not found in " // &
+                      TRIM(curveDict % stringValueForKey("name")) // &
+                      " Defaulting to 0"
+               CALL ThrowErrorExceptionOfType(poster = "SetChainOptimizationParameters",&
+                                              msg    = str, &
+                                              typ    = FT_ERROR_WARNING)
+            END IF 
+            
+            IF ( curveDict % containsKey(CHAIN_TOLERANCE_KEY) )     THEN
+               curveChain % tolerance = curveDict % realValueForKey(CHAIN_TOLERANCE_KEY) 
+            ELSE 
+               curveChain % tolerance = 1.0d-3
+               str = "Optimization tolerance key not found in " // &
+                      TRIM(curveDict % stringValueForKey("name")) // &
+                     " Defaulting to 1.0d-3"
+               CALL ThrowErrorExceptionOfType(poster = "SetChainOptimizationParameters",&
+                                              msg    = str, &
+                                              typ    = FT_ERROR_WARNING)
+            END IF 
+         END IF
+         
+      END SUBROUTINE SetChainOptimizationParameters
 !
 !////////////////////////////////////////////////////////////////////////
 !

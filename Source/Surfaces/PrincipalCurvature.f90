@@ -214,7 +214,7 @@
       IMPLICIT NONE
       REAL(KIND=RP) :: x, y
       REAL(KIND=RP) :: pc(2)
-      REAL(KIND=RP) :: a, b, c
+      REAL(KIND=RP) :: a, b
 
       a = SQRT((1.0_RP + x*x)*(1.0_RP + y*y))
       b = (x*x + y*y + 1.0_RP)**1.5_RP

@@ -30,6 +30,23 @@
 !
 !      Main program for 2/3D meshing
 !
+!      Basic program flow in 2D:
+!
+!         CALL ReadControlFile(controlFileName, projectDict)
+!         CALL HOHQMesh(projectDict, project, stats, didGenerate3DMesh, .FALSE.)
+!         CALL GenerateQuadMesh(project, errorCode)
+!         CALL GenerateAQuadMesh( project, errorCode )
+!         CALL GenerateQuadMeshFromGrid( project, errorCode )
+!         CALL PerformTopologyCleanup(project % mesh, errorCode)
+!         CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
+!         CALL PerformFinalMeshCleanup( project % mesh, project % model, errorCode )
+!         CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
+!         CALL CompleteElementConstruction(project)
+!         CALL setElementBoundaryInfo(project)
+!         CALL WritePlotFile(project, didGenerate3DMesh)
+!         CALL WriteMeshFile(project, didGenerate3DMesh)
+!
+!
 !////////////////////////////////////////////////////////////////////////
 !
       PROGRAM HOQMeshMain

@@ -126,7 +126,7 @@
         IMPLICIT NONE
         CLASS(SMTopography) :: self
         REAL(KIND=RP)       :: t(2)
-        REAL(KIND=RP)       :: gradF(2), nHat(2), deriv2, radInv, nrmGradF2
+        REAL(KIND=RP)       :: gradF(2)
         REAL(KIND=RP)       :: xp(3)  , xm(3)  , yp(3)  , ym(3)  , x(3)
         REAL(KIND=RP)       :: xpyp(3), xmyp(3), xpym(3), xmym(3)
         REAL(KIND=RP)       :: hessian(2,2)

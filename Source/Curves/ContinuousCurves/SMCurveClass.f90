@@ -59,6 +59,7 @@
          PROCEDURE                  :: printDescription   => printCurveDescription
          PROCEDURE                  :: positionAt
          PROCEDURE                  :: tangentAt
+         PROCEDURE                  :: derivativeAt
          PROCEDURE                  :: secondDerivativeAt
          PROCEDURE                  :: setID
          PROCEDURE                  :: id
@@ -83,7 +84,8 @@
       REAL(KIND=RP) :: xTarget(3)
       PRIVATE       :: xTarget
       
-      REAL(KIND=RP), PARAMETER, PRIVATE :: dt = 1.0d-5
+      REAL(KIND=RP), PARAMETER, PRIVATE :: dt  = 1.0d-7
+      REAL(KIND=RP), PARAMETER, PRIVATE :: dt2 = 1.0d-5
 !
 !     ========
       CONTAINS
@@ -219,6 +221,28 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      FUNCTION derivativeAt(self,t)  RESULT(x)
+         IMPLICIT NONE  
+         CLASS(SMCurve) :: self
+         REAL(KIND=RP)  :: t
+         REAL(KIND=RP)  :: x(3)
+
+         REAL(KIND=RP), DIMENSION(3) :: xp, xm, dx
+         REAL(KIND=RP)               :: tp, tm
+         
+         tp = MIN(1.0_RP,t + dt)
+         tm = MAX(0.0_RP,t - dt)
+         
+         xp = self % positionAt(tp)
+         xm = self % positionAt(tm)
+         
+         dx = xp - xm
+         x  = dx/(tp - tm)
+
+      END FUNCTION derivativeAt
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
       FUNCTION secondDerivativeAt(self,t)  RESULT(x)
          IMPLICIT NONE  
          CLASS(SMCurve) :: self
@@ -227,21 +251,21 @@
 
          REAL(KIND=RP), DIMENSION(3) :: xp, xm, x0
                   
-         IF ( t < dt )     THEN
-            xp = self % positionAt(t + 2.0_RP*dt)
-            x0 = self % positionAt(t + dt)
+         IF ( t < dt2 )     THEN
+            xp = self % positionAt(t + 2.0_RP*dt2)
+            x0 = self % positionAt(t + dt2)
             xm = self % positionAt(t)
-         ELSE IF( t > 1.0_RP - dt)      THEN 
+         ELSE IF( t > 1.0_RP - dt2)      THEN 
             xp = self % positionAt(t)
-            x0 = self % positionAt(t - dt)
-            xm = self % positionAt(t - 2.0_RP*dt)
+            x0 = self % positionAt(t - dt2)
+            xm = self % positionAt(t - 2.0_RP*dt2)
          ELSE
-            xp = self % positionAt(t + dt)
+            xp = self % positionAt(t + dt2)
             x0 = self % positionAt(t)
-            xm = self % positionAt(t - dt)
+            xm = self % positionAt(t - dt2)
          END IF 
          
-         x = (xp - 2.0_RP*x0 + xm)/dt**2
+         x = (xp - 2.0_RP*x0 + xm)/dt2**2
 
       END FUNCTION secondDerivativeAt
 !@mark -

@@ -93,7 +93,10 @@
 !     Constants
 !     ---------
 !
-      CHARACTER(LEN=16) :: CURVES_DONT_JOIN_EXCEPTION = "Curves dont join"
+      CHARACTER(LEN=16)                      :: CURVES_DONT_JOIN_EXCEPTION = "Curves dont join"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_CONTINUITY_KEY       = "continuity"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_OPTIMIZATION_KEY     = "optimize"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_TOLERANCE_KEY        = "tolerance"
 !
 !     ---------------------
 !     Class type definition
@@ -102,10 +105,13 @@
       TYPE, EXTENDS(SMCurve) :: SMChainedCurve
          CLASS(FTMutableObjectArray), POINTER     :: curvesArray  => NULL()
 
-         INTEGER      , DIMENSION(:), ALLOCATABLE :: myCurveIDs
-         INTEGER      , DIMENSION(:), ALLOCATABLE :: jointClassification
-         LOGICAL      , DIMENSION(:), ALLOCATABLE :: swapDirection
-         INTEGER                                  :: numberOfCurvesInChain
+         INTEGER, DIMENSION(:), ALLOCATABLE :: myCurveIDs
+         INTEGER, DIMENSION(:), ALLOCATABLE :: jointClassification
+         LOGICAL, DIMENSION(:), ALLOCATABLE :: swapDirection
+         INTEGER                            :: numberOfCurvesInChain
+         INTEGER                            :: optimization
+         INTEGER                            :: continuity
+         REAL(KIND=RP)                      :: tolerance
 !
 !        ========
          CONTAINS
