@@ -41,21 +41,28 @@
       USE SMTopographyClass
 
       IMPLICIT NONE
+      
+      TYPE JaggedRealArray
+         REAL(KIND=RP), ALLOCATABLE :: array(:) 
+      END TYPE 
 !
 !     ---------------------
 !     Class type definition
 !     ---------------------
 !
       TYPE, EXTENDS(FTObject) :: MeshSizer
-         INTEGER                               :: noOfInnerBoundaries
-         INTEGER                               :: noOfInterfaceBoundaries
-         REAL(KIND=RP)                         :: baseSize
-         REAL(KIND=RP)                         :: xMin(3), xMax(3)
-         CLASS(FTLinkedList)         , POINTER :: controlsList            => NULL()
-         CLASS(ChainedSegmentedCurve), POINTER :: outerBoundary           => NULL()
-         CLASS(FTLinkedList)         , POINTER :: innerBoundariesList     => NULL()
-         CLASS(FTLinkedList)         , POINTER :: interfaceBoundariesList => NULL()
-         CLASS(SMTopography)         , POINTER :: topography              => NULL()
+         INTEGER                                   :: noOfInnerBoundaries
+         INTEGER                                   :: noOfInterfaceBoundaries
+         REAL(KIND=RP)                             :: baseSize
+         REAL(KIND=RP)                             :: xMin(3), xMax(3)
+         REAL(KIND=RP)               , ALLOCATABLE :: outerOptimalPoints(:)
+         TYPE(JaggedRealArray)       , ALLOCATABLE :: innerOptimalPoints(:)
+         TYPE(JaggedRealArray)       , ALLOCATABLE :: interfaceOptimalPoints(:)
+         CLASS(FTLinkedList)         , POINTER     :: controlsList            => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER     :: outerBoundary           => NULL()
+         CLASS(FTLinkedList)         , POINTER     :: innerBoundariesList     => NULL()
+         CLASS(FTLinkedList)         , POINTER     :: interfaceBoundariesList => NULL()
+         CLASS(SMTopography)         , POINTER     :: topography              => NULL()
 !
 !        ========
          CONTAINS
@@ -77,6 +84,8 @@
       TYPE SizerCurvePtr
          CLASS(ChainedSegmentedCurve), POINTER :: curve => NULL()
       END TYPE SizerCurvePtr
+      
+      REAL(KIND=RP), PRIVATE :: REAL_OUT_OF_RANGE_VALUE = -1.0_RP
 !
 !     ========
       CONTAINS
@@ -179,6 +188,18 @@
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             obj => self % outerBoundary
             CALL release(obj)
+         END IF
+         
+         IF ( ALLOCATED(self % outerOptimalPoints) )     THEN
+            DEALLOCATE(self % outerOptimalPoints)
+         END IF 
+         
+         IF ( ALLOCATED(self % innerOptimalPoints) )     THEN
+            DEALLOCATE(self % innerOptimalPoints)
+         END IF 
+         
+         IF ( ALLOCATED(self % interfaceOptimalPoints) )     THEN
+            DEALLOCATE(self % interfaceOptimalPoints)
          END IF
 
          NULLIFY(self % outerBoundary)
@@ -292,6 +313,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION sizeFunctionMinimumOnBox( sizer, xMin, xMax ) RESULT(hMin)
+         USE IntervalSearchModule
          !TODO: Should switch to a good minimization algorithm. Use linear search for now.
          IMPLICIT NONE
 !
@@ -307,7 +329,7 @@
 !        local variables
 !        ---------------
 !
-         REAL(KIND=RP)                    :: dX(3)
+         REAL(KIND=RP)                    :: dX(3), tLoc
          REAL(KIND=RP)                    :: x(3), boundingBox(6)
          REAL(KIND=RP)                    :: cSize, aSize
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
@@ -357,15 +379,18 @@
 !
          cSize = TINY(cSize)
          IF( ASSOCIATED(sizer%outerBoundary) )     THEN
-            cSize = MAX( cSize, invCurveSizeForBox(sizer % outerBoundary, xMin, xMax ) )
+            cSize = MAX( cSize, invCurveSizeForBox(sizer % outerBoundary, xMin, xMax, tLoc ) )
+            IF ( ALLOCATED(sizer % outerOptimalPoints) )     THEN
+               cSize = MAX(cSize, 1.0_RP/segmentLength(array = sizer % outerOptimalPoints,t = tLoc))
+            END IF 
          END IF
 
          IF ( ASSOCIATED( sizer % innerBoundariesList) )     THEN
-            CALL cSizeForCurvesInList(sizer % innerBoundariesList, cSize, xMin, xMax)
+            CALL cSizeForCurvesInList(sizer % innerBoundariesList, cSize, xMin, xMax, sizer % innerOptimalPoints)
          END IF
 
          IF( ASSOCIATED(sizer % interfaceBoundariesList) )     THEN
-            CALL cSizeForCurvesInList(sizer % interfaceBoundariesList, cSize, xMin, xMax)
+            CALL cSizeForCurvesInList(sizer % interfaceBoundariesList, cSize, xMin, xMax, sizer % interfaceOptimalPoints)
          END IF
          cSize = 1.0_RP/cSize
 !
@@ -419,7 +444,8 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE cSizeForCurvesInList( list, cSize, xMin, xMax )
+      SUBROUTINE cSizeForCurvesInList( list, cSize, xMin, xMax, optimalPoints )
+         USE IntervalSearchModule
          IMPLICIT NONE
 !
 !        ---------
@@ -429,6 +455,7 @@
          CLASS(FTLinkedList), POINTER :: list
          REAL(KIND=RP)                :: cSize
          REAL(KIND=RP)                :: xMin(3), xMax(3)
+         TYPE(JaggedRealArray)        :: optimalPoints(:)
 !
 !        ---------------
 !        Local variables
@@ -437,15 +464,22 @@
          CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
+         REAL(KIND=RP)                         :: tLoc
+         INTEGER                               :: j
 
          ALLOCATE(iterator)
          CALL iterator % initWithFTLinkedList(list)
          CALL iterator % setToStart()
 
+         j = 0
          DO WHILE (.NOT.iterator % isAtEnd())
             obj => iterator % object()
             CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
-            cSize = MAX( cSize, invCurveSizeForBox(segmentedCurveChain, xMin, xMax ) )
+            cSize = MAX( cSize, invCurveSizeForBox(segmentedCurveChain, xMin, xMax, tLoc ) )
+            j = j + 1
+            IF ( ALLOCATED( optimalPoints(j) % array) )     THEN
+               cSize = MAX(cSize, 1.0_RP/segmentLength(array = optimalPoints(j) % array,t = tLoc))
+            END IF 
             CALL iterator % moveToNext()
          END DO
          obj => iterator
@@ -518,7 +552,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION invCurveSizeForBox(chain, xMin, xMax )
+      REAL(KIND=RP) FUNCTION invCurveSizeForBox(chain, xMin, xMax, tLoc )
       USE Geometry
       IMPLICIT NONE
 !
@@ -526,7 +560,7 @@
 !        Arguments
 !        ---------
 !
-         REAL(KIND=RP)                         :: xMin(3), xMax(3)
+         REAL(KIND=RP)                         :: xMin(3), xMax(3), tLoc
          CLASS(ChainedSegmentedCurve), POINTER :: chain
 !
 !        ---------------
@@ -544,6 +578,7 @@
          nodes(:,4) = (/xMin(1),xMax(2), 0.0_RP/)
 
          invCurveSizeForBox = 0.0_RP
+         tloc = REAL_OUT_OF_RANGE_VALUE
 
          N = chain % curveCount()
          DO k = 1, N
@@ -551,7 +586,8 @@
             DO j = 1, c % COUNT()
                x = c % positionAtIndex(j)
                IF ( PointInQuad(nodes,x) )     THEN
-                  s = c % invScaleAtIndex(j)
+                  s    = c % invScaleAtIndex(j)
+                  tLoc = c % argumentAtIndex(j)
                   invCurveSizeForBox =  MAX(s, invCurveSizeForBox)
                END IF
             END DO

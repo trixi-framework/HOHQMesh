@@ -82,7 +82,7 @@
       EXTERNAL :: TestCurves, TestPrincipalCurvature
       EXTERNAL :: TestBiCubicInterpolation, MiscTests
       EXTERNAL :: polynomialApproximationTest, BlobCurveTest
-      EXTERNAL :: legendreApproximationTests, SmoothnessCheck
+      EXTERNAL :: legendreApproximationTests, SmoothnessCheck, CircleTest
 !
 !     ------------------------------------------------------------------------------------
 !     The control files are located in a Benchmarks directory at the end of (if not empty)
@@ -104,6 +104,7 @@
       CALL testSuite % addTestSubroutineWithName(polynomialApproximationTest,"Polynomial Approximation Tests")
       CALL testSuite % addTestSubroutineWithName(SmoothnessCheck,"Smoothness check Tests")
       CALL testSuite % addTestSubroutineWithName(BlobCurveTest,"Blob curve Tests")
+      CALL testSuite % addTestSubroutineWithName(CircleTest,"Circle Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...

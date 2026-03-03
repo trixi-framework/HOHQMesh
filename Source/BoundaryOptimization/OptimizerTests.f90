@@ -201,6 +201,92 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+   SUBROUTINE CircleTest()
+!
+!  -------------------------------------------------------------------
+!  Ensure that the marching optimization is consistent with previous
+!  results.
+!  -------------------------------------------------------------------
+!
+      USE CurveOptimization
+      USE SMParametricEquationCurveClass
+      USE FTAssertions
+      IMPLICIT NONE
+!
+!     --------------
+!     Test paramters
+!     --------------
+!
+      INTEGER                                :: optType    = H1_NORM
+      INTEGER                                :: polyOrder  = 6
+      INTEGER                                :: smoothness = 2 ! C^2 smoothness
+      REAL(KIND=RP)                          :: toler      = 0.10_RP
+!
+!     ---------------
+!     Local Variables
+!     ---------------
+!
+      CLASS(SMCurve)                 , POINTER :: crv
+      TYPE(SMParametricEquationCurve), POINTER :: circleCurve
+      CLASS(SMCurve)                 , POINTER :: optimizedCurve
+      CLASS(MultiSegmentModalCurve)  , POINTER :: msmCurve
+      TYPE(OptimizerOptions)                   :: options
+      CHARACTER(LEN=64)                        :: xEqn, yEqn, zEqn
+      REAL(KIND=RP)                            :: arcL
+!
+!     --------------
+!     Set up options
+!     --------------
+!
+      CALL SetDefaultOptions(options)
+      options % internalConstraint = smoothness
+      options % toler              = toler
+      options % whichNorm          = optType
+!
+!     ---------------
+!     Create a Circle
+!     ---------------
+!
+      xEqn = "x(t) = 4*cos(2*pi*t)"
+      yEqn = "y(t) = 4*sin(2*pi*t)"
+      zEqn = "z(t) = 0.0"
+      ALLOCATE(circleCurve)
+      CALL circleCurve % initWithEquationsNameAndID(xEqn, yEqn, zEqn, curveName = "circleCurve", id = 1)
+      crv => circleCurve
+!
+!     ------------------------------------
+!     Find the optimal curve approximation
+!     ------------------------------------
+!
+      CALL OptimizeCurveByMarching(curve              = crv,             &
+                                   polyOrder          = polyOrder,       &
+                                   options            = options,         &
+                                   newName            = "CircleTest",    &
+                                   newID              = crv % id() + 1,  &
+                                   optimized          = optimizedCurve)
+!
+!     ------------------
+!     Compute arc length
+!     ------------------
+!
+      CALL castToMultiSegmentCurve(optimizedCurve, msmCurve)
+      arcL = msmCurve % arcLength()
+      CALL FTAssertEqual(expectedValue = 8.0_RP*PI, &
+                         actualValue   = arcL,  &
+                         relTol        = 1.0d-4, &
+                         msg           = "Arc Length estimation")
+!
+!     --------
+!     Clean up
+!     --------
+!
+      CALL releaseBaseCurve(optimizedCurve)
+      CALL releasePECurve(circleCurve)
+       
+   END SUBROUTINE CircleTest
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
    SUBROUTINE SmoothnessCheck
       USE FTAssertions
       USE ConstrainedMultiH1Optimization

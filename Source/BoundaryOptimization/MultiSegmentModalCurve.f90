@@ -32,6 +32,7 @@
          FINAL     :: DestructMultiSegmentModalCurve
          PROCEDURE :: positionAt => EvaluateMultiSegmentModalCurve
          PROCEDURE :: valueInSegment
+         PROCEDURE :: arcLength
          PROCEDURE :: mcSegmentLength
          PROCEDURE :: className  => MSMCClassName
       END TYPE MultiSegmentModalCurve
@@ -196,13 +197,63 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+   REAL(KIND=RP) FUNCTION arcLength(self)
+!
+!  -------------------------------------------
+!  Compute the arc length of a segmented curve
+!  -------------------------------------------
+!
+      IMPLICIT NONE
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      CLASS(MultiSegmentModalCurve) :: self
+!
+!     ----------------
+!     Local variables 
+!     ----------------
+!
+      INTEGER                    :: N
+      INTEGER                    :: qOrder
+      INTEGER                    :: nSegments
+      INTEGER                    :: j, k
+      REAL(KIND=RP)              :: t, h, e1(3)
+      REAL(KIND=RP), ALLOCATABLE :: nodes(:), weights(:)
+      REAL(KIND=RP)              :: dsdt
+      
+      nSegments = self % nSegments
+
+      N      = self % polyOrder
+      qOrder = 2*N
+      
+      ALLOCATE(nodes(0:qOrder), weights(0:qOrder))
+      CALL LegendreLobattoNodesAndWeights( qOrder, nodes, weights )
+      
+      arcLength = 0.0_RP
+      DO k = 1, nSegments
+         h    = self % cuts(k) - self % cuts(k-1)
+         dsdt = 2.0_RP/h
+         DO j = 0, qOrder
+            t              = self % cuts(k-1) + h*0.5_RP*(nodes(j) + 1.0_RP)
+            e1             = dsdt*self % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE)
+            arcLength = arcLength + 0.5_RP*h*weights(j)*SQRT(e1(1)**2 + e1(2)**2)
+         END DO 
+         
+      END DO 
+      
+   END FUNCTION arcLength
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
 !      -----------------------------------------------------------------
 !> Class name returns a string with the name of the type of the object
 !>
 !>  ### Usage:
 !>
 !>        PRINT *,  obj % className()
-!>        if( obj % className = "Spline")
+!>        if( obj % className = ="Spline")
 !>
       FUNCTION MSMCClassName(self)  RESULT(s)
          IMPLICIT NONE  

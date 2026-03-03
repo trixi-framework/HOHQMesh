@@ -725,13 +725,14 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER                               :: curveID
-         REAL(KIND=RP)                         :: h
-         CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
-         CLASS(FTObject)             , POINTER :: obj => NULL()
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedOuterBoundary => NULL()
-         CLASS(ChainedSegmentedCurve), POINTER :: segmentedInnerBoundary => NULL()
-         CLASS(SMChainedCurve)       , POINTER :: chain => NULL()
+         INTEGER                                :: curveID, j
+         REAL(KIND=RP)                          :: h
+         CLASS(FTLinkedListIterator)  , POINTER :: iterator => NULL()
+         CLASS(FTObject)              , POINTER :: obj => NULL()
+         CLASS(ChainedSegmentedCurve) , POINTER :: segmentedOuterBoundary => NULL()
+         CLASS(ChainedSegmentedCurve) , POINTER :: segmentedInnerBoundary => NULL()
+         CLASS(SMChainedCurve)        , POINTER :: chain => NULL()
+         CLASS(SMCurve)               , POINTER :: optimizedCurve, crv
          LOGICAL, EXTERNAL :: ReturnOnFatalError
 !
 !        ------------------------------------------------
@@ -745,12 +746,20 @@
 !
          curveID = 0
          h       = MINVAL(self % backgroundParams % backgroundGridSize(1:2))
+         ALLOCATE(self % sizer % innerOptimalPoints    (self % model % numberOfInnerCurves))
+         ALLOCATE(self % sizer % interfaceOptimalPoints(self % model % numberOfInterfaceCurves))
 
          IF( ASSOCIATED( self % model % outerBoundary ) )     THEN
             curveID                =  curveID + 1
             segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( self % model % outerBoundary, &
                                                                            h, self % sizer % controlsList, curveID )
             CALL self % sizer % addBoundaryCurve(segmentedOuterBoundary,OUTER)
+            
+            IF ( self % model % outerBoundary % optimization /= NONE )     THEN
+               CALL ComputeOptimizedSegments(curve     = self % model % outerBoundary ,     &
+                                             segments  = self % sizer % outerOptimalPoints, &
+                                             polyOrder = self % runParams % polynomialOrder)
+            END IF 
 
             CALL releaseChainChainedSegmentedCurve(segmentedOuterBoundary)
         END IF
@@ -763,6 +772,7 @@
          IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
             iterator => self % model % innerBoundariesIterator
             CALL iterator % setToStart()
+            j = 0
             DO WHILE (.NOT.iterator % isAtEnd())
                curveID =  curveID + 1
                obj     => iterator % object()
@@ -771,6 +781,13 @@
 
                CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INNER)
                CALL releaseChainChainedSegmentedCurve(segmentedInnerBoundary)
+               
+               IF ( chain % optimization /= NONE )     THEN
+                  j = j + 1
+                  CALL ComputeOptimizedSegments(curve     = chain ,                                       &
+                                                segments  = self % sizer % innerOptimalPoints(j) % array, &
+                                                polyOrder = self % runParams % polynomialOrder)
+               END IF 
 
                CALL iterator % moveToNext()
             END DO
@@ -784,6 +801,7 @@
          IF( ASSOCIATED( self % model % interfaceBoundaries ) )     THEN
             iterator => self % model % interfaceBoundariesIterator
             CALL iterator % setToStart
+            j = 0
              DO WHILE (.NOT.iterator % isAtEnd())
                 curveID =  curveID + 1
                 obj     => iterator % object()
@@ -792,6 +810,13 @@
 
                 CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INTERIOR_INTERFACE)
                 CALL releaseChainChainedSegmentedCurve(segmentedInnerBoundary)
+               
+               IF ( chain % optimization /= NONE )     THEN
+                  j = j + 1
+                  CALL ComputeOptimizedSegments(curve     = chain ,                                       &
+                                                segments  = self % sizer % interfaceOptimalPoints(j) % array, &
+                                                polyOrder = self % runParams % polynomialOrder)
+               END IF 
 
                 CALL iterator % moveToNext()
              END DO
@@ -817,7 +842,7 @@
 !              they must be discetized, but once the distances are found, it
 !              may be true that the spacing between the points is large in
 !              comparison. ResizeSegmentedCurves goes back and compares the
-!              spacing between the points int he segmented curves to the
+!              spacing between the points in the segmented curves to the
 !              computed spacing between the curves. This appears to be an
 !              iterative process, but is only done once.
 !              The procedure compiles and runs, but until a case arises where
@@ -827,6 +852,51 @@
 !         CALL ResizeSegmentedCurves(self)
 
       END SUBROUTINE BuildSizerBoundaryCurves
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ComputeOptimizedSegments(curve, segments, polyOrder)  
+        USE MultiSegmentModalCurveClass
+        USE ConstrainedMultiH1Optimization
+        USE CurveOptimization
+        IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMChainedCurve), POINTER :: curve
+         REAL(KIND=RP), ALLOCATABLE     :: segments(:)
+         INTEGER                        :: polyOrder
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE(OptimizerOptions)                 :: options
+         CLASS(MultiSegmentModalCurve), POINTER :: msmCurve
+         CLASS(SMCurve)               , POINTER :: crv
+         CLASS(SMCurve)               , POINTER :: optimizedCurve
+         
+         CALL SetDefaultOptions(options)
+         options % internalConstraint = curve % continuity
+         options % toler              = curve % tolerance
+         options % whichNorm          = curve % optimization
+         
+         crv => curve
+         CALL OptimizeCurveByMarching(curve              = crv ,             &
+                                      polyOrder          = polyOrder,        &
+                                      options            = options,          &
+                                      newName            = "dummy",          &
+                                      newID              = 0,                &
+                                      optimized          = optimizedCurve)
+         
+         CALL castToMultiSegmentCurve(optimizedCurve, msmCurve)
+         ALLOCATE(segments(0:SIZE(msmCurve % cuts)-1))
+         segments = msmCurve % arcLength()*msmCurve % cuts
+         CALL releaseBaseCurve(optimizedCurve)
+         
+      END SUBROUTINE ComputeOptimizedSegments
 !
 !////////////////////////////////////////////////////////////////////////
 !
