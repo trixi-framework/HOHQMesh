@@ -193,7 +193,7 @@
 
          errorRatio = options % toler/e
          options % toler = options % toler*errorRatio
-!         IF(errorRatio < 1.0_RP) WRITE(0,*) "Error required adjusting", e, errorRatio, TRIM(curve % curveName())
+!         IF(errorRatio < 1.0_RP) WRITE(0,*) "Error required adjusting", e, errorRatio, TRIM(curve % curveName()) !DEBUG
 !
          IF ( n < 3 )     THEN
             DEALLOCATE(errors)
@@ -235,9 +235,10 @@
       LOGICAL                                :: steppingNotDone
       REAL(KIND=RP)                          :: cuts(0:1)
       REAL(KIND=RP)                          :: iterToler = 1.0d-6
-      REAL(KIND=RP)                          :: fR, h, f
+      REAL(KIND=RP)                          :: fR, h, f, h2
       REAL(KIND=RP)                          :: tL, tMid, tR
-      INTEGER                                :: k
+      REAL(KIND=RP)                          :: e, hStar, cFactor, targetError
+      INTEGER                                :: k, nCuts
 
       ALLOCATE(optimizedCuts(0:1))
       optimizedCuts = [0.0_RP,1.0_RP]  ! will be added to as marching progresses
@@ -293,26 +294,29 @@
 !
 !     --------------------------------------------------------------------
 !     The last segment may be very small since the marching knows nothing
-!     about what lies ahead. Find the last segment size by starting at the
-!     right and moving left. Then choose something inbetween for the last
-!     two segments
+!     about what lies ahead. Use the last error and the fact that the
+!     the H^1 error should vary like h^{p} to estimate the segment size
+!     needed to produce the desired error. Choose the smaller of this
+!     segment size and half of the last two segments to balance the error
+!     in the last two segments. Don't bother with changes that are less
+!     than 25%, which is a completely arbitrary number.
 !     --------------------------------------------------------------------
 !
-!      tL   = 0.0_RP !optimizedCuts(UBOUND(optimizedCuts,1)-2) !Two segments away
-!      tR   = 1.0_RP  
-!      tMid = iterate(tL, tR, curve, polyOrder, options, gQuad, iterToler, LEFT_SIDE) !DEBUG
-!!      k    = UBOUND(optimizedCuts,1)
-!!      hNew = 1.0_RP - tMid
-!!      h    = optimizedCuts(k-1) - optimizedCuts(k-2)
-!      WRITE(0,*) optimizedCuts
-!      WRITE(0,*) tMid
-!!      IF ( hNew .ge. h )     THEN
-!!         h = 0.5_RP*h 
-!!      ELSE 
-!!         h = hNew 
-!!      END IF 
-!!!      optimizedCuts(k-1) = 1.0_RP - h
-!
+       nCuts       = SIZE(optimizedCuts) - 1
+       h2          = optimizedCuts(nCuts) - optimizedCuts(nCuts-2)
+       h           = optimizedCuts(nCuts) - optimizedCuts(nCuts-1)
+       cuts        = [optimizedCuts(nCuts-1), optimizedCuts(nCuts)]
+       targetError = options % safetyFactor*options % toler
+       e           = marchingFunction(curve, polyOrder, cuts, options, gQuad) + targetError
+       cFactor     = (targetError/(e + 1.0d-14))**(1.0_RP/polyOrder)
+!       PRINT *, e, targetError, cFactor, h, h2 !DEBUG
+       
+       IF ( cFactor > 1.25_RP )     THEN
+          hStar       = h*cFactor
+          optimizedCuts(nCuts-1) = 1.0 - MIN(hStar, 0.5_RP*h2)
+!          PRINT *, e, targetError, cFactor, h, hStar, h2, MIN(hStar, 0.5_RP*h) !DEBUG
+       END IF 
+
    END SUBROUTINE FindOptimizedCuts
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -529,38 +533,68 @@
 !     Local variables 
 !     ----------------
 !
-      INTEGER       :: qOrder
       INTEGER       :: nSegments
-      INTEGER       :: j, k
-      REAL(KIND=RP) :: t, h, dsdt
-      REAL(KIND=RP) :: e, e0(3), e1(3), eMax, eMaxDeriv
+      INTEGER       :: k
       
       nSegments = segmentedCurve % nSegments
       ALLOCATE(errors(nSegments,3), source = 0.0_RP)
       
-      qOrder = gQuad % N
-      
-      DO k = 1, nSegments
-         e         = 0.0_RP
-         eMax      = 0.0_RP
-         eMaxDeriv = 0.0_RP
-         h         = segmentedCurve % cuts(k) - segmentedCurve % cuts(k-1)
-         dsdt      = 2.0_RP/h
-         DO j = 0, qOrder
-            t    = segmentedCurve % cuts(k-1) + h*0.5_RP*(gQuad % nodes(j) + 1.0_RP)
-            e0   = (exact % positionAt(t)   - segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_FUNCTION))**2
-            e1   = (exact % derivativeAt(t) - dsdt*segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE))**2
-            
-            e         = e + (e0(1) + e0(2) + e1(1) + e1(2))*gQuad % weights(j)
-            eMax      = MAX(eMax,e0(1),e0(2))
-            eMaxDeriv = MAX(eMaxDeriv,e1(1),e1(2))
-         END DO 
-         errors(k,USER_NORM)       = SQRT(0.5_RP*h*e)
-         errors(k,MAX_NORM)        = SQRT(eMax)
-         errors(k,MAX_NORM_DERIV)  = SQRT(eMaxDeriv)
-      END DO 
+      DO k = 1, nSegments 
+         errors(k,:) =  segmentError(k, exact, segmentedCurve, gQuad)
+      END DO       
       
    END SUBROUTINE SegmentErrors
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   FUNCTION segmentError(k, exact, segmentedCurve, gQuad) RESULT(er)
+!
+!  ---------------------------------------------------------------
+!  Compute the H^1 errors on the k'th segment of a segmented curve
+!  ---------------------------------------------------------------
+!
+      IMPLICIT NONE
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      INTEGER                               :: k
+      CLASS(SMCurve)              , POINTER :: exact
+      TYPE(MultiSegmentModalCurve), POINTER :: segmentedCurve
+      TYPE(GaussQuadratureType)             :: gQuad
+      REAL(KIND=RP)                         :: er(3)
+!
+!     ----------------
+!     Local variables 
+!     ----------------
+!
+      INTEGER       :: qOrder
+      INTEGER       :: j
+      REAL(KIND=RP) :: t, h, dsdt
+      REAL(KIND=RP) :: e, e0(3), e1(3), eMax, eMaxDeriv
+            
+      qOrder = gQuad % N
+      
+      e         = 0.0_RP
+      eMax      = 0.0_RP
+      eMaxDeriv = 0.0_RP
+      h         = segmentedCurve % cuts(k) - segmentedCurve % cuts(k-1)
+      dsdt      = 2.0_RP/h
+      DO j = 0, qOrder
+         t    = segmentedCurve % cuts(k-1) + h*0.5_RP*(gQuad % nodes(j) + 1.0_RP)
+         e0   = (exact % positionAt(t)   - segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_FUNCTION))**2
+         e1   = (exact % derivativeAt(t) - dsdt*segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE))**2
+         
+         e         = e + (e0(1) + e0(2) + e1(1) + e1(2))*gQuad % weights(j)
+         eMax      = MAX(eMax,e0(1),e0(2))
+         eMaxDeriv = MAX(eMaxDeriv,e1(1),e1(2))
+      END DO 
+      er(USER_NORM)       = SQRT(0.5_RP*h*e)
+      er(MAX_NORM)        = SQRT(eMax)
+      er(MAX_NORM_DERIV)  = SQRT(eMaxDeriv)
+      
+   END FUNCTION segmentError
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
