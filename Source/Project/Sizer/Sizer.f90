@@ -380,7 +380,7 @@
          cSize = TINY(cSize)
          IF( ASSOCIATED(sizer%outerBoundary) )     THEN
             cSize = MAX( cSize, invCurveSizeForBox(sizer % outerBoundary, xMin, xMax, tLoc ) )
-            IF ( ALLOCATED(sizer % outerOptimalPoints) )     THEN
+            IF ( ALLOCATED(sizer % outerOptimalPoints) .AND. (tloc .ne. REAL_OUT_OF_RANGE_VALUE))     THEN
                cSize = MAX(cSize, 1.0_RP/segmentLength(array = sizer % outerOptimalPoints,t = tLoc))
             END IF 
          END IF
@@ -477,7 +477,7 @@
             CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
             cSize = MAX( cSize, invCurveSizeForBox(segmentedCurveChain, xMin, xMax, tLoc ) )
             j = j + 1
-            IF ( ALLOCATED( optimalPoints(j) % array) )     THEN
+            IF ( ALLOCATED( optimalPoints(j) % array) .AND. (tloc .ne. REAL_OUT_OF_RANGE_VALUE) )     THEN
                cSize = MAX(cSize, 1.0_RP/segmentLength(array = optimalPoints(j) % array,t = tLoc))
             END IF 
             CALL iterator % moveToNext()

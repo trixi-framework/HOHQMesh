@@ -877,6 +877,8 @@
          CLASS(MultiSegmentModalCurve), POINTER :: msmCurve
          CLASS(SMCurve)               , POINTER :: crv
          CLASS(SMCurve)               , POINTER :: optimizedCurve
+         REAL(KIND=RP)                          :: minSegment
+         INTEGER                                :: j
          
          CALL SetDefaultOptions(options)
          options % internalConstraint = curve % continuity
@@ -895,6 +897,15 @@
          ALLOCATE(segments(0:SIZE(msmCurve % cuts)-1))
          segments = msmCurve % arcLength()*msmCurve % cuts
          CALL releaseBaseCurve(optimizedCurve)
+         
+         IF ( printMessage )     THEN
+            minSegment = HUGE(minSegment)
+            DO j = 1, SIZE(segments)-1 
+               minSegment = MIN(minSegment, segments(j) - segments(j-1))
+            END DO 
+            PRINT *, "Minimum size for for accurate approximation of the curve ", &
+            TRIM(curve % curveName()), " is ", minSegment
+         END IF 
          
       END SUBROUTINE ComputeOptimizedSegments
 !

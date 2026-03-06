@@ -133,6 +133,11 @@
          \end{SPLINE_DATA}
        \end{SPLINE_CURVE}
 
+      \begin{SPLINE_CURVE}
+         name =
+         file =
+       \end{SPLINE_CURVE}
+
        \begin{ELLIPTIC_ARC}
 	   name    =
 	   center  = [ , ,0.0]
