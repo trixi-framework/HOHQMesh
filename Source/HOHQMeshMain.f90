@@ -62,7 +62,7 @@
 !        Other
 !        -----
 !
-         CHARACTER(LEN=*), PARAMETER :: version           = "1.5.5-pre"
+         CHARACTER(LEN=*), PARAMETER :: version           = "1.5.5"
          LOGICAL                     :: test              = .FALSE.
          LOGICAL                     :: generateTest      = .FALSE.
          LOGICAL                     :: didGenerate3DMesh = .FALSE.
@@ -235,12 +235,12 @@
 
       END SUBROUTINE ReadCommandLineArguments
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE PrintHelpMessage(iUnit)
          IMPLICIT NONE
          INTEGER :: iUnit
-         
+
          WRITE(iUnit,*) "HOHQMesh Help..."
          WRITE(iUnit,*) "Invocation:"
          WRITE(iUnit,*) "   ./HOHQMesh [options]"
