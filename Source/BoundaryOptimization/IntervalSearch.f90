@@ -72,14 +72,15 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      REAL(KIND=RP) FUNCTION segmentLength(array, t)  
+      REAL(KIND=RP) FUNCTION segmentLength(searchArray, array, t)  
          IMPLICIT NONE  
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         REAL(KIND=RP) :: array(0:)
+         REAL(KIND=RP) :: searchArray(0:)
+         REAL(KIND=RP) :: array(:)
          REAL(KIND=RP) :: t
 !
 !        ---------------
@@ -88,8 +89,8 @@
 !
          INTEGER       :: k
          
-         k             = findInterval(array, t)
-         segmentLength = array(k) - array(k-1)
+         k             = findInterval(searchArray, t)
+         segmentLength = array(k)
          
       END FUNCTION segmentLength
  

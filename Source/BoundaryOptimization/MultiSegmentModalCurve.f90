@@ -21,6 +21,8 @@
          INTEGER                    :: nSegments
          INTEGER                    :: polyOrder
          REAL(KIND=RP), ALLOCATABLE :: cuts(:)
+         REAL(KIND=RP), ALLOCATABLE :: segmentLengths(:)
+         REAL(KIND=RP), ALLOCATABLE :: segmentPoints(:,:)
          REAL(KIND=RP), ALLOCATABLE :: coefs(:,:,:)
          CLASS(SMCurve), POINTER    :: parentCurve ! Curve from which this is created.
 !
@@ -33,7 +35,6 @@
          PROCEDURE :: positionAt => EvaluateMultiSegmentModalCurve
          PROCEDURE :: valueInSegment
          PROCEDURE :: arcLength
-         PROCEDURE :: mcSegmentLength
          PROCEDURE :: className  => MSMCClassName
       END TYPE MultiSegmentModalCurve
 !
@@ -64,16 +65,34 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
       SUBROUTINE ConstructMultiSegmentModalCurve(self, parentCurve, cuts, coefs, curveName, id )  
-         IMPLICIT NONE  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
          CLASS(MultiSegmentModalCurve) :: self
          CLASS(SMCurve), POINTER       :: parentCurve
          REAL(KIND=RP)                 :: cuts(0:)
          REAL(KIND=RP)                 :: coefs(0:,:,:)
          CHARACTER(LEN=*)              :: curveName
          INTEGER                       :: id
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                       :: k
+         REAL(KIND=RP), ALLOCATABLE    :: nodes(:), weights(:)
+         INTEGER                       :: qOrder
+         REAL(KIND=RP)                 :: xStart(3), xEnd(3)
          
          CALL self % SMCurve % initWithNameAndID(curveName,id)
-         
+ !
+!        ----------
+!        Set values
+!        ----------
+!        
          self % cuts      = cuts
          self % coefs     = coefs
          self % polyOrder = SIZE(coefs,1) - 1
@@ -83,6 +102,24 @@
             self % parentCurve => parentCurve
             CALL parentCurve % retain() 
          END IF 
+!
+!        ---------------
+!        Computed values
+!        ---------------
+!
+         ALLOCATE(self % segmentLengths(self % nSegments)    , SOURCE = 0.0_RP)
+         ALLOCATE(self % segmentPoints (3,0:self % nSegments), SOURCE = 0.0_RP)
+         qOrder = 2*self % polyOrder
+         ALLOCATE(nodes(0:qOrder), weights(0:qOrder))
+         CALL LegendreLobattoNodesAndWeights( qOrder, nodes, weights )
+         
+         self % segmentPoints(:,0) = self % valueInSegment(1, self % cuts(0), which = LA_EVALUATE_FUNCTION)
+         DO k = 1, self % nSegments 
+            xStart = self % valueInSegment(k, self % cuts(k-1), which = LA_EVALUATE_FUNCTION)
+            xEnd   = self % valueInSegment(k, self % cuts(k)  , which = LA_EVALUATE_FUNCTION)
+            self % segmentPoints(:,k) = xEnd
+            self % segmentLengths(k) = SQRT((xEnd(1) - xStart(1))**2 + (xEnd(2) - xStart(2))**2)
+         END DO
 
       END SUBROUTINE ConstructMultiSegmentModalCurve
 !
@@ -181,22 +218,6 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      REAL(KIND=RP) FUNCTION mcSegmentLength(self,t)  
-         IMPLICIT NONE  
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS(MultiSegmentModalCurve) :: self
-         REAL(KIND=RP)                 :: t
-!
-         mcSegmentLength = segmentLength(self % cuts, t)
-         
-      END FUNCTION mcSegmentLength
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
    REAL(KIND=RP) FUNCTION arcLength(self)
 !
 !  -------------------------------------------
@@ -218,10 +239,8 @@
       INTEGER                    :: N
       INTEGER                    :: qOrder
       INTEGER                    :: nSegments
-      INTEGER                    :: j, k
-      REAL(KIND=RP)              :: t, h, e1(3)
+      INTEGER                    :: k
       REAL(KIND=RP), ALLOCATABLE :: nodes(:), weights(:)
-      REAL(KIND=RP)              :: dsdt
       
       nSegments = self % nSegments
 
@@ -233,17 +252,56 @@
       
       arcLength = 0.0_RP
       DO k = 1, nSegments
-         h    = self % cuts(k) - self % cuts(k-1)
-         dsdt = 2.0_RP/h
-         DO j = 0, qOrder
-            t              = self % cuts(k-1) + h*0.5_RP*(nodes(j) + 1.0_RP)
-            e1             = dsdt*self % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE)
-            arcLength = arcLength + 0.5_RP*h*weights(j)*SQRT(e1(1)**2 + e1(2)**2)
-         END DO 
-         
+         arcLength = arcLength + segmentArcLength(self,k,nodes,weights)
       END DO 
       
    END FUNCTION arcLength
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   REAL(KIND=RP) FUNCTION segmentArcLength(self, k, nodes, weights)
+!
+!  -------------------------------------
+!  Compute the arc length of a segmented
+!  segmented curve
+!  -------------------------------------
+!
+      IMPLICIT NONE
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      CLASS(MultiSegmentModalCurve) :: self
+      REAL(KIND=RP)                 :: nodes(0:), weights(0:)
+      INTEGER                       :: k
+!
+!     ----------------
+!     Local variables 
+!     ----------------
+!
+      INTEGER                    :: N
+      INTEGER                    :: qOrder
+      INTEGER                    :: nSegments
+      INTEGER                    :: j
+      REAL(KIND=RP)              :: t, h, e1(3)
+      REAL(KIND=RP)              :: dsdt
+      
+      nSegments = self % nSegments
+
+      N      = self % polyOrder
+      qOrder = SIZE(nodes) - 1
+            
+      segmentArcLength = 0.0_RP
+      h    = self % cuts(k) - self % cuts(k-1)
+      dsdt = 2.0_RP/h
+      DO j = 0, qOrder
+         t                = self % cuts(k-1) + h*0.5_RP*(nodes(j) + 1.0_RP)
+         e1               = dsdt*self % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE)
+         segmentArcLength = segmentArcLength + 0.5_RP*h*weights(j)*SQRT(e1(1)**2 + e1(2)**2)
+      END DO 
+      
+   END FUNCTION segmentArcLength
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
