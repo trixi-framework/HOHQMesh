@@ -114,7 +114,7 @@
 !        -----------------
 !
          CALL stopWatch % start()
-         
+
             CALL GenerateQuadMesh(project, errorCode)
 !
 !           -----------------------------------------------------------
@@ -125,13 +125,23 @@
             IF ( ASSOCIATED(symmetryCurve) )     THEN
                IF ( allSymmetryCurvesAreColinear(project % model) )     THEN
                   CALL ReflectMesh(project % mesh, symmetryCurve)
-               ELSE 
+!
+!                 ------------------------
+!                 Smooth mesh (again) if requested
+!                 ------------------------
+!
+                  IF(ASSOCIATED(project % smoother))     THEN
+                     IF(PrintMessage) PRINT *, "   Begin Smoothing (after reflection across a symmetry boundary)..."
+                     CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
+                     IF(PrintMessage) PRINT *, "   Smoothing done."
+                  END IF
+               ELSE
                   CALL ThrowErrorExceptionOfType(poster = "HOHQMesh", &
                             msg          = "A symmetry curve is is not straight or colinear. Ignoring...", &
                             typ          = FT_ERROR_WARNING)
-               END IF 
-            END IF 
-            
+               END IF
+            END IF
+
          CALL stopwatch % stop()
          CALL trapExceptions !Abort on fatal exceptions
 
