@@ -84,6 +84,8 @@
          INTEGER                    :: nSegments
          REAL(KIND=RP), ALLOCATABLE :: cuts(:)
          REAL(KIND=RP), ALLOCATABLE :: dsdt(:)
+         REAL(KIND=RP), ALLOCATABLE :: breaks(:)
+         REAL(KIND=RP), ALLOCATABLE :: breakIndices(:)
          INTEGER                    :: internalConstraint
          INTEGER                    :: endConstraint
          
@@ -143,13 +145,15 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ConstructCMH1O(self, N, M, nSegments, cuts, options, testModeOptn)
+      SUBROUTINE ConstructCMH1O(self, N, M, nSegments, cuts, breakIndices, &
+                                options, testModeOptn)
 !
 !     ----------------------------------------------------------------
 !     N                    = Appoximation order
 !     M                    = Quadrature order
 !     nSegments            = Number of segments in the total domain
 !     cuts(0:nSegments)    = segment points (TODO: Come up with better names) 
+!     breakIndices         = marks the segments at which breaks are placed
 !     options(OptimizerOptions):
 !        options % internalConstraint = smoothness order at internal interfaces. 
 !                                       0 = continuity, 1 = 1st derivative, etc.
@@ -170,6 +174,7 @@
       INTEGER                 :: M
       INTEGER                 :: nSegments
       REAL(KIND=RP)           :: cuts(0:nSegments)
+      INTEGER                 :: breakIndices(:)
       LOGICAL, OPTIONAL       :: testModeOptn
       LOGICAL                 :: testMode
 !
@@ -186,7 +191,9 @@
       self % nSegments          = nSegments
       self % endConstraint      = options % endConstraint
       self % internalConstraint = options %internalConstraint
+      
       ALLOCATE( self % cuts(0:nSegments), source = cuts )
+      self % breakIndices = breakIndices
       
       self % N = N
       self % M = M

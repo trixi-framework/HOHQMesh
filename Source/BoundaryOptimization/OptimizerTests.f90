@@ -33,6 +33,7 @@
       INTEGER                    :: polyOrder
       REAL(KIND=RP), ALLOCATABLE :: cuts(:)
       REAL(KIND=RP), ALLOCATABLE :: errors(:,:)
+      INTEGER      , ALLOCATABLE :: breakIndices(:)
       CHARACTER(LEN=64)          :: xEqn, yEqn, zEqn
       REAL(KIND=RP)              :: tol = 1.0d-7
       
@@ -58,11 +59,13 @@
       nSegments       = 3
       polyOrder       = 4
       ALLOCATE(cuts(0:nSegments))
-      cuts  = [0.0_RP, 0.3_RP, 0.6_RP, 1.0_RP] ! for SMCurves, t\in [0,1]
+      cuts         = [0.0_RP, 0.3_RP, 0.6_RP, 1.0_RP] ! for SMCurves, t\in [0,1]
+      breakIndices = [0]
       
       CALL OptimizeCurve(curve              = crv,                   &
                          polyOrder          = polyOrder,             &
                          cuts               = cuts,                  &
+                         breakIndices       = breakIndices,          &
                          options            = options,               &
                          newName            = "OptimizedSimpleCurve",&
                          newID              = simpleCurve % id() + 1,&
@@ -125,6 +128,7 @@
       TYPE(OptimizerOptions)                   :: options
       CHARACTER(LEN=64)                        :: xEqn, yEqn, zEqn
       REAL(KIND=RP), ALLOCATABLE               :: errors(:,:)
+      INTEGER      , ALLOCATABLE               :: breakIndices(:)
 !
 !     ------------------------------------------------------
 !     If algorithms change, these values will have to change
@@ -167,6 +171,8 @@
 !
       CALL OptimizeCurveByMarching(curve              = crv,             &
                                    polyOrder          = polyOrder,       &
+                                   breaks             = [0.0_RP,1.0_RP], &
+                                   breakIndices       = breakIndices,    &
                                    options            = options,         &
                                    newName            = "BlobTest",      &
                                    newID              = crv % id() + 1,  &
@@ -233,6 +239,7 @@
       TYPE(OptimizerOptions)                   :: options
       CHARACTER(LEN=64)                        :: xEqn, yEqn, zEqn
       REAL(KIND=RP)                            :: arcL
+      INTEGER                    , ALLOCATABLE :: breakIndices(:)
 !
 !     --------------
 !     Set up options
@@ -260,6 +267,8 @@
 !
       CALL OptimizeCurveByMarching(curve              = crv,             &
                                    polyOrder          = polyOrder,       &
+                                   breaks             = [0.0_RP,1.0_RP], &
+                                   breakindices       = breakIndices,    &
                                    options            = options,         &
                                    newName            = "CircleTest",    &
                                    newID              = crv % id() + 1,  &

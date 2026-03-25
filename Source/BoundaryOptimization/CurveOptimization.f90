@@ -45,7 +45,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-   SUBROUTINE OptimizeCurve(curve, polyOrder, cuts, options, newName, newID, optimized)
+   SUBROUTINE OptimizeCurve(curve, polyOrder, cuts, breakIndices, &
+                            options, newName, newID, optimized)
 !
 !  ----------------------------------------------------
 !  Given an SMCurve, return and optimal multi-segment 
@@ -65,6 +66,7 @@
       CHARACTER(LEN=*)        :: newName            ! Name of the new curve
       INTEGER                 :: newID              ! ID of the new curve
       TYPE(OptimizerOptions)  :: options            ! parameters for the approximation
+      INTEGER, ALLOCATABLE    :: breakIndices(:) ! index in optimizedCuts where break boundaries occur
 !
 !     ---------------
 !     Local variables
@@ -84,12 +86,13 @@
       nSegments       = SIZE(cuts) - 1
       quadratureOrder = 2*polyOrder
       
-      CALL multiOptimizer % construct(                              &
-                                      N         = polyOrder,        &
-                                      M         = quadratureOrder,  &
-                                      nSegments = nSegments,        &
-                                      cuts      = cuts,             &
-                                      options   = options)
+      CALL multiOptimizer % construct(                                 &
+                                      N            = polyOrder,        &
+                                      M            = quadratureOrder,  &
+                                      nSegments    = nSegments,        &
+                                      cuts         = cuts,             &
+                                      breakIndices = breakIndices,     &
+                                      options      = options)
 !
 !     ------------------
 !     Find optimal curve
@@ -111,7 +114,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-   SUBROUTINE OptimizeCurveByMarching(curve, polyOrder, options, newName, newID, optimized)
+   SUBROUTINE OptimizeCurveByMarching(curve, polyOrder, breaks, breakIndices, &
+                                      options, newName, newID, optimized)
 !
 !  -----------------------------------------------------------------------------------
 !  March along the curve and use bisection and secant to find the length of each
@@ -128,9 +132,12 @@
       CLASS(SMCurve), POINTER :: curve              ! The curve to be approximated
       CLASS(SMCurve), POINTER :: optimized          ! The new approximation
       INTEGER                 :: polyOrder          ! polynomial order of the new approximation
+      REAL(KIND=RP)           :: breaks(0:)         ! Location of forced cut points, starting with t = 0.0
+                                                    ! If none, use breaks = [0.0_RP,1.0_RP]
       CHARACTER(LEN=*)        :: newName            ! Name of the new curve
       INTEGER                 :: newID              ! ID of the new curve
       TYPE(OptimizerOptions)  :: options            ! parameters for the approximation
+      INTEGER, ALLOCATABLE    :: breakIndices(:)    ! index in optimizedCuts where break boundaries occur
 !
 !     ---------------
 !     Local variables
@@ -140,7 +147,7 @@
       CLASS(SMCurve)               , POINTER :: optimizedCurve
       CLASS(MultiSegmentModalCurve), POINTER :: msmCurve
       TYPE(GaussQuadratureType)              :: gQuad
-      TYPE(OptimizerOptions)                 :: savedOptions  ! parameters for the marching algorithm
+      TYPE(OptimizerOptions)                 :: savedOptions   ! parameters for the marching algorithm
       REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
       REAL(KIND=RP)                          :: e, errorRatio
       INTEGER                                :: n
@@ -161,7 +168,8 @@
 !        Find the optimized segments
 !        ---------------------------
 !
-         CALL FindOptimizedCuts(curve, polyOrder, options, gQuad, optimizedCuts)
+         CALL FindOptimizedCuts(curve, polyOrder, breaks, options, gQuad, &
+                                optimizedCuts, breakIndices)
 !
 !        ------------------------------------------------------------
 !        Construct the global polynomial using the optimized segments
@@ -170,6 +178,7 @@
          CALL OptimizeCurve(curve              = curve,              &
                             polyOrder          = polyOrder,          &
                             cuts               = optimizedCuts,      &
+                            breakIndices       = breakIndices,       &
                             options            = savedOptions,       &
                             newName            = newName,            &
                             newID              = newID,              &
@@ -209,7 +218,64 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-   SUBROUTINE FindOptimizedCuts(curve, polyOrder, options, gQuad, optimizedCuts)
+   SUBROUTINE FindOptimizedCuts(curve, polyOrder, breaks, options, gQuad, &
+                                optimizedCuts, breakIndices)
+!
+!  -----------------------------------------------------------------------------------
+!  March along the curve to find the length of each
+!  segement so that the H^1 error is less than the tolerance allowed for that segment.
+!  -----------------------------------------------------------------------------------
+!
+      IMPLICIT NONE  
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      CLASS(SMCurve), POINTER   , INTENT(IN)  :: curve              ! The curve to be approximated
+      INTEGER                   , INTENT(IN)  :: polyOrder          ! polynomial order of the new approximation
+      REAL(KIND=RP)             , INTENT(IN)  :: breaks(0:)         ! t Location of forced break points, starting with t = 0.0
+!                                                                    If none, use [0.0_RP,1.0_RP]
+      TYPE(OptimizerOptions)   , INTENT(IN)   :: options            ! parameters for the approximation
+      TYPE(GaussQuadratureType), INTENT(IN)   :: gQuad
+      REAL(KIND=RP), ALLOCATABLE, INTENT(OUT) :: optimizedCuts(:)   ! t location of segment boundaries starting with t = 0
+      INTEGER      , ALLOCATABLE, INTENT(OUT) :: breakIndices(:)    ! index in optimizedCuts where break boundaries occur
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      REAL(KIND=RP), ALLOCATABLE :: rangeCuts(:)
+      INTEGER                    :: nBreaks
+      INTEGER                    :: j
+      
+      nBreaks = SIZE(breaks) - 1
+!
+!     -------------------------------------------------------------
+!     There will be at least one, and possibly more forced segments
+!     -------------------------------------------------------------
+!
+      CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(0), breaks(1)], &
+                                    options, gQuad, optimizedCuts)
+      IF(nBreaks == 1) RETURN 
+!
+!     ----------------------------
+!     Otherwise, continue marching
+!     ----------------------------
+!
+      DO j = 2, nBreaks 
+         CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(j-1), breaks(j)], &
+                                       options, gQuad, rangeCuts)
+         breakIndices  = [breakIndices,breakIndices(j-1) + SIZE(rangeCuts) - 1]
+         optimizedCuts = [optimizedCuts, rangeCuts(1:)]
+         DEALLOCATE(rangeCuts)
+      END DO       
+
+   END SUBROUTINE FindOptimizedCuts
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE FindOptimizedCutsInRange(curve, polyOrder, tRange, options, gQuad, optimizedCuts)
 !
 !  -----------------------------------------------------------------------------------
 !  March along the curve to find the length of each
@@ -224,6 +290,7 @@
 !
       CLASS(SMCurve), POINTER    :: curve              ! The curve to be approximated
       INTEGER                    :: polyOrder          ! polynomial order of the new approximation
+      REAL(KIND=RP)              :: tRange(2)          ! Location of forced cut points, starting with t = 0.0
       TYPE(OptimizerOptions)     :: options            ! parameters for the approximation
       TYPE(GaussQuadratureType)  :: gQuad
       REAL(KIND=RP), ALLOCATABLE :: optimizedCuts(:)
@@ -241,14 +308,14 @@
       INTEGER                                :: k, nCuts
 
       ALLOCATE(optimizedCuts(0:1))
-      optimizedCuts = [0.0_RP,1.0_RP]  ! will be added to as marching progresses
+      optimizedCuts = tRange  ! will be added to as marching progresses
 !
-!     ---------------------------------
-!     Loop until hit the end at t = 1.0
-!     ---------------------------------
+!     ---------------------------------------
+!     Loop until hit the end at t = tRange(2)
+!     ---------------------------------------
 !
-      tL              = 0.0_RP
-      tR              = 1.0_RP
+      tL              = tRange(1)
+      tR              = tRange(2)
       cuts            = [tL, tR] ! = [t_{k-1},t_k]
       h               = tR - tL 
 !
@@ -277,9 +344,9 @@
 !        and prepare for the next
 !        -------------------------------------------------
 !
-         CALL addCut(cuts = optimizedCuts,valueToAdd = tMid, atIndex = k)
+         CALL addCut(cuts = optimizedCuts, valueToAdd = tMid, atIndex = k)
          tL   = tMid
-         tR   = 1.0_RP
+         tR   = tRange(2)
          cuts = [tL,tR]
 !
 !        ----------------------------------------------------
@@ -313,11 +380,11 @@
        
        IF ( cFactor > 1.25_RP )     THEN
           hStar       = h*cFactor
-          optimizedCuts(nCuts-1) = 1.0 - MIN(hStar, 0.5_RP*h2)
+          optimizedCuts(nCuts-1) = optimizedCuts(nCuts) - MIN(hStar, 0.5_RP*h2)
 !          PRINT *, e, targetError, cFactor, h, hStar, h2, MIN(hStar, 0.5_RP*h) !DEBUG
        END IF 
 
-   END SUBROUTINE FindOptimizedCuts
+   END SUBROUTINE FindOptimizedCutsInRange
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -490,14 +557,17 @@
       CLASS(MultiSegmentModalCurve), POINTER :: msmCurve
       TYPE(OptimizerOptions)                 :: options  ! parameters for the marching algorithm
       REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
+      INTEGER, ALLOCATABLE                   :: breakIndices(:)
 
-      CALL OptimizeCurve(curve     = curve,                   &
-                         polyOrder = polyOrder,               &
-                         cuts      = cuts,                    &
-                         options   = options,                 &
-                         newName   = "tmp",                   &
-                         newID     = 0,                       &
-                         optimized = optimizedCurve)
+      breakIndices = [0]
+      CALL OptimizeCurve(curve        = curve,                   &
+                         polyOrder    = polyOrder,               &
+                         cuts         = cuts,                    &
+                         breakIndices = breakIndices,            &
+                         options      = options,                 &
+                         newName      = "tmp",                   &
+                         newID        = 0,                       &
+                         optimized    = optimizedCurve)
 
       CALL castToMultiSegmentCurve(optimizedCurve, msmCurve)
       CALL SegmentErrors(exact          = curve,    &
@@ -632,6 +702,16 @@
       CALL MOVE_ALLOC(FROM = newCuts, TO = cuts)
 
    END SUBROUTINE addCut
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE AppendRealArray(base, arrayToAdd)  
+      IMPLICIT NONE  
+      REAL(KIND=RP), ALLOCATABLE :: base(:)
+      REAL(KIND=RP)              :: arrayToAdd(:)
+      base = [base,arrayToAdd]
+      
+   END SUBROUTINE AppendRealArray
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
