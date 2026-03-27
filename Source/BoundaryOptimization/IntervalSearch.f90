@@ -72,7 +72,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      REAL(KIND=RP) FUNCTION segmentLength(searchArray, array, t)  
+      REAL(KIND=RP) FUNCTION searchArrayForValue(searchArray, array, t)  
          IMPLICIT NONE  
 !
 !        ---------
@@ -89,9 +89,9 @@
 !
          INTEGER       :: k
          
-         k             = findInterval(searchArray, t)
-         segmentLength = array(k)
+         k                   = findInterval(searchArray, t)
+         searchArrayForValue = array(k)
          
-      END FUNCTION segmentLength
+      END FUNCTION searchArrayForValue
  
    END Module IntervalSearchModule

@@ -207,6 +207,97 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+   SUBROUTINE BlobBreaksTest()
+!
+!  -------------------------------------------------------------------
+!  Ensure that the marching optimization is consistent with previous
+!  results.
+!  -------------------------------------------------------------------
+!
+      USE CurveOptimization
+      USE SMParametricEquationCurveClass
+      USE FTAssertions
+      IMPLICIT NONE
+!
+!     --------------
+!     Test paramters
+!     --------------
+!
+      INTEGER                                :: optType    = H1_NORM
+      INTEGER                                :: polyOrder  = 6
+      INTEGER                                :: smoothness = 2 ! C^2 smoothness
+      REAL(KIND=RP)                          :: toler      = 0.1_RP, testTol = 1.0d-10
+      REAL(KIND=RP)                          :: testBreaks(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
+!
+!     ---------------
+!     Local Variables
+!     ---------------
+!
+      CLASS(SMCurve)                 , POINTER :: crv
+      TYPE(SMParametricEquationCurve), POINTER :: blobCurve
+      CLASS(SMCurve)                 , POINTER :: optimizedCurve
+      CLASS(MultiSegmentModalCurve)  , POINTER :: msmCurve
+      TYPE(GaussQuadratureType)                :: gQuad
+      TYPE(OptimizerOptions)                   :: options
+      CHARACTER(LEN=64)                        :: xEqn, yEqn, zEqn
+      REAL(KIND=RP), ALLOCATABLE               :: optimizedCuts(:)
+      INTEGER      , ALLOCATABLE               :: breakIndices(:)
+!
+!     ------------------------------------------------------
+!     If algorithms change, these values will have to change
+!     ------------------------------------------------------
+!
+      REAL(KIND=RP) :: targetCuts(14) = [0.0000000000000000d0,  9.7012968168723498d-002, 0.18597893891877526d0, &
+                                         0.27478076483584229d0, 0.33739038241792119d0  , 0.40000000000000002d0,  &
+                                         0.48775062953276671d0, 0.57664177626838375d0  , 0.63832088813419186d0,  &
+                                         0.69999999999999996d0, 0.78923224969083527d0  , 0.87992832312825509d0,  &
+                                         0.93996416156412754d0, 1.0000000000000000d0]
+      INTEGER       :: targetIndices(3) = [6, 10, 14]
+!
+!     --------------
+!     Set up options
+!     --------------
+!
+      CALL SetDefaultOptions(options)
+      options % internalConstraint = smoothness
+      options % toler              = toler
+      options % whichNorm          = optType
+!
+!     -------------------
+!     Create Winters Blob
+!     -------------------
+!
+      xEqn = "x(t) = 4*cos(2*pi*t) - 3/5*cos(8*pi*t)^3"
+      yEqn = "y(t) = 4*sin(2*pi*t) - 0.5*sin(11*pi*t)^2"
+      zEqn = "z(t) = 0.0"
+      ALLOCATE(blobCurve)
+      CALL blobCurve % initWithEquationsNameAndID(xEqn, yEqn, zEqn, curveName = "blobCurve", id = 1)
+      crv => blobCurve
+!
+!     ------------------------------------
+!     Find the optimal curve approximation
+!     ------------------------------------
+!
+      CALL ConstructGaussQuadrature(gQuad, 4*polyOrder) ! For error computation. The 4 is arbitrary
+      CALL FindOptimizedCuts(crv, polyOrder, testBreaks, options, gQuad, optimizedCuts, breakIndices)
+!
+!     ------------
+!     Check errors
+!     ------------
+!
+      CALL FTAssert(MAXVAL(ABS(optimizedCuts - targetCuts)) .le. testTol, msg = "Segments dont match")
+      CALL FTAssert(MAXVAL(ABS(targetIndices - breakIndices)) == 0, msg = "Break Indices dont match")
+!
+!     --------
+!     Clean up
+!     --------
+!
+      CALL releasePECurve(blobCurve)
+       
+   END SUBROUTINE BlobBreaksTest
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
    SUBROUTINE CircleTest()
 !
 !  -------------------------------------------------------------------

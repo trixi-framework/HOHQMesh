@@ -257,6 +257,7 @@
 !
       CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(0), breaks(1)], &
                                     options, gQuad, optimizedCuts)
+      breakIndices = [SIZE(optimizedCuts)]
       IF(nBreaks == 1) RETURN 
 !
 !     ----------------------------
