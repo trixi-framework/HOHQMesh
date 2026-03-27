@@ -55,9 +55,6 @@
          INTEGER                                   :: noOfInterfaceBoundaries
          REAL(KIND=RP)                             :: baseSize
          REAL(KIND=RP)                             :: xMin(3), xMax(3)
-         REAL(KIND=RP)               , ALLOCATABLE :: outerOptimalPoints(:)
-         TYPE(JaggedRealArray)       , ALLOCATABLE :: innerOptimalPoints(:)
-         TYPE(JaggedRealArray)       , ALLOCATABLE :: interfaceOptimalPoints(:)
          CLASS(FTLinkedList)         , POINTER     :: controlsList            => NULL()
          CLASS(ChainedSegmentedCurve), POINTER     :: outerBoundary           => NULL()
          CLASS(FTLinkedList)         , POINTER     :: innerBoundariesList     => NULL()
@@ -190,18 +187,6 @@
             CALL release(obj)
          END IF
          
-         IF ( ALLOCATED(self % outerOptimalPoints) )     THEN
-            DEALLOCATE(self % outerOptimalPoints)
-         END IF 
-         
-         IF ( ALLOCATED(self % innerOptimalPoints) )     THEN
-            DEALLOCATE(self % innerOptimalPoints)
-         END IF 
-         
-         IF ( ALLOCATED(self % interfaceOptimalPoints) )     THEN
-            DEALLOCATE(self % interfaceOptimalPoints)
-         END IF
-
          NULLIFY(self % outerBoundary)
          NULLIFY(self % interfaceBoundariesList)
          NULLIFY(self % innerBoundariesList)
@@ -380,17 +365,14 @@
          cSize = TINY(cSize)
          IF( ASSOCIATED(sizer%outerBoundary) )     THEN
             cSize = MAX( cSize, invCurveSizeForBox(sizer % outerBoundary, xMin, xMax, tLoc ) )
-            IF ( ALLOCATED(sizer % outerOptimalPoints) .AND. (tloc .ne. REAL_OUT_OF_RANGE_VALUE))     THEN
-               cSize = MAX(cSize, 1.0_RP/segmentLength(array = sizer % outerOptimalPoints,t = tLoc))
-            END IF 
          END IF
 
          IF ( ASSOCIATED( sizer % innerBoundariesList) )     THEN
-            CALL cSizeForCurvesInList(sizer % innerBoundariesList, cSize, xMin, xMax, sizer % innerOptimalPoints)
+            CALL cSizeForCurvesInList(sizer % innerBoundariesList, cSize, xMin, xMax)
          END IF
 
          IF( ASSOCIATED(sizer % interfaceBoundariesList) )     THEN
-            CALL cSizeForCurvesInList(sizer % interfaceBoundariesList, cSize, xMin, xMax, sizer % interfaceOptimalPoints)
+            CALL cSizeForCurvesInList(sizer % interfaceBoundariesList, cSize, xMin, xMax)
          END IF
          cSize = 1.0_RP/cSize
 !
@@ -444,7 +426,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE cSizeForCurvesInList( list, cSize, xMin, xMax, optimalPoints )
+      SUBROUTINE cSizeForCurvesInList( list, cSize, xMin, xMax )
          USE IntervalSearchModule
          IMPLICIT NONE
 !
@@ -455,7 +437,6 @@
          CLASS(FTLinkedList), POINTER :: list
          REAL(KIND=RP)                :: cSize
          REAL(KIND=RP)                :: xMin(3), xMax(3)
-         TYPE(JaggedRealArray)        :: optimalPoints(:)
 !
 !        ---------------
 !        Local variables
@@ -477,9 +458,6 @@
             CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
             cSize = MAX( cSize, invCurveSizeForBox(segmentedCurveChain, xMin, xMax, tLoc ) )
             j = j + 1
-            IF ( ALLOCATED( optimalPoints(j) % array) .AND. (tloc .ne. REAL_OUT_OF_RANGE_VALUE) )     THEN
-               cSize = MAX(cSize, 1.0_RP/segmentLength(array = optimalPoints(j) % array,t = tLoc))
-            END IF 
             CALL iterator % moveToNext()
          END DO
          obj => iterator
