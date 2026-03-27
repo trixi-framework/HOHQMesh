@@ -364,7 +364,7 @@
 !
          cSize = TINY(cSize)
          IF( ASSOCIATED(sizer%outerBoundary) )     THEN
-            cSize = MAX( cSize, invCurveSizeForBox(sizer % outerBoundary, xMin, xMax, tLoc ) )
+            cSize = MAX( cSize, invCurveSizeForBox(sizer % outerBoundary, xMin, xMax ) )
          END IF
 
          IF ( ASSOCIATED( sizer % innerBoundariesList) )     THEN
@@ -456,7 +456,7 @@
          DO WHILE (.NOT.iterator % isAtEnd())
             obj => iterator % object()
             CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
-            cSize = MAX( cSize, invCurveSizeForBox(segmentedCurveChain, xMin, xMax, tLoc ) )
+            cSize = MAX( cSize, invCurveSizeForBox(segmentedCurveChain, xMin, xMax ) )
             j = j + 1
             CALL iterator % moveToNext()
          END DO
@@ -530,7 +530,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION invCurveSizeForBox(chain, xMin, xMax, tLoc )
+      REAL(KIND=RP) FUNCTION invCurveSizeForBox(chain, xMin, xMax )
       USE Geometry
       IMPLICIT NONE
 !
@@ -556,7 +556,6 @@
          nodes(:,4) = (/xMin(1),xMax(2), 0.0_RP/)
 
          invCurveSizeForBox = 0.0_RP
-         tloc = REAL_OUT_OF_RANGE_VALUE
 
          N = chain % curveCount()
          DO k = 1, N
@@ -565,7 +564,6 @@
                x = c % positionAtIndex(j)
                IF ( PointInQuad(nodes,x) )     THEN
                   s    = c % invScaleAtIndex(j)
-                  tLoc = c % argumentAtIndex(j)
                   invCurveSizeForBox =  MAX(s, invCurveSizeForBox)
                END IF
             END DO

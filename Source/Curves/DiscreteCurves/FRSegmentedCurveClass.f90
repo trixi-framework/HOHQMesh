@@ -438,10 +438,11 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initFRSegmentedCurve( self, theCurve, h, controls, idc )
+      SUBROUTINE initFRSegmentedCurve( self, theCurve, idc, h, controls, segmentsSizes, cuts )
          USE Geometry, ONLY:Curvature
          USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE, UNDEFINED
          USE SMSplineCurveClass
+         USE IntervalSearchModule, ONLY: searchArrayForValue
 !
 !     ------------------------------------------------
 !     Construct the curve given a Curve class instance
@@ -458,6 +459,8 @@
          CLASS(FTLinkedList), POINTER :: controls
          REAL(KIND=RP)                :: h
          INTEGER                      :: idc
+         REAL(KIND=RP), OPTIONAL      :: segmentsSizes(:)
+         REAL(KIND=RP), OPTIONAL      :: cuts(:)
 !
 !        ---------------
 !        Local Variables
@@ -475,6 +478,16 @@
          CLASS(FTObject)     , POINTER             :: objPtr, obj
          CLASS(SMSplineCurve), POINTER             :: spline
          LOGICAL                                   :: useSplinePoints
+         LOGICAL                                   :: useSegmentOptimization
+!
+!        -------------
+!        Preliminaries
+!        -------------
+!
+         useSegmentOptimization = .FALSE.
+         IF ( PRESENT(segmentsSizes) .AND. PRESENT(cuts) )     THEN
+            useSegmentOptimization = .TRUE. 
+         END IF 
 !
 !        ----
 !        Self
@@ -585,8 +598,13 @@
             DO j = 1, spline % numKnots
                xPrime       = [spline % bx(j), spline % by(j), spline % bz(j)]
                xDoublePrime = [2.0_RP*spline % cx(j), 2.0_RP*spline % cy(j), 2.0_RP*spline % cz(j)]
-               c = Curvature( xPrime, xDoublePrime)
-               s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature
+               IF ( useSegmentOptimization )     THEN
+                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = spline % t(j)) 
+                  s = MIN( h, c ) !Choose the smaller of h or optimized size
+               ELSE 
+                  c = Curvature( xPrime, xDoublePrime)
+                  s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature
+               END IF 
 
                ALLOCATE(p)
                CALL p % initSMSegmentedCurveNode(x = [spline % x(j), spline % y(j), spline % z(j)], &
@@ -659,8 +677,14 @@
                   xDoublePrime = 2.0_RP*(xPrimeR - xPrimeL)/(tR - tL)
                END IF
 
-               c = Curvature( xPrime, xDoublePrime )
-               s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature
+               IF ( useSegmentOptimization )     THEN
+                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = p % t) 
+                  s = MIN( h, c ) !Choose the smaller of h or optimized size
+               ELSE 
+                  c = Curvature( xPrime, xDoublePrime)
+                  s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature
+               END IF 
+
                p % invScale = 1.0_RP/s
                norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
 !
