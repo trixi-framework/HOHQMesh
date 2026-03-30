@@ -386,8 +386,6 @@
          CLASS(FTObject)           , POINTER     :: obj
          CLASS(FTValueDictionary)  , POINTER     :: blockDict
          TYPE(FTLinkedListIterator)              :: iterator
-         
-         CALL SetChainOptimizationParameters(curveChain, curveDict)
 !
 !        ---------------------------------
 !        Construct the curves in the chain
@@ -411,6 +409,7 @@
 !        ------------------
 !
          CALL curveChain % complete(innerOrOuterCurve = innerOrOuter,chainMustClose = chainMustClose)
+         CALL SetChainOptimizationParameters(curveChain, curveDict)
 
       END SUBROUTINE AssembleChainCurve
 !
@@ -536,7 +535,8 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE SetChainOptimizationParameters(curveChain, curveDict)  
+      SUBROUTINE SetChainOptimizationParameters(curveChain, curveDict)
+         USE SMScannerClass
          IMPLICIT NONE
 !
 !        ---------
@@ -551,6 +551,11 @@
 !        ---------------
 !
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         LOGICAL                                 :: done
+         INTEGER                                 :: j
+         REAL(KIND=RP)                           :: break
+         TYPE(SMScanner)                         :: scanner
+         INTEGER  , ALLOCATABLE                  :: iBreaks(:)
 !
          curveChain % optimization = NONE
          IF ( curveDict % containsKey(CHAIN_OPTIMIZATION_KEY) )     THEN
@@ -589,7 +594,29 @@
                CALL ThrowErrorExceptionOfType(poster = "SetChainOptimizationParameters",&
                                               msg    = str, &
                                               typ    = FT_ERROR_WARNING)
-            END IF 
+            END IF
+            
+            IF ( curveDict % containsKey(CHAIN_BREAKS_KEY) )     THEN
+!
+!              -------------------------------------------------------------------------------
+!              Chain breaks are defined by the end of the numbered curve in the chain, e.g.
+!              with five curves in the chain, putting a break at the end of curve 2 and curve 
+!              3, write
+!                 breaks = 2,3
+!              where the separator is a comma.
+!              -------------------------------------------------------------------------------
+!
+               IF ( curveChain % COUNT() == 1 )     THEN
+                  curveChain % breaks = [0.0_RP, 1.0_RP]
+               ELSE 
+                  str                 = curveDict % stringValueForKey(CHAIN_BREAKS_KEY)
+                  CALL scanner % initWithString(str,delims = ",")
+                  iBreaks = scanner % scanIntsToArray()
+                  curveChain % breaks = [0.0_RP, REAL(iBreaks, RP)/ REAL(curveChain % COUNT(), RP), 1.0_RP]
+               END IF 
+            ELSE
+               curveChain % breaks = [0.0_RP, 1.0_RP]
+            END IF
          END IF
          
       END SUBROUTINE SetChainOptimizationParameters
