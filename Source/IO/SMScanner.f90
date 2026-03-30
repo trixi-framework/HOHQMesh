@@ -77,6 +77,7 @@
       PROCEDURE :: scanInt
       PROCEDURE :: scanReal
       PROCEDURE :: isAtEnd
+      PROCEDURE :: scanIntsToArray
    END TYPE SMScanner
    
    INTEGER, PARAMETER :: NOT_AN_INTEGER = -HUGE(NOT_AN_INTEGER)
@@ -126,7 +127,7 @@
       IMPLICIT NONE  
       CLASS(SMScanner)  :: self
       isAtEnd = .FALSE.
-      IF(self % cursorPos >= self % endPos) isAtEnd = .TRUE.
+      IF(self % cursorPos > self % endPos) isAtEnd = .TRUE.
    END FUNCTION isAtEnd
 !
 !//////////////////////////////////////////////////////////////////////// 
@@ -188,16 +189,18 @@
       
       p     = self % cursorPos
       e     = self % endPos
+! 
       scEnd = SCAN(STRING = self % str(p:e), &
                    SET    = self % delimeters)
+                   
       IF(scEnd == 0) THEN 
-         scEnd = self % endPos+1
+         scEnd = self % endPos
       ELSE
-         scEnd = p + scEnd - 1
+         scEnd = p + scEnd - 2
       END IF
       
-      token = self % str(p:scEnd-1)
-      self % cursorPos = scEnd + 1
+      token = self % str(p:scEnd)
+      self % cursorPos = scEnd + 2
 
    END SUBROUTINE getToken
 !
@@ -444,8 +447,8 @@
 ! 
    LOGICAL FUNCTION scanArrayTest()  
       IMPLICIT NONE
-!                                     123456789012345678901234567
-      CHARACTER(LEN = 64)  :: str      = " breaks = 124, 14, 3, 11, 2"
+!                                         123456789012345678901234567
+      CHARACTER(LEN = 64)  :: str      = " breaks = 124, 14,3, 11,2"
       CHARACTER(LEN = 64)  :: failStr  = " breaks = xxy"
       CHARACTER(LEN= 1)    :: dlms = ","
       TYPE(SMScanner)      :: scanner
@@ -478,5 +481,5 @@
       scanArrayTest = scanArrayTest .AND. SIZE(a) == 0
       
    END FUNCTION scanArrayTest
-
+   
    END Module SMScannerClass
