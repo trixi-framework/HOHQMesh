@@ -153,7 +153,6 @@
 !     Local variables
 !     ---------------
 !
-      INTEGER :: j
       INTEGER :: k
       
       scanUptoString   = .FALSE.
@@ -185,7 +184,6 @@
 !     ---------------
 !
       INTEGER :: scEnd, p, e
-      INTEGER :: iErr
       
       p     = self % cursorPos
       e     = self % endPos

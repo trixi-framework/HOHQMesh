@@ -81,8 +81,7 @@
       TYPE SizerCurvePtr
          CLASS(ChainedSegmentedCurve), POINTER :: curve => NULL()
       END TYPE SizerCurvePtr
-      
-      REAL(KIND=RP), PRIVATE :: REAL_OUT_OF_RANGE_VALUE = -1.0_RP
+
 !
 !     ========
       CONTAINS
@@ -314,7 +313,7 @@
 !        local variables
 !        ---------------
 !
-         REAL(KIND=RP)                    :: dX(3), tLoc
+         REAL(KIND=RP)                    :: dX(3)
          REAL(KIND=RP)                    :: x(3), boundingBox(6)
          REAL(KIND=RP)                    :: cSize, aSize
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
@@ -445,7 +444,6 @@
          CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
-         REAL(KIND=RP)                         :: tLoc
          INTEGER                               :: j
 
          ALLOCATE(iterator)
@@ -538,7 +536,7 @@
 !        Arguments
 !        ---------
 !
-         REAL(KIND=RP)                         :: xMin(3), xMax(3), tLoc
+         REAL(KIND=RP)                         :: xMin(3), xMax(3)
          CLASS(ChainedSegmentedCurve), POINTER :: chain
 !
 !        ---------------

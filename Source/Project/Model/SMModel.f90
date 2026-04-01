@@ -551,9 +551,6 @@
 !        ---------------
 !
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
-         LOGICAL                                 :: done
-         INTEGER                                 :: j
-         REAL(KIND=RP)                           :: break
          TYPE(SMScanner)                         :: scanner
          INTEGER  , ALLOCATABLE                  :: iBreaks(:)
 !
@@ -609,7 +606,7 @@
                IF ( curveChain % COUNT() == 1 )     THEN
                   curveChain % breaks = [0.0_RP, 1.0_RP]
                ELSE 
-                  str                 = curveDict % stringValueForKey(CHAIN_BREAKS_KEY)
+                  str = curveDict % stringValueForKey(CHAIN_BREAKS_KEY)
                   CALL scanner % initWithString(str,delims = ",")
                   iBreaks = scanner % scanIntsToArray()
                   curveChain % breaks = [0.0_RP, REAL(iBreaks, RP)/ REAL(curveChain % COUNT(), RP), 1.0_RP]
