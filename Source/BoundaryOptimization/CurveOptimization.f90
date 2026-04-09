@@ -248,6 +248,7 @@
       REAL(KIND=RP), ALLOCATABLE :: rangeCuts(:)
       INTEGER                    :: nBreaks
       INTEGER                    :: j
+      REAL(KIND=RP)              :: limit = 1.0d-14
       
       nBreaks = SIZE(breaks) - 1
 !
@@ -255,9 +256,10 @@
 !     There will be at least one, and possibly more forced segments
 !     -------------------------------------------------------------
 !
-      CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(0), breaks(1)], &
+      CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(0), breaks(1)-Limit], &
                                     options, gQuad, optimizedCuts)
       breakIndices = [SIZE(optimizedCuts)]
+      optimizedCuts(UBOUND(optimizedCuts)) = breaks(1)
       IF(nBreaks == 1) RETURN 
 !
 !     ----------------------------
@@ -265,9 +267,10 @@
 !     ----------------------------
 !
       DO j = 2, nBreaks 
-         CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(j-1), breaks(j)], &
+         CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(j-1)+limit, breaks(j)-limit], &
                                        options, gQuad, rangeCuts)
          breakIndices  = [breakIndices,breakIndices(j-1) + SIZE(rangeCuts) - 1]
+         rangeCuts(UBOUND(rangeCuts)) = breaks(j)
          optimizedCuts = [optimizedCuts, rangeCuts(1:)]
          DEALLOCATE(rangeCuts)
       END DO       
@@ -328,7 +331,7 @@
 !     ------------------------------------------------------------------
 !
       fR = marchingfunction(curve, polyOrder, cuts, options, gQuad)
-      IF(ABS(fR) .le. 0.0) RETURN 
+      IF(fr .le. 0.0) RETURN 
 !
 !     --------------------------
 !     Find the intervals in turn
@@ -336,6 +339,7 @@
 !
       steppingNotDone = .TRUE.
       k               = 0 ! Segment number
+
       DO WHILE(steppingNotDone)
          k    = k + 1
          tMid = iterate(tL, tR, curve, polyOrder, options, gQuad, iterToler, RIGHT_SIDE)
@@ -345,6 +349,7 @@
 !        and prepare for the next
 !        -------------------------------------------------
 !
+         IF (ABS(tMid - tRange(2)) <= iterToler) EXIT
          CALL addCut(cuts = optimizedCuts, valueToAdd = tMid, atIndex = k)
          tL   = tMid
          tR   = tRange(2)
@@ -377,158 +382,184 @@
        targetError = options % safetyFactor*options % toler
        e           = marchingFunction(curve, polyOrder, cuts, options, gQuad) + targetError
        cFactor     = (targetError/(e + 1.0d-14))**(1.0_RP/polyOrder)
-!       PRINT *, e, targetError, cFactor, h, h2 !DEBUG
        
        IF ( cFactor > 1.25_RP )     THEN
           hStar       = h*cFactor
           optimizedCuts(nCuts-1) = optimizedCuts(nCuts) - MIN(hStar, 0.5_RP*h2)
-!          PRINT *, e, targetError, cFactor, h, hStar, h2, MIN(hStar, 0.5_RP*h) !DEBUG
        END IF 
 
    END SUBROUTINE FindOptimizedCutsInRange
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+!
+!////////////////////////////////////////////////////////////////////////
+!
    REAL(KIND=RP) FUNCTION iterate(tL, tR, curve, polyOrder, options, gQuad, iterToler, side)
-!
-!  -----------------------------------------------------------------------------------
-!  Iterate to find the point t_{k+1} such that the error on [t_k,t_{k+1}] is less than
-!  iterToler.
-!  -----------------------------------------------------------------------------------
-!
-      IMPLICIT NONE
-!
-!     ---------
-!     Arguments
-!     ---------
-!
-      REAL(KIND=RP)             :: tL, tR
-      CLASS(SMCurve), POINTER   :: curve              ! The curve to be approximated
-      INTEGER                   :: polyOrder          ! polynomial order of the new approximation
-      TYPE(OptimizerOptions)    :: options            ! parameters for the approximation
-      TYPE(GaussQuadratureType) :: gQuad
-      REAL(KIND=RP)             :: iterToler
-      INTEGER                   :: side
-!
-!     ---------------
-!     Local variables
-!     ---------------
-!
-      REAL(KIND=RP)   :: cuts(0:1)
-      REAL(KIND=RP)   :: fL, fR, delta, s
-      REAL(KIND=RP)   :: tN, tNm1, fN, fNm1, tNp1
-      INTEGER         :: maxIterB = 6 ! Should get to 0.016
-      INTEGER         :: maxIterS = 8 ! Should get to iterToler
-      INTEGER         :: maxIter
-      INTEGER         :: n
-      LOGICAL         :: done
-      
-      cuts = [tL, tR] ! = [t_{k-1},t_k]
-      iterate = bisect(maxIterB, side, done)
-      IF ( done ) RETURN
-!
-!     -----------------------
-!     Secant method to finish
-!     -----------------------
-!
-      tN   = tR; fN    = fR
-      tNm1 = tL; fNm1 = fL
-      
-      DO n = 1, maxIterS
-         delta   = - (tn - tNm1)*fn/(fn - fNm1)
-         s       = SIGN(1.0_RP,delta)
-         delta   = s*MIN(ABS(0.1_RP*tN),ABS(delta))
-         tNp1    = tn + delta
-         tnm1    = tn
-         fNm1    = fn
+   !
+   !  -----------------------------------------------------------------------------------
+   !  Iterate to find the point t_{k+1} such that the error on [t_k,t_{k+1}] is less than
+   !  iterToler.
+   !  -----------------------------------------------------------------------------------
+   !
+         IMPLICIT NONE
+   !
+   !     ---------
+   !     Arguments
+   !     ---------
+   !
+         REAL(KIND=RP)             :: tL, tR
+         CLASS(SMCurve), POINTER   :: curve              ! The curve to be approximated
+         INTEGER                   :: polyOrder          ! polynomial order of the new approximation
+         TYPE(OptimizerOptions)    :: options            ! parameters for the approximation
+         TYPE(GaussQuadratureType) :: gQuad
+         REAL(KIND=RP)             :: iterToler
+         INTEGER                   :: side
+   !
+   !     ---------------
+   !     Local variables
+   !     ---------------
+   !
+         REAL(KIND=RP)   :: cuts(0:1)
+         REAL(KIND=RP)   :: fL, fR
+         REAL(KIND=RP)   :: tN, tNm1, fN, fNm1, tNp1, fNp1
+         INTEGER         :: maxIterB = 6 ! Should get to 0.016
+         INTEGER         :: maxIterS = 8 ! Should get to iterToler
+         INTEGER         :: maxIter
+         INTEGER         :: n
+         LOGICAL         :: done
 
-         IF ( ABS(delta) <= iterToler )     THEN
-            iterate = tNp1
-            RETURN 
-         END IF 
- 
-         cuts(1) = tNp1
-         fn      = marchingFunction(curve, polyOrder, cuts, options, gQuad)
-         tn      = tNp1
-      END DO 
-!
-!     ---------------------------------------------------------------
-!     If secant doesn't converge, we get to here. Just use bisection
-!     to finish the job.
-!     ---------------------------------------------------------------
-!
-      maxIter = NINT(LOG((tR - tL)/iterToler)/LOG(2.0_RP))+1
-      iterate = bisect(maxIter, side, done)
-!
-!     ========
-      CONTAINS
-!     ========
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   REAL(KIND=RP) FUNCTION bisect(maxIter, side, done)
-!
-!  -----------------------------------------------------------------------------------
-!  Iterate to find the point t_{k+1} such that the error on [t_k,t_{k+1}] is less than
-!  iterToler.
-!  -----------------------------------------------------------------------------------
-!
-      IMPLICIT NONE
-!
-!     ---------
-!     Arguments
-!     ---------
-!
-      INTEGER                   :: maxIter
-      LOGICAL                   :: done
-      INTEGER                   :: side
-!
-!     ---------------
-!     Local variables
-!     ---------------
-!
-      REAL(KIND=RP)   :: tMid, h
-      REAL(KIND=RP)   :: fMid
-      INTEGER         :: n
+         cuts = [tL, tR] ! = [t_{k-1},t_k]
+         iterate = bisect(maxIterB, side, done)
+         IF ( done ) RETURN
+   !
+   !     -----------------------------------
+   !     Pegasus method to finish
+   !     (fast modification of Regula Falsi)
+   !
+   !     See paper
+   !     Dowell, M., Jarratt, P. (1972)
+   !     The “Pegasus” method for computing
+   !       the root of an equation.
+   !     https://doi.org/10.1007/BF01932959
+   !     -----------------------------------
+   !
+         tN   = tR; fN   = fR
+         tNm1 = tL; fNm1 = fL
+		 
+		 ! Important note. This assumes that
+         ! fN and fNm1 have opposite sign, otherwise it won't bracket.
+         DO n = 1, maxIterS
+		    ! Regula Falsi position
+            ! (Intersection of secant line with the t axis)
+		    ! tNp1 = tN - (tN - tNm1) * fN / (fN - fNm1)
+            tNp1 = (fN * tNm1 - tN * fNm1) / (fN - fNm1)
+            cuts(1) = tNp1
+            fNp1    = marchingFunction(curve, polyOrder, cuts, options, gQuad)
 
-!
-!    -----------------------------------------------------
-!    Iterate on error funtion until tolerance is satisfied
-!    -----------------------------------------------------
-!
-      fL = - options % safetyFactor*options % toler ! the best case. See marchingFunction
-!
-!     ---------
-!     Bisection
-!     ---------
-!
-      done = .FALSE.
-      DO n = 1, maxIter
-         h       = tR - tL
-         tMid    = tL + 0.5_RP*h
-         cuts(side) = tMid 
-         fMid = marchingFunction(curve, polyOrder, cuts, options, gQuad)
+            ! Check for convergence
+            IF ( ( ABS(fNp1) <= iterToler ) .OR. ( ABS(tN - tNm1) <= iterToler ) )    THEN
+               iterate = tNp1
+               RETURN
+            END IF
 
-         IF(0.5_RP*ABS(h) .le. iterToler) THEN ! If marching R -> L, h < 0
-            bisect = tMid
-            done   = .TRUE.
-            RETURN
-         END IF
-         
-         IF ( fMid*fL < 0.0_RP )     THEN
-            tR = tMid
-            fR = fMid
-         ELSE 
-            tL = tMid
-            fL = fMid
-         END IF 
-      END DO
-      
-      bisect = tMid
-      
-   END FUNCTION bisect
-          
-   END FUNCTION iterate
+            ! Update endpoints
+            IF ( fNm1 * fNp1 < 0.0_RP )    THEN
+               ! tNm1 stays the same
+               ! Pegasus scaling of left function value
+               fNm1 = fNm1 * fN / (fN + fNp1)
+
+               ! Replace right endpoint
+               tN = tNp1
+               fN = fNp1
+            ELSE
+               ! tN stays the same
+               ! Pegasus scaling of right function value
+               fN = fNm1 * fN / (fNm1 + fNp1)
+
+               ! Replace left endpoint
+               tNm1 = tNp1
+               fNm1 = fNp1
+            END IF
+         END DO
+   !
+   !     ---------------------------------------------------------------
+   !     If Pegasus doesn't converge, we get to here. Just use bisection
+   !     to finish the job.
+   !     ---------------------------------------------------------------
+   !
+         maxIter = NINT(LOG((tR - tL)/iterToler)/LOG(2.0_RP))+1
+         iterate = bisect(maxIter, side, done)
+   !
+   !     ========
+         CONTAINS
+   !     ========
+   !
+   !////////////////////////////////////////////////////////////////////////
+   !
+      REAL(KIND=RP) FUNCTION bisect(maxIter, side, done)
+   !
+   !  -----------------------------------------------------------------------------------
+   !  Iterate to find the point t_{k+1} such that the error on [t_k,t_{k+1}] is less than
+   !  iterToler.
+   !  -----------------------------------------------------------------------------------
+   !
+         IMPLICIT NONE
+   !
+   !     ---------
+   !     Arguments
+   !     ---------
+   !
+         INTEGER                   :: maxIter
+         LOGICAL                   :: done
+         INTEGER                   :: side
+   !
+   !     ---------------
+   !     Local variables
+   !     ---------------
+   !
+         REAL(KIND=RP)   :: tMid, h
+         REAL(KIND=RP)   :: fMid
+         INTEGER         :: n
+
+   !
+   !    -----------------------------------------------------
+   !    Iterate on error function until tolerance is satisfied
+   !    -----------------------------------------------------
+   !
+         fL = - options % safetyFactor*options % toler ! the best case. See marchingFunction
+   !
+   !     ---------
+   !     Bisection
+   !     ---------
+   !
+         done = .FALSE.
+         DO n = 1, maxIter
+            h       = tR - tL
+            tMid    = tL + 0.5_RP*h
+            cuts(side) = tMid
+            fMid = marchingFunction(curve, polyOrder, cuts, options, gQuad)
+
+            IF(0.5_RP*ABS(h) .le. iterToler) THEN ! If marching R -> L, h < 0
+               bisect = tMid
+               done   = .TRUE.
+               RETURN
+            END IF
+
+            IF ( fMid*fL < 0.0_RP )     THEN
+               tR = tMid
+               fR = fMid
+            ELSE
+               tL = tMid
+               fL = fMid
+            END IF
+         END DO
+
+         bisect = tMid
+
+      END FUNCTION bisect
+
+      END FUNCTION iterate
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
