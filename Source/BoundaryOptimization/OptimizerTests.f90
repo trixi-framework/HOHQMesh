@@ -134,16 +134,17 @@
 !     If algorithms change, these values will have to change
 !     ------------------------------------------------------
 !
-      REAL(KIND=RP), DIMENSION(0:14) :: targetCuts = [0.0000000000000000d0, 8.1265428894348749d-002, 0.15045634145597994d0, &
-                                                      0.22077160987832684d0,0.29160351735901074d0,   0.36571566262080718d0, &
-                                                      0.43544793978560420d0,0.50460410822852930d0,   0.58656579827221011d0, &
-                                                      0.66015641233663280d0,0.72937541831030550d0,   0.79962654506078590d0, &
-                                                      0.87133812999416993d0,0.93566906499708491d0,   1.0000000000000000d0]     
-      REAL(KIND=RP), DIMENSION(14) :: targetErrs = [6.5701630229967944D-002, 9.2756354534509713D-002, 9.4318888450774865D-002, &
-                                                    8.9851776388901142D-002, 8.4840637330823726D-002, 9.1113354770013449D-002, &
-                                                    8.9982194651519853D-002, 6.6437188888605309D-002, 8.5125338466645842D-002, &
-                                                    9.4312319154085611D-002, 9.2294223211097523D-002, 7.9708219542325251D-002, &
-                                                    6.9615382669664438D-002, 6.0416666913070079D-002]
+      REAL(KIND=RP), DIMENSION(0:14) :: targetCuts = [0.0000000000000000d0, 8.1265579824703116d-002, 0.15045640903455607d0, &
+                                                      0.22077167956244118d0, 0.29160346317898733d0 , 0.36571564576560278d0, &
+                                                      0.43544797674686886d0, 0.50460408747686858d0 , 0.58656581476102343d0, &
+                                                      0.66015650714092378d0, 0.72937554977781693d0 , 0.79962664950202822d0, &
+                                                      0.87133825221559236d0, 0.93566912610779118d0 , 1.0000000000000000d0]     
+      REAL(KIND=RP), DIMENSION(14) :: targetErrs   = [6.5701104198703258D-002, 9.2755933527799317D-002, 9.4318673445075371D-002, &
+                                                      8.9851528325016500D-002, 8.4840512767012335D-002, 9.1113375058104948D-002, &
+                                                      8.9982141522456996D-002, 6.6437128781457827D-002, 8.5125422961208327D-002, &
+                                                      9.4312401609089630D-002, 9.2294314749049741D-002, 7.9708234689768759D-002, &
+                                                      6.9615262724751242D-002, 6.0416402664441364D-002]
+
 !
 !     --------------
 !     Set up options
@@ -247,11 +248,11 @@
 !     If algorithms change, these values will have to change
 !     ------------------------------------------------------
 !
-      REAL(KIND=RP) :: targetCuts(14) = [0.0000000000000000d0,  9.7012968168723498d-002, 0.18597893891877526d0, &
-                                         0.27478076483584229d0, 0.33739038241792119d0  , 0.40000000000000002d0,  &
-                                         0.48775062953276671d0, 0.57664177626838375d0  , 0.63832088813419186d0,  &
-                                         0.69999999999999996d0, 0.78923224969083527d0  , 0.87992832312825509d0,  &
-                                         0.93996416156412754d0, 1.0000000000000000d0]
+      REAL(KIND=RP) :: targetCuts(14) = [0.0000000000000000d0 , 9.7012998027394590D-002,  0.18597895426900293d0, &
+                                         0.2747807572302729d0 , 0.33739037861513144d0  , 0.40000000000000002d0,  &
+                                         0.48775051059386526d0, 0.57664143749005436d0  , 0.63832071874502216d0,  &
+                                         0.69999999999999996d0, 0.78923224973352135d0  , 0.87992823103602991d0,  &
+                                         0.93996411551800996d0, 1.0000000000000000d0]
       INTEGER       :: targetIndices(3) = [6, 10, 14]
 !
 !     --------------
@@ -406,6 +407,7 @@
       USE CurveOptimization
       USE FTExceptionClass
       USE SharedExceptionManagerModule
+      USE FTAssertions
       USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
       IMPLICIT NONE
 !
@@ -427,7 +429,11 @@
       TYPE(OptimizerOptions)     :: options
       REAL(KIND=RP), ALLOCATABLE :: optimizedCuts(:)
       INTEGER      , ALLOCATABLE :: breakIndices(:)
-      REAL(KIND=RP)              :: testBreaks(0:2) = [0.0_RP, 0.5_RP, 1.0_RP]
+      REAL(KIND=RP)              :: testBreaks(0:2)   = [0.0_RP, 0.5_RP, 1.0_RP]
+      REAL(KIND=RP)              :: expectedCuts(8) = [0.0000000000000000d0, 8.5660458319249122d-002,  0.17132061069400731d0, &
+                                                       0.25698120097987087d0, 0.34264177103695337d0, 0.42829034087238133d0,   &
+                                                       0.50000000000000000d0, 1.0000000000000000d0]
+      INTEGER                    :: expectedIndices(2) = [7, 8]
 !
 !     --------------
 !     Test paramters
@@ -436,7 +442,7 @@
       INTEGER       :: optType    = H1_NORM
       INTEGER       :: polyOrder  = 3
       INTEGER       :: smoothness = 0 ! C^0 smoothness
-      REAL(KIND=RP) :: toler      = 0.0010_RP
+      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 1.0d-10
 !
 !     -----
 !     Other
@@ -508,98 +514,15 @@
       curvePtr => chain
       CALL ConstructGaussQuadrature(gQuad, 4*polyOrder) ! For error computation. The 4 is arbitrary
       CALL FindOptimizedCuts(curvePtr, polyOrder, testBreaks, options, gQuad, optimizedCuts, breakIndices)
+!
+!     ------------
+!     Check errors
+!     ------------
+!
+      CALL FTAssert(MAXVAL(ABS(optimizedCuts - expectedCuts)) .le. testTol, msg = "Segments dont match")
+      CALL FTAssert(MAXVAL(ABS(expectedIndices - breakIndices)) == 0      , msg = "Break Indices dont match")
 
       CALL releaseChainedCurve(chain)
       
    END SUBROUTINE SegmentedCurveCheck
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-!   SUBROUTINE BlobCurveTestSetup()
-!!
-!!  -------------------------------------------------------------------
-!!  Compute and wite out the parameters needed for the BlobCurveTest
-!!  Uncomment and use to generate new results to compare against if 
-!!  algorithms change.
-!!  -------------------------------------------------------------------
-!!
-!      USE CurveOptimization
-!      USE SMParametricEquationCurveClass
-!      IMPLICIT NONE
-!      
-!      INTEGER                                :: optType    = H1_NORM
-!      INTEGER                                :: polyOrder  = 6
-!      INTEGER                                :: smoothness = 2 ! C^2 smoothness
-!      REAL(KIND=RP)                          :: toler      = 0.1_RP
-!!
-!      CLASS(SMCurve)                 , POINTER :: crv
-!      TYPE(SMParametricEquationCurve), POINTER :: blobCurve
-!      CLASS(SMCurve)                 , POINTER :: optimizedCurve
-!      CLASS(MultiSegmentModalCurve)  , POINTER :: msmCurve
-!      TYPE(GaussQuadratureType)                :: gQuad
-!      TYPE(OptimizerOptions)                   :: options
-!      CHARACTER(LEN=64)                        :: xEqn, yEqn, zEqn
-!      CHARACTER(LEN=8)                         :: exampleName = "BlobTest"
-!      INTEGER                                  :: j, nSegments
-!      REAL(KIND=RP)                            :: exact(3), apprx(3)
-!      REAL(KIND=RP), ALLOCATABLE               :: errors(:)
-!      CHARACTER(LEN=256)                       :: str
-!      
-!!
-!!     --------------
-!!     Set up options
-!!     --------------
-!!
-!      CALL SetDefaultOptions(options)
-!      options % internalConstraint = smoothness
-!      options % toler              = toler
-!      options % whichNorm          = optType
-!!
-!!     -------------------
-!!     Create Winters Blob
-!!     -------------------
-!!
-!      xEqn = "x(t) = 4*cos(2*pi*t) - 3/5*cos(8*pi*t)^3"
-!      yEqn = "y(t) = 4*sin(2*pi*t) - 0.5*sin(11*pi*t)^2"
-!      zEqn = "z(t) = 0.0"
-!      ALLOCATE(blobCurve)
-!      CALL blobCurve % initWithEquationsNameAndID(xEqn, yEqn, zEqn, curveName = "blobCurve", id = 1)
-!      crv => blobCurve
-!!
-!!     ------------------------------------
-!!     Find the optimal curve approximation
-!!     ------------------------------------
-!!
-!      CALL OptimizeCurveByMarching(curve              = crv,             &
-!                                   polyOrder          = polyOrder,       &
-!                                   options            = options,         &
-!                                   newName            = "BlobTest",      &
-!                                   newID              = crv % id() + 1,  &
-!                                   optimized          = optimizedCurve)
-!!
-!!     --------------
-!!     Compute errors
-!!     --------------
-!!
-!      CALL castToMultiSegmentCurve(optimizedCurve, msmCurve)
-!      CALL ConstructGaussQuadrature(gQuad, 2*polyOrder)
-!      CALL SegmentErrors(exact          = crv, &
-!                         segmentedCurve = msmCurve, &
-!                         gQuad          = gQuad, &
-!                         errors         = errors)      
-!!
-!      str = TRIM(exampleName) // "Segments.txt"
-!      OPEN(11, FILE = str)
-!         WRITE(11,*) msmCurve % cuts
-!         WRITE(11,*) errors
-!      CLOSE(11)
-!!
-!!     --------
-!!     Clean up
-!!     --------
-!!
-!      CALL releaseBaseCurve(optimizedCurve)
-!      CALL releasePECurve(blobCurve)
-!       
-!   END SUBROUTINE BlobCurveTestSetup
 
