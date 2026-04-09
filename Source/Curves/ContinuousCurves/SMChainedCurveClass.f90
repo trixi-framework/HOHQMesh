@@ -125,6 +125,7 @@
          PROCEDURE :: COUNT                   => chainedCurveCount
          PROCEDURE :: positionAt              => positionOnChainedCurveAt
          PROCEDURE :: tangentAt               => tangentOnChainedCurveAt
+         PROCEDURE :: derivativeAt            => derivativeOnChainedCurveAt
          PROCEDURE :: complete                => completeChainedCurve
          PROCEDURE :: curveAtIndex
          PROCEDURE :: curveWithLocation
@@ -636,6 +637,62 @@
          x = c % tangentAt(s)
 
       END FUNCTION tangentOnChainedCurveAt
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION derivativeOnChainedCurveAt( self, t ) RESULT(x)
+!
+!        ----------------------------------------------------------
+!        Given the fractional position along the chain, find the
+!        curve in the chain that this point corresponds to, and the
+!        location in the curve and return the tangent vector.
+!        ----------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMChainedCurve)       :: self
+         REAL(KIND=RP)               :: t
+         REAL(KIND=RP), DIMENSION(3) :: x
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                  :: curveNumber
+         REAL(KIND=RP)            :: s
+         CLASS(SMCurve) , POINTER :: c => NULL()
+         CLASS(FTobject), POINTER :: obj => NULL()
+!
+!        ----------------------------------------------------
+!        Find which curve (by order) the point corresponds to
+!        ----------------------------------------------------
+!
+         curveNumber = self % curveNumberForLocation(t)
+!
+!        ---------------------------------
+!        Move to that curve (if necessary)
+!        ---------------------------------
+!
+         obj => self % curvesArray % objectAtIndex(curveNumber)
+         CALL cast(obj,c)
+!
+!        --------------------------------------------
+!        Convert coordinate to local curve coordinate
+!        --------------------------------------------
+!
+         s = self % curveTForChainT(t)
+!
+!        --------------------------
+!        Evaluate, using chain rule
+!        --------------------------
+!
+         x = c % derivativeAt(s)* self % numberOfCurvesInChain
+
+      END FUNCTION derivativeOnChainedCurveAt
 !
 !////////////////////////////////////////////////////////////////////////
 !
