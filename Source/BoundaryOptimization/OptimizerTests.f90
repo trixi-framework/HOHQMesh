@@ -398,6 +398,123 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+   SUBROUTINE SegmentedCurveCheck
+      USE SMConstants
+      USE SMLineClass
+      USE SMChainedCurveClass
+      USE SMEllipticArcClass
+      USE CurveOptimization
+      USE FTExceptionClass
+      USE SharedExceptionManagerModule
+      USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+      IMPLICIT NONE
+!
+!     --------
+!     Geometry
+!     --------
+!
+      CLASS(SMLine)        , POINTER :: line
+      CLASS(SMEllipticArc) , POINTER :: circle
+      CLASS(SMChainedCurve), POINTER :: chain
+      CLASS(SMCurve)       , POINTER :: curvePtr => NULL()
+      CLASS(FTObject)      , POINTER :: obj
+!
+!     ------------
+!     Optimization
+!     ------------
+!
+      TYPE(GaussQuadratureType)  :: gQuad
+      TYPE(OptimizerOptions)     :: options
+      REAL(KIND=RP), ALLOCATABLE :: optimizedCuts(:)
+      INTEGER      , ALLOCATABLE :: breakIndices(:)
+      REAL(KIND=RP)              :: testBreaks(0:2) = [0.0_RP, 0.5_RP, 1.0_RP]
+!
+!     --------------
+!     Test paramters
+!     --------------
+!
+      INTEGER       :: optType    = H1_NORM
+      INTEGER       :: polyOrder  = 3
+      INTEGER       :: smoothness = 0 ! C^0 smoothness
+      REAL(KIND=RP) :: toler      = 0.0010_RP
+!
+!     -----
+!     Other
+!     -----
+!      
+      TYPE(FTException), POINTER :: exception
+      INTEGER                    :: errorSeverity = FT_ERROR_NONE
+      
+      CALL SetDefaultOptions(options)
+      options % internalConstraint = smoothness
+      options % toler              = toler
+      options % whichNorm          = optType
+!
+!     --------
+!     Geometry
+!     --------
+!
+      ALLOCATE(line)
+      CALL line % initWithStartEndNameAndID(xStart = [-1.0_RP,0.0_RP,0.0_RP], &
+                                            xEnd   = [1.0_RP,0.0_RP,0.0_RP],  &
+                                            cName  = "line", id = 1)
+      ALLOCATE(circle)
+      CALL circle % initWithParametersNameAndID(center     = [0.0_RP, 0.0_RP, 0.0_RP], &
+                                                radius     = 1.0_RP,                   &
+                                                startAngle = 0.0_RP,                   &
+                                                endAngle   = PI,                       &
+                                                cName      = "circle",                 &
+                                                id         = 2) 
+      ALLOCATE(chain)
+      CALL chain % initChainWithNameAndID(chainName = "chain",id = 3)
+!      
+      curvePtr => circle
+      CALL chain % addCurve(curvePtr)
+      obj => circle
+      CALL release(obj)
+      
+      curvePtr => line
+      CALL chain % addCurve(curvePtr)
+      obj => line
+      CALL release(obj)
+!      
+      CALL chain % complete(innerOrOuterCurve = OUTER,chainMustClose = .TRUE.)
+      
+      IF ( catch() )     THEN
+         WRITE(stderr,*) 
+         WRITE(stderr,*)  "------------------------------------------------------------------"
+         WRITE(stderr,*) 
+         WRITE(stderr,*)  "The following errors were found when constructing the check:"
+         
+         DO
+            exception => popLastException()
+            IF ( .NOT.ASSOCIATED(exception) )     EXIT
+            CALL exception % printDescription(stderr)
+            errorSeverity = MAX(errorSeverity, exception % severity())
+         END DO
+         WRITE(stderr,*) 
+         WRITE(stderr,*)  "------------------------------------------------------------------"
+         WRITE(stderr,*) 
+         
+         IF ( errorSeverity > FT_ERROR_WARNING )     THEN
+            ERROR STOP "The Errors were Fatal. Cannot generate optimized curve." 
+         END IF 
+      END IF 
+!
+!     -------------
+!     Optimizations
+!     -------------
+!
+      curvePtr => chain
+      CALL ConstructGaussQuadrature(gQuad, 4*polyOrder) ! For error computation. The 4 is arbitrary
+      CALL FindOptimizedCuts(curvePtr, polyOrder, testBreaks, options, gQuad, optimizedCuts, breakIndices)
+
+      CALL releaseChainedCurve(chain)
+      
+   END SUBROUTINE SegmentedCurveCheck
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
 !   SUBROUTINE BlobCurveTestSetup()
 !!
 !!  -------------------------------------------------------------------

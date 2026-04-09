@@ -587,7 +587,7 @@
                curveChain % tolerance = 1.0d-3
                str = "Optimization tolerance key not found in " // &
                       TRIM(curveDict % stringValueForKey("name")) // &
-                     " Defaulting to 1.0d-3"
+                     ". Defaulting to 1.0d-3."
                CALL ThrowErrorExceptionOfType(poster = "SetChainOptimizationParameters",&
                                               msg    = str, &
                                               typ    = FT_ERROR_WARNING)
@@ -603,7 +603,7 @@
 !              where the separator is a comma.
 !              -------------------------------------------------------------------------------
 !
-               IF ( curveChain % COUNT() == 1 )     THEN
+               IF ( curveChain % COUNT() == 1 )     THEN ! Ignore any breaks written if there is only one curve
                   curveChain % breaks = [0.0_RP, 1.0_RP]
                ELSE 
                   str = curveDict % stringValueForKey(CHAIN_BREAKS_KEY)
