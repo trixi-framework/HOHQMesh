@@ -400,6 +400,11 @@
 !//////////////////////////////////////////////////////////////////////// 
 ! 
    SUBROUTINE SegmentedCurveCheck
+!
+!  -------------------------------------------------
+!  Compute optimal segments for a half circle domain
+!  -------------------------------------------------
+!
       USE SMConstants
       USE SMLineClass
       USE SMChainedCurveClass
