@@ -77,7 +77,7 @@
          DO k = 1, chain % COUNT()
             cCurve => chain % curveAtIndex(k)
             ALLOCATE(frsCurve)
-            CALL frsCurve % initWithCurve(cCurve, cCurve % id(), h, controls, segmentsSizes, cuts)
+            CALL frsCurve % initWithCurve(cCurve, cCurve % id(), h, controls, segmentsSizes, cuts, k, chain % COUNT())
             CALL segmentedChain % add(frsCurve)
             CALL releaseFRSegmentedCurve(self = frsCurve)
          END DO

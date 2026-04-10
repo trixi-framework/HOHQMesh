@@ -922,7 +922,8 @@
 !           of the vector between the two segment points
 !           ------------------------------------------------------------------
 !
-            segmentsSizes(j) = MAX(ABS(x2(1) - x1(1)), ABS(x2(2) - x1(2)))
+!            segmentsSizes(j) = MAX(ABS(x2(1) - x1(1)), ABS(x2(2) - x1(2)))
+            segmentsSizes(j) = sqrt((x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
             minSegment = MIN(minSegment, segmentsSizes(j))
             x1 = x2
          END DO 

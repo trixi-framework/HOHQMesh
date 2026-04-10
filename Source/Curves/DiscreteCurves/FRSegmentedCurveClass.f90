@@ -438,7 +438,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initFRSegmentedCurve( self, theCurve, idc, h, controls, segmentsSizes, cuts )
+      SUBROUTINE initFRSegmentedCurve( self, theCurve, idc, h, controls, segmentsSizes, cuts, chainID, chainCount )
          USE Geometry, ONLY:Curvature
          USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE, UNDEFINED
          USE SMSplineCurveClass
@@ -461,6 +461,8 @@
          INTEGER                      :: idc
          REAL(KIND=RP), OPTIONAL      :: segmentsSizes(:)
          REAL(KIND=RP), OPTIONAL      :: cuts(:)
+         INTEGER      , OPTIONAL      :: chainID
+         INTEGER      , OPTIONAL      :: chainCount
 !
 !        ---------------
 !        Local Variables
@@ -485,7 +487,8 @@
 !        -------------
 !
          useSegmentOptimization = .FALSE.
-         IF ( PRESENT(segmentsSizes) .AND. PRESENT(cuts) )     THEN
+         IF ( PRESENT(segmentsSizes) .AND. PRESENT(cuts) .AND. &
+              PRESENT(chainCount)    .AND. PRESENT(chainID) )     THEN
             useSegmentOptimization = .TRUE. 
          END IF 
 !
@@ -599,7 +602,8 @@
                xPrime       = [spline % bx(j), spline % by(j), spline % bz(j)]
                xDoublePrime = [2.0_RP*spline % cx(j), 2.0_RP*spline % cy(j), 2.0_RP*spline % cz(j)]
                IF ( useSegmentOptimization )     THEN
-                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = spline % t(j)) 
+                  t = (REAL((chainID - 1),RP) + spline % t(j))/REAL(chainCount,RP)
+                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = t) 
                   s = MIN( h, c ) !Choose the smaller of h or optimized size
                ELSE 
                   c = Curvature( xPrime, xDoublePrime)
@@ -678,7 +682,8 @@
                END IF
 
                IF ( useSegmentOptimization )     THEN
-                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = p % t) 
+                  t = (REAL((chainID - 1),RP) + p % t)/REAL(chainCount,RP)
+                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = t) 
                   s = MIN( h, c ) !Choose the smaller of h or optimized size
                ELSE 
                   c = Curvature( xPrime, xDoublePrime)

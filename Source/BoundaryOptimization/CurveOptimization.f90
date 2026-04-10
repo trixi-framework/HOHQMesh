@@ -235,9 +235,9 @@
       CLASS(SMCurve), POINTER   , INTENT(IN)  :: curve              ! The curve to be approximated
       INTEGER                   , INTENT(IN)  :: polyOrder          ! polynomial order of the new approximation
       REAL(KIND=RP)             , INTENT(IN)  :: breaks(0:)         ! t Location of forced break points, starting with t = 0.0
-!                                                                    If none, use [0.0_RP,1.0_RP]
-      TYPE(OptimizerOptions)   , INTENT(IN)   :: options            ! parameters for the approximation
-      TYPE(GaussQuadratureType), INTENT(IN)   :: gQuad
+!                                                                     If none, use [0.0_RP,1.0_RP]
+      TYPE(OptimizerOptions)   ,  INTENT(IN)  :: options            ! parameters for the approximation
+      TYPE(GaussQuadratureType),  INTENT(IN)  :: gQuad
       REAL(KIND=RP), ALLOCATABLE, INTENT(OUT) :: optimizedCuts(:)   ! t location of segment boundaries starting with t = 0
       INTEGER      , ALLOCATABLE, INTENT(OUT) :: breakIndices(:)    ! index in optimizedCuts where break boundaries occur
 !
@@ -249,6 +249,7 @@
       INTEGER                    :: nBreaks
       INTEGER                    :: j
       REAL(KIND=RP)              :: limit = 1.0d-14
+      REAL(KIND=RP), ALLOCATABLE :: tmpA(:)
       
       nBreaks = SIZE(breaks) - 1
 !
@@ -257,10 +258,14 @@
 !     -------------------------------------------------------------
 !
       CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(0), breaks(1)-Limit], &
-                                    options, gQuad, optimizedCuts)
-      breakIndices = [SIZE(optimizedCuts)]
-      optimizedCuts(UBOUND(optimizedCuts)) = breaks(1)
-      IF(nBreaks == 1) RETURN 
+                                    options, gQuad, tmpA)
+      breakIndices = [SIZE(tmpA)]
+      tmpA(UBOUND(tmpA)) = breaks(1)
+      IF(nBreaks == 1) THEN
+         ALLOCATE(optimizedCuts(0:SIZE(tmpA)-1))
+         optimizedCuts(0:) = tmpA
+         RETURN 
+      END IF
 !
 !     ----------------------------
 !     Otherwise, continue marching
@@ -271,9 +276,11 @@
                                        options, gQuad, rangeCuts)
          breakIndices  = [breakIndices,breakIndices(j-1) + SIZE(rangeCuts) - 1]
          rangeCuts(UBOUND(rangeCuts)) = breaks(j)
-         optimizedCuts = [optimizedCuts, rangeCuts(1:)]
+         tmpA = [tmpA, rangeCuts(1:)]
          DEALLOCATE(rangeCuts)
-      END DO       
+      END DO
+      ALLOCATE(optimizedCuts(0:SIZE(tmpA)-1))
+      optimizedCuts(0:) = tmpA      
 
    END SUBROUTINE FindOptimizedCuts
 !
@@ -446,13 +453,13 @@
    !
          tN   = tR; fN   = fR
          tNm1 = tL; fNm1 = fL
-		 
-		 ! Important note. This assumes that
+       
+       ! Important note. This assumes that
          ! fN and fNm1 have opposite sign, otherwise it won't bracket.
          DO n = 1, maxIterS
-		    ! Regula Falsi position
+          ! Regula Falsi position
             ! (Intersection of secant line with the t axis)
-		    ! tNp1 = tN - (tN - tNm1) * fN / (fN - fNm1)
+          ! tNp1 = tN - (tN - tNm1) * fN / (fN - fNm1)
             tNp1 = (fN * tNm1 - tN * fNm1) / (fN - fNm1)
             cuts(1) = tNp1
             fNp1    = marchingFunction(curve, polyOrder, cuts, options, gQuad)
