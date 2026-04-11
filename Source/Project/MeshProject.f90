@@ -760,6 +760,8 @@
                                              polyOrder     = self % runParams % polynomialOrder)
                segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( self % model % outerBoundary, curveID, &
                                                                              h, self % sizer % controlsList, segmentsSizes, cuts )
+               IF(ALLOCATED(segmentsSizes)) DEALLOCATE(segmentsSizes)
+               IF(ALLOCATED(cuts)) DEALLOCATE(cuts)
             ELSE
                segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( self % model % outerBoundary, curveID, &
                                                                               h, self % sizer % controlsList )
@@ -789,9 +791,11 @@
                                                 cuts          = cuts,                                 &
                                                 segmentsSizes = segmentsSizes,                        &
                                                 polyOrder     = self % runParams % polynomialOrder)
-                  segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( chain, curveID,                 &
+                  segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, curveID,                 &
                                                                                  h, self % sizer % controlsList, &
                                                                                  segmentsSizes, cuts )
+                  IF(ALLOCATED(segmentsSizes)) DEALLOCATE(segmentsSizes)
+                  IF(ALLOCATED(cuts)) DEALLOCATE(cuts)
                ELSE
                   segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, curveID, h, self % sizer % controlsList )
                END IF 
@@ -823,9 +827,11 @@
                                                 cuts          = cuts,                                 &
                                                 segmentsSizes = segmentsSizes,                        &
                                                 polyOrder     = self % runParams % polynomialOrder)
-                  segmentedOuterBoundary => allocAndInitSegmentedChainFromChain( chain, curveID,                 &
+                  segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, curveID,                 &
                                                                                  h, self % sizer % controlsList, &
                                                                                  segmentsSizes, cuts )
+                  IF(ALLOCATED(segmentsSizes)) DEALLOCATE(segmentsSizes)
+                  IF(ALLOCATED(cuts)) DEALLOCATE(cuts)
                 ELSE
                   segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, curveID, h, self % sizer % controlsList )
                 END IF 
