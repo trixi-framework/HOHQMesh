@@ -182,6 +182,22 @@
          TYPE(SMQuad), POINTER :: quad => NULL()
       END TYPE SMQuadPtr
 !
+!     ------------------------
+!     Pointer to a linked list
+!     ------------------------
+!
+      TYPE LinkedListPtr
+         CLASS(FTLinkedList), POINTER :: list => NULL() 
+      END TYPE LinkedListPtr
+!
+!     -----------------------
+!     To store a jagged array
+!     -----------------------
+!
+      TYPE JaggedRealArray
+         REAL(KIND=RP), ALLOCATABLE :: array(:) 
+      END TYPE 
+!
 !     -----
 !     Casts
 !     -----

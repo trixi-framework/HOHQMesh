@@ -2153,19 +2153,28 @@
 !        ---------------
 !
          INTEGER                              :: N, j, k
+         INTEGER                              :: numBoundaryChains
          TYPE (SMMesh)              , POINTER :: mesh
+         TYPE (SMModel)             , POINTER :: model
          CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          TYPE (SMElement)           , POINTER :: e
          TYPE(TransfiniteQuadMap)             :: quadMap
-         TYPE(CurveInterpolant)     , POINTER :: boundaryCurves(:)
+         
+         TYPE(CurveInterpolant)       , POINTER     :: boundaryCurves(:)
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: values
+         TYPE(JaggedRealArray)        , ALLOCATABLE :: chainDivisionsArray(:)
 !
 !        --------------------
 !        Boundary information
 !        --------------------
 !
+         model => project % model
+         numBoundaryChains = model % numberOfOuterCurves + &
+                             model % numberOfInnerCurves + &
+                             model % numberOfInterfaceCurves
+         CALL GatherBoundaryNodes(project % mesh % nodesIterator, numBoundaryChains, chainDivisionsArray)
          CALL setElementBoundaryInfo(project)
 !
 !        -------------------

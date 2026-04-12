@@ -54,43 +54,6 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE CollectBoundaryAndInterfaceNodes(allNodesIterator,boundaryNodesList)
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE (FTLinkedListIterator), POINTER :: allNodesIterator
-         CLASS(FTLinkedList)        , POINTER :: boundaryNodesList
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         TYPE (SMNode)  , POINTER :: currentNode => NULL()
-         CLASS(FTObject), POINTER :: obj => NULL()
-!
-!        ------------------------------------------------------
-!        Loop through all the nodes and add those whose
-!        distance to a boundary is zero to the boundaryNodeList
-!        ------------------------------------------------------
-!
-         CALL allNodesIterator % setToStart()
-         DO WHILE ( .NOT.allNodesIterator % isAtEnd() )
-            obj => allNodesIterator % object()
-            CALL castToSMNode(obj,currentNode)
-            IF ( IsOnBoundaryCurve(currentNode) .AND. &
-                 currentNode%distToBoundary == 0.0_RP )     THEN
-               CALL boundaryNodesList % add(obj)
-            END IF 
-            CALL allNodesIterator % moveToNext()
-         END DO
-
-      END SUBROUTINE CollectBoundaryAndInterfaceNodes
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
       SUBROUTINE destruct( self )
          IMPLICIT NONE
          TYPE (MeshSmoother)   :: self

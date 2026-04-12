@@ -41,10 +41,6 @@
       USE SMTopographyClass
 
       IMPLICIT NONE
-      
-      TYPE JaggedRealArray
-         REAL(KIND=RP), ALLOCATABLE :: array(:) 
-      END TYPE 
 !
 !     ---------------------
 !     Class type definition

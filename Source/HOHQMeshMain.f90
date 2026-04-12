@@ -42,7 +42,7 @@
 !         CALL PerformFinalMeshCleanup( project % mesh, project % model, errorCode )
 !         CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
 !         CALL CompleteElementConstruction(project)
-!         CALL setElementBoundaryInfo(project)
+!              CALL setElementBoundaryInfo(project)
 !         CALL WritePlotFile(project, didGenerate3DMesh)
 !         CALL WriteMeshFile(project, didGenerate3DMesh)
 !
