@@ -2174,7 +2174,7 @@
          numBoundaryChains = model % numberOfOuterCurves + &
                              model % numberOfInnerCurves + &
                              model % numberOfInterfaceCurves
-         CALL GatherBoundaryNodes(project % mesh % nodesIterator, numBoundaryChains, chainDivisionsArray)
+         CALL ComputeBoundaryDivisionsFromBoundaryNodes(project % mesh % nodesIterator, numBoundaryChains, chainDivisionsArray)
          CALL setElementBoundaryInfo(project)
 !
 !        -------------------

@@ -1617,7 +1617,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE GatherBoundaryNodes(nodesIterator, numBoundaryChains, chainDivisionsArray)  
+      SUBROUTINE ComputeBoundaryDivisionsFromBoundaryNodes(nodesIterator, numBoundaryChains, chainDivisionsArray)  
          IMPLICIT NONE
 !
 !        ---------
@@ -1752,6 +1752,6 @@
          CALL releaseFTLinkedListIterator(boundaryNodesIterator)
          CALL releaseFTLinkedList(boundaryNodesList)
           
-      END SUBROUTINE GatherBoundaryNodes
+      END SUBROUTINE ComputeBoundaryDivisionsFromBoundaryNodes
 
    END MODULE MeshBoundaryMethodsModule
