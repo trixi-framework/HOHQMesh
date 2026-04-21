@@ -111,7 +111,7 @@
          ALLOCATE(self % segmentPoints (3,0:self % nSegments), SOURCE = 0.0_RP)
          qOrder = 2*self % polyOrder
          ALLOCATE(nodes(0:qOrder), weights(0:qOrder))
-         CALL LegendreLobattoNodesAndWeights( qOrder, nodes, weights )
+         CALL GaussLegendreNodesAndWeights( qOrder, nodes, weights )
          
          self % segmentPoints(:,0) = self % valueInSegment(1, self % cuts(0), which = LA_EVALUATE_FUNCTION)
          DO k = 1, self % nSegments 
@@ -248,7 +248,7 @@
       qOrder = 2*N
       
       ALLOCATE(nodes(0:qOrder), weights(0:qOrder))
-      CALL LegendreLobattoNodesAndWeights( qOrder, nodes, weights )
+      CALL GaussLegendreNodesAndWeights( qOrder, nodes, weights )
       
       arcLength = 0.0_RP
       DO k = 1, nSegments

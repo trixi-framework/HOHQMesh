@@ -391,6 +391,84 @@
 !
 !////////////////////////////////////////////////////////////////////////////////////////
 !
+      SUBROUTINE GaussLegendreNodesAndWeights( N, x, w )
+!
+!     Compute the Gauss-legendre quadrature nodes and
+!     weights
+!
+!     -----------------
+!     Input parameters:
+!     -----------------
+!
+      INTEGER, INTENT(IN) :: N
+!
+!     ------------------
+!     Output parameters:
+!     ------------------
+!
+      REAL(KIND=RP), DIMENSION(0:N), INTENT(OUT) :: x, w
+!
+!     ----------------
+!     Local Variables:
+!     ----------------
+!
+      REAL(KIND=RP) :: xj, L_NP1, LPrime_NP1, delta, tolerance
+      INTEGER       :: j, k, NDiv2
+!
+!     ----------
+!     Constants:
+!     ----------
+!
+      INTEGER, PARAMETER       :: numNewtonIterations = 10
+      REAL(KIND=RP), PARAMETER :: toleranceFactor     = 4.0_RP
+      
+      tolerance = toleranceFactor*EPSILON(L_NP1)
+      IF( N == 0 )     THEN
+         x(0) = 0.0_RP
+         w(0) = 2.0_RP
+         RETURN
+      ELSE IF( N == 1 )     THEN
+         x(0) = -SQRT(1.0_RP/3.0_RP)
+         w(0) =  1.0_RP
+         x(1) = -x(0)
+         w(1) =  w(0)
+      ELSE
+!
+!        ----------------------------------
+!        Iterate on half the interior nodes
+!        ----------------------------------
+!
+         NDiv2 = (N+1)/2
+         DO j = 0, NDiv2-1
+            xj = -COS( (2*j+1)*PI/(2*N+2) )
+            DO k = 0, numNewtonIterations
+               CALL LegendrePolyAndDerivative( N+1, xj, L_NP1, LPrime_NP1 )
+               delta = -L_NP1/LPrime_NP1
+               xj = xj + delta
+               IF( ABS(delta) <=  tolerance*ABS(xj) )     EXIT
+            END DO
+            CALL LegendrePolyAndDerivative( N+1, xj, L_NP1, LPrime_NP1 )
+            x(j)   = xj
+            w(j)   = 2.0_RP/( (1.0_RP - xj**2)*LPrime_NP1**2 )
+            x(N-j) = -xj
+            w(N-j) = w(j)
+         END DO
+      END IF
+!
+!     ---------------------------
+!     Fill in middle if necessary
+!     ---------------------------
+!
+      IF( MOD(N,2) == 0 )     THEN
+         CALL LegendrePolyAndDerivative( N+1, 0.0_RP, L_NP1, LPrime_NP1 )
+         x(N/2) = 0.0_RP
+         w(N/2) = 2.0_RP/LPrime_NP1**2
+      END IF
+      
+      END SUBROUTINE GaussLegendreNodesAndWeights
+!
+!////////////////////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE LegendrePolyAndDerivative( N, x, L_N, LPrime_N )
 !
 !     --------------------------------------------------------------
@@ -472,7 +550,7 @@
          
          DO N = 2, nMax
             
-            CALL LegendreLobattoNodesAndWeights( N, x, w )
+            CALL GaussLegendreNodesAndWeights( N, x, w )
             CALL RANDOM_NUMBER(HARVEST = coefs)
 !
 !           --------------------------------
@@ -529,7 +607,7 @@
         REAL(KIND=RP)      :: nrm, tol = 1.0d-8
         INTEGER            :: j
  
-        CALL LegendreLobattoNodesAndWeights( N, nodes, weights )
+        CALL GaussLegendreNodesAndWeights( N, nodes, weights )
 !
 !       --------------------------------------
 !       Orthogonal polynomials shall give zero
@@ -625,7 +703,7 @@
          INTEGER       :: j
          REAL(KIND=RP) :: nodes(0:4), weights(0:4)
  
-         CALL LegendreLobattoNodesAndWeights( 4, nodes, weights )
+         CALL GaussLegendreNodesAndWeights( 4, nodes, weights )
          DO j = 0, 4 
             vals(j) = testPolynomial(nodes(j))
          END DO 
@@ -665,7 +743,7 @@
          REAL(KIND=RP)      :: nodes(0:N), weights(0:N)
          INTEGER            :: j,k
  
-        CALL LegendreLobattoNodesAndWeights( N, nodes, weights )
+        CALL GaussLegendreNodesAndWeights( N, nodes, weights )
 !
 !       -----------------------
 !       Select the coefficients

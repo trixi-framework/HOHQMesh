@@ -125,7 +125,7 @@
       
       self % N = N
       ALLOCATE(self % nodes(0:N), self % weights(0:N))
-      CALL LegendreLobattoNodesAndWeights( N, self % nodes, self % weights )
+      CALL GaussLegendreNodesAndWeights( N, self % nodes, self % weights )
  
    END SUBROUTINE ConstructGaussQuadrature
 !
