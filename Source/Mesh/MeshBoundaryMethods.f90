@@ -1617,7 +1617,15 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ComputeBoundaryDivisionsFromBoundaryNodes(nodesIterator, numBoundaryChains, chainDivisionsArray)  
+      SUBROUTINE SortBoundaryNodesToChains(nodesIterator, numBoundaryChains, chainNodesArray)
+!
+!     ---------------------------------------------------------------------------
+!     Gather up all the boundary nodes and arrange them in arrays by chainID. The
+!     returned chainNodesArray contains pointers to all the nodes that fall along
+!     a given curve chain. Thus, chainNodesArray(j) % array is an ordered array 
+!     of all nodes along boundary chain j.
+!     ---------------------------------------------------------------------------
+!
          IMPLICIT NONE
 !
 !        ---------
@@ -1626,7 +1634,7 @@
 !
          INTEGER                                 :: numBoundaryChains
          TYPE(FTLinkedListIterator), POINTER     :: nodesIterator
-         TYPE(JaggedRealArray)     , ALLOCATABLE :: chainDivisionsArray(:)
+         TYPE(JaggedNodeArray)                   :: chainNodesArray(:)
 !
 !        ---------------
 !        Local Variables
@@ -1645,16 +1653,15 @@
          LOGICAL                              :: reOrder
 !
 !
-!-----------------------------------------------------
-!Temorary storage for the nodes along each curve chain
-!-----------------------------------------------------
+!        -----------------------------------------------------
+!        Temporary storage for the nodes along each curve chain
+!        -----------------------------------------------------
 !
          ALLOCATE(boundaryNodesArray(numBoundaryChains))
          DO id = 1, numBoundaryChains 
             ALLOCATE(boundaryNodesArray(id) % list)
             CALL boundaryNodesArray(id) % list % init()
          END DO
-         ALLOCATE(chainDivisionsArray(numBoundaryChains))
 !
 !        ------------------------------
 !        Collect all the boundary nodes
@@ -1727,22 +1734,28 @@
                previousRecord % next => NULL() 
             END IF
 !
-!           ----------------------------
-!           Copy locations into an array
-!           ----------------------------
+!           ------------------------------------
+!           Copy each chain into an array
+!           *Note that these are weak references
+!            and can go away at any time*
+!           ------------------------------------
 !
-            ALLOCATE( chainDivisionsArray(id) % array(list % count()))
+            ALLOCATE( chainNodesArray(id) % array(list % count()))
             CALL listIterator % setToStart()
             j = 0
             DO WHILE ( .NOT.listIterator % isAtEnd() )
                j = j + 1
                obj => listIterator % object()
                CALL castToSMNode(obj,currentNode)
-               chainDivisionsArray(id) % array(j) = currentNode % gWhereOnBoundary
+               chainNodesArray(id) % array(j) % node => currentNode
                CALL listIterator % moveToNext()
             END DO
          END DO
-
+!
+!        -------
+!        Cleanup
+!        -------
+!
          DO id = 1, numBoundaryChains 
             CALL releaseFTLinkedList(boundaryNodesArray(id) % list)
          END DO
@@ -1751,7 +1764,17 @@
          CALL releaseFTLinkedListIterator(listIterator)
          CALL releaseFTLinkedListIterator(boundaryNodesIterator)
          CALL releaseFTLinkedList(boundaryNodesList)
+!         
+!         !DEBUG
+!         DO id = 1, numBoundaryChains
+!            DO j = 1, SIZE(chainNodesArray(id) % array)
+!            currentNode => chainNodesArray(id) % array(j) % node
+!            WRITE(0,*) currentNode % gWhereOnBoundary, currentNode % bCurveChainID, &
+!                       currentNode % bCurveID, currentNode % whereOnBoundary, currentNode % x(1:2)
+!            END DO 
+!            WRITE(0,*)
+!         END DO 
           
-      END SUBROUTINE ComputeBoundaryDivisionsFromBoundaryNodes
+      END SUBROUTINE SortBoundaryNodesToChains
 
    END MODULE MeshBoundaryMethodsModule

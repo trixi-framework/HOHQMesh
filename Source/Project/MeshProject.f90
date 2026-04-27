@@ -55,6 +55,7 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_NAME_KEY         = "mesh file name"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FILE_NAME_KEY         = "plot file name"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: STATS_FILE_NAME_KEY        = "stats file name"
+      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ERROR_FILE_NAME_KEY        = "error file name"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_FORMAT_NAME_KEY  = "mesh file format"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: POLYNOMIAL_ORDER_KEY       = "polynomial order"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FORMAT_KEY            = "plot file format"
@@ -99,6 +100,7 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: MeshFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: plotFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: errorFileName
          INTEGER                                 :: meshFileFormat
          INTEGER                                 :: polynomialOrder
          INTEGER                                 :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
@@ -141,19 +143,21 @@
 !     ------------------------
 !
       TYPE, EXTENDS(FTObject) ::  MeshProject
-         TYPE (SMModel)           , POINTER :: model    => NULL()
-         TYPE (SMMesh)            , POINTER :: mesh     => NULL()
-         TYPE (MeshSizer)         , POINTER :: sizer    => NULL()
-         TYPE (QuadTreeGrid)      , POINTER :: grid     => NULL()
-         CLASS(MeshSmoother)      , POINTER :: smoother => NULL()
-         TYPE(StructuredHexMesh)  , POINTER :: hexMesh  => NULL()
-         TYPE(RunParameters)                :: runParams
-         TYPE(MeshParameters)               :: meshParams
-         TYPE(BackgroundGridParameters)     :: backgroundParams
-         TYPE(RotationTransform)            :: rotationTransformer
-         TYPE(ScaleTransform)               :: scaleTransformer
-         CHARACTER(LEN=32)                  :: backgroundMaterialName
-         INTEGER                            :: numberOfLevelsUsed
+         TYPE (SMModel)            , POINTER :: model    => NULL()
+         TYPE (SMMesh)             , POINTER :: mesh     => NULL()
+         TYPE (MeshSizer)          , POINTER :: sizer    => NULL()
+         TYPE (QuadTreeGrid)       , POINTER :: grid     => NULL()
+         CLASS(MeshSmoother)       , POINTER :: smoother => NULL()
+         TYPE(StructuredHexMesh)   , POINTER :: hexMesh  => NULL()
+         TYPE(FTMutableObjectArray), POINTER :: boundaryPolynomialsArray => NULL()
+         TYPE(RunParameters)                 :: runParams
+         TYPE(MeshParameters)                :: meshParams
+         TYPE(BackgroundGridParameters)      :: backgroundParams
+         TYPE(RotationTransform)             :: rotationTransformer
+         TYPE(ScaleTransform)                :: scaleTransformer
+         CHARACTER(LEN=32)                   :: backgroundMaterialName
+         INTEGER                             :: numberOfLevelsUsed
+         REAL(KIND=RP)         , ALLOCATABLE :: L2ErrorMax(:), H1ErrorMax(:)
 !
 !        ========
          CONTAINS
@@ -293,12 +297,25 @@
 !        -----------------
 !
          CALL BuildProject( self, controlDict )
+         
+         IF(.NOT.ASSOCIATED(modelDict))     RETURN
+!
+!        ----------------------------------------------------------------------
+!        If the model has boundary curves (the only way we actually get to here),
+!        then allocate the storage for the boundary curves that will be
+!        used to compute the boundary errors, plus output
+!        ----------------------------------------------------------------------
+!
+         IF ( self % model % numberOfChains() > 0 )     THEN
+            ALLOCATE(self % boundaryPolynomialsArray)
+            CALL self % boundaryPolynomialsArray % initWithSize(self % model % numberOfChains())
+         END IF 
 !
 !        ----------------------------------------------------------------
 !        If there is topography and sizing is requested, add to the sizer
 !        ----------------------------------------------------------------
 !
-         IF(.NOT.ASSOCIATED(modelDict))     RETURN
+
          IF ( modelDict % containsKey(TOPOGRAPHY_BLOCK_KEY)) THEN
             obj => modelDict % objectForKey(TOPOGRAPHY_BLOCK_KEY)
             topoDict => valueDictionaryFromObject(obj)
@@ -308,7 +325,16 @@
                END IF
             END IF
          END IF
-
+!
+!        ----------------------------------------------------
+!        Set the initial values of the global boundary errors
+!        ----------------------------------------------------
+!
+         IF ( self % model % numberOfChains() > 0 )     THEN
+            ALLOCATE(self % L2ErrorMax(self % model % numberOfChains()), source = HUGE(1.0d0)) 
+            ALLOCATE(self % H1ErrorMax(self % model % numberOfChains()), source = HUGE(1.0d0)) 
+         END IF 
+         
       END SUBROUTINE initWithDictionary
 !
 !////////////////////////////////////////////////////////////////////////
@@ -340,6 +366,10 @@
          IF (  ASSOCIATED(self % hexMesh) )     THEN
             CALL DestructStructuredHexMesh(hexMesh  = self % hexMesh)
          END IF
+         
+         IF ( ASSOCIATED( self % boundaryPolynomialsArray) )     THEN
+            CALL releaseFTMutableObjectArray(self % boundaryPolynomialsArray) 
+         END IF 
 
       END SUBROUTINE DestructMeshProject
 !
@@ -822,10 +852,10 @@
                 CALL castToSMChainedCurve(obj,chain)
                 
                 IF ( chain % optimization /= NONE )     THEN
-                  CALL ComputeOptimizedSegments(curve         = chain ,        &
-                                                breaks        = chain % breaks,&
-                                                cuts          = cuts,                                 &
-                                                segmentsSizes = segmentsSizes,                        &
+                  CALL ComputeOptimizedSegments(curve         = chain ,                             &
+                                                breaks        = chain % breaks,                     &
+                                                cuts          = cuts,                               &
+                                                segmentsSizes = segmentsSizes,                      &
                                                 polyOrder     = self % runParams % polynomialOrder)
                   segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, curveID,                 &
                                                                                  h, self % sizer % controlsList, &
@@ -833,7 +863,8 @@
                   IF(ALLOCATED(segmentsSizes)) DEALLOCATE(segmentsSizes)
                   IF(ALLOCATED(cuts)) DEALLOCATE(cuts)
                 ELSE
-                  segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, curveID, h, self % sizer % controlsList )
+                  segmentedInnerBoundary => allocAndInitSegmentedChainFromChain( chain, curveID, h,              &
+                                                                                 self % sizer % controlsList )
                 END IF 
 
                 CALL self % sizer % addBoundaryCurve(segmentedInnerBoundary,INTERIOR_INTERFACE)
@@ -1180,6 +1211,19 @@
                                            key        = MESH_FILE_FORMAT_NAME_KEY, &
                                            errorLevel = FT_ERROR_WARNING,          &
                                            message    = msg,                       &
+                                           poster     = "SetRunParametersBlock")
+!
+!        --------------------------------------------------------------------------------
+!        For now, no warnings or anything for not requesting the errors to be written out
+!        --------------------------------------------------------------------------------
+!
+         params % errorFileName = "none"
+         msg = "Control file is missing the errors file name. Errors not written."
+         CALL SetStringValueFromDictionary(valueToSet = params % errorFileName, &
+                                           sourceDict = paramsDict,             &
+                                           key        = ERROR_FILE_NAME_KEY,    &
+                                           errorLevel = FT_ERROR_NONE,          &
+                                           message    = msg,                    &
                                            poster     = "SetRunParametersBlock")
 
          IF( fileFormat == "Basic" )     THEN

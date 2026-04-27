@@ -81,6 +81,7 @@
          CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
          TYPE(FTLinkedListIterator) , POINTER     :: innerBoundariesIterator => NULL()
          TYPE(FTLinkedListIterator) , POINTER     :: interfaceBoundariesIterator => NULL()
+         TYPE(FTMutableObjectArray) , POINTER     :: allChains  => NULL()
          CLASS(SMTopography)        , POINTER     :: topography => NULL()
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
@@ -94,6 +95,7 @@
          PROCEDURE :: chainWithID
          PROCEDURE :: curveWithID => curveInModelWithID
          PROCEDURE :: symmetryCurve
+         PROCEDURE :: numberOfChains
       END TYPE SMModel
 !
 !     ========
@@ -115,6 +117,7 @@
          self % innerBoundariesIterator     => NULL()
          self % interfaceBoundariesIterator => NULL()
          self % topography                  => NULL()
+         self % allChains                   => NULL()
          self % curveCount                  =  0
          self % numberOfOuterCurves         =  0
          self % numberOfInnerCurves         =  0
@@ -165,6 +168,10 @@
             obj => self % topography
             CALL release(obj)
          END IF
+         
+         IF ( ASSOCIATED(self % allChains) )     THEN
+            CALL releaseFTMutableObjectArray(self % allChains) 
+         END IF  
 
       END SUBROUTINE destructModel
 !
@@ -336,6 +343,7 @@
 !        ---------
 !
          CALL MakeCurveToChainConnections(self)
+         CALL GatherAllChains(self)
 
       END SUBROUTINE constructModelFromDictionary
 !
@@ -1901,5 +1909,94 @@
          END DO 
           
       END FUNCTION allSymmetryCurvesAreColinear
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      INTEGER FUNCTION numberOfChains(self)  
+         IMPLICIT NONE  
+         CLASS(SMModel)  :: self
+         numberOfChains = self % numberOfInnerCurves +     &
+                          self % numberOfInterfaceCurves + &
+                          self % numberOfOuterCurves
+      END FUNCTION numberOfChains
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE GatherAllChains(self)
+!
+!     -----------------------------------------------------------------
+!     For convenience, gather all of the boundary curve chains into an 
+!     array for easer stepping without needing separate iterators.
+!     Enables access by chainID
+!     -----------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMModel)  :: self
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTObject)            , POINTER :: obj
+         TYPE(FTMutableObjectArray) , POINTER :: objArray
+         CLASS(FTMutableObjectArray), POINTER :: chains   !Used as an alias for self % allChains
+         CLASS(SMChainedCurve)      , POINTER :: chain
+         INTEGER                     :: j
+         
+         ALLOCATE(self % allChains)
+         CALL self % allChains % initWithSize(self % numberOfChains())
+         chains => self % allChains !Just an alias
+!
+!        -----------------------------------------------------------------
+!        TODO: FTMultableObjectArray needs a way to update the count to 
+!        allow replacement rather than add. The folowing gets around that 
+!        omission
+!        -----------------------------------------------------------------
+!
+         ALLOCATE(obj)
+         CALL obj % init()
+         DO j = 1, self % numberOfChains() 
+            CALL chains % addObject(obj) 
+         END DO 
+!
+!        -----------------
+!        Gather the chains
+!        -----------------
+!
+         IF ( self % numberOfOuterCurves == 1 )     THEN !(There is either 0 or 1)
+            obj => self % outerBoundary
+            CALL chains % replaceObjectAtIndexWithObject(indx        = self % outerBoundary % id(), &
+                                                         replacement = obj) 
+         END IF 
+          
+         !TODO: Someday add a "append array" procedure to 
+         ! FTMultableObjectArray to replace these two blocks
+        
+         IF ( self % numberOfInnerCurves > 0 )     THEN
+            objArray => self % innerBoundaries % allObjects()
+            DO j = 1, numberOfItems(objArray) 
+               obj => objArray % objectAtIndex(j)
+               CALL castToSMChainedCurve(obj,chain)
+               CALL chains % replaceObjectAtIndexWithObject(chain % id(),obj) 
+            END DO 
+            CALL releaseFTMutableObjectArray(objArray)
+         END IF 
+ 
+         IF ( self % numberOfInterfaceCurves > 0 )     THEN
+            objArray => self % interfaceBoundaries % allObjects()
+            DO j = 1, numberOfItems(objArray) 
+               obj => objArray % objectAtIndex(j)
+               CALL castToSMChainedCurve(obj,chain)
+               CALL chains % replaceObjectAtIndexWithObject(chain % id(),obj) 
+            END DO 
+            CALL releaseFTMutableObjectArray(objArray)
+         END IF 
+        
+      END SUBROUTINE GatherAllChains
 
       END Module SMModelClass

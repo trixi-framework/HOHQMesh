@@ -53,6 +53,8 @@
          PROCEDURE :: printDescription => printLineDescription
          PROCEDURE :: className        => LineClassName
       END TYPE SMLine
+      
+      CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH), PARAMETER :: SM_LINE_CLASS_NAME = "Line"
 !
 !     ========
       CONTAINS
@@ -152,7 +154,7 @@
          CLASS(SMLine)                              :: self
          CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH) :: s
          
-         s = "Line"
+         s = SM_LINE_CLASS_NAME
          IF( self % refCount() >= 0 ) CONTINUE 
  
       END FUNCTION LineClassName

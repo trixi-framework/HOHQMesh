@@ -106,7 +106,7 @@
 !     --------------------------------------------------------------
 !
       ALLOCATE(MSMCurve)
-      CALL MSMCurve % construct(curve, cuts, optimalCoefficients, newName, newID)
+      CALL MSMCurve % constructMultiSegmentModalCurve(curve, cuts, optimalCoefficients, newName, newID)
 
       optimized => MSMCurve
 

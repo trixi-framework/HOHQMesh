@@ -197,6 +197,9 @@
       TYPE JaggedRealArray
          REAL(KIND=RP), ALLOCATABLE :: array(:) 
       END TYPE 
+      TYPE JaggedNodeArray
+         TYPE(SMNodePtr), ALLOCATABLE :: array(:) 
+      END TYPE 
 !
 !     -----
 !     Casts

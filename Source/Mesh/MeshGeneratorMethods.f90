@@ -94,6 +94,15 @@
                IF( errorCode == A_OK_ERROR_CODE)     EXIT
             END DO
         END IF
+!
+!        -----------------------------------
+!        Gather and set boundary information
+!        and from that, create boundary 
+!        polynomial approximations to the 
+!        boundary chains.
+!        -----------------------------------
+!
+         CALL ComputeBoundaryApproximations(project)
 
       END SUBROUTINE GenerateQuadMesh
 !
@@ -109,6 +118,12 @@
 !
          CLASS(MeshProject), POINTER :: project
          INTEGER                     :: errorCode
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE (SMModel)       , POINTER     :: model
 !
          IF(PrintMessage) PRINT *, "Generate 2D mesh..."
 !
@@ -163,31 +178,23 @@
             IF(PrintMessage) PRINT *, "   final Smoothing done."
          END IF
 !
-!        -----------------------------------------
-!        Set boundary information for the elements
-!        and compute the patch interpolated points
-!        inside the element
-!        -----------------------------------------
+!        ----------------------------------------------------------
+!        If this is a multi-material mesh, then set each element's
+!        materialID and materialName
+!        ----------------------------------------------------------
 !
-         CALL CompleteElementConstruction(project)
+         IF ( ASSOCIATED(interfaceCurves) .AND. &
+            project % runParams % meshFileFormat == ISM_MM)     THEN
+            CALL SetMaterialProperties(mesh = project % mesh)
+         END IF
 !
-!     ----------------------------------------------------------
-!     If this is a multi-material mesh, then set each element's
-!     materialID and materialName
-!     ----------------------------------------------------------
+!        -------------------------------------
+!        We no longer need the boundary arrays
+!        -------------------------------------
 !
-      IF ( ASSOCIATED(interfaceCurves) .AND. &
-           project % runParams % meshFileFormat == ISM_MM)     THEN
-         CALL SetMaterialProperties(mesh = project % mesh)
-      END IF
-!
-!     -------------------------------------
-!     We no longer need the boundary arrays
-!     -------------------------------------
-!
-      CALL destroyTemporaryBoundaryArrays
+         CALL destroyTemporaryBoundaryArrays
 
-      IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
+         IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
 
       END SUBROUTINE GenerateAQuadMesh
 !
@@ -2132,7 +2139,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CompleteElementConstruction(project)
+      SUBROUTINE ComputeFacePatches(project)
 !
 !     ---------------------------------------------------------------
 !     Compute the boundary and interior face patch interpolant points
@@ -2153,9 +2160,7 @@
 !        ---------------
 !
          INTEGER                              :: N, j, k
-         INTEGER                              :: numBoundaryChains
          TYPE (SMMesh)              , POINTER :: mesh
-         TYPE (SMModel)             , POINTER :: model
          CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTObject)            , POINTER :: obj
          TYPE (SMElement)           , POINTER :: e
@@ -2164,18 +2169,6 @@
          TYPE(CurveInterpolant)       , POINTER     :: boundaryCurves(:)
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: values
-         TYPE(JaggedRealArray)        , ALLOCATABLE :: chainDivisionsArray(:)
-!
-!        --------------------
-!        Boundary information
-!        --------------------
-!
-         model => project % model
-         numBoundaryChains = model % numberOfOuterCurves + &
-                             model % numberOfInnerCurves + &
-                             model % numberOfInterfaceCurves
-         CALL ComputeBoundaryDivisionsFromBoundaryNodes(project % mesh % nodesIterator, numBoundaryChains, chainDivisionsArray)
-         CALL setElementBoundaryInfo(project)
 !
 !        -------------------
 !        Interior face patch
@@ -2213,7 +2206,7 @@
 
          DEALLOCATE( boundaryCurves)
 
-      END SUBROUTINE CompleteElementConstruction
+      END SUBROUTINE ComputeFacePatches
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -2667,5 +2660,286 @@
          END DO
 
       END SUBROUTINE RotationTransformMesh
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ComputeBoundaryPolynomials( project, chainNodesArray)
+!
+!     -----------------------------------------------------------------
+!     Generate multisegment curves that span the curve segments in the 
+!     chainNodesArray. This procedure creates polynomial approximations
+!     to the model's curves referenced in allCurves and stores them in
+!     the project's boundaryPolynomialsArray. The approximation error
+!     can be computed from the difference between the two.
+!     -----------------------------------------------------------------
+!
+         USE MultiSegmentNodalCurveClass
+         USE MultiSegmentModalCurveClass
+         USE CurveOptimization
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshProject)     :: project
+         TYPE(JaggedNodeArray) :: chainNodesArray(:) !Array of arrays of nodes along the boundary
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         
+         CLASS(SMModel)                , POINTER  :: model               !An alias
+         CLASS(FTMutableObjectArray)   , POINTER  :: boundaryPolynomials !An alias
+         CLASS(FTMutableObjectArray)   , POINTER  :: modelChains         !An alias
+         CLASS(FTObject)               , POINTER  :: obj                 !An Alias
+         
+         CLASS(SMChainedCurve)         , POINTER  :: modelChain
+         CLASS(MultiSegmentNodalCurve) , POINTER  :: boundaryPolynomial
+         CLASS(MultiSegmentModalCurve) , POINTER  :: optimizedCurve
+         CLASS(SMCurve)                , POINTER  :: crv, crvPtr
+         
+         TYPE(OptimizerOptions)                   :: options
+         REAL(KIND=RP)              , ALLOCATABLE :: nodeTs(:), chebyPoints(:)
+         REAL(KIND=RP)              , ALLOCATABLE :: values(:,:)
+         INTEGER                    , ALLOCATABLE :: ends(:)
+         
+         INTEGER                                  :: j, k, nNodes, N, m
+         INTEGER                                  :: nChains, nCurves
+         REAL(KIND=RP)                            :: t, dt
+         REAL(KIND=RP)                            :: nodeTol = 1.0d-12 ! TODO: put into a constant.
+!
+!        -----------
+!        Set aliases
+!        -----------
+!
+         model               => project % model
+         modelChains         => model % allChains
+         boundaryPolynomials => project % boundaryPolynomialsArray
+         
+         nChains = model % numberOfChains()
+         N       = project % runParams % polynomialOrder
+!
+!        ---------------------------------------
+!        Allocate Chebyshev Gauss-Lobatto points
+!        for use with non-optimized boundary
+!        curves.
+!        ---------------------------------------
+!
+         ALLOCATE(chebyPoints(0:N))
+         ALLOCATE(values(0:N,3))
+         DO m = 0, N 
+            chebyPoints(m) = (1.0_RP - COS(m*PI/N))/2.0_RP
+         END DO 
+!
+!        ---------------------------------------------------------------------------------
+!        For each chained curve, generate a new curve from the
+!        curves in the source chain. The new curves added to the chain includes
+!        (a) pointers to a new SMCurve of type MultiSegmentModalCurve if the curve
+!            is to be optimized. This may include coalescing several curves in the chain
+!            if the user requests them to be connected
+!        (b) pointers to a new MultiSegmentNodalCurve subclasses for polynomials defined
+!            between two pairs of nodes along boundaries.
+!        ---------------------------------------------------------------------------------
+!
+         DO j = 1, nChains ! For each boundary curve chain
+            boundaryPolynomial => NULL()
+            optimizedCurve     => NULL()
+!
+!           -----------------------------------------------------
+!           Get the curve chain from the model.
+!           modelChain is the exact chain.
+!           boundaryPolynomial is its approximation by a (PW) polynomial
+!           which is saved in the boundaryPolynomialsArray of the
+!           project at the same index.
+!           -----------------------------------------------------
+!
+            obj => modelChains % objectAtIndex(j)
+            CALL castToSMChainedCurve(obj, modelChain)
+!
+!           ----------------------------------------------------
+!           Collect all the parametric locations along the chain
+!           ----------------------------------------------------
+!
+            nNodes = SIZE(chainNodesArray(j) % array)
+            ALLOCATE(nodeTs(0:nNodes))
+            
+            IF ( chainNodesArray(j) % array(1) % node % gWhereOnBoundary == 0.0_RP )     THEN
+               DO k = 0, nNodes-1
+                  nodeTs(k) = chainNodesArray(j) % array(k+1) % node % gWhereOnBoundary
+               END DO  
+               nodeTs(nNodes) = 1.0_RP
+            ELSE 
+               nodeTs(0) = 0.0_RP
+               DO k = 1, nNodes
+                  nodeTs(k) = chainNodesArray(j) % array(k) % node % gWhereOnBoundary
+               END DO  
+            END IF
+!
+!           ---------------------------------------------
+!           Find the indices of the ends of each segment
+!           in the model chain.
+!           ---------------------------------------------
+!
+            nCurves = modelChain % COUNT()
+            dt      = 1.0_RP/REAL(nCurves, RP)
+            
+            ALLOCATE(ends(0:nCurves), source = 0)
+            ends(0)       = 0
+            ends(nCurves) = nNodes
+            
+            m = 1
+            DO k = 1, nNodes-1
+               t = m*dt
+               IF ( ABS(nodeTs(k) - t) <= nodeTol )     THEN
+                  ends(m)   = k
+                  nodeTs(k) = t
+                  m = m + 1 
+               END IF 
+            END DO
+!
+!           -------------------------------------------------------------
+!           Create a polynomial approximation for each curve in the chain
+!           depending on if optimization is requested or not.
+!           -------------------------------------------------------------
+!
+            crv => modelChain
+            IF ( modelChain % optimization /= NONE)     THEN
+      
+               CALL SetDefaultOptions(options)
+               options % whichNorm = modelChain % optimization
+               CALL OptimizeCurve(curve              = crv,                     &
+                                  polyOrder          = N,                       &
+                                  cuts               = nodeTs,                  &
+                                  breakIndices       = ends,                    &
+                                  options            = options,                 &
+                                  newName            = modelChain % curveName(),&
+                                  newID              = modelChain % id(),       &
+                                  optimized          = crvPtr)
+               CALL castToMultiSegmentCurve(crvPtr, optimizedCurve)
+               obj => optimizedCurve
+               CALL boundaryPolynomials % addObject(obj)
+            ELSE 
+               ALLOCATE(boundaryPolynomial)
+               CALL boundaryPolynomial % ConstructMultiSegmentNodalCurve(crv, nodeTs, N, &
+                                                      modelChain % curveName(), modelChain % id() )
+               obj => boundaryPolynomial
+               CALL boundaryPolynomials % addObject(obj)
+            END IF 
+            
+            !DEBUG follows
+!            WRITE(0,*) boundaryPolynomial % curveName()
+!            dt = 1.0_RP/100.0_RP
+!            DO k = 0, 100 
+!               t = k*dt
+!               WRITE(0,*) t, boundaryPolynomial % positionAt(t), modelChain % positionAt(t)
+!            END DO 
+!            WRITE(0,*)
+!
+!           -------
+!           Cleanup
+!           -------
+!
+            DEALLOCATE(ends)
+            DEALLOCATE(nodeTs)
+            IF(ASSOCIATED(boundaryPolynomial)) CALL releaseMultiSegmentNodalCurve(boundaryPolynomial)
+            IF(ASSOCIATED(optimizedCurve))     CALL releaseMultiSegmentModalCurve(optimizedCurve)
+           
+         END DO !All boundary curves
+         
+      END SUBROUTINE ComputeBoundaryPolynomials
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ComputeBoundaryErrors(project)  
+         IMPLICIT NONE  
+         TYPE(MeshProject) :: project
+      END SUBROUTINE ComputeBoundaryErrors
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE MakeMeshSymmetric(project, symmetryCurve) 
+      IMPLICIT NONE  
+!
+!     -----------------------------------------------------------
+!     Perform symmetric transform if there is a symmetry boundary
+!     -----------------------------------------------------------
+!
+!
+!      ---------
+!      Arguments
+!      ---------
+!
+       CLASS(SMCurve)      , POINTER :: symmetryCurve
+       CLASS( MeshProject ), POINTER :: project
+!
+!      ---------------
+!      Local variables
+!      ---------------
+!
+       INTEGER :: errorCode
+            
+       IF ( allSymmetryCurvesAreColinear(project % model) )     THEN
+          CALL ReflectMesh(project % mesh, symmetryCurve)
+!
+!         --------------------------------
+!         Smooth mesh (again) if requested
+!         --------------------------------
+!
+          IF(ASSOCIATED(project % smoother))     THEN
+            IF(PrintMessage) PRINT *, "   Begin Smoothing (after reflection across a symmetry boundary)..."
+            CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
+            IF(PrintMessage) PRINT *, "   Smoothing done."
+          END IF
+       ELSE
+           CALL ThrowErrorExceptionOfType(poster = "HOHQMesh", &
+                                          msg    = "A symmetry curve is is not straight or colinear. Ignoring...", &
+                                          typ    = FT_ERROR_WARNING)
+       END IF
+         
+   END SUBROUTINE MakeMeshSymmetric
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE ComputeBoundaryApproximations(project)  
+      IMPLICIT NONE  
+      
+      CLASS(MeshProject), POINTER :: project
+!
+!     ---------------
+!     Local Variables
+!     ---------------
+!
+      TYPE(JaggedNodeArray), ALLOCATABLE :: chainNodesArray(:)
+      TYPE (SMModel)       , POINTER     :: model
+      INTEGER                            :: numBoundaryChains
+!
+!     -----------------------------------
+!     Gather and set boundary information
+!     and from that, create boundary 
+!     polynomial approximations to the 
+!     boundary chains.
+!     -----------------------------------
+!
+      model => project % model
+      numBoundaryChains = model % numberOfChains()
+      ALLOCATE(chainNodesArray(numBoundaryChains))
+      CALL SortBoundaryNodesToChains(project % mesh % nodesIterator, &
+                                     numBoundaryChains, chainNodesArray)
+      CALL ComputeBoundaryPolynomials( project, chainNodesArray)
+      CALL setElementBoundaryInfo(project)
+!
+!     -----------------------------------------
+!     Compute the patch of interpolated points
+!     inside the elements
+!     -----------------------------------------
+!
+      CALL ComputeFacePatches(project)
+      
+      DEALLOCATE(chainNodesArray)
+      
+   END SUBROUTINE ComputeBoundaryApproximations
+   
    END MODULE MeshGenerationMethods
 !

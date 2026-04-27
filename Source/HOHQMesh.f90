@@ -42,6 +42,7 @@
       USE MeshOutputMethods3D
       USE ControlFileReaderClass
       USE FTValueDictionaryClass
+      USE BoundaryErrorModule
       IMPLICIT NONE
 !
 !-------------------------------------------------------------------
@@ -89,6 +90,8 @@
          CLASS(FTObject)         , POINTER :: obj
          TYPE (FTValueDictionary), POINTER :: modelDict, controlDict
          CLASS(SMCurve)          , POINTER :: symmetryCurve => NULL()
+         CLASS(SMCurve)          , POINTER :: boundaryCurve => NULL()
+         CHARACTER(LEN=SM_CURVE_NAME_LENGTH) :: str
 !
 !        -----------------------------------------------------
 !        Initialize the project and check the integrity of the
@@ -116,36 +119,18 @@
          CALL stopWatch % start()
 
             CALL GenerateQuadMesh(project, errorCode)
-!
-!           -----------------------------------------------------------
-!           Perform symmetric transform if there is a symmetry boundary
-!           -----------------------------------------------------------
-!
             symmetryCurve => project % model % symmetryCurve()
-            IF ( ASSOCIATED(symmetryCurve) )     THEN
-               IF ( allSymmetryCurvesAreColinear(project % model) )     THEN
-                  CALL ReflectMesh(project % mesh, symmetryCurve)
-!
-!                 ------------------------
-!                 Smooth mesh (again) if requested
-!                 ------------------------
-!
-                  IF(ASSOCIATED(project % smoother))     THEN
-                     IF(PrintMessage) PRINT *, "   Begin Smoothing (after reflection across a symmetry boundary)..."
-                     CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
-                     IF(PrintMessage) PRINT *, "   Smoothing done."
-                  END IF
-               ELSE
-                  CALL ThrowErrorExceptionOfType(poster = "HOHQMesh", &
-                            msg          = "A symmetry curve is is not straight or colinear. Ignoring...", &
-                            typ          = FT_ERROR_WARNING)
-               END IF
-            END IF
+            IF ( ASSOCIATED(symmetryCurve) ) CALL MakeMeshSymmetric(project, symmetryCurve)
 
          CALL stopwatch % stop()
+!
+!        -----------------------
+!        2D Mesh generation done
+!        -----------------------
+!
          CALL trapExceptions !Abort on fatal exceptions
-
          IF(PrintMessage) PRINT *, "Mesh generated"
+         CALL CheckMeshForDuplicateNodes(project % mesh)
 !
 !        -----------------------------
 !        Gather and publish statistics
@@ -182,9 +167,26 @@
                                        acceptableLow(k), acceptableHigh(k), refValues(k)
             END DO
             PRINT *, " "
+            
          END IF
-
-         CALL CheckMeshForDuplicateNodes(project % mesh)
+!
+!        ----------------
+!        Write out errors
+!        ----------------
+!
+         CALL WriteBoundaryErrors(project)
+         IF ( .NOT.test )     THEN
+            IF ( SIZE(project % L2ErrorMax) > 0 )     THEN
+               PRINT *, "Boundary Error Quality:" 
+               WRITE(6,"(A32,4x,A12,A16)") "Boundary Name", "Max L2 Error", "Max H1Error"
+               DO k = 1, SIZE(project % L2ErrorMax)
+                  obj => project % model % allChains % objectAtIndex(k)
+                  CALL castToSMCurve(obj,boundaryCurve)
+                  str = boundaryCurve % curveName()
+                  WRITE(6,"(A32, 2(1PE16.8))") TRIM(str), project % L2ErrorMax(k), project % H1ErrorMax(k) 
+               END DO 
+            END IF 
+         END IF 
 !
 !        -----------------------------------------------
 !        Perform transformations on 2D mesh if requested
