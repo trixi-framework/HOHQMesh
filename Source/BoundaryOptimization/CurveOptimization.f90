@@ -192,7 +192,7 @@
 !        be OK
 !        --------------------------------------------------------------------------
 !
-         CALL castToMultiSegmentCurve(optimizedCurve, msmCurve)
+         CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
          CALL SegmentErrors(exact          = curve,    &
                             segmentedCurve = msmCurve, &
                             gQuad          = gQuad,    &
@@ -580,6 +580,7 @@
       CLASS(SMCurve), POINTER    :: curve              ! The curve to be approximated
       INTEGER                    :: polyOrder          ! polynomial order of the new approximation
       REAL(KIND=RP)              :: cuts(0:1)
+      TYPE(OptimizerOptions)     :: options            ! parameters for the marching algorithm
       TYPE(GaussQuadratureType)  :: gQuad
 !
 !     ------------
@@ -592,10 +593,34 @@
 !     Local variables
 !     ---------------
 !
+      REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
+      CALL curveSegmentErrors(curve, polyOrder, cuts, options, gQuad, errors)
+      f = errors(1,USER_NORM) - options % safetyFactor*options % toler
+      
+   END FUNCTION marchingFunction
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE curveSegmentErrors(curve, polyOrder, cuts, options, gQuad, errors)
+      IMPLICIT NONE
+!
+!     ----------
+!     Arguments 
+!     ----------
+!
+      CLASS(SMCurve), POINTER    :: curve              ! The curve to be approximated
+      INTEGER                    :: polyOrder          ! polynomial order of the new approximation
+      REAL(KIND=RP)              :: cuts(0:1)
+      TYPE(GaussQuadratureType)  :: gQuad
+      REAL(KIND=RP), ALLOCATABLE :: errors(:,:)
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
       CLASS(SMCurve)               , POINTER :: optimizedCurve
       CLASS(MultiSegmentModalCurve), POINTER :: msmCurve
       TYPE(OptimizerOptions)                 :: options  ! parameters for the marching algorithm
-      REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
       INTEGER, ALLOCATABLE                   :: breakIndices(:)
 
       breakIndices = [0]
@@ -608,16 +633,75 @@
                          newID        = 0,                       &
                          optimized    = optimizedCurve)
 
-      CALL castToMultiSegmentCurve(optimizedCurve, msmCurve)
+      CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
       CALL SegmentErrors(exact          = curve,    &
                          segmentedCurve = msmCurve, &
                          gQuad          = gQuad,    &
                          errors         = errors)
 
-      f = errors(1,USER_NORM) - options % safetyFactor*options % toler
       CALL releaseBaseCurve(optimizedCurve)
       
-   END FUNCTION marchingFunction
+   END SUBROUTINE curveSegmentErrors
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE curveSegmentLengths(curve, polyOrder, cuts, options, gQuad, lengths)
+!
+!  -----------------------------------------------------
+!  Collect the arc lengths of the optimal curve segments
+!  -----------------------------------------------------
+!
+      IMPLICIT NONE
+!
+!     ----------
+!     Arguments 
+!     ----------
+!
+      CLASS(SMCurve), POINTER    :: curve              ! The curve to be approximated
+      INTEGER                    :: polyOrder          ! polynomial order of the new approximation
+      REAL(KIND=RP)              :: cuts(0:)
+      TYPE(GaussQuadratureType)  :: gQuad
+      REAL(KIND=RP), ALLOCATABLE :: lengths(:)
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      CLASS(SMCurve)               , POINTER :: optimizedCurve
+      CLASS(MultiSegmentModalCurve), POINTER :: msmCurve
+      TYPE(OptimizerOptions)                 :: options  ! parameters for the marching algorithm
+      INTEGER, ALLOCATABLE                   :: breakIndices(:)
+      INTEGER                                :: nSegments
+      INTEGER                                :: j
+!
+!     ------------------------------
+!     find the optimal approximation
+!     ------------------------------
+!
+      breakIndices = [0]
+      CALL OptimizeCurve(curve        = curve,                   &
+                         polyOrder    = polyOrder,               &
+                         cuts         = cuts,                    &
+                         breakIndices = breakIndices,            &
+                         options      = options,                 &
+                         newName      = "tmp",                   &
+                         newID        = 0,                       &
+                         optimized    = optimizedCurve)
+
+      CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
+!
+!     ---------------------------------------
+!     Compute the arc lengths of each segment
+!     ---------------------------------------
+!
+      nSegments = msmCurve % nSegments
+      ALLOCATE(lengths(nSegments))
+      DO j = 1, nSegments 
+         lengths(j) = segmentArcLength(msmCurve, j ,gQuad % nodes, gQuad % weights)
+      END DO 
+      CALL releaseBaseCurve(optimizedCurve)
+      
+   END SUBROUTINE curveSegmentLengths
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -801,7 +885,7 @@
 !                         newID     = newID,                       &
 !                         optimized = optimizedCurve)
 !
-!      CALL castToMultiSegmentCurve(optimizedCurve, msmCurve)
+!      CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
 !      CALL SegmentErrors(exact          = curve,    &
 !                         segmentedCurve = msmCurve, &
 !                         gQuad          = gQuad,    &
@@ -839,7 +923,7 @@
 !                            newID              = newID,              &
 !                            optimized          = optimizedCurve)
 !   
-!         CALL castToMultiSegmentCurve(optimizedCurve, msmCurve)
+!         CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
 !         CALL SegmentErrors(exact          = curve,    &
 !                            segmentedCurve = msmCurve, &
 !                            gQuad          = gQuad,    &

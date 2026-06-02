@@ -157,7 +157,9 @@
          TYPE(ScaleTransform)                :: scaleTransformer
          CHARACTER(LEN=32)                   :: backgroundMaterialName
          INTEGER                             :: numberOfLevelsUsed
+         REAL(KIND=RP)                       :: boundaryErrorTolerance
          REAL(KIND=RP)         , ALLOCATABLE :: L2ErrorMax(:), H1ErrorMax(:)
+         TYPE(JaggedRealArray) , ALLOCATABLE :: L2BoundaryError(:), H1BoundaryError(:)
 !
 !        ========
          CONTAINS
@@ -210,7 +212,8 @@
 !        but a model is optional
 !        ------------------------------------
 !
-         self % numberOfLevelsUsed = 0
+         self % numberOfLevelsUsed     = 0
+         self % boundaryErrorTolerance = 1.0d-3 !DEBUG move this to a controle file parameter
 
          obj         => masterControlDictionary % objectForKey(key = "CONTROL_INPUT")
          IF ( .NOT. ASSOCIATED(obj) )     THEN
@@ -394,7 +397,7 @@
 !
       SUBROUTINE ResetProject(self)
          IMPLICIT NONE
-         CLASS(MeshProject), POINTER :: self
+         CLASS(MeshProject)         , POINTER :: self
 
          IF ( ASSOCIATED(self % grid) )     THEN
             CALL releaseGrid(self % grid)
@@ -405,8 +408,37 @@
          IF ( ASSOCIATED( self % mesh) )     THEN
             CALL releaseMesh(self % mesh)
          END IF
-
+         
+         CALL ResetProjectBoundaryObjects(self)
+         
       END SUBROUTINE ResetProject
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ResetProjectBoundaryObjects(self)
+         IMPLICIT NONE
+         CLASS(MeshProject)         , POINTER :: self
+         CLASS(FTMutableObjectArray), POINTER :: boundaryPolynomials !An alias
+         CLASS(FTObject)            , POINTER :: obj
+         INTEGER                              :: i, nObjs
+         
+         IF(ALLOCATED(self % L2BoundaryError)) DEALLOCATE(self % L2BoundaryError)
+         IF(ALLOCATED(self % H1BoundaryError)) DEALLOCATE(self % H1BoundaryError)
+!
+!        ---------------------------------------------------------------------
+!        The FTMutableObjectArray has no method to clear the objects it holds,
+!        so do that here manually
+!        ---------------------------------------------------------------------
+!
+         boundaryPolynomials => self % boundaryPolynomialsArray
+         IF(ASSOCIATED(boundaryPolynomials))    THEN
+            nObjs = boundaryPolynomials % COUNT()
+            DO i = 1, nObjs
+               CALL boundaryPolynomials % removeObjectAtIndex(i)
+            END DO
+         END IF
+         
+      END SUBROUTINE ResetProjectBoundaryObjects
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -927,13 +959,14 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER, ALLOCATABLE      :: breakIndices(:)    ! index in optimizedCuts where break boundaries occur
-         TYPE(OptimizerOptions)    :: options
-         CLASS(SMCurve), POINTER   :: crv
-         REAL(KIND=RP)             :: minSegment
-         INTEGER                   :: j, nSegments
-         TYPE(GaussQuadratureType) :: gQuad
-         REAL(KIND=RP)             :: x1(3),x2(3)
+         INTEGER      , ALLOCATABLE :: breakIndices(:)    ! index in optimizedCuts where break boundaries occur
+         REAL(KIND=RP), ALLOCATABLE :: arcLengths(:)
+         TYPE(OptimizerOptions)     :: options
+         CLASS(SMCurve), POINTER    :: crv
+         REAL(KIND=RP)              :: minSegment
+         INTEGER                    :: j, nSegments
+         TYPE(GaussQuadratureType)  :: gQuad
+         REAL(KIND=RP)              :: x1(3),x2(3)
          
          CALL SetDefaultOptions(options)
          options % internalConstraint = curve % continuity
@@ -945,6 +978,8 @@
          crv => curve
          CALL FindOptimizedCuts(curve, polyOrder, breaks, options, gQuad, &
                                 cuts, breakIndices)
+         CALL curveSegmentLengths(crv, polyOrder, cuts, options, gQuad, arcLengths)
+         
          nSegments = UBOUND(cuts,1)
          ALLOCATE(segmentsSizes(nSegments))
          
@@ -959,7 +994,6 @@
 !           of the vector between the two segment points
 !           ------------------------------------------------------------------
 !
-!            segmentsSizes(j) = MAX(ABS(x2(1) - x1(1)), ABS(x2(2) - x1(2)))
             segmentsSizes(j) = sqrt((x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
             minSegment = MIN(minSegment, segmentsSizes(j))
             x1 = x2
@@ -1051,6 +1085,239 @@
          END IF
 
       END SUBROUTINE ResizeSegmentedCurves
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ResetInverseScales( self, needsRemesh )
+      USE MultiSegmentCurveClass
+!
+!     -----------------------------------------------------------
+!     From the errors computed along the boundaries, reset the
+!     invScale values along the segmented curves to help meet
+!     the project's error tolerance. Previous calls to 
+!     ComputeBoundaryApproximations and ComputeBoundaryErrors
+!     must be made before calling this procedure, or nothing will
+!     happen.
+!     -----------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (MeshProject) :: self
+         LOGICAL            :: needsRemesh
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(MeshSizer)            , POINTER :: sizer
+         CLASS(FRSegmentedCurve)     , POINTER :: frsCurve
+         CLASS(SMChainedCurve)       , POINTER :: outerBoundary
+         CLASS(SMCurve)              , POINTER :: cCurve
+         CLASS(FTLinkedListIterator) , POINTER :: curveIterator, segmentedIterator
+         CLASS(FTObject)             , POINTER :: obj
+         CLASS(SMChainedCurve)       , POINTER :: innerCurveChain
+         CLASS(ChainedSegmentedCurve), POINTER :: innerSegmentedCurveChain
+         CLASS(MultiSegmentCurve)    , POINTER :: boundaryPolynomial
+         INTEGER                               :: j, curveID
+         REAL(KIND=RP), ALLOCATABLE            :: hFactorArray(:)
+!
+!        -----------------------------------------------------------
+!        Do nothing if errors are not avalable by previous calls
+!        to ComputeBoundaryApproximations and ComputeBoundaryErrors 
+!        -----------------------------------------------------------
+!
+         needsRemesh = .FALSE.
+         IF(.NOT.ALLOCATED(self % H1BoundaryError)) RETURN
+         
+         sizer => self % sizer
+!
+!        --------------
+!        Outer boundary
+!        --------------
+!
+         IF ( ASSOCIATED( sizer % outerBoundary) )     THEN
+!
+!           ------------------------------------------------------
+!           Segmented chained curve along outer boundary, chain of
+!           FRSegmented curves
+!           ------------------------------------------------------
+!
+            outerBoundary => self % model % outerBoundary
+            curveID = outerBoundary % id()
+!
+!           ------------------------------------------
+!           The model curve associated with this chain
+!           Only resize if the bound is requested
+!           ------------------------------------------
+!
+            obj => self % model % allChains % objectAtIndex(curveID)
+            CALL castToSMChainedCurve(obj, outerBoundary)
+            
+            IF(outerBoundary % optimization .ne. NONE) THEN
+!
+!              -------------------------------------------------------------
+!              The boundary polynomials are segmented curves along which the
+!              error norms have been computed
+!              -------------------------------------------------------------
+!
+               obj => self % boundaryPolynomialsArray % objectAtIndex(curveID)
+               CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
+!
+!              ---------------------------------------------------
+!              For each segmented curve in the boundary chain
+!              adjust the local scale according to the size of the
+!              error
+!              ---------------------------------------------------
+!
+               IF ( outerBoundary % optimization == L2_NORM )     THEN
+                  hFactorArray = self % L2BoundaryError(curveID) % array
+               ELSE
+                  hFactorArray = self % H1BoundaryError(curveID) % array
+               END IF
+               CALL ComputeNewSizeFactor(hFactorArray, self % runParams % polynomialOrder, &
+                                         outerBoundary % tolerance)
+!
+!              --------------------------------------------------------------
+!              Apply the boundary factor to the current scales stored in the 
+!              FTSegmented curve in the sizer
+!              --------------------------------------------------------------
+!
+               IF ( MAXVAL(hFactorArray) > 1.0_RP )     THEN
+                  needsRemesh = .TRUE. 
+                   DO j = 1, sizer % outerBoundary % curveCount()
+                     cCurve   => outerBoundary % curveAtIndex(j)
+                     frsCurve => sizer % outerBoundary % segmentedCurveAtIndex(j)
+                     CALL RescaleFRSegmentedCurve(frsCurve, hFactorArray, boundaryPolynomial % cuts)
+                  END DO
+               END IF 
+               
+               DEALLOCATE(hFactorArray)
+            END IF
+            
+         END IF
+!
+!        ----------------
+!        Inner boundaries
+!        ----------------
+!
+         IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
+            curveIterator => self % model % innerBoundariesIterator
+            ALLOCATE(segmentedIterator)
+            CALL segmentedIterator % initWithFTLinkedList(sizer % innerBoundariesList)
+
+            CALL curveIterator % setToStart()
+            CALL segmentedIterator % setToStart()
+
+            DO WHILE (.NOT.curveIterator % isAtEnd())
+               obj     => curveIterator % object()
+               CALL castToSMChainedCurve(obj,innerCurveChain)
+
+               obj     => segmentedIterator % object()
+               CALL castToChainedSegmentedCurve(obj,innerSegmentedCurveChain)
+
+               DO j = 1, innerSegmentedCurveChain % curveCount()
+                  cCurve   => innerCurveChain % curveAtIndex(j)
+                  frsCurve => innerSegmentedCurveChain % segmentedCurveAtIndex(j)
+!                  CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve)
+               END DO
+
+               CALL curveIterator % moveToNext()
+               CALL segmentedIterator % moveToNext()
+            END DO
+         END IF
+         !TODO Add interface boundaries
+
+      END SUBROUTINE ResetInverseScales
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ComputeNewSizeFactor(hFactorArray, N, tol)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         REAL(KIND=RP) :: hFactorArray(:)
+         INTEGER       :: N
+         REAL(KIND=RP) :: tol
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER       :: j
+         REAL(KIND=RP) :: alpha
+         REAL(KIND=RP) :: q
+         INTEGER       :: ip
+!
+!        ----------------------------------------------------------------------
+!        Under the assumtion for smooth functions that the error varies as h^p,
+!        estimate the factor by which the element size needs to be reduced for
+!        the error to match tyhe tolerance, tol. If the error for any index is
+!        already less than the tolerance, then set the factor to unity so that
+!        nothing will change. Since the grid refinement works in powers of two,
+!        the factor is chosen to trigger the next factor of two refinement.
+!        Since it will be used on the inverse scale length, the reciprocal of
+!        the factor is computed and stored.
+!        ----------------------------------------------------------------------
+!
+         DO j = 1, SIZE(hFactorArray) 
+            alpha = hFactorArray(j)/tol
+            IF(alpha .le. 1.0_RP)  THEN
+               hFactorArray(j) = 1.0_RP
+            ELSE
+               alpha           = alpha**(1.0_RP/N)
+               q               = LOG(alpha)/LOG(2.0_RP)
+               ip              = CEILING(q)
+               alpha           = 2.0_RP**ip + 1.0_RP
+               hFactorArray(j) = alpha
+            END IF
+         END DO 
+          
+      END SUBROUTINE ComputeNewSizeFactor
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE RescaleFRSegmentedCurve(frsCurve, hFactorArray, cuts)
+!
+!        ---------------------------------------------------------------
+!        For each point along the segmented curve, find the scale factor
+!        in the hFactor array for that location and adjust the invScale
+!        accordingly
+!        ---------------------------------------------------------------
+!
+         USE IntervalSearchModule
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FRSegmentedCurve), POINTER :: frsCurve
+         REAL(KIND=RP)                    :: hFactorArray(:)
+         REAL(KIND=RP)                    :: cuts(0:)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER       :: j, k
+         REAL(KIND=RP) :: t, s
+         
+         DO j = 1, frsCurve % COUNT()
+            t = frsCurve % argumentAtIndex(j)
+            k = findInterval(cuts, t)
+            s = frsCurve % invScaleAtIndex(j)
+            s = s*hFactorArray(k)
+            CALL frsCurve % setCurveInvScaleForIndex(s,j)
+         END DO
+         
+      END SUBROUTINE RescaleFRSegmentedCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !

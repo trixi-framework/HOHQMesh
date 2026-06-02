@@ -37,7 +37,7 @@
    CONTAINS  
 !  ========      
 !
-      SUBROUTINE castToMultiSegmentCurve(curve,cast)
+      SUBROUTINE castToMultiSegmentModalCurve(curve,cast)
 !
 !     -----------------------------------------------------
 !     Cast the base class SMCurve to the FTValue class
@@ -55,7 +55,7 @@
                
          END SELECT
          
-      END SUBROUTINE castToMultiSegmentCurve
+      END SUBROUTINE castToMultiSegmentModalCurve
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -393,7 +393,8 @@
       DO k = 0, 5 
          t = cuts(0) + k*(cuts(3) - cuts(0))/5.0_RP
          MultiSegmentModalCurveIsOK = MAXVAL(ABS(self % positionAt(t) - testPolynomialAt(self,t))) < tol
-         MultiSegmentModalCurveIsOK = MAXVAL(ABS(self % derivativeAt(t) - testPolynomialDerivAt(self,t))) < tol
+         MultiSegmentModalCurveIsOK = MultiSegmentModalCurveIsOK .AND. MAXVAL(ABS(self % derivativeAt(t) - &   
+                                      testPolynomialDerivAt(self,t))) < tol
       END DO 
 
       CALL releaseMultiSegmentModalCurve(self)

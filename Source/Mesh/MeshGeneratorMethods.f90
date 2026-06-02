@@ -39,6 +39,7 @@
       USE ErrorTypesModule
       USE MeshOutputMethods
       USE MeshSizerClass
+      USE BoundaryErrorModule
       IMPLICIT NONE
 
 !
@@ -64,8 +65,31 @@
 !        ---------------
 !
          INTEGER :: k
+         LOGICAL :: needsRemesh
 
          CALL GenerateAQuadMesh( project, errorCode )
+!
+!        -----------------------------------
+!        Gather and set boundary information
+!        and from that, create boundary 
+!        polynomial approximations to the 
+!        boundary chains.
+!        -----------------------------------
+!
+         CALL ComputeBoundaryApproximations(project)
+         CALL ComputeBoundaryErrors(project)
+         CALL ResetInverseScales(project, needsRemesh)
+!
+!        -----------------------------------------------
+!        If the mesh needs to be remeshed because errors
+!        are too large someplace, do so
+!        -----------------------------------------------
+!
+         IF ( needsRemesh )     THEN
+            CALL ResetProject(project)
+            CALL GenerateAQuadMesh(project,errorCode)
+            CALL ComputeBoundaryApproximations(project)
+         END IF 
 !
 !        ------------------------------------------------------------------------
 !        If there is a problem, usually it is because the initial background grid
@@ -87,22 +111,13 @@
 
                CALL ResetProject(project)
                CALL clearBoundaryCurves(project % sizer)
-               CALL BuildSizerBoundaryCurves(self = project)
+               CALL BuildSizerBoundaryCurves(project)
 
                CALL GenerateAQuadMesh(project,errorCode)
 
                IF( errorCode == A_OK_ERROR_CODE)     EXIT
             END DO
         END IF
-!
-!        -----------------------------------
-!        Gather and set boundary information
-!        and from that, create boundary 
-!        polynomial approximations to the 
-!        boundary chains.
-!        -----------------------------------
-!
-         CALL ComputeBoundaryApproximations(project)
 
       END SUBROUTINE GenerateQuadMesh
 !
@@ -2817,7 +2832,7 @@
                                   newName            = modelChain % curveName(),&
                                   newID              = modelChain % id(),       &
                                   optimized          = crvPtr)
-               CALL castToMultiSegmentCurve(crvPtr, optimizedCurve)
+               CALL castToMultiSegmentModalCurve(crvPtr, optimizedCurve)
                obj => optimizedCurve
                CALL boundaryPolynomials % addObject(obj)
             ELSE 
@@ -2827,15 +2842,6 @@
                obj => boundaryPolynomial
                CALL boundaryPolynomials % addObject(obj)
             END IF 
-            
-            !DEBUG follows
-!            WRITE(0,*) boundaryPolynomial % curveName()
-!            dt = 1.0_RP/100.0_RP
-!            DO k = 0, 100 
-!               t = k*dt
-!               WRITE(0,*) t, boundaryPolynomial % positionAt(t), modelChain % positionAt(t)
-!            END DO 
-!            WRITE(0,*)
 !
 !           -------
 !           Cleanup
@@ -2849,13 +2855,6 @@
          END DO !All boundary curves
          
       END SUBROUTINE ComputeBoundaryPolynomials
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE ComputeBoundaryErrors(project)  
-         IMPLICIT NONE  
-         TYPE(MeshProject) :: project
-      END SUBROUTINE ComputeBoundaryErrors
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

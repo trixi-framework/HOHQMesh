@@ -213,7 +213,7 @@
 !        Local Variables
 !        ---------------
 !
-         REAL(KIND=RP)              :: nodes(0:N), weights(0:N)
+         REAL(KIND=RP)             :: nodes(0:N), weights(0:N)
          INTEGER                   :: j,k
          REAL(KIND=RP)             :: L(0:N,0:N), LPrime(0:N,0:N)
 !

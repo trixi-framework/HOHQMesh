@@ -227,17 +227,29 @@
          REAL(KIND=RP)  :: t
          REAL(KIND=RP)  :: x(3)
 
-         REAL(KIND=RP), DIMENSION(3) :: xp, xm, dx
+         REAL(KIND=RP), DIMENSION(3) :: x0, x1, x2, dx
          REAL(KIND=RP)               :: tp, tm
          
-         tp = MIN(1.0_RP,t + dt)
-         tm = MAX(0.0_RP,t - dt)
-         
-         xp = self % positionAt(tp)
-         xm = self % positionAt(tm)
-         
-         dx = xp - xm
-         x  = dx/(tp - tm)
+         IF ( t == 1.0_RP )     THEN
+            x0 = self % positionAt(t)
+            x1 = self % positionAt(t - dt)
+            x2 = self % positionAt(t - 2.0_RP*dt)
+            x  = (3.0_RP*x0 - 4.0_RP*x1 + x2)/(2.0_RP*dt)
+         ELSE IF(t == 0.0_RP)   THEN
+            x0 = self % positionAt(t)
+            x1 = self % positionAt(t + dt)
+            x2 = self % positionAt(t+ 2.0_RP*dt)
+            x  = (-3.0_RP*x0 + 4.0_RP*x1 - x2)/(2.0_RP*dt)
+         ELSE
+            tp = MIN(1.0_RP,t + dt)
+            tm = MAX(0.0_RP,t - dt)
+            
+            x1 = self % positionAt(tp)
+            x0 = self % positionAt(tm)
+            
+            dx = x1 - x0
+            x  = dx/(tp - tm)
+         END IF 
 
       END FUNCTION derivativeAt
 !

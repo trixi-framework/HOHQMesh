@@ -110,6 +110,8 @@
          FINAL     :: DestructCMH10
          PROCEDURE :: Optimize
       END TYPE MultiH1Optimizer
+      
+      PRIVATE :: InvAffineMap, affineMap
 !
 !     ========
       CONTAINS  
