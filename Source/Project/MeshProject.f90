@@ -1124,6 +1124,7 @@
          CLASS(MultiSegmentCurve)    , POINTER :: boundaryPolynomial
          INTEGER                               :: j, curveID
          REAL(KIND=RP), ALLOCATABLE            :: hFactorArray(:)
+         REAL(KIND=RP)                         :: aMap(2), d
 !
 !        -----------------------------------------------------------
 !        Do nothing if errors are not avalable by previous calls
@@ -1187,11 +1188,12 @@
 !              --------------------------------------------------------------
 !
                IF ( MAXVAL(hFactorArray) > 1.0_RP )     THEN
-                  needsRemesh = .TRUE. 
+                   needsRemesh = .TRUE. 
+                   d = REAL(sizer % outerBoundary % curveCount(),RP)
                    DO j = 1, sizer % outerBoundary % curveCount()
-                     cCurve   => outerBoundary % curveAtIndex(j)
+                     aMap     = [REAL(j-1,RP)/d, 1.0_RP/d]
                      frsCurve => sizer % outerBoundary % segmentedCurveAtIndex(j)
-                     CALL RescaleFRSegmentedCurve(frsCurve, hFactorArray, boundaryPolynomial % cuts)
+                     CALL RescaleFRSegmentedCurve(frsCurve, hFactorArray, aMap, boundaryPolynomial % cuts)
                   END DO
                END IF 
                
@@ -1283,7 +1285,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE RescaleFRSegmentedCurve(frsCurve, hFactorArray, cuts)
+      SUBROUTINE RescaleFRSegmentedCurve(frsCurve, hFactorArray, aMap, cuts)
 !
 !        ---------------------------------------------------------------
 !        For each point along the segmented curve, find the scale factor
@@ -1300,6 +1302,7 @@
 !
          CLASS(FRSegmentedCurve), POINTER :: frsCurve
          REAL(KIND=RP)                    :: hFactorArray(:)
+         REAL(KIND=RP)                    :: aMap(2)
          REAL(KIND=RP)                    :: cuts(0:)
 !
 !        ---------------
@@ -1310,7 +1313,8 @@
          REAL(KIND=RP) :: t, s
          
          DO j = 1, frsCurve % COUNT()
-            t = frsCurve % argumentAtIndex(j)
+            t = frsCurve % argumentAtIndex(j) !Local location along this curve
+            t = aMap(1) + t*aMap(2)           !Affine map to the chain curve location
             k = findInterval(cuts, t)
             s = frsCurve % invScaleAtIndex(j)
             s = s*hFactorArray(k)
