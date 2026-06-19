@@ -430,12 +430,10 @@
 !        so do that here manually
 !        ---------------------------------------------------------------------
 !
-         boundaryPolynomials => self % boundaryPolynomialsArray
-         IF(ASSOCIATED(boundaryPolynomials))    THEN
-            nObjs = boundaryPolynomials % COUNT()
-            DO i = 1, nObjs
-               CALL boundaryPolynomials % removeObjectAtIndex(i)
-            END DO
+         CALL releaseFTMutableObjectArray(self % boundaryPolynomialsArray)
+         IF ( self % model % numberOfChains() > 0 )     THEN
+            ALLOCATE(self % boundaryPolynomialsArray)
+            CALL self % boundaryPolynomialsArray % initWithSize(self % model % numberOfChains())
          END IF
          
       END SUBROUTINE ResetProjectBoundaryObjects
@@ -1313,8 +1311,8 @@
          REAL(KIND=RP) :: t, s
          
          DO j = 1, frsCurve % COUNT()
-            t = frsCurve % argumentAtIndex(j) !Local location along this curve
-            t = aMap(1) + t*aMap(2)           !Affine map to the chain curve location
+            s = frsCurve % argumentAtIndex(j) !Local location along this curve
+            t = aMap(1) + s*aMap(2)           !Affine map to the chain curve location
             k = findInterval(cuts, t)
             s = frsCurve % invScaleAtIndex(j)
             s = s*hFactorArray(k)
