@@ -66,30 +66,34 @@
 !
          INTEGER :: k
          LOGICAL :: needsRemesh
+         INTEGER :: numberOfTries = 3
+         INTEGER :: j
 
-         CALL GenerateAQuadMesh( project, errorCode )
+         needsRemesh = .FALSE.
+         
+         DO j = 1, numberOfTries 
+            CALL GenerateAQuadMesh( project, errorCode )
 !
-!        -----------------------------------
-!        Gather and set boundary information
-!        and from that, create boundary 
-!        polynomial approximations to the 
-!        boundary chains.
-!        -----------------------------------
+!           -----------------------------------
+!           Gather and set boundary information
+!           and from that, create boundary 
+!           polynomial approximations to the 
+!           boundary chains.
+!           -----------------------------------
 !
-         CALL ComputeBoundaryApproximations(project)
-         CALL ComputeBoundaryErrors(project)
-         CALL ResetInverseScales(project, needsRemesh)
+            CALL ComputeBoundaryApproximations(project)
+            CALL ComputeBoundaryErrors(project)
+            CALL ResetInverseScales(project, needsRemesh)
 !
 !        -----------------------------------------------
 !        If the mesh needs to be remeshed because errors
 !        are too large someplace, do so
 !        -----------------------------------------------
 !
-         IF ( needsRemesh )     THEN
-            CALL ResetProject(project)
-            CALL GenerateAQuadMesh(project,errorCode)
-            CALL ComputeBoundaryApproximations(project)
-         END IF 
+            IF ( .NOT. needsRemesh )     EXIT
+            
+            IF( j < numberOfTries) CALL ResetProject(project)
+         END DO 
 !
 !        ------------------------------------------------------------------------
 !        If there is a problem, usually it is because the initial background grid

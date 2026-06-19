@@ -1274,7 +1274,7 @@
                alpha           = alpha**(1.0_RP/N)
                q               = LOG(alpha)/LOG(2.0_RP)
                ip              = CEILING(q)
-               alpha           = 2.0_RP**ip + 1.0_RP
+               alpha           = 2.0_RP**ip !+ 1.0_RP
                hFactorArray(j) = alpha
             END IF
          END DO 
