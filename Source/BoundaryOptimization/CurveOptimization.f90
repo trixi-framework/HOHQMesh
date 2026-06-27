@@ -66,7 +66,7 @@
       CHARACTER(LEN=*)        :: newName            ! Name of the new curve
       INTEGER                 :: newID              ! ID of the new curve
       TYPE(OptimizerOptions)  :: options            ! parameters for the approximation
-      INTEGER, ALLOCATABLE    :: breakIndices(:) ! index in optimizedCuts where break boundaries occur
+      INTEGER, ALLOCATABLE    :: breakIndices(:)    ! index in optimizedCuts where break boundaries occur
 !
 !     ---------------
 !     Local variables

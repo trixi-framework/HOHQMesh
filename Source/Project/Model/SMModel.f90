@@ -46,6 +46,7 @@
       USE SMTopographyClass
       USE SMEquationTopographyClass
       USE SMTopographyFromFileClass
+      USE ScanningModule
       IMPLICIT NONE
 !
 !     ---------
@@ -559,8 +560,9 @@
 !        ---------------
 !
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
-         TYPE(SMScanner)                         :: scanner
-         INTEGER  , ALLOCATABLE                  :: iBreaks(:)
+         INTEGER      , PARAMETER                :: DONT_SKIP = 0, SKIP = 1
+         INTEGER                                 :: j
+         
 !
          curveChain % optimization = NONE
          IF ( curveDict % containsKey(CHAIN_OPTIMIZATION_KEY) )     THEN
@@ -607,20 +609,25 @@
 !              Chain breaks are defined by the end of the numbered curve in the chain, e.g.
 !              with five curves in the chain, putting a break at the end of curve 2 and curve 
 !              3, write
-!                 breaks = 2,3
-!              where the separator is a comma.
+!                 connect = 2-3
+!              and to connect 2 & 3 and 4&5,
+!                 connect = 2-3, 4-5
+!              where the separator is a comma. (Spaces are ignored)
 !              -------------------------------------------------------------------------------
 !
-               IF ( curveChain % COUNT() == 1 )     THEN ! Ignore any breaks written if there is only one curve
+               IF ( curveChain % COUNT() == 1 )     THEN ! No breaks if there is only one curve
                   curveChain % breaks = [0.0_RP, 1.0_RP]
                ELSE 
                   str = curveDict % stringValueForKey(CHAIN_BREAKS_KEY)
-                  CALL scanner % initWithString(str,delims = ",")
-                  iBreaks = scanner % scanIntsToArray()
-                  curveChain % breaks = [0.0_RP, REAL(iBreaks, RP)/ REAL(curveChain % COUNT(), RP), 1.0_RP]
+                  CALL ScanForBreaks(str, curveChain % breaks, curveChain % COUNT() )
                END IF 
             ELSE
-               curveChain % breaks = [0.0_RP, 1.0_RP]
+               IF ( curveChain % COUNT() == 1 )     THEN ! No breaks if there is only one curve
+                  curveChain % breaks = [0.0_RP, 1.0_RP]
+               ELSE                                      ! Break all curves
+                  ALLOCATE(curveChain % breaks(0:curveChain % COUNT()))
+                  curveChain % breaks = [(REAL(j,RP)/REAL(curveChain % COUNT(), RP),j=0,curveChain % COUNT())]
+               END IF 
             END IF
          END IF
          

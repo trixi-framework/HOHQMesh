@@ -420,7 +420,6 @@
          CLASS(MeshProject)         , POINTER :: self
          CLASS(FTMutableObjectArray), POINTER :: boundaryPolynomials !An alias
          CLASS(FTObject)            , POINTER :: obj
-         INTEGER                              :: i, nObjs
          
          IF(ALLOCATED(self % L2BoundaryError)) DEALLOCATE(self % L2BoundaryError)
          IF(ALLOCATED(self % H1BoundaryError)) DEALLOCATE(self % H1BoundaryError)

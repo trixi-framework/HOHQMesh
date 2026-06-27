@@ -58,12 +58,12 @@
    Module SMScannerClass
    USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
    USE IEEE_ARITHMETIC
-   USE SMConstants, ONLY: RP
    IMPLICIT NONE  
    
    TYPE SMScanner
       CHARACTER(LEN=:), ALLOCATABLE :: str
-      CHARACTER(LEN=:), ALLOCATABLE :: delimeters
+      CHARACTER(LEN=:), ALLOCATABLE :: delimeters   ! String with the delimiters
+      CHARACTER(LEN=1)              :: delm         ! Last delimiter scanned
       INTEGER                       :: cursorPos
       INTEGER                       :: endPos
 !
@@ -78,6 +78,7 @@
       PROCEDURE :: scanReal
       PROCEDURE :: isAtEnd
       PROCEDURE :: scanIntsToArray
+      PROCEDURE :: lastDelimiter
    END TYPE SMScanner
    
    INTEGER, PARAMETER :: NOT_AN_INTEGER = -HUGE(NOT_AN_INTEGER)
@@ -92,14 +93,15 @@
    SUBROUTINE initWithString(self, str, delims)
       IMPLICIT NONE
       CLASS(SMScanner)  :: self
-      CHARACTER(LEN=*) :: str
-      CHARACTER(LEN=*) :: delims
+      CHARACTER(LEN=*)  :: str
+      CHARACTER(LEN=*)  :: delims
       
       CALL DestructScanner(self)
       self % str        = str
       self % delimeters = delims
       self % cursorPos  = 1
       self % endPos     = LEN_TRIM(str)
+      self % delm       = ""
       
    END SUBROUTINE initWithString
 !
@@ -192,15 +194,27 @@
                    SET    = self % delimeters)
                    
       IF(scEnd == 0) THEN 
-         scEnd = self % endPos
+         scEnd       = self % endPos
+         self % delm = ""
       ELSE
-         scEnd = p + scEnd - 2
+         self % delm = self % str(p+scEnd-1:p+scEnd-1)
+         scEnd       = p + scEnd - 2
       END IF
       
       token = self % str(p:scEnd)
       self % cursorPos = scEnd + 2
 
    END SUBROUTINE getToken
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   CHARACTER(LEN=1) FUNCTION lastDelimiter(self)  
+      IMPLICIT NONE  
+      CLASS(SMScanner) :: self
+      
+      lastDelimiter = self % delm
+      
+   END FUNCTION lastDelimiter
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -239,7 +253,7 @@
 !     ---------
 !
       CLASS(SMScanner)  :: self
-      REAL(KIND=RP)     :: res
+      REAL(KIND(1.0d0)) :: res
 !
 !     ---------------
 !     Local variables
@@ -345,7 +359,7 @@
       TYPE(SMScanner)     :: scanner
       LOGICAL             :: done
       INTEGER             :: intResult
-      REAL(KIND=RP)       :: realResult
+      REAL(KIND(1.0d0))   :: realResult
    
       CALL scanner % initWithString(str,dlms)
       done     = scanner % scanUpToString("[")
@@ -479,5 +493,5 @@
       scanArrayTest = scanArrayTest .AND. SIZE(a) == 0
       
    END FUNCTION scanArrayTest
-   
+
    END Module SMScannerClass

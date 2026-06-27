@@ -97,7 +97,7 @@
       CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_CONTINUITY_KEY       = "continuity"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_OPTIMIZATION_KEY     = "optimize"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_TOLERANCE_KEY        = "tolerance"
-      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_BREAKS_KEY           = "breaks"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_BREAKS_KEY           = "connect"
 !
 !     ---------------------
 !     Class type definition
