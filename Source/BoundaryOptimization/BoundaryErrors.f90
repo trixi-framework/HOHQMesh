@@ -184,7 +184,7 @@
       CHARACTER(DEFAULT_CHARACTER_LENGTH)      :: str
       REAL(KIND=RP)                            :: gTStart, gTEnd
       REAL(KIND=RP)                            :: eL2Norm, eH1Norm
-      INTEGER                                  :: iUnit, normUnit
+      INTEGER                                  :: normUnit
       INTEGER                                  :: m, j, c
 !
 !     -------
@@ -199,7 +199,6 @@
 !     Where to write the results
 !     --------------------------
 !
-      OPEN(NEWUNIT = iUnit   , FILE = project % runParams % errorFileName)
       m = INDEX(STRING = project % runParams % errorFileName, SUBSTRING = ".")
       IF ( m == -1 )     THEN
          OPEN(NEWUNIT = normUnit, FILE = project % runParams % errorFileName //"_Norms")
@@ -222,7 +221,7 @@
       DO j = 1, model % numberOfChains()
          obj => modelChains % objectAtIndex(j)
          CALL castToSMChainedCurve(obj, modelChain)
-         WRITE(iUnit,*) TRIM(modelChain % curveName())
+         WRITE(normUnit,*) TRIM(modelChain % curveName())
          
          obj => boundaryPolynomials % objectAtIndex(j)
          CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
@@ -237,9 +236,8 @@
             
          END DO
          
-      END DO 
-
-      CLOSE(iUnit)
+      END DO
+      
       CLOSE(normUnit)
       
    END SUBROUTINE WriteBoundaryErrors

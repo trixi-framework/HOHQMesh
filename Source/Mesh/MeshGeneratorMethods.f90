@@ -93,6 +93,8 @@
             IF ( .NOT. needsRemesh )     EXIT
             
             IF( j < numberOfTries) CALL ResetProject(project)
+            IF(printMessage)       PRINT *, "Remeshing for accuracy..."
+           
          END DO 
 !
 !        ------------------------------------------------------------------------
