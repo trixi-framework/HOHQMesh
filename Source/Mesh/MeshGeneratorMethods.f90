@@ -81,7 +81,8 @@
 !           boundary chains.
 !           -----------------------------------
 !
-            CALL ComputeBoundaryApproximations(project)
+            CALL ComputeBoundaryApproximations(project, .FALSE.)
+!            CALL ComputeBoundaryApproximations(project, .TRUE.)
             CALL ComputeBoundaryErrors(project)
             CALL ResetInverseScales(project, needsRemesh)
 !
@@ -2684,7 +2685,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE ComputeBoundaryPolynomials( project, chainNodesArray)
+      SUBROUTINE ComputeBoundaryPolynomials( project, chainNodesArray, performOptimization)
 !
 !     -----------------------------------------------------------------
 !     Generate multisegment curves that span the curve segments in the 
@@ -2705,6 +2706,7 @@
 !
          TYPE(MeshProject)     :: project
          TYPE(JaggedNodeArray) :: chainNodesArray(:) !Array of arrays of nodes along the boundary
+         LOGICAL               :: performOptimization
 !
 !        ---------------
 !        Local variables
@@ -2826,7 +2828,7 @@
 !           -------------------------------------------------------------
 !
             crv => modelChain
-            IF ( modelChain % optimization /= NONE)     THEN
+            IF ( modelChain % optimization /= NONE .AND. performOptimization)     THEN
       
                CALL SetDefaultOptions(options)
                options % whichNorm = modelChain % optimization
@@ -2907,10 +2909,11 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-   SUBROUTINE ComputeBoundaryApproximations(project)  
+   SUBROUTINE ComputeBoundaryApproximations(project, optimize)  
       IMPLICIT NONE  
       
       CLASS(MeshProject), POINTER :: project
+      LOGICAL                     :: optimize
 !
 !     ---------------
 !     Local Variables
@@ -2932,7 +2935,7 @@
       ALLOCATE(chainNodesArray(numBoundaryChains))
       CALL SortBoundaryNodesToChains(project % mesh % nodesIterator, &
                                      numBoundaryChains, chainNodesArray)
-      CALL ComputeBoundaryPolynomials( project, chainNodesArray)
+      CALL ComputeBoundaryPolynomials( project, chainNodesArray, optimize)
       CALL setElementBoundaryInfo(project)
 !
 !     -----------------------------------------
