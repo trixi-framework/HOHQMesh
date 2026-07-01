@@ -1204,25 +1204,81 @@
 !        ----------------
 !
          IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
+!
+!           ------------------------------------------------------------
+!           innerBoundaries is a linked list. Step through each boundary
+!           and the associated segmented curves
+!           ------------------------------------------------------------
+!
             curveIterator => self % model % innerBoundariesIterator
             ALLOCATE(segmentedIterator)
             CALL segmentedIterator % initWithFTLinkedList(sizer % innerBoundariesList)
 
             CALL curveIterator % setToStart()
             CALL segmentedIterator % setToStart()
-
+!
+!           ---------------------------
+!           For each curve in the model
+!           ---------------------------
+!
             DO WHILE (.NOT.curveIterator % isAtEnd())
+!
+!              ----------------
+!              Access the curve
+!              ----------------
+!
                obj     => curveIterator % object()
                CALL castToSMChainedCurve(obj,innerCurveChain)
-
+               curveID = innerCurveChain % id()
+!
+!              ----------------------------------
+!              And its associated segmented curve
+!              ----------------------------------
+!
                obj     => segmentedIterator % object()
                CALL castToChainedSegmentedCurve(obj,innerSegmentedCurveChain)
-
-               DO j = 1, innerSegmentedCurveChain % curveCount()
-                  cCurve   => innerCurveChain % curveAtIndex(j)
-                  frsCurve => innerSegmentedCurveChain % segmentedCurveAtIndex(j)
-!                  CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve)
-               END DO
+               
+               IF(outerBoundary % optimization .ne. NONE) THEN
+!
+!                 -------------------------------------------------------------
+!                 The boundary polynomials are segmented curves along which the
+!                 error norms have been computed
+!                 -------------------------------------------------------------
+!
+                  obj => self % boundaryPolynomialsArray % objectAtIndex(curveID)
+                  CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
+!
+!                 ---------------------------------------------------
+!                 For each segmented curve in the boundary chain
+!                 adjust the local scale according to the size of the
+!                 error
+!                 ---------------------------------------------------
+!
+                  IF ( innerCurveChain % optimization == L2_NORM )     THEN
+                     hFactorArray = self % L2BoundaryError(curveID) % array
+                  ELSE
+                     hFactorArray = self % H1BoundaryError(curveID) % array
+                  END IF
+                  CALL ComputeNewSizeFactor(hFactorArray, self % runParams % polynomialOrder, &
+                                            innerCurveChain % tolerance)
+!
+!                 --------------------------------------------------------------
+!                 Apply the boundary factor to the current scales stored in the 
+!                 FTSegmented curve in the sizer
+!                 --------------------------------------------------------------
+!
+                  IF ( MAXVAL(hFactorArray) > 1.0_RP )     THEN
+                      needsRemesh = .TRUE. 
+                      d = REAL(innerSegmentedCurveChain % curveCount(),RP)
+                      DO j = 1, innerSegmentedCurveChain % curveCount()
+                        aMap     = [REAL(j-1,RP)/d, 1.0_RP/d]
+                        frsCurve => innerSegmentedCurveChain % segmentedCurveAtIndex(j)
+                        CALL RescaleFRSegmentedCurve(frsCurve, hFactorArray, aMap, boundaryPolynomial % cuts)
+                     END DO
+                  END IF 
+                  
+                  DEALLOCATE(hFactorArray)
+               END IF
 
                CALL curveIterator % moveToNext()
                CALL segmentedIterator % moveToNext()
