@@ -1137,7 +1137,7 @@
 !        Outer boundary
 !        --------------
 !
-         IF ( ASSOCIATED( sizer % outerBoundary) )     THEN
+         IF ( ASSOCIATED( self % model % outerBoundary) )     THEN
 !
 !           ------------------------------------------------------
 !           Segmented chained curve along outer boundary, chain of
@@ -1238,7 +1238,7 @@
                obj     => segmentedIterator % object()
                CALL castToChainedSegmentedCurve(obj,innerSegmentedCurveChain)
                
-               IF(outerBoundary % optimization .ne. NONE) THEN
+               IF(innerCurveChain % optimization .ne. NONE) THEN
 !
 !                 -------------------------------------------------------------
 !                 The boundary polynomials are segmented curves along which the

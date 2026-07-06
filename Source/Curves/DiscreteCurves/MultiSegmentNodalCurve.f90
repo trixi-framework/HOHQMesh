@@ -321,8 +321,6 @@
 !     ----------------------------------------------
 !
       REAL(KIND=RP) :: cuts(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
-      REAL(KIND=RP) :: t, tol = 1.0d-12, eMax, dTol = 1.0d-6
-      INTEGER       :: k
 !
 !     ---------------
 !     Create a Circle

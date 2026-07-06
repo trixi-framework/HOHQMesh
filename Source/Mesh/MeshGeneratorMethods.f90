@@ -82,7 +82,7 @@
 !           -----------------------------------
 !
             CALL ComputeBoundaryApproximations(project, .FALSE.)
-!            CALL ComputeBoundaryApproximations(project, .TRUE.)
+!!            CALL ComputeBoundaryApproximations(project, .TRUE.)
             CALL ComputeBoundaryErrors(project)
             CALL ResetInverseScales(project, needsRemesh)
 !

@@ -177,7 +177,6 @@
 !     Local variables 
 !     ----------------
 !
-      INTEGER                    :: N
       INTEGER                    :: nSegments
       INTEGER                    :: k
       
@@ -217,7 +216,7 @@
       INTEGER                    :: qOrder
       INTEGER                    :: nSegments
       INTEGER                    :: j
-      REAL(KIND=RP)              :: t, h, e1(3), x(3)
+      REAL(KIND=RP)              :: t, h, e1(3)
       REAL(KIND=RP)              :: dsdt
       
       nSegments = self % nSegments
