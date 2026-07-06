@@ -372,8 +372,9 @@
 !     Compute total arc length
 !     ------------------------
 !
+      CALL ConstructGaussQuadrature(gQuad, 4*polyOrder) ! The 4 is arbitrary
       CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
-      arcL = msmCurve % arcLength()
+      arcL = msmCurve % arcLength(gQuad)
       CALL FTAssertEqual(expectedValue = 8.0_RP*PI, &
                          actualValue   = arcL,  &
                          relTol        = 1.0d-4, &
@@ -383,7 +384,6 @@
 !     Compute arc lengths of segments
 !     -------------------------------
 !
-      CALL ConstructGaussQuadrature(gQuad, 4*polyOrder) ! The 4 is arbitrary
       CALL curveSegmentLengths(crv, polyOrder, [0.0_RP, 0.5_RP, 1.0_RP], &
                                options, gQuad, aLengths)
       CALL FTAssertEqual(expectedValue = 4.0_RP*PI, &

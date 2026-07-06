@@ -27,6 +27,7 @@
       
       self % N = N
       ALLOCATE(self % nodes(0:N), self % weights(0:N))
+      CALL GaussLegendreNodesAndWeights( N, self % nodes, self % weights )
  
    END SUBROUTINE ConstructGaussQuadrature
    

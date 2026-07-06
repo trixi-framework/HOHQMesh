@@ -39,7 +39,7 @@
 !     Constants
 !     ---------
 !
-      INTEGER, PARAMETER :: SM_CURVE_NAME_LENGTH = 32
+      INTEGER, PARAMETER                             :: SM_CURVE_NAME_LENGTH = 32
       CHARACTER(LEN=SM_CURVE_NAME_LENGTH), PARAMETER :: SYMMETRY_CURVE_NAME = ":symmetry"
 !
 !     ---------------------

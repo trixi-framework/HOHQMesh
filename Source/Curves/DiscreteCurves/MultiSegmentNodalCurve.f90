@@ -3,7 +3,7 @@
 !
 !      MultiSegmentNodalCurve.f90
 !      Created: April 22, 2026 at 2:45 PM
-!      From the MultiSegmentModalCurve class
+!      From the MultiSegmentNodalCurve class
 !      By: David Kopriva  
 !
 !      A curve subclass that is defined in terms of multiple segments
@@ -14,6 +14,7 @@
    Module MultiSegmentNodalCurveClass
       USE MultiSegmentCurveClass
       USE CurveInterpolantClass
+      USE LegendreAlgorithms
       IMPLICIT NONE  
    
       TYPE, EXTENDS(MultiSegmentCurve) :: MultiSegmentNodalCurve
@@ -28,6 +29,7 @@
          PROCEDURE :: positionAt => EvaluateMultiSegmentNodalCurve
          PROCEDURE :: derivativeAt => EvaluateMultiSegmentNodalCurveD 
          PROCEDURE :: className  => MSNCClassName
+         PROCEDURE :: derivativeInSegment => nodalDerivativeInSegment
       END TYPE MultiSegmentNodalCurve
 !
 !  ========      
@@ -166,6 +168,26 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      FUNCTION nodalDerivativeInSegment(self, t, k)  RESULT(x)
+!
+!        ---------------------------------------------------------------
+!        Returns the derivative in segment k as needed by the superclass
+!        procedure to compute the arc length
+!        ---------------------------------------------------------------
+!
+         IMPLICIT NONE  
+         CLASS(MultiSegmentNodalCurve) :: self
+         REAL(KIND=RP)                 :: t
+         REAL(KIND=RP)                 :: x(3)
+         INTEGER                       :: k
+         
+         CALL derivative_AT(self % selfInterpolants(k),t,x)
+         x = x*(self % cuts(k) - self % cuts(k-1))/2.0_RP
+         
+      END FUNCTION nodalDerivativeInSegment
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
 !      -----------------------------------------------------------------
 !> Class name returns a string with the name of the type of the object
 !>
@@ -183,6 +205,8 @@
          IF( self % refCount() >= 0 ) CONTINUE 
  
       END FUNCTION MSNCClassName
+   
+   END Module MultiSegmentNodalCurveClass
 !
 !///////////////////////////////////////////////////////////////////////
 !
@@ -191,8 +215,10 @@
 !///////////////////////////////////////////////////////////////////////
 !
 ! 
-   LOGICAL FUNCTION MultiSegmentNodalCurveIsOK()  
+   SUBROUTINE MultiSegmentNodalCurveTest()  
       USE SMParametricEquationCurveClass
+      USE MultiSegmentNodalCurveClass
+      USE FTAssertions
       IMPLICIT NONE
       
       CLASS(MultiSegmentNodalCurve)   , POINTER :: self
@@ -209,8 +235,6 @@
       REAL(KIND=RP) :: cuts(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
       REAL(KIND=RP) :: t, tol = 1.0d-12, eMax, dTol = 1.0d-6
       INTEGER       :: k, N = 3
-      
-      MultiSegmentNodalCurveIsOK = .TRUE.
 !
 !     ----------------------------
 !     The curve to be approximated
@@ -230,9 +254,9 @@
 !     Check intervals
 !     ---------------
 !
-      IF( findInterval(self % cuts, t = 0.25_RP) .NE. 1) MultiSegmentNodalCurveIsOK = .FALSE.
-      IF( findInterval(self % cuts, t = 0.50_RP) .NE. 2) MultiSegmentNodalCurveIsOK = .FALSE.
-      IF( findInterval(self % cuts, t = 0.80_RP) .NE. 3) MultiSegmentNodalCurveIsOK = .FALSE.
+      CALL FTAssert(test = findInterval(self % cuts, t = 0.25_RP) == 1,msg = "First find interval failed")
+      CALL FTAssert(test = findInterval(self % cuts, t = 0.50_RP) == 2,msg = "Second find interval failed")
+      CALL FTAssert(test = findInterval(self % cuts, t = 0.80_RP) == 3,msg = "Third find interval failed")
 !
 !     ------------
 !     Check values
@@ -242,8 +266,8 @@
       DO k = 0, 25 
          t = cuts(0) + k*(cuts(3) - cuts(0))/25.0_RP
          eMax = MAX(eMax, MAXVAL(ABS(self % positionAt(t) - parentCurve % positionAt(t))) )
-         MultiSegmentNodalCurveIsOK = emax < tol
       END DO
+      CALL FTAssert(test = eMax < tol, msg = "Nodal segmented curve evaluation failed")
 !
 !     -----------------
 !     Check Derivatives
@@ -253,12 +277,87 @@
       DO k = 0, 10 
          t = cuts(0) + k*(cuts(3) - cuts(0))/10.0_RP
          eMax = MAX(eMax, MAXVAL(ABS(self % derivativeAt(t) - parentCurve % derivativeAt(t))) )
-         MultiSegmentNodalCurveIsOK = emax < dTol ! derivativeAt uses a finite difference, 1st order at endpoints
       END DO
+      CALL FTAssert(test = eMax < dTol, msg = "Nodal segmented curve derivative evaluation failed")
 
       CALL releaseMultiSegmentNodalCurve(self)
       CALL releasePECurve(parentCurve)
       
-   END FUNCTION MultiSegmentNodalCurveIsOK
-   
-   END Module MultiSegmentNodalCurveClass
+   END SUBROUTINE MultiSegmentNodalCurveTest
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE NodalCircleTest()
+!
+!  -------------------------------------------------------------------
+!  Ensure that the marching optimization is consistent with previous
+!  results.
+!  -------------------------------------------------------------------
+!
+      USE MultiSegmentNodalCurveClass
+      USE SMParametricEquationCurveClass
+      USE FTAssertions
+      IMPLICIT NONE
+!
+!     --------------
+!     Test paramters
+!     --------------
+!
+      INTEGER                                :: polyOrder  = 6
+!
+!     ---------------
+!     Local Variables
+!     ---------------
+!
+      CLASS(SMCurve)                 , POINTER :: crv
+      TYPE(SMParametricEquationCurve), POINTER :: circleCurve
+      CLASS(MultiSegmentNodalCurve)  , POINTER :: msnCurve
+      TYPE(GaussQuadratureType)                :: gQuad
+      CHARACTER(LEN=64)                        :: xEqn, yEqn, zEqn
+      REAL(KIND=RP)                            :: arcL
+!
+!     ----------------------------------------------
+!     Polynomial with three modes and three segments
+!     ----------------------------------------------
+!
+      REAL(KIND=RP) :: cuts(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
+      REAL(KIND=RP) :: t, tol = 1.0d-12, eMax, dTol = 1.0d-6
+      INTEGER       :: k
+!
+!     ---------------
+!     Create a Circle
+!     ---------------
+!
+      xEqn = "x(t) = 4*cos(2*pi*t)"
+      yEqn = "y(t) = 4*sin(2*pi*t)"
+      zEqn = "z(t) = 0.0"
+      ALLOCATE(circleCurve)
+      CALL circleCurve % initWithEquationsNameAndID(xEqn, yEqn, zEqn, curveName = "circleCurve", id = 1)
+      crv => circleCurve
+!
+!     ---------------------------------
+!     Create a multisegment nodal curve
+!     ---------------------------------
+!
+      ALLOCATE(msnCurve)
+      CALL msnCurve % ConstructMultiSegmentNodalCurve(crv, cuts, polyOrder, "multiSeg", 2 )
+!
+!     ------------------------
+!     Compute total arc length
+!     ------------------------
+!
+      CALL ConstructGaussQuadrature(gQuad, 4*polyOrder) ! The 4 is arbitrary
+      arcL = msnCurve % arcLength(gQuad)
+      CALL FTAssertEqual(expectedValue = 8.0_RP*PI, &
+                         actualValue   = arcL,  &
+                         relTol        = 1.0d-4, &
+                         msg           = "Arc Length estimation")
+!
+!     --------
+!     Clean up
+!     --------
+!
+      CALL releaseMultiSegmentNodalCurve(msnCurve)
+      CALL releasePECurve(circleCurve)
+       
+   END SUBROUTINE NodalCircleTest

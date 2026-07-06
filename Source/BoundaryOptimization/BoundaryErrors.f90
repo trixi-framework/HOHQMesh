@@ -49,6 +49,7 @@
       REAL(KIND=RP)                            :: e, eD, eL2Norm, eH1Norm, el2Max, eH1Max
       REAL(KIND=RP)                            :: xC(3), xP(3)
       REAL(KIND=RP)              , ALLOCATABLE :: nodes(:), weights(:)
+      REAL(KIND=RP)                            :: arc
 !
 !     -------------------------------------------
 !     Use Gauss quadrature to compute error norms
@@ -121,15 +122,6 @@
             DO m = 0, Ng
                t = gTStart + dt*0.5_RP*(nodes(m) + 1.0_RP)
 !
-!              --------------
-!              Location error
-!              --------------
-!
-               xC      = modelChain % positionAt(t)
-               xP      = boundaryPolynomial % positionAt(t)
-               e       = (xP(1)-xC(1))**2 + (xP(2)-xC(2))**2
-               eL2Norm = eL2Norm + e*weights(m)
-!
 !              ------------------
 !              Derivative error  
 !              ------------------
@@ -137,13 +129,25 @@
                xC      = modelChain % derivativeAt(t)
                xP      = boundaryPolynomial % derivativeAt(t)
 
-               eD      = (xP(1)-xC(1))**2 + (xP(2)-xC(2))**2
+               eD       = (xP(1)-xC(1))**2 + (xP(2)-xC(2))**2
+!
+!              --------------
+!              Location error
+!              --------------
+!
+               xC      = modelChain % positionAt(t)
+               xP      = boundaryPolynomial % positionAt(t)
+               e       = (xP(1)-xC(1))**2 + (xP(2)-xC(2))**2
+               
+               eL2Norm = eL2Norm + e*weights(m)
                eH1Norm = eH1Norm + eL2Norm + eD*weights(m)
                
             END DO
+            
+            arc = segmentArcLength(boundaryPolynomial, c, nodes, weights)
 
-            eL2Norm = SQRT(0.5_RP*dt*eL2Norm)
-            eH1Norm = SQRT(0.5_RP*dt*eH1Norm)
+            eL2Norm = SQRT(0.5_RP*dt*eL2Norm/arc)
+            eH1Norm = SQRT(0.5_RP*dt*eH1Norm/arc)
             
             project % L2BoundaryError(j) % array(c) = eL2Norm
             project % H1BoundaryError(j) % array(c) = eH1Norm

@@ -54,21 +54,22 @@
       USE ProgramGlobals
       USE LegendreAlgorithms
       USE SMCurveClass
+      USE GaussQuadratureModule
       IMPLICIT NONE
       
       INTEGER, PARAMETER :: NO_CONSTRAINT       = 0
       INTEGER, PARAMETER :: FIXED_CONSTRAINT    = -1
       INTEGER, PARAMETER :: PERIODIC_CONSTRAINT = -2
       INTEGER, PARAMETER :: H1O_OK = 0, H1O_CONVERT = 1
-!
-!     --------------------------------
-!     Utility to use to compute errors
-!     --------------------------------
-!
-      TYPE GaussQuadratureType
-         INTEGER                    :: N
-         REAL(KIND=RP), ALLOCATABLE :: nodes(:), weights(:)
-      END TYPE GaussQuadratureType
+!!
+!!     --------------------------------
+!!     Utility to use to compute errors
+!!     --------------------------------
+!!
+!      TYPE GaussQuadratureType
+!         INTEGER                    :: N
+!         REAL(KIND=RP), ALLOCATABLE :: nodes(:), weights(:)
+!      END TYPE GaussQuadratureType
       
       TYPE OptimizerOptions
          INTEGER       :: internalConstraint ! Default = 0
@@ -117,19 +118,19 @@
       CONTAINS  
 !     ========
 !
-!
-!//////////////////////////////////////////////////////////////////////// 
+!!
+!!//////////////////////////////////////////////////////////////////////// 
+!! 
+!   SUBROUTINE ConstructGaussQuadrature(self, N)  
+!      IMPLICIT NONE
+!      TYPE(GaussQuadratureType) :: self
+!      INTEGER                   :: N
+!      
+!      self % N = N
+!      ALLOCATE(self % nodes(0:N), self % weights(0:N))
+!      CALL GaussLegendreNodesAndWeights( N, self % nodes, self % weights )
 ! 
-   SUBROUTINE ConstructGaussQuadrature(self, N)  
-      IMPLICIT NONE
-      TYPE(GaussQuadratureType) :: self
-      INTEGER                   :: N
-      
-      self % N = N
-      ALLOCATE(self % nodes(0:N), self % weights(0:N))
-      CALL GaussLegendreNodesAndWeights( N, self % nodes, self % weights )
- 
-   END SUBROUTINE ConstructGaussQuadrature
+!   END SUBROUTINE ConstructGaussQuadrature
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

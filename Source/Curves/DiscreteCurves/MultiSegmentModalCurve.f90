@@ -16,9 +16,9 @@
       IMPLICIT NONE  
    
       TYPE, EXTENDS(MultiSegmentCurve) :: MultiSegmentModalCurve
-         REAL(KIND=RP), ALLOCATABLE :: segmentLengths(:)
-         REAL(KIND=RP), ALLOCATABLE :: segmentPoints(:,:)
-         REAL(KIND=RP), ALLOCATABLE :: coefs(:,:,:)
+         REAL(KIND=RP), ALLOCATABLE    :: segmentLengths(:)
+         REAL(KIND=RP), ALLOCATABLE    :: segmentPoints(:,:)
+         REAL(KIND=RP), ALLOCATABLE    :: coefs(:,:,:)
 !
 !        ========
          CONTAINS
@@ -28,8 +28,8 @@
          FINAL     :: DestructMultiSegmentModalCurve
          PROCEDURE :: positionAt => EvaluateMultiSegmentModalCurve
          PROCEDURE :: derivativeAt => EvaluateMultiSegmentModalCurveD
+         PROCEDURE :: derivativeInSegment => modalDerivativeInSegment
          PROCEDURE :: valueInSegment
-         PROCEDURE :: arcLength
          PROCEDURE :: className  => MSMCClassName
       END TYPE MultiSegmentModalCurve
 !
@@ -185,6 +185,30 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
+      FUNCTION modalDerivativeInSegment(self, t, k)  RESULT(x)
+!
+!     ---------------------------------------------------------------
+!     Returns the derivative in segment k as needed by the superclass
+!     procedure to compute the arc length
+!     ---------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(MultiSegmentModalCurve) :: self
+         REAL(KIND=RP)                 :: t
+         REAL(KIND=RP)                 :: x(3)
+         INTEGER                       :: k
+!
+         x = valueInSegment(self, k ,t, LA_EVALUATE_DERIVATIVE)
+
+      END FUNCTION modalDerivativeInSegment
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
       FUNCTION valueInSegment(self, k, t, which)  RESULT(x)
          IMPLICIT NONE
 !
@@ -217,93 +241,6 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-   REAL(KIND=RP) FUNCTION arcLength(self)
-!
-!  -------------------------------------------
-!  Compute the arc length of a segmented curve
-!  -------------------------------------------
-!
-      IMPLICIT NONE
-!
-!     ---------
-!     Arguments
-!     ---------
-!
-      CLASS(MultiSegmentModalCurve) :: self
-!
-!     ----------------
-!     Local variables 
-!     ----------------
-!
-      INTEGER                    :: N
-      INTEGER                    :: qOrder
-      INTEGER                    :: nSegments
-      INTEGER                    :: k
-      REAL(KIND=RP), ALLOCATABLE :: nodes(:), weights(:)
-      
-      nSegments = self % nSegments
-
-      N      = self % polyOrder
-      qOrder = 2*N
-      
-      ALLOCATE(nodes(0:qOrder), weights(0:qOrder))
-      CALL GaussLegendreNodesAndWeights( qOrder, nodes, weights )
-      
-      arcLength = 0.0_RP
-      DO k = 1, nSegments
-         arcLength = arcLength + segmentArcLength(self,k,nodes,weights)
-      END DO 
-      
-   END FUNCTION arcLength
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   REAL(KIND=RP) FUNCTION segmentArcLength(self, k, nodes, weights)
-!
-!  -------------------------------------
-!  Compute the arc length of a segmented
-!  segmented curve
-!  -------------------------------------
-!
-      IMPLICIT NONE
-!
-!     ---------
-!     Arguments
-!     ---------
-!
-      CLASS(MultiSegmentModalCurve) :: self
-      REAL(KIND=RP)                 :: nodes(0:), weights(0:)
-      INTEGER                       :: k
-!
-!     ----------------
-!     Local variables 
-!     ----------------
-!
-      INTEGER                    :: N
-      INTEGER                    :: qOrder
-      INTEGER                    :: nSegments
-      INTEGER                    :: j
-      REAL(KIND=RP)              :: t, h, e1(3)
-      REAL(KIND=RP)              :: dsdt
-      
-      nSegments = self % nSegments
-
-      N      = self % polyOrder
-      qOrder = SIZE(nodes) - 1
-            
-      segmentArcLength = 0.0_RP
-      h    = self % cuts(k) - self % cuts(k-1)
-      dsdt = 2.0_RP/h
-      DO j = 0, qOrder
-         t                = self % cuts(k-1) + h*0.5_RP*(nodes(j) + 1.0_RP)
-         e1               = dsdt*self % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE)
-         segmentArcLength = segmentArcLength + 0.5_RP*h*weights(j)*SQRT(e1(1)**2 + e1(2)**2)
-      END DO 
-      
-   END FUNCTION segmentArcLength
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
 !      -----------------------------------------------------------------
 !> Class name returns a string with the name of the type of the object
 !>
@@ -321,26 +258,6 @@
          IF( self % refCount() >= 0 ) CONTINUE 
  
       END FUNCTION MSMCClassName
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION affineMap(t0,t1,s)  
-         IMPLICIT NONE  
-         REAL(KIND=RP) :: t0, t1, s !\in [-1,1]
-         
-         affineMap = t0 + (t1 - t0)*0.5_RP*(1.0_RP + s)
-         
-      END FUNCTION affineMap
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION InvAffineMap(t0,t1,t)  
-         IMPLICIT NONE  
-         REAL(KIND=RP) :: t0, t1, t !\in [t0,t1]
-         
-         InvAffineMap = 2.0_RP*(t - t0)/(t1 - t0) - 1.0_RP
-         
-      END FUNCTION InvAffineMap
 !
 !///////////////////////////////////////////////////////////////////////
 !
