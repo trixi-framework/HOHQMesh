@@ -130,6 +130,13 @@
 !
          CALL trapExceptions !Abort on fatal exceptions
          IF(PrintMessage) PRINT *, "Mesh generated"
+!
+!        ------------------------------------------------------------------------------
+!        The following was implemented early on because duplicate nodes were appearing.
+!        Over the years, this has not been an issue, and this procedure can probably
+!        be eliminated.
+!        ------------------------------------------------------------------------------
+!
          CALL CheckMeshForDuplicateNodes(project % mesh)
 !
 !        -----------------------------
@@ -170,9 +177,9 @@
             
          END IF
 !
-!        ----------------
-!        Write out errors
-!        ----------------
+!        -------------------------
+!        Write out boundary errors
+!        -------------------------
 !
          CALL WriteBoundaryErrors(project)
          IF ( .NOT.test )     THEN

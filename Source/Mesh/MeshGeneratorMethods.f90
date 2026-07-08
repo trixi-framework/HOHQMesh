@@ -82,7 +82,6 @@
 !           -----------------------------------
 !
             CALL ComputeBoundaryApproximations(project, .FALSE.)
-!!            CALL ComputeBoundaryApproximations(project, .TRUE.)
             CALL ComputeBoundaryErrors(project)
             CALL ResetInverseScales(project, needsRemesh)
 !
@@ -125,6 +124,14 @@
                IF( errorCode == A_OK_ERROR_CODE)     EXIT
             END DO
         END IF
+!
+!       -------------------------------------------------------------
+!       Re-compute the boundary polynomials with the optimized curves
+!       if that has been requested
+!       -------------------------------------------------------------
+!
+        CALL ResetProjectBoundaryObjects(project)
+        CALL ComputeBoundaryApproximations(project, .TRUE.)
 
       END SUBROUTINE GenerateQuadMesh
 !
@@ -1914,7 +1921,7 @@
             obj => iterator % object()
             CALL castToSMElement(obj,e)
             CALL ElementBoundaryInfoInit( e % boundaryInfo, N)
-            CALL gatherElementBoundaryInfo( e, model )
+            CALL gatherElementBoundaryInfo( e, project )
 
             CALL iterator % moveToNext()
          END DO
@@ -1923,8 +1930,13 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE gatherElementBoundaryInfo( e, model  )
+      SUBROUTINE gatherElementBoundaryInfoORIG( e, model  )
 !
+!   ATTENTION: THIS IS THE ORIGINAL VERSION THAT COMPUTES THE BOUNDARY LOCATIONS
+!              FROM THE CURVES IN THE MODEL. I'M LEAVING IT IN FOR NOW, BUT WITH
+!              THE OPTIMIZATIONS, WE WANT TO WRITE OUT THE EVALUATIONS OF THE
+!              BOUNDARY POLYNOMIAL APPROXIMATIONS, AS FOUND IN THE NEXT PROCEDURE.
+!              PRESUMABLY THIS PROCEDURE CAN BE DELETED.
 !     --------------------------------------------------------------------------
 !     Gather together the boundary information for the four
 !     edges of the element. This info is
@@ -2034,8 +2046,6 @@
 
             IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN ! Use boundary curves to compute interpolant
 
-              c      => model % curveWithID(curveID(k), chain)
-
               deltaT = tEnd(k) - tStart(k)
               IF( deltaT > maxParameterChange )     THEN !Crossing over the start
                  deltaT = deltaT - 1.0_RP
@@ -2053,6 +2063,163 @@
                   END IF
 
                   e % boundaryInfo % x(:,j,k) = chain % PositionAt( t_j )
+
+                END DO
+             ELSE ! Use a straight line between end nodes
+
+               node1 => e % nodes(edgeMap(1,k)) % node
+               node2 => e % nodes(edgeMap(2,k)) % node
+
+               DO j = 0, N
+                  t_j = (1.0_RP - COS(j*PI/N))/2.0_RP
+                  e % boundaryInfo % x(:,j,k) = (1.0_RP - t_j)*node1 % x + t_j*node2 % x
+               END DO
+
+             END IF
+         END DO
+
+      END SUBROUTINE gatherElementBoundaryInfoORIG
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE gatherElementBoundaryInfo( e, project  )
+!
+!     --------------------------------------------------------------------------
+!     Gather together the boundary information for the four
+!     edges of the element. This info is
+!
+!     nodeIDs(4)    = integer id # of the 4 corner nodes
+!     bCurveFlag(4) = integer ON or OFF of whether a boundary
+!                     curve is defined or NOT
+!     bCurveName(4) = Name of the 4 boundary curves. Equals "---" IF
+!                     the element side is interior,
+!     x(3,0:N,4)    = location (x,y) of the j=0:N Chebyshev-Lobatto points
+!                     along boundary k = 1,2,3,4. The kth entry will be zero if
+!                     bCurveFlag(k) = OFF.
+!     -------------------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMElement)         , POINTER :: e
+         TYPE (MeshProject)        :: project
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE (SMModel)       , POINTER :: model
+         INTEGER                        :: j, k
+         INTEGER                        :: N
+         TYPE (SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
+         CLASS(SMCurve)       , POINTER :: c     => NULL()
+         CLASS(SMChainedCurve), POINTER :: chain => NULL()
+         CLASS(FTMutableObjectArray), POINTER  :: boundaryPolynomials !An alias
+         CLASS(MultiSegmentCurve)   , POINTER  :: boundaryPolynomial
+         CLASS(FTObject)               , POINTER  :: obj
+
+         REAL(KIND=RP)            :: tStart(4), tEnd(4), t_j, deltaT
+         INTEGER                  :: curveId(4)
+         CHARACTER(LEN=32)        :: noCurveName(-4:-1) = (/"Right ", "Left  ", "Bottom", "Top   " /)
+
+         model => project % model
+         boundaryPolynomials => project % boundaryPolynomialsArray
+         N = SIZE(e % boundaryInfo%x,2)-1
+!
+!        -----
+!        Nodes
+!        -----
+!
+         DO k = 1, 4
+            node1 => e % nodes(k) % node
+            e % boundaryInfo % nodeIDs(k) = node1 % id
+         END DO
+!
+!        -----------------------------------
+!        Gather up boundary edge information
+!        -----------------------------------
+!
+         e % boundaryInfo % bCurveName = NO_BC_STRING
+         e % boundaryInfo % bCurveFlag = OFF
+
+         DO k = 1, 4
+            node1 => e % nodes(edgeMap(1,k)) % node
+            node2 => e % nodes(edgeMap(2,k)) % node
+!
+!           ---------------------------------------------------------------------------
+!           See if this edge is on a boundary. One of the two nodes should be
+!           a ROW_SIDE, and that one is on a curve rather than the joint of two curves.
+!           The edge could be on an outer box, in which case it is a straight line, but
+!           still needs boundary name information
+!           ---------------------------------------------------------------------------
+!
+            IF( IsOnBoundaryCurve(node1) .AND. IsOnBoundaryCurve(node2) )     THEN
+!
+!              -----------------------------------------------------------
+!              Mark as on a boundary curve needing interpolant information
+!              -----------------------------------------------------------
+!
+               e % boundaryInfo % bCurveFlag(k) = ON
+               IF( node2 % whereOnBoundary == 0.0_RP .OR. node2 % whereOnBoundary == 1.0_RP )     THEN
+                  c             => model % curveWithID(node1 % bCurveID, chain)
+                  curveID(k)    = chain % id()
+               ELSE
+                  c             => model % curveWithID(node2 % bCurveID, chain)
+                  curveID(k)    = chain % id()
+               END IF
+
+               e % boundaryInfo % bCurveName(k) = c % curveName()
+               tStart(k)                        = node1 % gWhereOnBoundary
+               tEnd(k)                          = node2 % gWhereOnBoundary
+
+            ELSE IF ( IsOnOuterBox(node1) .AND. IsOnOuterBox(node2) )     THEN
+!
+!              --------------------------------------------------------------
+!              Only mark the boundary names for output, no interpolant needed
+!              --------------------------------------------------------------
+!
+               IF( node1 % nodeType == CORNER_NODE )     THEN
+                  e % boundaryInfo % bCurveName(k) = noCurveName(node2 % bCurveID)
+               ELSE
+                  e % boundaryInfo % bCurveName(k) = noCurveName(node1 % bCurveID)
+               END IF
+
+            END IF
+         END DO
+!
+!        --------------------------------------------
+!        Construct boundary information
+!        Use a Chebyshev interpolant for the points.
+!        --------------------------------------------
+!
+         DO k = 1, 4
+
+            IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN ! Use boundary curves to compute interpolant
+
+              obj => boundaryPolynomials % objectAtIndex(curveID(k))
+              CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
+
+              deltaT = tEnd(k) - tStart(k)
+              IF( deltaT > maxParameterChange )     THEN !Crossing over the start
+                 deltaT = deltaT - 1.0_RP
+              ELSE IF (deltaT < -maxParameterChange ) THEN
+                 deltaT = 1.0_RP + deltaT
+              END IF
+              
+
+              DO j = 0, N
+
+                  t_j = tStart(k) + deltaT*(1.0_RP - COS(j*PI/N))/2.0_RP
+                  IF( t_j > 1.0_RP )     THEN
+                     t_j = t_j - 1.0_RP
+                  ELSE IF( t_j < 0.0_RP )     THEN
+                     t_j = t_j + 1.0_RP
+                  END IF
+
+                  e % boundaryInfo % x(:,j,k) = boundaryPolynomial % PositionAt( t_j )
 
                 END DO
              ELSE ! Use a straight line between end nodes
@@ -2493,7 +2660,7 @@
          REAL(KIND=RP) :: values(0:N,3)
          INTEGER       :: i, j, k
 
-         ALLOCATE(e % xPatch(3,0:N,0:N))
+         IF(.NOT. ALLOCATED(e % xPatch)) ALLOCATE(e % xPatch(3,0:N,0:N))
 !
 !        -------------------
 !        Set up the quad map
