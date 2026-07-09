@@ -653,7 +653,7 @@
          CLASS(SMElement)           , POINTER :: e => NULL()
          TYPE (SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: edgeListIterator
+         CLASS(FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
 
          numBoundaries = model % numberOfInnerCurves &

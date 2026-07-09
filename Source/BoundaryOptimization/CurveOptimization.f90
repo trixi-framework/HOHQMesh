@@ -717,10 +717,10 @@
 !     Arguments
 !     ---------
 !
-      CLASS(SMCurve)              , POINTER :: exact
-      TYPE(MultiSegmentModalCurve), POINTER :: segmentedCurve
-      TYPE(GaussQuadratureType)             :: gQuad
-      REAL(KIND=RP), ALLOCATABLE            :: errors(:,:)
+      CLASS(SMCurve)               , POINTER :: exact
+      CLASS(MultiSegmentModalCurve), POINTER :: segmentedCurve
+      TYPE(GaussQuadratureType)              :: gQuad
+      REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
 !
 !     ----------------
 !     Local variables 
@@ -752,11 +752,11 @@
 !     Arguments
 !     ---------
 !
-      INTEGER                               :: k
-      CLASS(SMCurve)              , POINTER :: exact
-      TYPE(MultiSegmentModalCurve), POINTER :: segmentedCurve
-      TYPE(GaussQuadratureType)             :: gQuad
-      REAL(KIND=RP)                         :: er(3)
+      INTEGER                                :: k
+      CLASS(SMCurve)               , POINTER :: exact
+      CLASS(MultiSegmentModalCurve), POINTER :: segmentedCurve
+      TYPE(GaussQuadratureType)              :: gQuad
+      REAL(KIND=RP)                          :: er(3)
 !
 !     ----------------
 !     Local variables 

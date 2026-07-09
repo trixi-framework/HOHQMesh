@@ -126,7 +126,7 @@
 ! 
       SUBROUTINE releaseMultiSegmentNodalCurve(self)  
          IMPLICIT NONE
-         TYPE (MultiSegmentNodalCurve), POINTER :: self
+         class(MultiSegmentNodalCurve), POINTER :: self
          CLASS(FTObject)              , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -222,7 +222,7 @@
       IMPLICIT NONE
       
       CLASS(MultiSegmentNodalCurve)   , POINTER :: self
-      CLASS(SMParametricEquationCurve), POINTER :: parentCurve
+      TYPE (SMParametricEquationCurve), POINTER :: parentCurve
       CLASS(SMCurve)                  , POINTER :: crv
       CHARACTER(LEN=EQUATION_STRING_LENGTH) :: sx = "f(t) = 2.1*t^3 + 1.4*t^2 + t + 3.13"
       CHARACTER(LEN=EQUATION_STRING_LENGTH) :: sy = "f(t) = t^3 + 2*t^2 + 3*t + 2.72"

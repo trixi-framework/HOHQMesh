@@ -1950,10 +1950,10 @@
 !        ---------------
 !
          CLASS(FTObject)            , POINTER :: obj
-         TYPE(FTMutableObjectArray) , POINTER :: objArray
+         TYPE (FTMutableObjectArray), POINTER :: objArray
          CLASS(FTMutableObjectArray), POINTER :: chains   !Used as an alias for self % allChains
          CLASS(SMChainedCurve)      , POINTER :: chain
-         INTEGER                     :: j
+         INTEGER                              :: j
          
          ALLOCATE(self % allChains)
          CALL self % allChains % initWithSize(self % numberOfChains())
@@ -1986,7 +1986,7 @@
         
          IF ( self % numberOfInnerCurves > 0 )     THEN
             objArray => self % innerBoundaries % allObjects()
-            DO j = 1, numberOfItems(objArray) 
+            DO j = 1, objArray % COUNT()! numberOfItems(objArray) 
                obj => objArray % objectAtIndex(j)
                CALL castToSMChainedCurve(obj,chain)
                CALL chains % replaceObjectAtIndexWithObject(chain % id(),obj) 
@@ -1996,7 +1996,7 @@
  
          IF ( self % numberOfInterfaceCurves > 0 )     THEN
             objArray => self % interfaceBoundaries % allObjects()
-            DO j = 1, numberOfItems(objArray) 
+            DO j = 1, objArray % COUNT() !numberOfItems(objArray) 
                obj => objArray % objectAtIndex(j)
                CALL castToSMChainedCurve(obj,chain)
                CALL chains % replaceObjectAtIndexWithObject(chain % id(),obj) 

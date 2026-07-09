@@ -104,7 +104,7 @@
          CLASS(FTLinkedList)        , POINTER :: newElementsList => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
          TYPE (SMNode)              , POINTER :: node            => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: interfaceElementIterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: interfaceElementIterator => NULL()
          INTEGER                              :: interfaceNodeCount, k
          INTEGER                              :: boundaryNodeNumber, oppositeNodeNumber
          

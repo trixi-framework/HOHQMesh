@@ -704,7 +704,7 @@
 !        Local Variables
 !        ---------------
 !
-         TYPE (FTLinkedListIterator) , POINTER   :: refinementIterator => NULL()
+         CLASS (FTLinkedListIterator), POINTER   :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER   :: obj => NULL()
          CLASS(FTValueDictionary)    , POINTER   :: refinementObjectDict
 
@@ -973,7 +973,7 @@
          CALL ConstructGaussQuadrature(gQuad, 4*polyOrder) ! For error computation. The 4 is arbitrary
          
          crv => curve
-         CALL FindOptimizedCuts(curve, polyOrder, breaks, options, gQuad, &
+         CALL FindOptimizedCuts(crv, polyOrder, breaks, options, gQuad, &
                                 cuts, breakIndices)
          CALL curveSegmentLengths(crv, polyOrder, cuts, options, gQuad, arcLengths)
          

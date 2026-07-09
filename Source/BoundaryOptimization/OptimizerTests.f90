@@ -440,7 +440,7 @@
 !
       CLASS(SMLine)        , POINTER :: line
       CLASS(SMEllipticArc) , POINTER :: circle
-      CLASS(SMChainedCurve), POINTER :: chain
+      TYPE (SMChainedCurve), POINTER :: chain
       CLASS(SMCurve)       , POINTER :: curvePtr => NULL()
       CLASS(FTObject)      , POINTER :: obj
 !

@@ -74,7 +74,7 @@
 !
          CLASS(FTObject) , POINTER             :: obj => NULL()
          INTEGER                               :: N, k
-         TYPE (FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS (FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: chain => NULL()
 !
 !        --------------
@@ -380,7 +380,7 @@
          CLASS(FTLinkedList)        , POINTER     :: sortedEdges => NULL(), edgeList => NULL()
          TYPE (SMNodePtr)           , POINTER     :: sortedNodes(:) => NULL()
          CLASS(FTobject)            , POINTER     :: obj            => NULL()
-         TYPE (FTLinkedListIterator), POINTER     :: iterator       => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: iterator       => NULL()
          TYPE (SMEdgePtr)           , ALLOCATABLE :: edgeArray(:)
          INTEGER                    , ALLOCATABLE :: nodeArray(:,:)
          REAL(KIND=RP)              , ALLOCATABLE :: sortedNodeLocations(:,:)
@@ -631,7 +631,7 @@
 !        Local variables
 !        ---------------
 !
-         TYPE (FTLinkedListIterator)  , POINTER :: iterator => NULL()
+         CLASS(FTLinkedListIterator)  , POINTER :: iterator => NULL()
          CLASS(FTLinkedListRecord)    , POINTER :: cr => NULL()
          TYPE (SMEdge)                , POINTER :: currentEdge => NULL(), prevEdge => NULL()
          INTEGER                                :: nNodes, id, idP1, idP2, j
@@ -758,7 +758,7 @@
          TYPE (SMEdge)              , POINTER     :: edge             => NULL()
          CLASS(FTObject)            , POINTER     :: obj              => NULL()
          CLASS(FTLinkedList)        , POINTER     :: edgeList         => NULL()
-         TYPE (FTLinkedListIterator), POINTER     :: edgeListIterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: edgeListIterator => NULL()
 
          LOGICAL                                  :: isInnerBoundaryCurve
          INTEGER                                  :: j
@@ -1076,7 +1076,7 @@
 !     --------------------------------------------------------------------
 !
       IMPLICIT NONE
-      TYPE (FTLinkedListIterator), POINTER :: nodeIterator
+      CLASS(FTLinkedListIterator), POINTER :: nodeIterator
       CLASS(FTObject)            , POINTER :: obj  => NULL()
       TYPE (SMNode)              , POINTER :: node => NULL()
       CALL nodeIterator % setToStart()
@@ -1129,7 +1129,7 @@
          TYPE (SMEdge)      , POINTER :: currentEdge => NULL()
          CLASS(FTObject)    , POINTER :: obj => NULL()
 
-         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS (FTLinkedListIterator), POINTER :: iterator => NULL()
 !
 !        ---------------------
 !        Gather boundary Edges
@@ -1233,7 +1233,7 @@
 !
          TYPE (SMNode)              , POINTER :: currentNode => NULL()
          CLASS(SMCurve)             , POINTER :: c => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          REAL(KIND=RP)                        :: tOld,tNew
          REAL(KIND=RP)                        :: pOld(3),pNew(3)
@@ -1587,7 +1587,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE (FTLinkedListIterator), POINTER :: allNodesIterator
+         CLASS(FTLinkedListIterator), POINTER :: allNodesIterator
          CLASS(FTLinkedList)        , POINTER :: boundaryNodesList
 !
 !        ---------------
@@ -1633,7 +1633,7 @@
 !        ---------
 !
          INTEGER                                 :: numBoundaryChains
-         TYPE(FTLinkedListIterator), POINTER     :: nodesIterator
+         CLASS(FTLinkedListIterator), POINTER    :: nodesIterator
          TYPE(JaggedNodeArray)                   :: chainNodesArray(:)
 !
 !        ---------------

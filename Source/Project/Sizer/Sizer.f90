@@ -586,7 +586,7 @@
 !        ---------------
 !
          TYPE(SizerCurvePtr)        , DIMENSION(:), ALLOCATABLE :: innerCurvesArray
-         TYPE(FTLinkedListIterator) , POINTER                   :: iterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER                   :: iterator => NULL()
          CLASS(FTObject)            , POINTER                   :: obj => NULL()
 
          CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()

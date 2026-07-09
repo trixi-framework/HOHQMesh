@@ -118,7 +118,7 @@
 ! 
       SUBROUTINE releaseMultiSegmentModalCurve(self)  
          IMPLICIT NONE
-         TYPE (MultiSegmentModalCurve), POINTER :: self
+         CLASS(MultiSegmentModalCurve), POINTER :: self
          CLASS(FTObject)              , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
