@@ -133,7 +133,7 @@ FatalErrorException.o \
 MeshProject.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/3DSource/3DMeshController.f90
 
-Assert.o :$(HOHQMESHPATH)/Source/FTTesting/Assert.f90 \
+Assert.o :$(FTOLPATH)/Source/FTTesting/Assert.f90 \
 Comparisons.o \
 FTOLConstants.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(FTOLPATH)/Source/FTTesting/Assert.f90
@@ -507,7 +507,7 @@ FTObjectArrayClass.o \
 MeshProject.o \
 TestSuiteManagerClass.o \
 Assert.o
-	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(FTOLPATH)/Source/Testing/MeshingTests.f90
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/MeshingTests.f90
 
 MeshOperationsModule.o :$(HOHQMESHPATH)/Source/Mesh/MeshOperationsModule.f90 \
 FTObjectClass.o \
