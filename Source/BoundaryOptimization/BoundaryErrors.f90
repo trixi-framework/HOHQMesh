@@ -190,6 +190,8 @@
       REAL(KIND=RP)                            :: eL2Norm, eH1Norm
       INTEGER                                  :: normUnit
       INTEGER                                  :: m, j, c
+      
+      IF ( project % runParams % errorFileName == "none" )     RETURN
 !
 !     -------
 !     Aliases
