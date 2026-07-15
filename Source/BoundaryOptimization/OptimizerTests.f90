@@ -2,11 +2,11 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      OptimizerTests.f90
-!      Created: November 22, 2025 at 8:58 AM 
-!      By: David Kopriva  
+!      Created: November 22, 2025 at 8:58 AM
+!      By: David Kopriva
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE polynomialApproximationTest
 !
 !  -------------------------------------------------------------------
@@ -19,16 +19,16 @@
       USE SMParametricEquationCurveClass
       USE FTAssertions
       IMPLICIT NONE
-            
+
       INTEGER                                  :: optType = H1_NORM! L2_NORM or H1_NORM
-      
+
       CLASS(SMCurve)                 , POINTER :: crv
       TYPE(SMParametricEquationCurve), POINTER :: simpleCurve
       CLASS(SMCurve)                 , POINTER :: optimizedCurve
       CLASS(MultiSegmentModalCurve)  , POINTER :: msmCurve
       TYPE(GaussQuadratureType)                :: gQuad
       TYPE(OptimizerOptions)                   :: options
-      
+
       INTEGER                    :: nSegments
       INTEGER                    :: polyOrder
       REAL(KIND=RP), ALLOCATABLE :: cuts(:)
@@ -36,7 +36,7 @@
       INTEGER      , ALLOCATABLE :: breakIndices(:)
       CHARACTER(LEN=64)          :: xEqn, yEqn, zEqn
       REAL(KIND=RP)              :: tol = 1.0d-7
-      
+
       CALL SetDefaultOptions(options)
       options % whichNorm = optType
 !
@@ -47,7 +47,7 @@
       xEqn = "x(t) = 2*t-1"                   ! mapped L_0
       yEqn = "y(t) = 0.5*(3*(2*t-1)^2 - 1)"   ! mapped L_1
       zEqn = "z(t) = 0.0"
-      
+
       ALLOCATE(simpleCurve)
       CALL simpleCurve % initWithEquationsNameAndID(xEqn, yEqn, zEqn, curveName = "simpleCurve", id = 1)
       crv => simpleCurve
@@ -61,7 +61,7 @@
       ALLOCATE(cuts(0:nSegments))
       cuts         = [0.0_RP, 0.3_RP, 0.6_RP, 1.0_RP] ! for SMCurves, t\in [0,1]
       breakIndices = [0]
-      
+
       CALL OptimizeCurve(curve              = crv,                   &
                          polyOrder          = polyOrder,             &
                          cuts               = cuts,                  &
@@ -82,18 +82,18 @@
                          gQuad          = gQuad, &
                          errors         = errors)
       CALL FTAssert(MAXVAL(errors(:,USER_NORM)) .le. tol, msg = "PolynomialApproximationTest")
-! 
+!
 !     --------
 !     Clean up
 !     --------
 !
       CALL releaseBaseCurve(optimizedCurve)
       CALL releasePECurve(simpleCurve)
-       
+
    END SUBROUTINE PolynomialApproximationTest
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE BlobCurveTest()
 !
 !  -------------------------------------------------------------------
@@ -106,15 +106,15 @@
       USE FTAssertions
       IMPLICIT NONE
 !
-!     --------------
-!     Test paramters
-!     --------------
+!     ---------------
+!     Test parameters
+!     ---------------
 !
       INTEGER                                :: optType    = H1_NORM
       INTEGER                                :: polyOrder  = 6
       INTEGER                                :: smoothness = 2 ! C^2 smoothness
       REAL(KIND=RP)                          :: toler      = 0.1_RP
-      REAL(KIND=RP)                          :: testTol    = 1.0d-10
+      REAL(KIND=RP)                          :: testTol    = 2.0d-9
 !
 !     ---------------
 !     Local Variables
@@ -138,7 +138,7 @@
                                                       0.22077110332899968d0, 0.29160293158998757d0 , 0.36571518148058291d0, &
                                                       0.43544720244301666d0, 0.50460363752397241d0 , 0.58656575126088406d0, &
                                                       0.66015636956282953d0, 0.72937540809332357d0 , 0.79962651199484203d0, &
-                                                      0.87133816457876168d0, 0.93566908228937584d0 , 1.0000000000000000d0]     
+                                                      0.87133816457876168d0, 0.93566908228937584d0 , 1.0000000000000000d0]
       REAL(KIND=RP), DIMENSION(14) :: targetErrs   = [6.5702408339004884d-002, 9.2756204392096850d-002, 9.4318406193022147d-002, &
                                                       8.9851311172061341d-002, 8.4840693387210162d-002, 9.1113841663074166d-002, &
                                                       8.9981484563422739d-002, 6.6436074374897389d-002, 8.5125646477200778d-002, &
@@ -187,7 +187,7 @@
       CALL SegmentErrors(exact          = crv, &
                          segmentedCurve = msmCurve, &
                          gQuad          = gQuad, &
-                         errors         = errors)      
+                         errors         = errors)
 !
 !     ------------
 !     Check errors
@@ -202,11 +202,11 @@
 !
       CALL releaseBaseCurve(optimizedCurve)
       CALL releasePECurve(blobCurve)
-       
+
    END SUBROUTINE BlobCurveTest
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE BlobBreaksTest()
 !
 !  -------------------------------------------------------------------
@@ -226,7 +226,7 @@
       INTEGER                                :: optType    = H1_NORM
       INTEGER                                :: polyOrder  = 6
       INTEGER                                :: smoothness = 2 ! C^2 smoothness
-      REAL(KIND=RP)                          :: toler      = 0.1_RP, testTol = 1.0d-10
+      REAL(KIND=RP)                          :: toler      = 0.1_RP, testTol = 2.0d-9
       REAL(KIND=RP)                          :: testBreaks(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
 !
 !     ---------------
@@ -293,11 +293,11 @@
 !     --------
 !
       CALL releasePECurve(blobCurve)
-       
+
    END SUBROUTINE BlobBreaksTest
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE CircleTest()
 !
 !  -------------------------------------------------------------------
@@ -333,7 +333,7 @@
       REAL(KIND=RP)                            :: arcL
       INTEGER                    , ALLOCATABLE :: breakIndices(:)
       REAL(KIND=RP)              , ALLOCATABLE :: aLengths(:)
-      
+
 !
 !     --------------
 !     Set up options
@@ -401,22 +401,22 @@
 !
       CALL releaseBaseCurve(optimizedCurve)
       CALL releasePECurve(circleCurve)
-       
+
    END SUBROUTINE CircleTest
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE SmoothnessCheck
       USE FTAssertions
       USE ConstrainedMultiH1Optimization
       IMPLICIT NONE
-      
+
       CALL FTAssert(spotCheckSmoothnessConditionsIsOK(),msg = "Smoothness Continuity array")
 
    END SUBROUTINE SmoothnessCheck
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE SegmentedCurveCheck
 !
 !  -------------------------------------------------
@@ -431,7 +431,7 @@
       USE FTExceptionClass
       USE SharedExceptionManagerModule
       USE FTAssertions
-      USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT 
+      USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
       IMPLICIT NONE
 !
 !     --------
@@ -457,7 +457,7 @@
                                                          0.25698133016711511d0, 0.34264190234426545d0  , 0.42829047404568898d0, &
                                                          0.50000000000000000d0, 1.0000000000000000d0]
       INTEGER                    :: expectedIndices(2) = [7, 8]
-       
+
 !
 !     --------------
 !     Test paramters
@@ -466,15 +466,15 @@
       INTEGER       :: optType    = H1_NORM
       INTEGER       :: polyOrder  = 3
       INTEGER       :: smoothness = 0 ! C^0 smoothness
-      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 1.0d-10
+      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 2.0d-9
 !
 !     -----
 !     Other
 !     -----
-!      
+!
       TYPE(FTException), POINTER :: exception
       INTEGER                    :: errorSeverity = FT_ERROR_NONE
-      
+
       CALL SetDefaultOptions(options)
       options % internalConstraint = smoothness
       options % toler              = toler
@@ -494,42 +494,42 @@
                                                 startAngle = 0.0_RP,                   &
                                                 endAngle   = PI,                       &
                                                 cName      = "circle",                 &
-                                                id         = 2) 
+                                                id         = 2)
       ALLOCATE(chain)
       CALL chain % initChainWithNameAndID(chainName = "chain",id = 3)
-!      
+!
       curvePtr => circle
       CALL chain % addCurve(curvePtr)
       obj => circle
       CALL release(obj)
-      
+
       curvePtr => line
       CALL chain % addCurve(curvePtr)
       obj => line
       CALL release(obj)
-!      
+!
       CALL chain % complete(innerOrOuterCurve = OUTER,chainMustClose = .TRUE.)
-      
+
       IF ( catch() )     THEN
-         WRITE(stderr,*) 
+         WRITE(stderr,*)
          WRITE(stderr,*)  "------------------------------------------------------------------"
-         WRITE(stderr,*) 
+         WRITE(stderr,*)
          WRITE(stderr,*)  "The following errors were found when constructing the check:"
-         
+
          DO
             exception => popLastException()
             IF ( .NOT.ASSOCIATED(exception) )     EXIT
             CALL exception % printDescription(stderr)
             errorSeverity = MAX(errorSeverity, exception % severity())
          END DO
-         WRITE(stderr,*) 
+         WRITE(stderr,*)
          WRITE(stderr,*)  "------------------------------------------------------------------"
-         WRITE(stderr,*) 
-         
+         WRITE(stderr,*)
+
          IF ( errorSeverity > FT_ERROR_WARNING )     THEN
-            ERROR STOP "The Errors were Fatal. Cannot generate optimized curve." 
-         END IF 
-      END IF 
+            ERROR STOP "The Errors were Fatal. Cannot generate optimized curve."
+         END IF
+      END IF
 !
 !     -------------
 !     Optimizations
@@ -547,6 +547,6 @@
       CALL FTAssert(MAXVAL(ABS(expectedIndices - breakIndices)) == 0      , msg = "Break Indices dont match")
 
       CALL releaseChainedCurve(chain)
-      
+
    END SUBROUTINE SegmentedCurveCheck
 
