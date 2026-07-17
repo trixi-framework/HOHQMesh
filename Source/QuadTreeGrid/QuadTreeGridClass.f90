@@ -446,9 +446,9 @@
             CALL GetGridPosition( self % x0, self % dx, i  , j  , xMax )
             hMin = sizeFunctionMinimumOnBox( sizer, xMin, xMax )
 
-            IF ( hMin - MAXVAL(self % dx(1:2)) < -subdivisionRelTol*MAXVAL(self % dx(1:2)))     THEN
+            IF ( hMin - MAXVAL(self % dx(1:2)) .LT. -subdivisionRelTol*MAXVAL(self % dx(1:2)))     THEN
 
-               IF ( highestLevel < maxLevelLimit )     THEN
+               IF ( highestLevel .LE. maxLevelLimit )     THEN
 
                   dx = self % dx/DBLE(refinementType)
                   ALLOCATE(childGrid)
