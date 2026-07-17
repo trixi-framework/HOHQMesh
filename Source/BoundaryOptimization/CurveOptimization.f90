@@ -2,27 +2,27 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
 ! FTObjectLibrary contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 ! https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
 !
 ! --- End License
@@ -30,14 +30,14 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      CurveOptimization.f90
-!      Created: November 20, 2025 at 11:10 AM 
-!      By: David Kopriva  
+!      Created: November 20, 2025 at 11:10 AM
+!      By: David Kopriva
 !
 !  Compute an optimized approximation to a curve.
 !
 !  There are three main entry points:
 !
-!    
+!
 !  (1) SUBROUTINE OptimizeCurve(curve, polyOrder, cuts, options, newName, newID, optimized)
 !
 !      Use this if the location of the segment boundaries given in cuts is known.
@@ -45,24 +45,24 @@
 !
 !  (2) SUBROUTINE OptimizeCurveWithSubdivisions(curve, polyOrder, options, newName, newID, optimized)
 !
-!      Use this to automatically compute the segments so that the error is is within the desired 
+!      Use this to automatically compute the segments so that the error is is within the desired
 !      tolerance, toler. Returns an SMCurve subclass "optimized". Uses subdivision algorithm
 !      *** THIS ROUTINE IS INEFFICIENT COMPARED TO THE NEXT. It IS INCLUDED BUT COMMENTED OUT FOR SOME FUTURE NEED ***
 !
 !  (3) SUBROUTINE OptimizeCurveByMarching(curve, polyOrder, options, newName, newID, optimized)
 !
-!      Use this to automatically compute the segments so that the error is is within the desired 
+!      Use this to automatically compute the segments so that the error is is within the desired
 !      tolerance, toler. Returns an SMCurve subclass "optimized". Uses the marching algorithm
 !
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   Module CurveOptimization 
+   Module CurveOptimization
    USE SMCurveClass
    USE ConstrainedMultiH1Optimization
    USE MultiSegmentModalCurveClass
    IMPLICIT NONE
-   
+
    INTEGER, PARAMETER, PRIVATE :: MAX_DEPTH = 10
    INTEGER, PARAMETER, PRIVATE :: LEFT_SIDE = 0, RIGHT_SIDE = 1
    INTEGER, PARAMETER          :: USER_NORM = 1, MAX_NORM   = 2, MAX_NORM_DERIV = 3
@@ -71,13 +71,13 @@
    CONTAINS
 !  ========
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE OptimizeCurve(curve, polyOrder, cuts, breakIndices, &
                             options, newName, newID, optimized)
 !
 !  ----------------------------------------------------
-!  Given an SMCurve, return and optimal multi-segment 
+!  Given an SMCurve, return and optimal multi-segment
 !  curve that approximates it
 !  ----------------------------------------------------
 !
@@ -102,18 +102,18 @@
 !
       TYPE(MultiH1Optimizer)                   :: multiOptimizer
       TYPE(MultiSegmentModalCurve)   , POINTER :: MSMCurve
-      
+
       INTEGER                                  :: quadratureOrder
       INTEGER                                  :: nSegments
       REAL(KIND=RP), ALLOCATABLE               :: optimalCoefficients(:,:,:)
 !
-!     --------------
-!     Optimzer setup
-!     --------------
+!     ---------------
+!     Optimizer setup
+!     ---------------
 !
       nSegments       = SIZE(cuts) - 1
       quadratureOrder = 2*polyOrder
-      
+
       CALL multiOptimizer % construct(                                 &
                                       N            = polyOrder,        &
                                       M            = quadratureOrder,  &
@@ -140,18 +140,18 @@
 
    END SUBROUTINE OptimizeCurve
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE OptimizeCurveByMarching(curve, polyOrder, breaks, breakIndices, &
                                       options, newName, newID, optimized)
 !
-!  -----------------------------------------------------------------------------------
+!  ----------------------------------------------------------------------------------
 !  March along the curve and use bisection and secant to find the length of each
-!  segement so that the H^1 error is less than the tolerance allowed for that segment.
+!  segment so that the H^1 error is less than the tolerance allowed for that segment.
 !  Clean up at the end by applying the global optimization
-!  -----------------------------------------------------------------------------------
+!  ----------------------------------------------------------------------------------
 !
-      IMPLICIT NONE  
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -179,8 +179,8 @@
       REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
       REAL(KIND=RP)                          :: e, errorRatio
       INTEGER                                :: n
-            
-      
+
+
       CALL ConstructGaussQuadrature(gQuad, 4*polyOrder) ! For error computation. The 4 is arbitrary
 !
 !     -----------------------------------------------------------------------
@@ -189,7 +189,7 @@
 !
       savedOptions            = options
       options % endConstraint = FIXED_CONSTRAINT
-      
+
       DO n = 1,3 ! This is a try/try again to account for constraints not being included in marching.
 !
 !        ---------------------------
@@ -213,7 +213,7 @@
                             optimized          = optimizedCurve)
 !
 !        --------------------------------------------------------------------------
-!        See if the error is within tolerance. Since the marching can only use the 
+!        See if the error is within tolerance. Since the marching can only use the
 !        FIXED_CONSTRAINT option, and since errors increase as the constraint
 !        order increases, then the error won't be within the tolerance. If not,
 !        create a new tolerance that is small enough so that when done we should
@@ -236,7 +236,7 @@
             DEALLOCATE(errors)
             DEALLOCATE(optimizedCuts)
             CALL releaseMultiSegmentModalCurve(msmCurve)
-         END IF 
+         END IF
 
       END DO
 
@@ -244,17 +244,17 @@
 !
    END SUBROUTINE OptimizeCurveByMarching
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE FindOptimizedCuts(curve, polyOrder, breaks, options, gQuad, &
                                 optimizedCuts, breakIndices)
 !
-!  -----------------------------------------------------------------------------------
+!  ----------------------------------------------------------------------------------
 !  March along the curve to find the length of each
-!  segement so that the H^1 error is less than the tolerance allowed for that segment.
-!  -----------------------------------------------------------------------------------
+!  segment so that the H^1 error is less than the tolerance allowed for that segment.
+!  ----------------------------------------------------------------------------------
 !
-      IMPLICIT NONE  
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -278,7 +278,7 @@
       INTEGER                    :: j
       REAL(KIND=RP)              :: limit = 1.0d-14
       REAL(KIND=RP), ALLOCATABLE :: tmpA(:)
-      
+
       nBreaks = SIZE(breaks) - 1
 !
 !     -------------------------------------------------------------
@@ -292,14 +292,14 @@
       IF(nBreaks == 1) THEN
          ALLOCATE(optimizedCuts(0:SIZE(tmpA)-1))
          optimizedCuts(0:) = tmpA
-         RETURN 
+         RETURN
       END IF
 !
 !     ----------------------------
 !     Otherwise, continue marching
 !     ----------------------------
 !
-      DO j = 2, nBreaks 
+      DO j = 2, nBreaks
          CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(j-1)+limit, breaks(j)-limit], &
                                        options, gQuad, rangeCuts)
          breakIndices  = [breakIndices,breakIndices(j-1) + SIZE(rangeCuts) - 1]
@@ -308,20 +308,20 @@
          DEALLOCATE(rangeCuts)
       END DO
       ALLOCATE(optimizedCuts(0:SIZE(tmpA)-1))
-      optimizedCuts(0:) = tmpA      
+      optimizedCuts(0:) = tmpA
 
    END SUBROUTINE FindOptimizedCuts
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE FindOptimizedCutsInRange(curve, polyOrder, tRange, options, gQuad, optimizedCuts)
 !
-!  -----------------------------------------------------------------------------------
+!  ----------------------------------------------------------------------------------
 !  March along the curve to find the length of each
-!  segement so that the H^1 error is less than the tolerance allowed for that segment.
-!  -----------------------------------------------------------------------------------
+!  segment so that the H^1 error is less than the tolerance allowed for that segment.
+!  ----------------------------------------------------------------------------------
 !
-      IMPLICIT NONE  
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -356,17 +356,17 @@
       tL              = tRange(1)
       tR              = tRange(2)
       cuts            = [tL, tR] ! = [t_{k-1},t_k]
-      h               = tR - tL 
+      h               = tR - tL
 !
 !     ------------------------------------------------------------------
 !     If the approximation already satisfies the approximation tolerance
-!     then the marchingfunction will be negative. Positive means 
+!     then the marchingfunction will be negative. Positive means
 !     the tolerance is not met and a search must be done
 !     fR = marchingfunction(curve, polyOrder, cuts, options, gQuad)
 !     ------------------------------------------------------------------
 !
       fR = marchingfunction(curve, polyOrder, cuts, options, gQuad)
-      IF(fr .le. 0.0) RETURN 
+      IF(fr .le. 0.0) RETURN
 !
 !     --------------------------
 !     Find the intervals in turn
@@ -396,7 +396,7 @@
 !        ----------------------------------------------------
 !
          f = marchingFunction(curve, polyOrder, cuts, options, gQuad)
-         IF(f .le. 0.0_RP)    EXIT  
+         IF(f .le. 0.0_RP)    EXIT
 
       END DO !Stepping
 !
@@ -417,16 +417,16 @@
        targetError = options % safetyFactor*options % toler
        e           = marchingFunction(curve, polyOrder, cuts, options, gQuad) + targetError
        cFactor     = (targetError/(e + 1.0d-14))**(1.0_RP/polyOrder)
-       
+
        IF ( cFactor > 1.25_RP )     THEN
           hStar       = h*cFactor
           optimizedCuts(nCuts-1) = optimizedCuts(nCuts) - MIN(hStar, 0.5_RP*h2)
-       END IF 
+       END IF
 
    END SUBROUTINE FindOptimizedCutsInRange
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -481,7 +481,7 @@
    !
          tN   = tR; fN   = fR
          tNm1 = tL; fNm1 = fL
-       
+
        ! Important note. This assumes that
          ! fN and fNm1 have opposite sign, otherwise it won't bracket.
          DO n = 1, maxIterS
@@ -596,13 +596,13 @@
 
       END FUNCTION iterate
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    FUNCTION marchingFunction(curve, polyOrder, cuts, options, gQuad) RESULT(f)
       IMPLICIT NONE
 !
 !     ----------
-!     Arguments 
+!     Arguments
 !     ----------
 !
       CLASS(SMCurve), POINTER    :: curve              ! The curve to be approximated
@@ -624,16 +624,16 @@
       REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
       CALL curveSegmentErrors(curve, polyOrder, cuts, options, gQuad, errors)
       f = errors(1,USER_NORM) - options % safetyFactor*options % toler
-      
+
    END FUNCTION marchingFunction
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE curveSegmentErrors(curve, polyOrder, cuts, options, gQuad, errors)
       IMPLICIT NONE
 !
 !     ----------
-!     Arguments 
+!     Arguments
 !     ----------
 !
       CLASS(SMCurve), POINTER    :: curve              ! The curve to be approximated
@@ -668,11 +668,11 @@
                          errors         = errors)
 
       CALL releaseBaseCurve(optimizedCurve)
-      
+
    END SUBROUTINE curveSegmentErrors
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE curveSegmentLengths(curve, polyOrder, cuts, options, gQuad, lengths)
 !
 !  -----------------------------------------------------
@@ -682,7 +682,7 @@
       IMPLICIT NONE
 !
 !     ----------
-!     Arguments 
+!     Arguments
 !     ----------
 !
       CLASS(SMCurve), POINTER    :: curve              ! The curve to be approximated
@@ -724,15 +724,15 @@
 !
       nSegments = msmCurve % nSegments
       ALLOCATE(lengths(nSegments))
-      DO j = 1, nSegments 
+      DO j = 1, nSegments
          lengths(j) = segmentArcLength(msmCurve, j ,gQuad % nodes, gQuad % weights)
-      END DO 
+      END DO
       CALL releaseBaseCurve(optimizedCurve)
-      
+
    END SUBROUTINE curveSegmentLengths
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE SegmentErrors(exact, segmentedCurve, gQuad, errors)
 !
 !  -------------------------------------------------------------------
@@ -751,23 +751,23 @@
       REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
 !
 !     ----------------
-!     Local variables 
+!     Local variables
 !     ----------------
 !
       INTEGER       :: nSegments
       INTEGER       :: k
-      
+
       nSegments = segmentedCurve % nSegments
       ALLOCATE(errors(nSegments,3), source = 0.0_RP)
-      
-      DO k = 1, nSegments 
+
+      DO k = 1, nSegments
          errors(k,:) =  segmentError(k, exact, segmentedCurve, gQuad)
-      END DO       
-      
+      END DO
+
    END SUBROUTINE SegmentErrors
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    FUNCTION segmentError(k, exact, segmentedCurve, gQuad) RESULT(er)
 !
 !  ---------------------------------------------------------------
@@ -787,16 +787,16 @@
       REAL(KIND=RP)                          :: er(3)
 !
 !     ----------------
-!     Local variables 
+!     Local variables
 !     ----------------
 !
       INTEGER       :: qOrder
       INTEGER       :: j
       REAL(KIND=RP) :: t, h, dsdt
       REAL(KIND=RP) :: e, e0(3), e1(3), eMax, eMaxDeriv
-            
+
       qOrder = gQuad % N
-      
+
       e         = 0.0_RP
       eMax      = 0.0_RP
       eMaxDeriv = 0.0_RP
@@ -806,24 +806,24 @@
          t    = segmentedCurve % cuts(k-1) + h*0.5_RP*(gQuad % nodes(j) + 1.0_RP)
          e0   = (exact % positionAt(t)   - segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_FUNCTION))**2
          e1   = (exact % derivativeAt(t) - dsdt*segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE))**2
-         
+
          e         = e + (e0(1) + e0(2) + e1(1) + e1(2))*gQuad % weights(j)
          eMax      = MAX(eMax,e0(1),e0(2))
          eMaxDeriv = MAX(eMaxDeriv,e1(1),e1(2))
-      END DO 
+      END DO
       er(USER_NORM)       = SQRT(0.5_RP*h*e)
       er(MAX_NORM)        = SQRT(eMax)
       er(MAX_NORM_DERIV)  = SQRT(eMaxDeriv)
-      
+
    END FUNCTION segmentError
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE addCut(cuts, valueToAdd, atIndex)  
+!////////////////////////////////////////////////////////////////////////
+!
+   SUBROUTINE addCut(cuts, valueToAdd, atIndex)
 !
 !     ----------------------------------------------------------
 !     Cuts is dimensioned as (0:N), but there seems to be no way
-!     with an allocatable to note that in the declaration here. 
+!     with an allocatable to note that in the declaration here.
 !     So work with shifted indices, shifted by 1
 !     ----------------------------------------------------------
 !
@@ -843,31 +843,31 @@
 !
       REAL(KIND=RP), ALLOCATABLE :: newCuts(:)
       INTEGER                    :: N
-      
+
       N = SIZE(cuts)
       ALLOCATE(newCuts(0:N))
       newCuts(0:atIndex-1)  = cuts(0:atIndex-1)
       newCuts(atIndex+1:)   = cuts(atIndex:)
       newCuts(atIndex)      = valueToAdd
-      
+
       CALL MOVE_ALLOC(FROM = newCuts, TO = cuts)
 
    END SUBROUTINE addCut
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE AppendRealArray(base, arrayToAdd)  
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+   SUBROUTINE AppendRealArray(base, arrayToAdd)
+      IMPLICIT NONE
       REAL(KIND=RP), ALLOCATABLE :: base(:)
       REAL(KIND=RP)              :: arrayToAdd(:)
       base = [base,arrayToAdd]
-      
+
    END SUBROUTINE AppendRealArray
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
 !   SUBROUTINE OptimizeCurveWithSubdivisions(curve, polyOrder, options, newName, newID, optimized)
-!      IMPLICIT NONE  
+!      IMPLICIT NONE
 !!
 !!     ---------
 !!     Arguments
@@ -894,7 +894,7 @@
 !      REAL(KIND=RP), ALLOCATABLE             :: errors(:)
 !      REAL(KIND=RP)                          :: tMid
 !      LOGICAL                                :: subdivisionIsFinished
-!      
+!
 !      CALL ConstructGaussQuadrature(gQuad, 4*polyOrder)
 !!
 !!     ------------------
@@ -904,7 +904,7 @@
 !      nSegments = 1
 !      ALLOCATE(cuts(0:nSegments))
 !      cuts = [0.0_RP, 1.0_RP]
-!      
+!
 !      CALL OptimizeCurve(curve     = curve,                       &
 !                         polyOrder = polyOrder,                   &
 !                         cuts      = cuts,                        &
@@ -929,11 +929,11 @@
 !         DO j = 1, UBOUND(errors,1)
 !            i = j + offset
 !            IF ( errors(j) > options % toler )     THEN
-!               tMid = 0.5_RP*(cuts(i) + cuts(i-1)) 
-!               CALL addCut(cuts,valueToAdd = tMid, atIndex = i) 
+!               tMid = 0.5_RP*(cuts(i) + cuts(i-1))
+!               CALL addCut(cuts,valueToAdd = tMid, atIndex = i)
 !               offset = offset + 1
 !               subdivisionIsFinished = .FALSE.
-!            END IF 
+!            END IF
 !         END DO
 !         IF(subdivisionIsFinished) EXIT
 !!
@@ -950,16 +950,16 @@
 !                            newName            = newName,            &
 !                            newID              = newID,              &
 !                            optimized          = optimizedCurve)
-!   
+!
 !         CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
 !         CALL SegmentErrors(exact          = curve,    &
 !                            segmentedCurve = msmCurve, &
 !                            gQuad          = gQuad,    &
 !                            errors         = errors)
-!         
+!
 !      END DO
 !      optimized => optimizedCurve
 !
 !   END SUBROUTINE OptimizeCurveWithSubdivisions
-   
+
    END Module CurveOptimization

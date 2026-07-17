@@ -2,8 +2,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !>      SMScanner.f90
-!>      Created: March 23, 2026 at 8:34 AM 
-!>      By: David Kopriva  
+!>      Created: March 23, 2026 at 8:34 AM
+!>      By: David Kopriva
 !>
 !>      A basic scanner type
 !>
@@ -32,14 +32,14 @@
 !>            i   = self % scanInt()
 !>
 !>                Scans from the cursor position up to the next delimiter
-!>                and attempts to convert str(currentPos:delimPos) to an 
-!>                integer. If that fails, the value NOT_AN_INTEGER is 
+!>                and attempts to convert str(currentPos:delimPos) to an
+!>                integer. If that fails, the value NOT_AN_INTEGER is
 !>                returned. Cursor is placed after the delimiter.
 !>
-!>            r   = self % scanReal()        
+!>            r   = self % scanReal()
 !>
 !>                Scans from the cursor position up to the next delimiter
-!>                and attempts to convert str(currentPos:delimPos) to a 
+!>                and attempts to convert str(currentPos:delimPos) to a
 !>                real. If that fails, NaN is returned.
 !>                Cursor is placed after the delimiter.
 !>
@@ -58,18 +58,18 @@
    Module SMScannerClass
    USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
    USE IEEE_ARITHMETIC
-   IMPLICIT NONE  
-   
+   IMPLICIT NONE
+
    TYPE SMScanner
       CHARACTER(LEN=:), ALLOCATABLE :: str
-      CHARACTER(LEN=:), ALLOCATABLE :: delimeters   ! String with the delimiters
+      CHARACTER(LEN=:), ALLOCATABLE :: delimiters   ! String with the delimiters
       CHARACTER(LEN=1)              :: delm         ! Last delimiter scanned
       INTEGER                       :: cursorPos
       INTEGER                       :: endPos
 !
-!     ========      
+!     ========
       CONTAINS
-!     ========      
+!     ========
 !
       PROCEDURE :: initWithString
       PROCEDURE :: reset
@@ -80,60 +80,60 @@
       PROCEDURE :: scanIntsToArray
       PROCEDURE :: lastDelimiter
    END TYPE SMScanner
-   
+
    INTEGER, PARAMETER :: NOT_AN_INTEGER = -HUGE(NOT_AN_INTEGER)
 !
 !  ========
-   CONTAINS  
+   CONTAINS
 !  ========
 !
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE initWithString(self, str, delims)
       IMPLICIT NONE
       CLASS(SMScanner)  :: self
       CHARACTER(LEN=*)  :: str
       CHARACTER(LEN=*)  :: delims
-      
+
       CALL DestructScanner(self)
       self % str        = str
-      self % delimeters = delims
+      self % delimiters = delims
       self % cursorPos  = 1
       self % endPos     = LEN_TRIM(str)
       self % delm       = ""
-      
+
    END SUBROUTINE initWithString
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE DestructScanner(self)
       IMPLICIT NONE
       CLASS(SMScanner)  :: self
       self % cursorPos  = 1
       IF(ALLOCATED(self % str)) DEALLOCATE(self % str)
-      IF(ALLOCATED(self % delimeters)) DEALLOCATE(self % delimeters)
+      IF(ALLOCATED(self % delimiters)) DEALLOCATE(self % delimiters)
    END SUBROUTINE DestructScanner
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE reset(self)
       IMPLICIT NONE
       CLASS(SMScanner)  :: self
       self % cursorPos  = 1
    END SUBROUTINE reset
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   LOGICAL FUNCTION isAtEnd(self) 
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+   LOGICAL FUNCTION isAtEnd(self)
+      IMPLICIT NONE
       CLASS(SMScanner)  :: self
       isAtEnd = .FALSE.
       IF(self % cursorPos > self % endPos) isAtEnd = .TRUE.
    END FUNCTION isAtEnd
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    LOGICAL FUNCTION scanUptoString(self, str)
 !
 !  --------------------------------------------------
@@ -156,23 +156,23 @@
 !     ---------------
 !
       INTEGER :: k
-      
+
       scanUptoString   = .FALSE.
       k                = INDEX(self % str(self % cursorPos: self % endPos), &
                                SUBSTRING = str)
       IF ( k == 0 )     THEN
          scanUptoString = .TRUE.
-         RETURN 
-      END IF 
-      
+         RETURN
+      END IF
+
       self % cursorPos = self % cursorPos + k + LEN_TRIM(str) - 1
-            
+
    END FUNCTION scanUptoString
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE getToken(self, token)  
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+   SUBROUTINE getToken(self, token)
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -186,40 +186,40 @@
 !     ---------------
 !
       INTEGER :: scEnd, p, e
-      
+
       p     = self % cursorPos
       e     = self % endPos
-! 
+!
       scEnd = SCAN(STRING = self % str(p:e), &
-                   SET    = self % delimeters)
-                   
-      IF(scEnd == 0) THEN 
+                   SET    = self % delimiters)
+
+      IF(scEnd == 0) THEN
          scEnd       = self % endPos
          self % delm = ""
       ELSE
          self % delm = self % str(p+scEnd-1:p+scEnd-1)
          scEnd       = p + scEnd - 2
       END IF
-      
+
       token = self % str(p:scEnd)
       self % cursorPos = scEnd + 2
 
    END SUBROUTINE getToken
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   CHARACTER(LEN=1) FUNCTION lastDelimiter(self)  
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+   CHARACTER(LEN=1) FUNCTION lastDelimiter(self)
+      IMPLICIT NONE
       CLASS(SMScanner) :: self
-      
+
       lastDelimiter = self % delm
-      
+
    END FUNCTION lastDelimiter
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    FUNCTION scanInt(self) RESULT(intResult)
-      IMPLICIT NONE  
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -234,19 +234,19 @@
 !
       INTEGER            :: iErr
       CHARACTER(LEN=128) :: token
-      
+
       CALL getToken(self,token)
       READ(  token, *, IOSTAT = iErr ) intResult
       IF ( iErr /=0 )     THEN
          intResult = -HUGE(intResult)
       END IF
-      
+
    END FUNCTION scanInt
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    FUNCTION scanReal(self) RESULT(res)
-      IMPLICIT NONE  
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -261,18 +261,18 @@
 !
       INTEGER            :: iErr
       CHARACTER(LEN=128) :: token
-      
+
       CALL getToken(self,token)
       READ(  token, *, IOSTAT = iErr ) res
-      
+
       IF ( iErr /=0 )     THEN
          res = IEEE_VALUE(res, IEEE_QUIET_NAN)
       END IF
-      
+
    END FUNCTION scanReal
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    FUNCTION scanIntsToArray(self)  RESULT(array)
 !
 !  ---------------------------------------------------------------
@@ -294,13 +294,13 @@
 !     ---------------
 !
       INTEGER :: j
-      
+
       ALLOCATE(array(0))
       j = self % scanInt()
 
       IF ( j == NOT_AN_INTEGER ) RETURN
       array = [j]
-            
+
       DO WHILE(.NOT. self % isAtEnd())
          j = self % scanInt()
 
@@ -308,9 +308,9 @@
             DEALLOCATE(array)
             ALLOCATE(array(0))
             RETURN
-         ELSE 
+         ELSE
             array = [array, j]
-         END IF 
+         END IF
       END DO
 
    END FUNCTION scanIntsToArray
@@ -319,7 +319,7 @@
 !  Testing...
 !  ------------------------------------------------------------------------
 !
-   LOGICAL FUNCTION scanUpToTest()  
+   LOGICAL FUNCTION scanUpToTest()
       IMPLICIT NONE
 !                                      123456789012345
       CHARACTER(LEN = 64)   :: str = "[124, 3.14, ss]"
@@ -327,30 +327,30 @@
       CHARACTER(LEN= 3)   :: dlms = ",[]"
       TYPE(SMScanner)     :: scanner
       LOGICAL             :: done
-   
-      scanUpToTest = .TRUE. 
-      
+
+      scanUpToTest = .TRUE.
+
       CALL scanner % initWithString(str,dlms)
       done = scanner % scanUpToString("[")
       IF(done) scanUpToTest = .FALSE.
       scanUpToTest = scanUpToTest .AND. scanner % cursorPos == p(1)
-      
+
       done         = scanner % scanUpToString(",")
       scanUpToTest = scanUpToTest .AND. .NOT. done
       scanUpToTest = scanUpToTest .AND. scanner % cursorPos == p(2)
-            
+
       done         = scanner % scanUpToString(",")
       scanUpToTest = scanUpToTest .AND. .NOT. done
       scanUpToTest = scanUpToTest .AND. scanner % cursorPos == p(3)
-      
+
       done         = scanner % scanUpToString(",")
       scanUpToTest = scanUpToTest .AND. done
-      
+
    END FUNCTION scanUpToTest
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   LOGICAL FUNCTION scanTest()  
+!////////////////////////////////////////////////////////////////////////
+!
+   LOGICAL FUNCTION scanTest()
       IMPLICIT NONE
 !                                   12345678901234567890123456
       CHARACTER(LEN = 64) :: str  = "[124, 14, 3.14, 11, 2.718]"
@@ -360,7 +360,7 @@
       LOGICAL             :: done
       INTEGER             :: intResult
       REAL(KIND(1.0d0))   :: realResult
-   
+
       CALL scanner % initWithString(str,dlms)
       done     = scanner % scanUpToString("[")
       scanTest = .NOT.done
@@ -452,12 +452,12 @@
       ELSE
          scanTest = .FALSE.
       END IF
-      
+
    END FUNCTION scanTest
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   LOGICAL FUNCTION scanArrayTest()  
+!////////////////////////////////////////////////////////////////////////
+!
+   LOGICAL FUNCTION scanArrayTest()
       IMPLICIT NONE
 !                                         123456789012345678901234567
       CHARACTER(LEN = 64)  :: str      = " breaks = 124, 14,3, 11,2"
@@ -476,7 +476,7 @@
       done     = scanner % scanUpToString("=")
       scanArrayTest = .NOT.done
       IF(done) RETURN
-      
+
       a = scanIntsToArray(scanner)
       scanArrayTest = scanArrayTest .AND. MAXVAL(a-c) == 0
       DEALLOCATE(a)
@@ -491,7 +491,7 @@
       IF(done) RETURN
       a = scanIntsToArray(scanner)
       scanArrayTest = scanArrayTest .AND. SIZE(a) == 0
-      
+
    END FUNCTION scanArrayTest
 
    END Module SMScannerClass

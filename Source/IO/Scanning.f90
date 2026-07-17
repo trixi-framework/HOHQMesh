@@ -2,39 +2,39 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      Scanning.f90
-!      Created: June 23, 2026 at 10:13 AM 
-!      By: David Kopriva  
+!      Created: June 23, 2026 at 10:13 AM
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
    Module ScanningModule
    USE SMConstants, ONLY: RP
-   USE SMScannerClass 
+   USE SMScannerClass
    IMPLICIT NONE
    PRIVATE
    PUBLIC :: ScanForBreaks, ScanForBreaksIsOK, flaggingIsOK
 !
 !  ========
-   CONTAINS  
+   CONTAINS
 !  ========
 !
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE ScanForBreaks(connectionString, breaks, nSegments)
 !
 !     -----------------------------------------------------------------------
 !     Compute the locations of the breaks in a curve as specified by the user
 !     in the control file. Breaks are expressed in the form
-   
+
 !     connect = N1-N2, N3-N4 [,...]
-   
+
 !     e.g.
 !     connect = 2-4, 6-9, 10-11
 !
 !     if there are four segments and connect = 2-3 then the breaks are
 !     at the end of segments 1 and 3, and breaks = [0.0, 0.25, 0.75, 1.0],
-!     skipping the breaks at 1/2 between segments 2 and 3. See 
+!     skipping the breaks at 1/2 between segments 2 and 3. See
 !     ScanForBreaksIsOK for examples
 !  -----------------------------------------------------------------------
 !
@@ -59,7 +59,7 @@
       INTEGER         :: numberOfBreaks
       INTEGER         :: j, k
       REAL(KIND=RP) :: c
-      
+
       flagged = 0
       CALL scanner % initWithString(connectionString,delims = ",-")
 !
@@ -69,16 +69,16 @@
 !
       CALL flagSegments(scanner, flagged, flagCount, 1, fail)
       IF ( fail )     THEN
-         WRITE(0,*) "Scanning of the folowing connection lines failed with a syntax error"
+         WRITE(0,*) "Scanning of the following connection lines failed with a syntax error"
          WRITE(0,*) TRIM(connectionString)
          RETURN
-      END IF 
-      
+      END IF
+
       numberOfBreaks = nSegments - flagCount
       ALLOCATE(breaks(0:numberOfBreaks))
       breaks(0)              = 0.0_RP
       breaks(numberOfBreaks) = 1.0_RP
-      
+
       k = 1
       c = 1.0_RP/REAL(nSegments,KIND=RP)
       DO j = 1, nSegments-1
@@ -86,12 +86,12 @@
          breaks(k) = j*c
          k = k + 1
       END DO
-      
-      
+
+
    END SUBROUTINE ScanForBreaks
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE flagSegments(scanner, flagged, flagCount, flagOn, fail )
 !
 !  -----------------------------------------------------------------------
@@ -120,7 +120,7 @@
       INTEGER          :: fSize
       INTEGER          :: j, k
       INTEGER          :: strt, stp
-      
+
       fSize     = SIZE(flagged)
       fail      = .FALSE.
       flagCount = 0
@@ -141,9 +141,9 @@
          IF ( scanner % lastDelimiter() .NE. "-" )     THEN
             WRITE(0,*) "String start configuration error"
             fail = .TRUE.
-            RETURN 
-         END IF 
-         
+            RETURN
+         END IF
+
          stp = scanInt(scanner)
 !
 !        --------------------------------------------------------
@@ -154,8 +154,8 @@
          IF ( scanner % lastDelimiter() .EQ. "-")     THEN
             WRITE(0,*) "String stop configuration error"
             fail = .TRUE.
-            RETURN 
-         END IF 
+            RETURN
+         END IF
 !
 !        --------------------------------------------------------
 !        At the end of the string, we don't flag the last segment
@@ -170,15 +170,15 @@
 !        We're done when we get to the end of the string
 !        -----------------------------------------------
 !
-         IF (scanner % isAtEnd() )     EXIT         
-      END DO 
-      
+         IF (scanner % isAtEnd() )     EXIT
+      END DO
+
    END SUBROUTINE flagSegments
-   
+
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   LOGICAL FUNCTION flagString(str, flagged, flagCount)  
+!////////////////////////////////////////////////////////////////////////
+!
+   LOGICAL FUNCTION flagString(str, flagged, flagCount)
       IMPLICIT NONE
 !
 !     ---------
@@ -195,26 +195,26 @@
 !
       TYPE(SMScanner) :: scanner
       LOGICAL         :: fail
-      
+
       flagged = 0
       CALL scanner % initWithString(str,delims = ",-")
-      
+
       CALL flagSegments(scanner, flagged, flagCount, 1, fail)
-      
+
       flagString = fail
-      
+
    END FUNCTION flagString
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   LOGICAL FUNCTION flaggingIsOK()  
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+   LOGICAL FUNCTION flaggingIsOK()
+      IMPLICIT NONE
       LOGICAL           :: fail
       CHARACTER(LEN=16) :: str
       INTEGER           :: flagged(0:8)
       INTEGER           :: flagCount
       INTEGER           :: flagged1(0:8), flagged2(0:8)
-      
+
       flaggingIsOK = .TRUE.
 !
 !     -----
@@ -239,8 +239,8 @@
 
    END FUNCTION flaggingIsOK
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    LOGICAL FUNCTION ScanForBreaksIsOK()
       IMPLICIT NONE
       CHARACTER(LEN=16) :: testString1 = "2-3"
@@ -249,17 +249,17 @@
       REAL(KIND=RP)              :: b1(0:3) = [0.0_RP, 0.25_RP, 0.75_RP, 1.0_RP]
       REAL(KIND=RP)              :: b2(0:5) = [0.0_RP, 0.25_RP, 0.375_RP, 0.75_RP, 0.875_RP, 1.0_RP]
       INTEGER                    :: nSegments = 4
-      
+
       ScanForBreaksIsOK = .TRUE.
-      
+
       CALL ScanForBreaks(testString1, breaks, nSegments )
       ScanForBreaksIsOK = MAXVAL(b1 - breaks) == 0.0_RP
       DEALLOCATE(breaks)
-            
+
       CALL ScanForBreaks(testString2, breaks, nSegments*2 )
       ScanForBreaksIsOK = ScanForBreaksIsOK .AND. MAXVAL(b2 - breaks) == 0.0_RP
-      
+
    END FUNCTION ScanForBreaksIsOK
-  
-   
+
+
    END Module ScanningModule

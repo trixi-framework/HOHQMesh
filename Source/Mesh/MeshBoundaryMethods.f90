@@ -1578,8 +1578,8 @@
 
       END FUNCTION TestPointsForCrossing
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE CollectBoundaryAndInterfaceNodes(allNodesIterator,boundaryNodesList)
          IMPLICIT NONE
 !
@@ -1609,20 +1609,20 @@
             IF ( IsOnBoundaryCurve(currentNode) .AND. &
                  currentNode%distToBoundary == 0.0_RP )     THEN
                CALL boundaryNodesList % add(obj)
-            END IF 
+            END IF
             CALL allNodesIterator % moveToNext()
          END DO
 
       END SUBROUTINE CollectBoundaryAndInterfaceNodes
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE SortBoundaryNodesToChains(nodesIterator, numBoundaryChains, chainNodesArray)
 !
 !     ---------------------------------------------------------------------------
 !     Gather up all the boundary nodes and arrange them in arrays by chainID. The
 !     returned chainNodesArray contains pointers to all the nodes that fall along
-!     a given curve chain. Thus, chainNodesArray(j) % array is an ordered array 
+!     a given curve chain. Thus, chainNodesArray(j) % array is an ordered array
 !     of all nodes along boundary chain j.
 !     ---------------------------------------------------------------------------
 !
@@ -1658,7 +1658,7 @@
 !        -----------------------------------------------------
 !
          ALLOCATE(boundaryNodesArray(numBoundaryChains))
-         DO id = 1, numBoundaryChains 
+         DO id = 1, numBoundaryChains
             ALLOCATE(boundaryNodesArray(id) % list)
             CALL boundaryNodesArray(id) % list % init()
          END DO
@@ -1688,24 +1688,24 @@
          END DO
 !
 !        ------------------------------------------------------------------------
-!        The nodes in each chain will be ordered, but do not necessarily start 
+!        The nodes in each chain will be ordered, but do not necessarily start
 !        at parameter value of zero. Since the nodes describe a closed (periodic)
-!        curve, we can just reset the pointers in the linked lists so that the 
-!        parameter values are stricly increasing.
+!        curve, we can just reset the pointers in the linked lists so that the
+!        parameter values are strictly increasing.
 !        ------------------------------------------------------------------------
 !
          ALLOCATE(listIterator)
          CALL listIterator % init()
-         DO id = 1, SIZE(boundaryNodesArray) 
+         DO id = 1, SIZE(boundaryNodesArray)
             list => boundaryNodesArray(id) % list
             CALL listIterator % setLinkedList(list)
-            
+
             previousRecord => listIterator % currentRecord()
             obj            => listIterator % object()
             CALL castToSMNode(obj,currentNode)
             prevT = currentNode % gWhereOnBoundary
             CALL listIterator % moveToNext()
-            
+
             DO WHILE ( .NOT.listIterator % isAtEnd() )
                currentRecord => listIterator % currentRecord()
                obj           => listIterator % object()
@@ -1713,25 +1713,25 @@
                currentT = currentNode % gWhereOnBoundary
 !
 !              -----------------------------------------------
-!              If the parameter, t, is starting over, then 
-!              the list needs to be re-ordered. Stop here and 
-!              do the re-ording after exit
+!              If the parameter, t, is starting over, then
+!              the list needs to be re-ordered. Stop here and
+!              do the re-ordering after exit
 !              -----------------------------------------------
 !
                IF ( currentT < prevT )     THEN ! The parameter t is starting over
-                  reOrder = .TRUE.      
-                  EXIT 
-               END IF 
-               
+                  reOrder = .TRUE.
+                  EXIT
+               END IF
+
                previousRecord => currentRecord
                CALL listIterator % moveToNext()
             END DO
-            
+
             IF ( reOrder )     THEN
                list % tail % next    => list % head
                list % head           => currentRecord
                list % tail           => previousRecord
-               previousRecord % next => NULL() 
+               previousRecord % next => NULL()
             END IF
 !
 !           ------------------------------------
@@ -1756,25 +1756,25 @@
 !        Cleanup
 !        -------
 !
-         DO id = 1, numBoundaryChains 
+         DO id = 1, numBoundaryChains
             CALL releaseFTLinkedList(boundaryNodesArray(id) % list)
          END DO
          DEALLOCATE( boundaryNodesArray )
-         
+
          CALL releaseFTLinkedListIterator(listIterator)
          CALL releaseFTLinkedListIterator(boundaryNodesIterator)
          CALL releaseFTLinkedList(boundaryNodesList)
-!         
+!
 !         !DEBUG
 !         DO id = 1, numBoundaryChains
 !            DO j = 1, SIZE(chainNodesArray(id) % array)
 !            currentNode => chainNodesArray(id) % array(j) % node
 !            WRITE(0,*) currentNode % gWhereOnBoundary, currentNode % bCurveChainID, &
 !                       currentNode % bCurveID, currentNode % whereOnBoundary, currentNode % x(1:2)
-!            END DO 
+!            END DO
 !            WRITE(0,*)
-!         END DO 
-          
+!         END DO
+
       END SUBROUTINE SortBoundaryNodesToChains
 
    END MODULE MeshBoundaryMethodsModule

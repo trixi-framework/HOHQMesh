@@ -4,7 +4,7 @@
 !      MultiSegmentNodalCurve.f90
 !      Created: April 22, 2026 at 2:45 PM
 !      From the MultiSegmentNodalCurve class
-!      By: David Kopriva  
+!      By: David Kopriva
 !
 !      A curve subclass that is defined in terms of multiple segments
 !      of nodally defined Lagrange polynomials
@@ -15,26 +15,26 @@
       USE MultiSegmentCurveClass
       USE CurveInterpolantClass
       USE LegendreAlgorithms
-      IMPLICIT NONE  
-   
+      IMPLICIT NONE
+
       TYPE, EXTENDS(MultiSegmentCurve) :: MultiSegmentNodalCurve
-         TYPE(CurveInterpolant), ALLOCATABLE :: selfInterpolants(:) 
+         TYPE(CurveInterpolant), ALLOCATABLE :: selfInterpolants(:)
 !
 !        ========
          CONTAINS
 !        ========
-!         
+!
          PROCEDURE :: ConstructMultiSegmentNodalCurve
          FINAL     :: DestructMultiSegmentNodalCurve
          PROCEDURE :: positionAt => EvaluateMultiSegmentNodalCurve
-         PROCEDURE :: derivativeAt => EvaluateMultiSegmentNodalCurveD 
+         PROCEDURE :: derivativeAt => EvaluateMultiSegmentNodalCurveD
          PROCEDURE :: className  => MSNCClassName
          PROCEDURE :: derivativeInSegment => nodalDerivativeInSegment
       END TYPE MultiSegmentNodalCurve
 !
-!  ========      
-   CONTAINS  
-!  ========      
+!  ========
+   CONTAINS
+!  ========
 !
       SUBROUTINE castToMultiSegmentNodalCurve(curve,cast)
 !
@@ -42,23 +42,23 @@
 !     Cast the base class SMCurve to the FTValue class
 !     -----------------------------------------------------
 !
-         IMPLICIT NONE  
+         IMPLICIT NONE
          CLASS(SMCurve)                , POINTER :: curve
          CLASS(MultiSegmentNodalCurve) , POINTER :: cast
-         
+
          cast => NULL()
          SELECT TYPE (e => curve)
             CLASS IS(MultiSegmentNodalCurve)
                cast => e
             CLASS DEFAULT
-               
+
          END SELECT
-         
+
       END SUBROUTINE castToMultiSegmentNodalCurve
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE ConstructMultiSegmentNodalCurve(self, parentCurve, cuts, N, curveName, id )  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ConstructMultiSegmentNodalCurve(self, parentCurve, cuts, N, curveName, id )
          IMPLICIT NONE
 !
 !        ---------
@@ -93,81 +93,81 @@
          ALLOCATE(chebyPoints(0:N))
          ALLOCATE(values(0:N,3))
          ALLOCATE(nodes(0:N))
-         DO m = 0, N 
+         DO m = 0, N
             chebyPoints(m) = 0.5_RP*(1.0_RP - COS(m*PI/N))
-         END DO 
+         END DO
 !
 !        -----------------------
 !        Compute the polynomials
 !        -----------------------
 !
          ALLOCATE(self % selfInterpolants(self % nSegments))
-         DO k = 1, self % nSegments 
+         DO k = 1, self % nSegments
             dt = cuts(k) - cuts(k-1)
-            DO m = 0, N 
+            DO m = 0, N
                t           = cuts(k-1) + dt*chebyPoints(m)
                nodes(m)    = t
                values(m,:) = parentCurve % positionAt(t)
             END DO
             CALL ConstructCurveInterpolant( self % selfInterpolants(k), N, nodes, values)
-         END DO 
+         END DO
 !
       END SUBROUTINE ConstructMultiSegmentNodalCurve
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE DestructMultiSegmentNodalCurve(self)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE DestructMultiSegmentNodalCurve(self)
+         IMPLICIT NONE
          TYPE(MultiSegmentNodalCurve) :: self
 
       END SUBROUTINE DestructMultiSegmentNodalCurve
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE releaseMultiSegmentNodalCurve(self)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE releaseMultiSegmentNodalCurve(self)
          IMPLICIT NONE
          class(MultiSegmentNodalCurve), POINTER :: self
          CLASS(FTObject)              , POINTER :: obj
-         
+
          IF(.NOT. ASSOCIATED(self)) RETURN
-         
+
          obj => self
          CALL releaseFTObject(self = obj)
          IF ( .NOT. ASSOCIATED(obj) )     THEN
-            self => NULL() 
-         END IF      
+            self => NULL()
+         END IF
       END SUBROUTINE releaseMultiSegmentNodalCurve
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION EvaluateMultiSegmentNodalCurve(self,t)  RESULT(x)
-         IMPLICIT NONE  
+         IMPLICIT NONE
          CLASS(MultiSegmentNodalCurve) :: self
          REAL(KIND=RP)                 :: t
          REAL(KIND=RP)                 :: x(3)
          INTEGER                       :: k
-         
+
          k = findInterval(self % cuts,t)
          CALL EvaluateAt(self % selfInterpolants(k),t,x)
-         
+
       END FUNCTION EvaluateMultiSegmentNodalCurve
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION EvaluateMultiSegmentNodalCurveD(self,t)  RESULT(x)
-         IMPLICIT NONE  
+         IMPLICIT NONE
          CLASS(MultiSegmentNodalCurve) :: self
          REAL(KIND=RP)                 :: t
          REAL(KIND=RP)                 :: x(3)
          INTEGER                       :: k
-         
+
          k = findInterval(self % cuts,t)
          CALL derivative_AT(self % selfInterpolants(k),t,x)
-         
+
       END FUNCTION EvaluateMultiSegmentNodalCurveD
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION nodalDerivativeInSegment(self, t, k)  RESULT(x)
 !
 !        ---------------------------------------------------------------
@@ -175,19 +175,19 @@
 !        procedure to compute the arc length
 !        ---------------------------------------------------------------
 !
-         IMPLICIT NONE  
+         IMPLICIT NONE
          CLASS(MultiSegmentNodalCurve) :: self
          REAL(KIND=RP)                 :: t
          REAL(KIND=RP)                 :: x(3)
          INTEGER                       :: k
-         
+
          CALL derivative_AT(self % selfInterpolants(k),t,x)
          x = x*(self % cuts(k) - self % cuts(k-1))/2.0_RP
-         
+
       END FUNCTION nodalDerivativeInSegment
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
 !      -----------------------------------------------------------------
 !> Class name returns a string with the name of the type of the object
 !>
@@ -197,15 +197,15 @@
 !>        if( obj % className = ="Spline")
 !>
       FUNCTION MSNCClassName(self)  RESULT(s)
-         IMPLICIT NONE  
+         IMPLICIT NONE
          CLASS(MultiSegmentNodalCurve)              :: self
          CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH) :: s
-         
+
          s = "MultiSegmentNodalCurve"
-         IF( self % refCount() >= 0 ) CONTINUE 
- 
+         IF( self % refCount() >= 0 ) CONTINUE
+
       END FUNCTION MSNCClassName
-   
+
    END Module MultiSegmentNodalCurveClass
 !
 !///////////////////////////////////////////////////////////////////////
@@ -214,13 +214,13 @@
 !
 !///////////////////////////////////////////////////////////////////////
 !
-! 
-   SUBROUTINE MultiSegmentNodalCurveTest()  
+!
+   SUBROUTINE MultiSegmentNodalCurveTest()
       USE SMParametricEquationCurveClass
       USE MultiSegmentNodalCurveClass
       USE FTAssertions
       IMPLICIT NONE
-      
+
       CLASS(MultiSegmentNodalCurve)   , POINTER :: self
       TYPE (SMParametricEquationCurve), POINTER :: parentCurve
       CLASS(SMCurve)                  , POINTER :: crv
@@ -263,7 +263,7 @@
 !     ------------
 !
       eMax = 0.0_RP
-      DO k = 0, 25 
+      DO k = 0, 25
          t = cuts(0) + k*(cuts(3) - cuts(0))/25.0_RP
          eMax = MAX(eMax, MAXVAL(ABS(self % positionAt(t) - parentCurve % positionAt(t))) )
       END DO
@@ -274,7 +274,7 @@
 !     -----------------
 !
       eMax = 0.0_RP
-      DO k = 0, 10 
+      DO k = 0, 10
          t = cuts(0) + k*(cuts(3) - cuts(0))/10.0_RP
          eMax = MAX(eMax, MAXVAL(ABS(self % derivativeAt(t) - parentCurve % derivativeAt(t))) )
       END DO
@@ -282,11 +282,11 @@
 
       CALL releaseMultiSegmentNodalCurve(self)
       CALL releasePECurve(parentCurve)
-      
+
    END SUBROUTINE MultiSegmentNodalCurveTest
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE NodalCircleTest()
 !
 !  -------------------------------------------------------------------
@@ -299,9 +299,9 @@
       USE FTAssertions
       IMPLICIT NONE
 !
-!     --------------
-!     Test paramters
-!     --------------
+!     ---------------
+!     Test parameters
+!     ---------------
 !
       INTEGER                                :: polyOrder  = 6
 !
@@ -357,5 +357,5 @@
 !
       CALL releaseMultiSegmentNodalCurve(msnCurve)
       CALL releasePECurve(circleCurve)
-       
+
    END SUBROUTINE NodalCircleTest
