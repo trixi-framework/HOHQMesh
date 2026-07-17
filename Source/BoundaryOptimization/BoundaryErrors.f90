@@ -2,27 +2,27 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
 ! FTObjectLibrary contains code that, to the best of our knowledge, has been released as
 ! public domain software:
-! * `b3hs_hash_key_jenkins`: originally by Rich Townsend, 
+! * `b3hs_hash_key_jenkins`: originally by Rich Townsend,
 ! https://groups.google.com/forum/#!topic/comp.lang.fortran/RWoHZFt39ng, 2005
 !
 ! --- End License
@@ -30,8 +30,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      BoundaryErrors.f90
-!      Created: April 21, 2026 at 1:38 PM 
-!      By: David Kopriva  
+!      Created: April 21, 2026 at 1:38 PM
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -40,14 +40,14 @@
    USE MultiSegmentNodalCurveClass
    USE MultiSegmentModalCurveClass
    USE LegendreAlgorithms
-   IMPLICIT NONE  
+   IMPLICIT NONE
 
-!  ======== 
-   CONTAINS  
-!  ======== 
+!  ========
+   CONTAINS
+!  ========
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
    SUBROUTINE ComputeBoundaryErrors(project)
       IMPLICIT NONE
 !
@@ -64,12 +64,12 @@
       TYPE(SMModel)                 , POINTER  :: model               !An alias
       CLASS(FTMutableObjectArray)   , POINTER  :: boundaryPolynomials !An alias
       CLASS(FTMutableObjectArray)   , POINTER  :: modelChains         !An alias
-      
+
       CLASS(SMChainedCurve)         , POINTER  :: modelChain
       CLASS(MultiSegmentCurve)      , POINTER  :: boundaryPolynomial
       CLASS(SMCurve)                , POINTER  :: modelCurve, polyCurve
       CLASS(FTObject)               , POINTER  :: obj
-      
+
       INTEGER                                  :: N, Ng, c
       INTEGER                                  :: m, j
       REAL(KIND=RP)                            :: t, dt
@@ -84,7 +84,7 @@
 !     -------------------------------------------
 !
       N  = project % runParams % polynomialOrder
-      nG = N ! The gauss quadrature order. 
+      nG = N ! The gauss quadrature order.
       ALLOCATE(nodes(0:Ng), weights(0:Ng))
       CALL GaussLegendreNodesAndWeights( Ng, nodes, weights )
 !
@@ -104,7 +104,7 @@
       IF(ALLOCATED( project % H1BoundaryError)) DEALLOCATE(project % H1BoundaryError)
       ALLOCATE(project % L2BoundaryError(model % numberOfChains()) )
       ALLOCATE(project % H1BoundaryError(model % numberOfChains()) )
-      
+
       DO j = 1, model % numberOfChains()
          el2Max = -HUGE(1.0_RP)
          eH1Max = -HUGE(1.0_RP)
@@ -126,7 +126,7 @@
 !        approximation to the chain, which corresponds
 !        to an element edge along a boundary and
 !        compute the pointwise, L2 and H1 error norms,
-!        since it is convenient to do it all at once. 
+!        since it is convenient to do it all at once.
 !        ---------------------------------------------
 !
          ALLOCATE(project % L2BoundaryError(j) % array(boundaryPolynomial % nSegments) )
@@ -151,7 +151,7 @@
                t = gTStart + dt*0.5_RP*(nodes(m) + 1.0_RP)
 !
 !              ------------------
-!              Derivative error  
+!              Derivative error
 !              ------------------
 !
                xC      = modelChain % derivativeAt(t)
@@ -166,35 +166,35 @@
                xC      = modelChain % positionAt(t)
                xP      = boundaryPolynomial % positionAt(t)
                e       = (xP(1)-xC(1))**2 + (xP(2)-xC(2))**2
-               
+
                eL2Norm = eL2Norm + e*weights(m)
                eH1Norm = eH1Norm + eL2Norm + eD*weights(m)
-               
+
             END DO
-            
+
             arc = segmentArcLength(boundaryPolynomial, c, nodes, weights)
 
             eL2Norm = SQRT(0.5_RP*dt*eL2Norm/arc)
             eH1Norm = SQRT(0.5_RP*dt*eH1Norm/arc)
-            
+
             project % L2BoundaryError(j) % array(c) = eL2Norm
             project % H1BoundaryError(j) % array(c) = eH1Norm
-            
+
             el2Max  = MAX(el2Max, eL2Norm)
             eH1Max  = MAX(eH1Max, eH1Norm)
          END DO
-         
+
          project % L2ErrorMax(j) = el2Max
          project % H1ErrorMax(j) = eH1Max
-         
+
       END DO !All boundary chains
-       
+
    END SUBROUTINE ComputeBoundaryErrors
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE WriteBoundaryErrors(project)  
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+   SUBROUTINE WriteBoundaryErrors(project)
+      IMPLICIT NONE
 !
 !     ---------
 !     Arguments
@@ -212,13 +212,13 @@
       CLASS(FTObject)               , POINTER  :: obj
       CLASS(SMChainedCurve)         , POINTER  :: modelChain
       CLASS(MultiSegmentCurve)      , POINTER  :: boundaryPolynomial
-      
+
       CHARACTER(DEFAULT_CHARACTER_LENGTH)      :: str
       REAL(KIND=RP)                            :: gTStart, gTEnd
       REAL(KIND=RP)                            :: eL2Norm, eH1Norm
       INTEGER                                  :: normUnit
       INTEGER                                  :: m, j, c
-      
+
       IF ( project % runParams % errorFileName == "none" )     RETURN
 !
 !     -------
@@ -236,11 +236,11 @@
       m = INDEX(STRING = project % runParams % errorFileName, SUBSTRING = ".")
       IF ( m == -1 )     THEN
          OPEN(NEWUNIT = normUnit, FILE = project % runParams % errorFileName //"_Norms")
-      ELSE 
+      ELSE
          str = project % runParams % errorFileName
          str = str(1:m-1) //"_Norms.txt"
          OPEN(NEWUNIT = normUnit, FILE = str)
-      END IF 
+      END IF
 !
 !     ----------------------------
 !     Compute the results to write
@@ -256,24 +256,24 @@
          obj => modelChains % objectAtIndex(j)
          CALL castToSMChainedCurve(obj, modelChain)
          WRITE(normUnit,*) TRIM(modelChain % curveName())
-         
+
          obj => boundaryPolynomials % objectAtIndex(j)
          CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
-         
+
          DO c = 1, boundaryPolynomial % nSegments
             gTStart = boundaryPolynomial % cuts(c-1)
             gTEnd   = boundaryPolynomial % cuts(c)
             eL2Norm = project % L2BoundaryError(j) % array(c)
             eH1Norm = project % H1BoundaryError(j) % array(c)
-            
+
             WRITE(normUnit,*) 0.5_RP*(gTStart + gTEnd), LOG10(eL2Norm + 1.0d-15), LOG10(eH1Norm + 1.0d-15)
-            
+
          END DO
-         
+
       END DO
-      
+
       CLOSE(normUnit)
-      
+
    END SUBROUTINE WriteBoundaryErrors
-   
+
    END Module BoundaryErrorModule

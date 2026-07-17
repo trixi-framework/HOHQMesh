@@ -290,7 +290,7 @@
       INTEGER, ALLOCATABLE :: array(:)
 !
 !     ---------------
-!     Local varaibles
+!     Local variables
 !     ---------------
 !
       INTEGER :: j
