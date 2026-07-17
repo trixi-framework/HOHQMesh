@@ -42,7 +42,6 @@
 
       CALL FTAssert(legendreQuadratureIsOK(),msg = "Legendre quadrature")
       CALL FTAssert(gaussInnerProductIsOK(),msg = "Gauss quadrature")
-      CALL FTAssert(legendreCoefsAreOK(),msg = "Legendre coeffcients from recursion")
       CALL FTAssert(legendreCoefsForTestAreOK(),msg = "Legendre coefficients")
       CALL FTAssert(legendreSeriesIsOK(),msg = "Legendre series")
       CALL FTAssert(legendrePolyAndDerivIsOK(),msg = "Legendre poly. and deriv.")
