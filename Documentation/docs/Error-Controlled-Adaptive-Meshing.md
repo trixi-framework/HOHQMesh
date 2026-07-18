@@ -1,4 +1,7 @@
 # Boundary Error Controlled Adaptive Meshing
+
+> THE ERROR CONTROLLED ADAPTIVE MESHING IS A NEW ADDITION TO HOHQMESH, AND IS STILL UNDER DEVELOPMENT. IT SHOULD BE USED ONLY WITH SOME UNDERSTANDING OF HOW IT WORKS, AND THE ASSUMPTIONS INVOLVED.
+
 HOHQMesh automatically sizes elements according to a number of criteria, including the local radius of curvature of the boundary curves, the distance between curves, and user defined refinement regions.
 
 It now can also adaptively mesh a model to provide optimal boundary approximations to the model curves with user specified smoothness to within a user defined tolerance. Adaptively meshing the model can lead to more efficient meshes with fewer elements and larger element sizes than the default, in addition to ensuring that the boundary approximations written out to the mesh file are accurate to within a desired tolerance. A description of the mathematics behind the optimal curve approximations, how it works, and its limitations can be found in the developer documentation, [here](TODO).
@@ -33,11 +36,12 @@ The options are
 
 		connect = 3-4,6-9
 
-**Notes:**
+**Note Well:**
 
 * Optimized adaptive meshing is a feature under active development, with all caveats applied.
 * There is no reason to optimize straight line or low order polynomial curves, which is why optimization is implemented chain-by-chain.
 * Optimization of the mesh is an expensive process. It will take significantly longer to generate a mesh, especially if the error tolerances are low.
+* If the tolerance is chosen too low, it is possible to hit the depth limit, or take an inordinate amount of time. Think about how accurate of a mesh is needed before choosing something like 10^-10. It is also possible to choose tolerances inconsisten with internal tolerances used by HOHQMesh.
 
 # Boundary Error Output
 HOHQMesh can optionally write out the boundary approximation errors to files for later analysis. Two files can be written prepended with the name of the control file. One contains the pointwise error along each boundary as a function of the chain curve parameter. The other contains the integrated ($L^2$ or $H^1$ norms), grouped by chain. To have these files written, include the following key in the [RUN_PARAMETERS](the-control-input.md#RunParameters) block,
