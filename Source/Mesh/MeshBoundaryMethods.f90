@@ -1587,7 +1587,7 @@
 !        Arguments
 !        ---------
 !
-         TYPE (FTLinkedListIterator), POINTER :: allNodesIterator
+         CLASS(FTLinkedListIterator), POINTER :: allNodesIterator
          CLASS(FTLinkedList)        , POINTER :: boundaryNodesList
 !
 !        ---------------
