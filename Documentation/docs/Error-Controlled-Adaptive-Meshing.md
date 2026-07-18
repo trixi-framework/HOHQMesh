@@ -36,6 +36,6 @@ where the `crv_n` are the index of the curves in the chain. For example, if a ch
 **Notes:**
 
 * Optimized adaptive meshing is a feature under active development, with all caveats applied.
-* There is no reason to optimize straight line or low order polynomial curves, which is why optimzation is implemented chain-by-chain.
-* Optimization of the mesh is an expesive process. It will take significantly longer to generate a mesh, especially if the error tolerances are low.
+* There is no reason to optimize straight line or low order polynomial curves, which is why optimization is implemented chain-by-chain.
+* Optimization of the mesh is an expensive process. It will take significantly longer to generate a mesh, especially if the error tolerances are low.
 * 
