@@ -21,9 +21,9 @@ on:
         default: false
 
 env:
-  # Modify this variable to change the ifort compiler version - do NOT hardcode the version
+  # Modify this variable to change the ifx compiler version - do NOT hardcode the version
   # anywhere else!
-  INTEL_ONEAPI_VERSION: 2023.2.1
+  INTEL_ONEAPI_VERSION: 2025.2
 
 jobs:
   test:
@@ -107,9 +107,21 @@ jobs:
             shell: bash
             test_type: valgrind
             coverage: false
+          - os: ubuntu-26.04
+            os_name: linux
+            compiler: gfortran-15
+            shell: bash
+            test_type: regular
+            coverage: false
+          - os: ubuntu-26.04
+            os_name: linux
+            compiler: gfortran-15
+            shell: bash
+            test_type: valgrind
+            coverage: false
           - os: ubuntu-latest
             os_name: linux
-            compiler: ifort
+            compiler: ifx
             shell: bash
             test_type: regular
             coverage: false
@@ -160,7 +172,7 @@ jobs:
           path: /opt/intel/oneapi
           key: ${{ matrix.os }}-${{ matrix.compiler }}-${{ env.INTEL_ONEAPI_VERSION }}
       - name: Install Intel oneAPI Fortran compiler
-        if: matrix.compiler == 'ifort' && steps.cache.outputs.cache-hit != 'true'
+        if: matrix.compiler == 'ifx' && steps.cache.outputs.cache-hit != 'true'
         run: |
           # download the key to system keyring
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
@@ -177,7 +189,7 @@ jobs:
           . /opt/intel/oneapi/setvars.sh
           env | grep oneapi >> $GITHUB_ENV
       - name: Use existing Intel oneAPI Fortran compiler
-        if: matrix.compiler == 'ifort' && steps.cache.outputs.cache-hit == 'true'
+        if: matrix.compiler == 'ifx' && steps.cache.outputs.cache-hit == 'true'
         run: |
           # set environment variables and make them persistent across steps
           . /opt/intel/oneapi/setvars.sh
