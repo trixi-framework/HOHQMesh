@@ -486,7 +486,7 @@ Then we compute the derivatives recursively using the following algorithm.
 This section is implemented in the module
 `ConstrainedMultiH1Optimization` contained in the
 file
-[`Source/BoundaryOptimization/ConstrainedMultiH1Optimization.f90`](https://github.com/trixi-framework/HOHQMesh/blob/BoundaryOptimization/Source/BoundaryOptimization/CurveOptimization.f90).
+[`Source/BoundaryOptimization/ConstrainedMultiH1Optimization.f90`](https://github.com/trixi-framework/HOHQMesh/blob/main/Source/BoundaryOptimization/CurveOptimization.f90).
 
 - The linear systems from Eq. (1) are solved with an LU factorization,
   implemented in `LUFactorization` and `ForwardBackwardSolve` defined in that file.
@@ -564,7 +564,7 @@ resulting mesh.
 
 - The procedure `SUBROUTINE OptimizeCurve` is found
   in the file
-  [`Source/BoundaryOptimization/CurveOptimization.f90`](https://github.com/trixi-framework/HOHQMesh/blob/BoundaryOptimization/Source/BoundaryOptimization/CurveOptimization.f90).
+  [`Source/BoundaryOptimization/CurveOptimization.f90`](https://github.com/trixi-framework/HOHQMesh/blob/main/Source/BoundaryOptimization/CurveOptimization.f90).
 
 - The nonlinear solve for (3) is performed in the `FUNCTION iterate`,
 - found in the same file, which combines
@@ -577,7 +577,7 @@ resulting mesh.
 ## The Adaptive Mesh Procedure
 
 The mesh adaptation is performed in the procedure `SUBROUTINE GenerateQuadMesh` in the file
-[`Source/Mesh/MeshGeneratorMethods.f90`](https://github.com/trixi-framework/HOHQMesh/blob/BoundaryOptimization/Source/Mesh/MeshGeneratorMethods.f90)
+[`Source/Mesh/MeshGeneratorMethods.f90`](https://github.com/trixi-framework/HOHQMesh/blob/main/Source/Mesh/MeshGeneratorMethods.f90)
 The sequence of events is shown in the following algorithm.
 <figure id="fig:alg2" data-latex-placement="htbp">
 <img src="https://github.com/user-attachments/assets/ee947034-8791-4615-a97b-287d13ff1125" style="width:7in" />
