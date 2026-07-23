@@ -110,7 +110,7 @@ where $h = t_{k} - t_{k-1}$. Then $ds/dt = 2/h$. Written out,
 $$
 \begin{split}
 \mathcal Q &= \mathcal Q_x + \mathcal Q_y \\& =
-\frac{1}{2}\frac{h}{2}\int\limits \,\mathrm{d}s +  \frac{1}{2}\frac{h}{2}\int\limits_{-1}^1 \left( X'(t(s)) - \sum_{j=0}^N  b^x_j \phi'_j(s)\frac{ds}{dt}\right)^{\!2} \,\mathrm{d}s
+\frac{1}{2}\frac{h}{2}\int\limits \left(  X(t(s)) - \sum_{j=0}^N  b^x_j \phi_j(s) \right)^{\!2}\,\mathrm{d}s +  \frac{1}{2}\frac{h}{2}\int\limits_{-1}^1 \left( X'(t(s)) - \sum_{j=0}^N  b^x_j \phi'_j(s)\frac{ds}{dt}\right)^{\!2} \,\mathrm{d}s
 \\&
 +\frac{1}{2}\frac{h}{2}\int\limits_{-1}^1 \left(  Y(t(s)) - \sum_{j=0}^N  b^y_j \phi_j(s) \right)^{\!2} \,\mathrm{d}s +  \frac{1}{2}\frac{h}{2}\int\limits_{-1}^1 \left( Y'(t(s)) - \sum_{j=0}^N  b^y_j \phi'_j(t) \frac{ds}{dt}\right)^{\!2} \,\mathrm{d}s.
 \end{split}
