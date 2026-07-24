@@ -33,15 +33,15 @@ To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order bounda
   - Setting how the mesh should be [smoothed](Documentation/docs/the-control-input.md#Smoother)
   - Defining optional [refinement regions](Documentation/docs/the-control-input.md#RefinementRegions) to allow manual refinement of the mesh to emphasize specific regions not indicated by the boundary curves or topography.
 
-HOHQMesh will automatically generate a mesh with curved elements sized according to the geometry, like the curvature of the boundary curves and bottom topography, and the distance between boundary curves. It will generate a mesh that is symmetric about a symmetry line if segments of the outer boundary are defined as [symmetry boundaries](Documentation/docs/the-model.md#Symmetric-Meshes).
+HOHQMesh will automatically generate a mesh with curved elements sized according to the geometry, like the curvature of the boundary curves and bottom topography, and the distance between boundary curves. It will generate a mesh that is symmetric about a symmetry line if segments of the outer boundary are defined as [symmetry boundaries](Documentation/docs/the-model.md#Symmetry).
 
-Additionally, you can generate an all [hexahedral](Documentation/docs/three-dimensional-hexahedral-meshes) mesh from the two-dimensional mesh by extruding a quadrilateral mesh by
+Additionally, you can generate an all [hexahedral](Documentation/docs/three-dimensional-hexahedral-meshes.md) mesh from the two-dimensional mesh by extruding a quadrilateral mesh by
 
-- [Simple extrusion](Documentation/docs/three-dimensional-hexahedral-meshes.md#Simple-Extrusion) along a coordinate direction
-- [Simple rotation](Documentation/docs/three-dimensional-hexahedral-meshes.md#Simple-Rotation) about an axis
+- [Simple extrusion](Documentation/docs/three-dimensional-hexahedral-meshes.md#Extrusion) along a coordinate direction
+- [Simple rotation](Documentation/docs/three-dimensional-hexahedral-meshes.md#Rotation) about an axis
 - [Sweeping](Documentation/docs/three-dimensional-hexahedral-meshes.md#Sweeping) a quadrilateral mesh along a curve and optionally [scaling](Documentation/docs/three-dimensional-hexahedral-meshes.md#Scaling) the width along the way
 
-One can have the bottom of a hexahedral mesh follow a prescribed [topography](Documentation/docs/three-dimensional-hexahedral-meshes.md#Topography) defined in functional form or from data. A 3D mesh can also be [sized](Documentation/docs/three-dimensional-hexahedral-meshes.md#Sizing-the-Mesh-along-Bottom-Topography) according to the curvature of the bottom topography.
+One can have the bottom of a hexahedral mesh follow a prescribed [topography](Documentation/docs/three-dimensional-hexahedral-meshes.md#Topography) defined in functional form or from data. A 3D mesh can also be [sized](Documentation/docs/three-dimensional-hexahedral-meshes.md#SizingTopography) according to the curvature of the bottom topography.
 
 ## News
 

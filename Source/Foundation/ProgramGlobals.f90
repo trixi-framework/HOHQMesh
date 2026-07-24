@@ -90,7 +90,9 @@
 !        Misc
 !        ----
 !
-         INTEGER :: BACKGROUND_MATERIAL_ID = 0
+         INTEGER             :: BACKGROUND_MATERIAL_ID = 0
+         INTEGER, PARAMETER  :: L2_NORM = 1, H1_NORM = 2
+         INTEGER, PARAMETER  :: SUBDIVISION = 0, MARCHING = 1
 !
 !        -----------
 !        Preferences

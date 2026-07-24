@@ -146,7 +146,7 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges  => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          TYPE (SMElement)           , POINTER :: e => NULL()
          TYPE (SMEdge)              , POINTER :: currentEdge, newBoundaryEdge, edge
          TYPE (SMNode)              , POINTER :: node1, node2
@@ -292,7 +292,7 @@
          CLASS(FTLinkedList)        , POINTER      :: newlyExposedBoundaryEdges => NULL()
          TYPE (SMElement)           , POINTER      :: e => NULL()
          TYPE (SMEdge)              , POINTER      :: currentEdge => NULL(), newBoundaryEdge => NULL()
-         TYPE (FTLinkedListIterator), POINTER      :: iterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER      :: iterator => NULL()
          CLASS(FTObject)            , POINTER      :: obj => NULL()
          INTEGER                                   :: k, nB, interiorEdgeNumber
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
@@ -423,7 +423,7 @@
          TYPE (SMNode)              , POINTER :: node        => NULL()
          CLASS(SMCurve)             , POINTER :: cEnd        => NULL()
          CLASS(SMChainedCurve)      , POINTER :: chain       => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: iterator    => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator    => NULL()
          INTEGER                              :: k
          REAL(KIND=RP)                        :: t
 
@@ -461,7 +461,7 @@
 !        from the edge list
 !        ----------------------------------------------
 !
-         TYPE (FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTobject)            , POINTER :: obj         => NULL()
          TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
          LOGICAL                              :: takeStep

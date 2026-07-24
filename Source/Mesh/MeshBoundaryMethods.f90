@@ -74,7 +74,7 @@
 !
          CLASS(FTObject) , POINTER             :: obj => NULL()
          INTEGER                               :: N, k
-         TYPE (FTLinkedListIterator) , POINTER :: iterator => NULL()
+         CLASS (FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: chain => NULL()
 !
 !        --------------
@@ -380,7 +380,7 @@
          CLASS(FTLinkedList)        , POINTER     :: sortedEdges => NULL(), edgeList => NULL()
          TYPE (SMNodePtr)           , POINTER     :: sortedNodes(:) => NULL()
          CLASS(FTobject)            , POINTER     :: obj            => NULL()
-         TYPE (FTLinkedListIterator), POINTER     :: iterator       => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: iterator       => NULL()
          TYPE (SMEdgePtr)           , ALLOCATABLE :: edgeArray(:)
          INTEGER                    , ALLOCATABLE :: nodeArray(:,:)
          REAL(KIND=RP)              , ALLOCATABLE :: sortedNodeLocations(:,:)
@@ -631,7 +631,7 @@
 !        Local variables
 !        ---------------
 !
-         TYPE (FTLinkedListIterator)  , POINTER :: iterator => NULL()
+         CLASS(FTLinkedListIterator)  , POINTER :: iterator => NULL()
          CLASS(FTLinkedListRecord)    , POINTER :: cr => NULL()
          TYPE (SMEdge)                , POINTER :: currentEdge => NULL(), prevEdge => NULL()
          INTEGER                                :: nNodes, id, idP1, idP2, j
@@ -758,7 +758,7 @@
          TYPE (SMEdge)              , POINTER     :: edge             => NULL()
          CLASS(FTObject)            , POINTER     :: obj              => NULL()
          CLASS(FTLinkedList)        , POINTER     :: edgeList         => NULL()
-         TYPE (FTLinkedListIterator), POINTER     :: edgeListIterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: edgeListIterator => NULL()
 
          LOGICAL                                  :: isInnerBoundaryCurve
          INTEGER                                  :: j
@@ -1076,7 +1076,7 @@
 !     --------------------------------------------------------------------
 !
       IMPLICIT NONE
-      TYPE (FTLinkedListIterator), POINTER :: nodeIterator
+      CLASS(FTLinkedListIterator), POINTER :: nodeIterator
       CLASS(FTObject)            , POINTER :: obj  => NULL()
       TYPE (SMNode)              , POINTER :: node => NULL()
       CALL nodeIterator % setToStart()
@@ -1129,7 +1129,7 @@
          TYPE (SMEdge)      , POINTER :: currentEdge => NULL()
          CLASS(FTObject)    , POINTER :: obj => NULL()
 
-         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS (FTLinkedListIterator), POINTER :: iterator => NULL()
 !
 !        ---------------------
 !        Gather boundary Edges
@@ -1233,7 +1233,7 @@
 !
          TYPE (SMNode)              , POINTER :: currentNode => NULL()
          CLASS(SMCurve)             , POINTER :: c => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          REAL(KIND=RP)                        :: tOld,tNew
          REAL(KIND=RP)                        :: pOld(3),pNew(3)
@@ -1577,5 +1577,204 @@
          END DO
 
       END FUNCTION TestPointsForCrossing
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE CollectBoundaryAndInterfaceNodes(allNodesIterator,boundaryNodesList)
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTLinkedListIterator), POINTER :: allNodesIterator
+         CLASS(FTLinkedList)        , POINTER :: boundaryNodesList
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE (SMNode)  , POINTER :: currentNode => NULL()
+         CLASS(FTObject), POINTER :: obj => NULL()
+!
+!        ------------------------------------------------------
+!        Loop through all the nodes and add those whose
+!        distance to a boundary is zero to the boundaryNodeList
+!        ------------------------------------------------------
+!
+         CALL allNodesIterator % setToStart()
+         DO WHILE ( .NOT.allNodesIterator % isAtEnd() )
+            obj => allNodesIterator % object()
+            CALL castToSMNode(obj,currentNode)
+            IF ( IsOnBoundaryCurve(currentNode) .AND. &
+                 currentNode%distToBoundary == 0.0_RP )     THEN
+               CALL boundaryNodesList % add(obj)
+            END IF
+            CALL allNodesIterator % moveToNext()
+         END DO
+
+      END SUBROUTINE CollectBoundaryAndInterfaceNodes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SortBoundaryNodesToChains(nodesIterator, numBoundaryChains, chainNodesArray)
+!
+!     ---------------------------------------------------------------------------
+!     Gather up all the boundary nodes and arrange them in arrays by chainID. The
+!     returned chainNodesArray contains pointers to all the nodes that fall along
+!     a given curve chain. Thus, chainNodesArray(j) % array is an ordered array
+!     of all nodes along boundary chain j.
+!     ---------------------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         INTEGER                                 :: numBoundaryChains
+         CLASS(FTLinkedListIterator), POINTER    :: nodesIterator
+         TYPE(JaggedNodeArray)                   :: chainNodesArray(:)
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE(LinkedListPtr)        , POINTER :: boundaryNodesArray(:)
+         CLASS(FTLinkedList)        , POINTER :: boundaryNodesList => NULL()
+         CLASS(FTLinkedList)        , POINTER :: list
+         CLASS(FTLinkedListIterator), POINTER :: boundaryNodesIterator
+         CLASS(FTLinkedListIterator), POINTER :: listIterator
+         TYPE (SMNode)              , POINTER :: currentNode => NULL()
+         CLASS(FTObject)            , POINTER :: obj => NULL()
+         CLASS(FTLinkedListRecord)  , POINTER :: previousRecord, currentRecord
+         INTEGER                              :: id, j
+         REAL(KIND=RP)                        :: prevT, currentT
+         LOGICAL                              :: reOrder
+!
+!
+!        -----------------------------------------------------
+!        Temporary storage for the nodes along each curve chain
+!        -----------------------------------------------------
+!
+         ALLOCATE(boundaryNodesArray(numBoundaryChains))
+         DO id = 1, numBoundaryChains
+            ALLOCATE(boundaryNodesArray(id) % list)
+            CALL boundaryNodesArray(id) % list % init()
+         END DO
+!
+!        ------------------------------
+!        Collect all the boundary nodes
+!        ------------------------------
+!
+         ALLOCATE(boundaryNodesList)
+         CALL boundaryNodesList % init()
+         CALL CollectBoundaryAndInterfaceNodes( nodesIterator, boundaryNodesList )
+!
+!        --------------------------------------------------------
+!        Separate into a single node list for each boundary chain
+!        --------------------------------------------------------
+!
+         ALLOCATE(boundaryNodesIterator)
+         CALL boundaryNodesIterator % initWithFTLinkedList(boundaryNodesList)
+         CALL boundaryNodesIterator % setToStart()
+
+         DO WHILE ( .NOT.boundaryNodesIterator % isAtEnd() )
+            obj => boundaryNodesIterator % object()
+            CALL castToSMNode(obj,currentNode)
+            id = currentNode % bCurveChainID
+            CALL boundaryNodesArray(id) % list % add(obj)
+            CALL boundaryNodesIterator % moveToNext()
+         END DO
+!
+!        ------------------------------------------------------------------------
+!        The nodes in each chain will be ordered, but do not necessarily start
+!        at parameter value of zero. Since the nodes describe a closed (periodic)
+!        curve, we can just reset the pointers in the linked lists so that the
+!        parameter values are strictly increasing.
+!        ------------------------------------------------------------------------
+!
+         ALLOCATE(listIterator)
+         CALL listIterator % init()
+         DO id = 1, SIZE(boundaryNodesArray)
+            list => boundaryNodesArray(id) % list
+            CALL listIterator % setLinkedList(list)
+
+            previousRecord => listIterator % currentRecord()
+            obj            => listIterator % object()
+            CALL castToSMNode(obj,currentNode)
+            prevT = currentNode % gWhereOnBoundary
+            CALL listIterator % moveToNext()
+
+            DO WHILE ( .NOT.listIterator % isAtEnd() )
+               currentRecord => listIterator % currentRecord()
+               obj           => listIterator % object()
+               CALL castToSMNode(obj,currentNode)
+               currentT = currentNode % gWhereOnBoundary
+!
+!              -----------------------------------------------
+!              If the parameter, t, is starting over, then
+!              the list needs to be re-ordered. Stop here and
+!              do the re-ordering after exit
+!              -----------------------------------------------
+!
+               IF ( currentT < prevT )     THEN ! The parameter t is starting over
+                  reOrder = .TRUE.
+                  EXIT
+               END IF
+
+               previousRecord => currentRecord
+               CALL listIterator % moveToNext()
+            END DO
+
+            IF ( reOrder )     THEN
+               list % tail % next    => list % head
+               list % head           => currentRecord
+               list % tail           => previousRecord
+               previousRecord % next => NULL()
+            END IF
+!
+!           ------------------------------------
+!           Copy each chain into an array
+!           *Note that these are weak references
+!            and can go away at any time*
+!           ------------------------------------
+!
+            ALLOCATE( chainNodesArray(id) % array(list % count()))
+            CALL listIterator % setToStart()
+            j = 0
+            DO WHILE ( .NOT.listIterator % isAtEnd() )
+               j = j + 1
+               obj => listIterator % object()
+               CALL castToSMNode(obj,currentNode)
+               chainNodesArray(id) % array(j) % node => currentNode
+               CALL listIterator % moveToNext()
+            END DO
+         END DO
+!
+!        -------
+!        Cleanup
+!        -------
+!
+         DO id = 1, numBoundaryChains
+            CALL releaseFTLinkedList(boundaryNodesArray(id) % list)
+         END DO
+         DEALLOCATE( boundaryNodesArray )
+
+         CALL releaseFTLinkedListIterator(listIterator)
+         CALL releaseFTLinkedListIterator(boundaryNodesIterator)
+         CALL releaseFTLinkedList(boundaryNodesList)
+!
+!         !DEBUG
+!         DO id = 1, numBoundaryChains
+!            DO j = 1, SIZE(chainNodesArray(id) % array)
+!            currentNode => chainNodesArray(id) % array(j) % node
+!            WRITE(0,*) currentNode % gWhereOnBoundary, currentNode % bCurveChainID, &
+!                       currentNode % bCurveID, currentNode % whereOnBoundary, currentNode % x(1:2)
+!            END DO
+!            WRITE(0,*)
+!         END DO
+
+      END SUBROUTINE SortBoundaryNodesToChains
 
    END MODULE MeshBoundaryMethodsModule

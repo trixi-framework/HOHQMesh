@@ -262,6 +262,8 @@
          aT = 1.5_RP*a; bT = 1.1_RP*b; cT = 1.75_RP*c
          CALL FTAssert(.NOT. linesAreColinear(a,b,c,aT,bT,cT),msg = "Colinear lines are not colinear")
          
+         CALL TestPolynomialInterpolation()
+         
       END SUBROUTINE TestCurves
 !
 !////////////////////////////////////////////////////////////////////////
@@ -339,3 +341,117 @@
                             ACHAR(10) // "       " // description)
 
       END SUBROUTINE TestPrintDescription
+
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE TestPolynomialInterpolation()
+         USE SMPolynomialInterpolantClass
+         USE TestSuiteManagerClass
+         USE FTAssertions
+         USE SharedExceptionManagerModule
+         IMPLICIT NONE
+         
+         TYPE(SMPolynomialInterpolant) :: p
+         INTEGER, PARAMETER            :: N = 6
+         REAL(KIND=RP)                 :: nodes(0:N)
+         REAL(KIND=RP)                 :: values(0:N,3), v(3), tau(2)
+         INTEGER                       :: j
+         REAL(KIND=RP)                 :: t, dt, e
+   
+         dt = 1.0_RP/N
+         DO j = 0, N 
+            t        = j*dt
+            nodes(j) = t
+            values(j,1) = xFun(t)
+            values(j,2) = yFun(t)
+            values(j,3) = 0.0_RP
+         END DO
+   
+         CALL p % initWithNodesValuesAndID(N,nodes,values, "poly",id = 1)
+!
+!        --------
+!        Location
+!        --------
+!
+         dt = 1.0_RP/20
+         e = 0.0_RP
+         DO j = 0, 20
+            t = j*dt
+            v = p % positionAt(t)
+            e = MAX(e, ABS(xFun(t) - v(1)),ABS(yFun(t) - v(2)))
+         END DO
+         CALL FTAssert(test = e < 1.0d-12,msg = "Polynomial values are incorrect")
+!
+!        ----------
+!        Derivative
+!        ----------
+!
+         dt = 1.0_RP/20
+         e = 0.0_RP
+         DO j = 0, 20
+            t = j*dt
+            v = p % derivativeAt(t)
+            e = MAX(e, ABS(xDFun(t) - v(1)),ABS(yDFun(t) - v(2)))
+         END DO 
+         CALL FTAssert(test = e < 1.0d-12,msg = "Polynomial derivatives are incorrect")
+!
+!        --------------
+!        Tangent vector
+!        --------------
+!
+         dt = 1.0_RP/20
+         e = 0.0_RP
+         DO j = 0, 20
+            t = j*dt
+            v = p % tangentAt(t)
+            tau = [xDfun(t), yDfun(t)]
+            tau = tau/SQRT(tau(1)**2 + tau(2)**2)
+            e = MAX(e, ABS(tau(1) - v(1)),ABS(tau(2) - v(2)))
+         END DO 
+         CALL FTAssert(test = e < 1.0d-12,msg = "Polynomial tangents are incorrect")
+!
+!        ----------
+!        Class name
+!        ----------
+!
+         CALL FTAssertEqual(expectedValue = "Polynomial Interpolant",actualValue = p % className(), &
+                            msg = "Polynomial curve class name incorrect")
+!
+!     ========
+      CONTAINS
+!     ========
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      REAL(KIND=RP) FUNCTION xFun(t)
+         IMPLICIT NONE
+         REAL(KIND=RP) :: t
+         xFun = 3.0_RP*t**4 + 2.5_RP*t**3 + 4.1_RP*t**2 + t + 3.14_RP
+      END FUNCTION xFun
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      REAL(KIND=RP) FUNCTION yFun(t)  
+         IMPLICIT NONE  
+         REAL(KIND=RP) :: t
+         yFun = 2.0_RP*t**4 + 3.5_RP*t**3 + 2.1_RP*t**2 + t + 2.718_RP
+      END FUNCTION yFun
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      REAL(KIND=RP) FUNCTION xDFun(t)  
+         IMPLICIT NONE  
+         REAL(KIND=RP) :: t
+         xDFun = 12.0_RP*t**3 + 3.0_RP*2.5_RP*t**2 + 8.2_RP*t + 1.0_RP
+      END FUNCTION xDFun
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      REAL(KIND=RP) FUNCTION yDFun(t)  
+         IMPLICIT NONE  
+         REAL(KIND=RP) :: t
+         yDFun = 8.0_RP*t**3 + 3.0_RP*3.5_RP*t**2 + 4.2_RP*t + 1.0_RP
+      END FUNCTION yDFun
+      
+      END SUBROUTINE TestPolynomialInterpolation

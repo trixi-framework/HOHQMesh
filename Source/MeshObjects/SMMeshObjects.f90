@@ -182,6 +182,25 @@
          TYPE(SMQuad), POINTER :: quad => NULL()
       END TYPE SMQuadPtr
 !
+!     ------------------------
+!     Pointer to a linked list
+!     ------------------------
+!
+      TYPE LinkedListPtr
+         CLASS(FTLinkedList), POINTER :: list => NULL() 
+      END TYPE LinkedListPtr
+!
+!     -----------------------
+!     To store a jagged array
+!     -----------------------
+!
+      TYPE JaggedRealArray
+         REAL(KIND=RP), ALLOCATABLE :: array(:) 
+      END TYPE 
+      TYPE JaggedNodeArray
+         TYPE(SMNodePtr), ALLOCATABLE :: array(:) 
+      END TYPE 
+!
 !     -----
 !     Casts
 !     -----
@@ -835,7 +854,7 @@
          TYPE(ElementBoundaryInfo) :: self
          INTEGER                   :: N ! = polynomial order
          
-         ALLOCATE( self%x(3,0:N,4) )
+         IF(.NOT. ALLOCATED(self%x)) ALLOCATE( self%x(3,0:N,4) )
          
          self % x          = 0.0_RP
          self % bCurveFlag = 0

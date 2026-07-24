@@ -118,7 +118,7 @@
          
          IF( sourceDict % containsKey(key) )     THEN
             valueToSet = sourceDict % stringValueForKey(key = key,requestedLength = DEFAULT_CHARACTER_LENGTH)
-         ELSE
+         ELSE IF(errorLevel > FT_ERROR_NONE)   THEN
             CALL ThrowErrorExceptionOfType(poster = poster,  &
                                            msg    = message, &
                                            typ    = errorLevel)

@@ -93,7 +93,11 @@
 !     Constants
 !     ---------
 !
-      CHARACTER(LEN=16) :: CURVES_DONT_JOIN_EXCEPTION = "Curves dont join"
+      CHARACTER(LEN=16)                      :: CURVES_DONT_JOIN_EXCEPTION = "Curves dont join"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_CONTINUITY_KEY       = "continuity"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_OPTIMIZATION_KEY     = "optimize"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_TOLERANCE_KEY        = "tolerance"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER  :: CHAIN_BREAKS_KEY           = "connect"
 !
 !     ---------------------
 !     Class type definition
@@ -102,10 +106,14 @@
       TYPE, EXTENDS(SMCurve) :: SMChainedCurve
          CLASS(FTMutableObjectArray), POINTER     :: curvesArray  => NULL()
 
-         INTEGER      , DIMENSION(:), ALLOCATABLE :: myCurveIDs
-         INTEGER      , DIMENSION(:), ALLOCATABLE :: jointClassification
-         LOGICAL      , DIMENSION(:), ALLOCATABLE :: swapDirection
-         INTEGER                                  :: numberOfCurvesInChain
+         INTEGER, DIMENSION(:), ALLOCATABLE :: myCurveIDs
+         INTEGER, DIMENSION(:), ALLOCATABLE :: jointClassification
+         LOGICAL, DIMENSION(:), ALLOCATABLE :: swapDirection
+         INTEGER                            :: numberOfCurvesInChain
+         INTEGER                            :: optimization
+         INTEGER                            :: continuity
+         REAL(KIND=RP)                      :: tolerance
+         REAL(KIND=RP), ALLOCATABLE         :: breaks(:)
 !
 !        ========
          CONTAINS
@@ -117,6 +125,7 @@
          PROCEDURE :: COUNT                   => chainedCurveCount
          PROCEDURE :: positionAt              => positionOnChainedCurveAt
          PROCEDURE :: tangentAt               => tangentOnChainedCurveAt
+         PROCEDURE :: derivativeAt            => derivativeOnChainedCurveAt
          PROCEDURE :: complete                => completeChainedCurve
          PROCEDURE :: curveAtIndex
          PROCEDURE :: curveWithLocation
@@ -628,6 +637,62 @@
          x = c % tangentAt(s)
 
       END FUNCTION tangentOnChainedCurveAt
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION derivativeOnChainedCurveAt( self, t ) RESULT(x)
+!
+!        ----------------------------------------------------------
+!        Given the fractional position along the chain, find the
+!        curve in the chain that this point corresponds to, and the
+!        location in the curve and return the tangent vector.
+!        ----------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMChainedCurve)       :: self
+         REAL(KIND=RP)               :: t
+         REAL(KIND=RP), DIMENSION(3) :: x
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                  :: curveNumber
+         REAL(KIND=RP)            :: s
+         CLASS(SMCurve) , POINTER :: c => NULL()
+         CLASS(FTobject), POINTER :: obj => NULL()
+!
+!        ----------------------------------------------------
+!        Find which curve (by order) the point corresponds to
+!        ----------------------------------------------------
+!
+         curveNumber = self % curveNumberForLocation(t)
+!
+!        ---------------------------------
+!        Move to that curve (if necessary)
+!        ---------------------------------
+!
+         obj => self % curvesArray % objectAtIndex(curveNumber)
+         CALL cast(obj,c)
+!
+!        --------------------------------------------
+!        Convert coordinate to local curve coordinate
+!        --------------------------------------------
+!
+         s = self % curveTForChainT(t)
+!
+!        --------------------------
+!        Evaluate, using chain rule
+!        --------------------------
+!
+         x = c % derivativeAt(s)* self % numberOfCurvesInChain
+
+      END FUNCTION derivativeOnChainedCurveAt
 !
 !////////////////////////////////////////////////////////////////////////
 !

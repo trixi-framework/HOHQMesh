@@ -365,7 +365,7 @@
 !        ---------
 !
          CLASS (SpringMeshSmoother)            :: self
-         TYPE  (FTLinkedListIterator), POINTER :: nodeIterator
+         CLASS (FTLinkedListIterator), POINTER :: nodeIterator
          TYPE  (SMModel)             , POINTER :: model
 !
 !        ---------------

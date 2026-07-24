@@ -399,10 +399,17 @@
               CALL newDict % addObjectForKey(obj,"LIST")
               CALL releaseFTLinkedList(self = newList)
               
-              IF(objectName == "CHAIN")     THEN ! Read the name of the chain
-                 READ(fileUnit,"(A)", END = 1000) line
-                 CALL replaceTabs(line)
-                 CALL addKeyAndValueFromLineToDict(blockDict = newDict,line = line)
+              IF(objectName == "CHAIN" .OR. objectName == "OUTER_BOUNDARY")     THEN ! Read (possible) chain parameters
+                 DO 
+                    READ(fileUnit,"(A)", END = 1000) line
+                    CALL replaceTabs(line)
+                    line = ADJUSTL(line)
+                    IF ( line(1:1) == "\" )     THEN
+                       BACKSPACE(fileUnit)
+                       EXIT
+                    END IF 
+                    CALL addKeyAndValueFromLineToDict(blockDict = newDict,line = line)
+                 END DO 
               END IF
               obj => newList
          END IF

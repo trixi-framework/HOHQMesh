@@ -14,7 +14,7 @@ If no model block is included at all, then a purely Cartesian mesh will be creat
 As an example, the model in Fig. 16 has one outer boundary - the outer triangle - and four inner boundaries whose interiors are exterior to the mesh.
 
 ![AllFeatures](https://github.com/user-attachments/assets/2f12ca1c-8a20-4c7d-98e6-9d619562a34d)
-<p align = "center"> Fig. 16. A mesh whose model uses all curve types. Three `END_POINTS_LINE`s for the outer triangle. A `SPLINE_CURVE` for the free-form inner boundary, circles defined by a `PARAMETRIC_EQUATION_CURVE` and by a `CIRCULAR_ARC` curve, and an ellipse defined by an `ELLIPTIC_ARC` curve. (<em>Examples/2D/AllFeatures</em>).</p>
+<p align = "center"> Fig. 16. A mesh whose model uses all curve types. Three <code>END_POINTS_LINE</code>s for the outer triangle. A <code>SPLINE_CURVE</code> for the free-form inner boundary, circles defined by a <code>PARAMETRIC_EQUATION_CURVE</code> and by a <code>CIRCULAR_ARC</code> curve, and an ellipse defined by an <code>ELLIPTIC_ARC</code> curve. (<em>Examples/2D/AllFeatures</em>).</p>
 
 ### Internal Boundaries<a name="Interfaces"></a>
 
@@ -222,9 +222,9 @@ Alternatively, the bottom topography data can be read in from a file, e.g.,
            data file = path/to/bottom_data.txt
            sizing = ON \or\ OFF (Optional)
         \end{TOPOGRAPHY}
-        
+
  The `sizing` key is optional, with the default being `OFF`.
- 
+
 From this data, a bicubic interpolation is used to compute the bottom topography information.
 Currently this strategy of bottom topography extrusion relies on *gridded data*. The data file is assumed to come as separate lists of the x coordinate points, with length $n$, the
 y coordinate points, with length $m$, and the z coordinate points where the grid data is ordered slice-by-slice in the y direction, with size $m \times n$. Below a small example is provided to clarify the
