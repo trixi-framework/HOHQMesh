@@ -13,7 +13,7 @@ It now can also adaptively mesh a model to provide optimal boundary approximatio
 Error control is added chain-by-chain in the model by telling HOHQMesh what norm to optimize ($\mathbb L^2$ or $\mathbb H^1$), the error tolerance, and to what derivatives the resulting boundary approximation will be smooth. The syntax is
 
 	\begin{CHAIN}
-		optimization = L2Norm OR H1Norm or none
+		optimize = L2Norm OR H1Norm OR none
 		tolerance = <real value>
 		continuity = <integer value>
 		connect = <see below>
@@ -22,11 +22,14 @@ Error control is added chain-by-chain in the model by telling HOHQMesh what norm
 		.
 	\end{CHAIN}
 
+An `OUTER_BOUNDARY` implicitly includes a chain. So, the optimization keywords can directly
+be added to a `\begin{OUTER_BOUNDARY} ... \end{OUTER_BOUNDARY}` block.
+
 HOHQMesh will then find the best polynomial approximation of each curve in the chain to the order defined by `polynomial order` in the `RUN_PARAMETERS` section of the `CONTROL_INPUT` [block](the-control-input.md#RunParameters).
 
 The options are:
 
-1. **optimization:** Specifies the norm to be minimized. For convenience, `none` can be used to turn it off.
+1. **optimize:** Specifies the norm to be minimized. For convenience, `none` can be used to turn it off.
 2. **tolerance:** The accuracy to which the boundaries are to be approximated.
 3. **continuity:** The derivatives to which the approximation will be constrained. For example, if second derivative continuity is to be enforced, choose `continuity = 2`. If zero, then the approximation is simply continuous.
 4. **connect:** This *optional* parameter allows one to optimize across segments of a chain. By default, optimization is done curve by curve within the chain, since usually there will be discontinuities (e.g. corners) between the curves. If it is desired to define a more global approximation across multiple curves, include the `connect` key.
