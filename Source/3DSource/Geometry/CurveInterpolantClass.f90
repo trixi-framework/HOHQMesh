@@ -74,7 +74,7 @@
       SUBROUTINE ConstructCurveInterpolant( this, N, nodes, values)
 !
 !-------------------------------------------------------------------
-! Constructor pfor a curve interpolant
+! Constructor for a curve interpolant
 !-------------------------------------------------------------------
 !
          TYPE(CurveInterpolant)         , INTENT(OUT) :: this
@@ -98,7 +98,7 @@
       SUBROUTINE SetValues( this, values )
 !
 !-------------------------------------------------------------------
-! Constructor pfor a curve interpolant
+! Constructor for a curve interpolant
 !-------------------------------------------------------------------
 !
          TYPE(CurveInterpolant)        , INTENT(INOUT) :: this
