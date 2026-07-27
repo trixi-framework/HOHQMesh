@@ -166,7 +166,7 @@
 !        ----------------------------------------
 !
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(boundaryEdgeList)
+         CALL iterator % initWithFTLinkedListClass(boundaryEdgeList)
          CALL iterator % setToStart()
 
          obj => iterator % object()
@@ -262,8 +262,8 @@
 !
          CALL removeMarkedEdges(iterator)
 !
-         CALL releaseFTLinkedListIterator(iterator)
-         CALL releaseFTLinkedList(newlyExposedBoundaryEdges)
+         CALL releaseFTLinkedListIteratorClass(iterator)
+         CALL releaseFTLinkedListClass(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveCloseElements
 !
@@ -305,7 +305,7 @@
          CALL newlyExposedBoundaryEdges % init()
 
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(boundaryEdgeList)
+         CALL iterator % initWithFTLinkedListClass(boundaryEdgeList)
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
@@ -397,8 +397,8 @@
 !
          CALL removeMarkedEdges(iterator)
 
-         CALL releaseFTLinkedListIterator(iterator)
-         CALL releaseFTLinkedList(newlyExposedBoundaryEdges)
+         CALL releaseFTLinkedListIteratorClass(iterator)
+         CALL releaseFTLinkedListClass(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveBumpOuts
 !
@@ -428,7 +428,7 @@
          REAL(KIND=RP)                        :: t
 
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(boundaryEdgeList)
+         CALL iterator % initWithFTLinkedListClass(boundaryEdgeList)
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
@@ -447,7 +447,7 @@
 
             CALL iterator % moveToNext()
          END DO
-         CALL releaseFTLinkedListIterator(iterator)
+         CALL releaseFTLinkedListIteratorClass(iterator)
 
       END SUBROUTINE MoveInterfaceNodesToBoundary
 !

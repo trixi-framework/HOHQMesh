@@ -720,7 +720,7 @@
 !        --------------------------------------------------------------
 !
          ALLOCATE(refinementIterator)
-         CALL refinementIterator % initWithFTLinkedList(list = refinementsList)
+         CALL refinementIterator % initWithFTLinkedListClass(list = refinementsList)
          CALL refinementIterator % setToStart()
 
          DO WHILE (.NOT. refinementIterator % isAtEnd())
@@ -762,7 +762,7 @@
             CALL refinementIterator % moveToNext()
          END DO
 
-         CALL releaseFTLinkedListIterator(refinementIterator)
+         CALL releaseFTLinkedListIteratorClass(refinementIterator)
 
       END SUBROUTINE AddRefinementRegionsToSizer
 !
@@ -1058,7 +1058,7 @@
          IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
             curveIterator => self % model % innerBoundariesIterator
             ALLOCATE(segmentedIterator)
-            CALL segmentedIterator % initWithFTLinkedList(sizer % innerBoundariesList)
+            CALL segmentedIterator % initWithFTLinkedListClass(sizer % innerBoundariesList)
 
             CALL curveIterator % setToStart()
             CALL segmentedIterator % setToStart()
@@ -1212,7 +1212,7 @@
 !
             curveIterator => self % model % innerBoundariesIterator
             ALLOCATE(segmentedIterator)
-            CALL segmentedIterator % initWithFTLinkedList(sizer % innerBoundariesList)
+            CALL segmentedIterator % initWithFTLinkedListClass(sizer % innerBoundariesList)
 
             CALL curveIterator % setToStart()
             CALL segmentedIterator % setToStart()

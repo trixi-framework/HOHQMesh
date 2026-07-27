@@ -94,7 +94,7 @@
          INTEGER                                  :: N
          INTEGER                                  :: iUnit
          INTEGER                                  :: i
-         TYPE(FTException), POINTER               :: exception
+         TYPE(FTException) , POINTER              :: exception
 
          iUnit = UnusedUnit()
          OPEN( UNIT = iUnit, FILE = dataFile )
@@ -139,10 +139,10 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER                     :: N, nDim
-         REAL(KIND=RP)               :: xx(2,SIZE(x))
-         INTEGER                     :: circ, j
-         TYPE(FTException), POINTER  :: exception
+         INTEGER                      :: N, nDim
+         REAL(KIND=RP)                :: xx(2,SIZE(x))
+         INTEGER                      :: circ, j
+         TYPE(FTException) , POINTER  :: exception
 !
 !        ---------------
 !        Check integrity

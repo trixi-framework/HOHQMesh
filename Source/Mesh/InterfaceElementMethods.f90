@@ -126,7 +126,7 @@
 !        -----------------------------------------------
 !
          ALLOCATE(interfaceElementIterator)
-         CALL interfaceElementIterator % initWithFTLinkedList(interfaceElements)
+         CALL interfaceElementIterator % initWithFTLinkedListClass(interfaceElements)
          CALL interfaceElementIterator % setToStart()
          DO WHILE ( .NOT.interfaceElementIterator % isAtEnd() )
             obj => interfaceElementIterator % object()
@@ -211,8 +211,8 @@
 !        -------------------------------------------------
 !
          CALL mesh % elements % addObjectsFromList(newElementsList)
-         CALL releaseFTLinkedListIterator(interfaceElementIterator)
-         CALL releaseFTLinkedList(newElementsList)
+         CALL releaseFTLinkedListIteratorClass(interfaceElementIterator)
+         CALL releaseFTLinkedListClass(newElementsList)
 
       END SUBROUTINE SplitInterfaceElements
 !

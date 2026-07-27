@@ -78,8 +78,8 @@
          CLASS(SMChainedCurve)      , POINTER     :: outerBoundary       => NULL()
          CLASS(SMChainedCurve)      , POINTER     :: sweepCurve          => NULL()
          CLASS(SMChainedCurve)      , POINTER     :: scaleCurve          => NULL()
-         CLASS(FTLinkedList)        , POINTER     :: innerBoundaries     => NULL()
-         CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
+         TYPE(FTLinkedList)         , POINTER     :: innerBoundaries     => NULL()
+         TYPE(FTLinkedList)         , POINTER     :: interfaceBoundaries => NULL()
          TYPE(FTLinkedListIterator) , POINTER     :: innerBoundariesIterator => NULL()
          TYPE(FTLinkedListIterator) , POINTER     :: interfaceBoundariesIterator => NULL()
          TYPE(FTMutableObjectArray) , POINTER     :: allChains  => NULL()
@@ -213,7 +213,7 @@
          CLASS(FTValueDictionary), POINTER :: outerBoundaryDict, innerBoundariesDict, sweepCurveDict
          CLASS(FTValueDictionary), POINTER :: topographyDict
          CLASS(FTValueDictionary), POINTER :: scaleCurveDict
-         CLASS(FTLinkedList)     , POINTER :: innerBoundariesList
+         TYPE (FTLinkedList)     , POINTER :: innerBoundariesList
          CLASS(FTObject)         , POINTER :: obj
 !
 !        ----------
@@ -277,7 +277,7 @@
             obj                 => innerBoundariesDict % objectForKey(key = "LIST")
             innerBoundariesList => linkedListFromObject(obj)
 
-            CALL ConstructInnerBoundaries( self, INTERFACE_BOUNDARY_BLOCK,innerBoundariesList )
+            CALL ConstructInnerBoundaries( self, INTERFACE_BOUNDARY_BLOCK, innerBoundariesList )
             IF(ReturnOnFatalError())     RETURN
 
          END IF
@@ -391,7 +391,7 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedList)       , POINTER     :: curveList
+         TYPE (FTLinkedList)       , POINTER     :: curveList
          CLASS(FTObject)           , POINTER     :: obj
          CLASS(FTValueDictionary)  , POINTER     :: blockDict
          TYPE(FTLinkedListIterator)              :: iterator
@@ -433,7 +433,7 @@
 !
          CLASS(SMModel)               :: self
          INTEGER                      :: blockType
-         CLASS(FTLinkedList), POINTER :: boundariesList
+         TYPE (FTLinkedList), POINTER :: boundariesList
 !
 !        ---------------
 !        Local variables
@@ -442,7 +442,7 @@
          CLASS(FTLinkedListIterator), POINTER    :: innerBoundariesIterator, listOfCurvesIterator
          CLASS(FTValueDictionary)   , POINTER    :: chainDict, curveDict, ibDict
          CLASS(FTObject)            , POINTER    :: obj
-         CLASS(FTLinkedList)        , POINTER    :: listOfCurves
+         TYPE (FTLinkedList)        , POINTER    :: listOfCurves
 
          CLASS(SMChainedCurve), POINTER          :: chain => NULL()
          CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: chainName, ibType

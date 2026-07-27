@@ -681,7 +681,7 @@
                obj  => boundaryEdgesArray % objectAtIndex(j)
                CALL cast(obj,currentEdgeList)
 
-               CALL edgeListIterator % initWithFTLinkedList(currentEdgeList)
+               CALL edgeListIterator % initWithFTLinkedListClass(currentEdgeList)
                CALL edgeListIterator % setToStart()
 
                DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
@@ -696,7 +696,7 @@
                   CALL EdgeListIterator % moveToNext()
                END DO
 
-               CALL releaseFTLinkedListIterator(edgeListIterator)
+               CALL releaseFTLinkedListIteratorClass(edgeListIterator)
             END DO
             CALL deallocateNodeToEdgeConnections
          ELSE
@@ -727,7 +727,7 @@
                CALL cast(obj,currentEdgeList)
 
                ALLOCATE(edgeListIterator)
-               CALL edgeListIterator % initWithFTLinkedList(currentEdgeList)
+               CALL edgeListIterator % initWithFTLinkedListClass(currentEdgeList)
                CALL edgeListIterator % setToStart()
 
                DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
@@ -749,7 +749,7 @@
                   CALL EdgeListIterator % moveToNext()
                END DO
 
-               CALL releaseFTLinkedListIterator(edgeListIterator)
+               CALL releaseFTLinkedListIteratorClass(edgeListIterator)
            END DO
 !
 !          ----------------------------------------------------
@@ -819,7 +819,7 @@
 !
            CALL splitInterfaceElements( mesh, interfaceElements )
 !
-           CALL releaseFTLinkedList(interfaceElements)
+           CALL releaseFTLinkedListClass(interfaceElements)
          END IF
 !
 !        --------

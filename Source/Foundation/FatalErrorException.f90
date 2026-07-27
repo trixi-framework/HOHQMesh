@@ -117,7 +117,7 @@
 !        -------------------
 !
          CALL throw(exception)
-         CALL releaseFTException(self = exception)
+         CALL releaseFTException(exception)
          
       END SUBROUTINE ThrowErrorExceptionOfType
       

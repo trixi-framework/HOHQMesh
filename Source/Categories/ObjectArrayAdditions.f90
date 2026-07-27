@@ -72,7 +72,7 @@
 !        "Copy" the contents of the list to the array
 !        --------------------------------------------
 !
-         CALL iterator % initWithFTLinkedList(list)
+         CALL iterator % initWithFTLinkedListClass(list)
          CALL iterator % setToStart()
          
          DO WHILE (.NOT.iterator % isAtEnd())
