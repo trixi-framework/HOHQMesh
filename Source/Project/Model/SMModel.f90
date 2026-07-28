@@ -171,6 +171,7 @@
          END IF
 
          IF ( ASSOCIATED(self % allChains) )     THEN
+         !DEBUG
             CALL releaseFTMutableObjectArray(self % allChains)
          END IF
 
