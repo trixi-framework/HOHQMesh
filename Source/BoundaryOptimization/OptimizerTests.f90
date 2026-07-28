@@ -571,6 +571,9 @@
 !     Check errors
 !     ------------
 !
+      WRITE(6,*) optimizedCuts
+      WRITE(6,*) expectedCuts
+      WRITE(6,*) MAXVAL(ABS(optimizedCuts - expectedCuts))
       CALL FTAssert(MAXVAL(ABS(optimizedCuts - expectedCuts)) .le. testTol, msg = "Segments dont match")
       CALL FTAssert(MAXVAL(ABS(expectedIndices - breakIndices)) == 0      , msg = "Break Indices dont match")
 
