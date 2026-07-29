@@ -74,7 +74,7 @@
 !
          CLASS(FTObject) , POINTER             :: obj => NULL()
          INTEGER                               :: N, k
-         CLASS (FTLinkedListIterator), POINTER :: iterator => NULL()
+         TYPE  (FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: chain => NULL()
 !
 !        --------------
@@ -94,7 +94,7 @@
             ALLOCATE( interiorCurves(N) )
 
             ALLOCATE(iterator)
-            CALL iterator % initWithFTLinkedList( sizer % innerBoundariesList)
+            CALL iterator % initwithFTLinkedListClass( sizer % innerBoundariesList)
             CALL iterator % setToStart()
             k = 0
             DO WHILE( .NOT.iterator % isAtEnd() )
@@ -116,7 +116,7 @@
             ALLOCATE( interfaceCurves(N) )
 
             ALLOCATE(iterator)
-            CALL iterator % initWithFTLinkedList( sizer % interfaceBoundariesList)
+            CALL iterator % initwithFTLinkedListClass( sizer % interfaceBoundariesList)
             CALL iterator % setToStart()
             k = 0
             DO WHILE( .NOT.iterator % isAtEnd() )
@@ -178,7 +178,7 @@
 !     Local variables
 !     ---------------
 !
-      CLASS(FTLinkedList), POINTER :: list => NULL()
+      TYPE (FTLinkedList), POINTER :: list => NULL()
       CLASS(FTobject)    , POINTER :: obj  => NULL()
       INTEGER                      :: k
 !
@@ -210,7 +210,7 @@
          CALL list % init()
          obj => list
          CALL boundaryEdgesArray % addObject(obj)
-         CALL releaseFTLinkedList(self = list)
+         CALL releaseFTLinkedList(list)
       END DO
 
       END SUBROUTINE AllocateBoundaryEdgesArray
@@ -420,7 +420,7 @@
             ALLOCATE(edgeArray(numEdges))
 
             ALLOCATE(iterator)
-            CALL iterator % initWithFTLinkedList(edgeList)
+            CALL iterator % initWithFTLinkedListClass(edgeList)
             CALL iterator % setToStart()
 
             j     = 1
@@ -451,7 +451,7 @@
                locRelativeToBoundary = currentEdge % nodes(2) % node % bCurveSide
                CALL iterator % moveToNext()
             END DO
-            CALL releaseFTLinkedListIterator(self = iterator)
+            CALL releaseFTLinkedListIteratorClass(self = iterator)
             sharedNodeID = idMin
 !
 !           -------------------------
@@ -602,7 +602,7 @@
 !
             obj => sortedEdges
             CALL boundaryEdgesArray % replaceObjectAtIndexWithObject(k,obj)
-            CALL releaseFTLinkedList(self = sortedEdges)
+            CALL releaseFTLinkedListClass(self = sortedEdges)
          END DO
          DEALLOCATE(nodeArray)
 
@@ -643,7 +643,7 @@
          nNodes = list % COUNT()
          ALLOCATE( GatheredNodes(nNodes) )
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(list)
+         CALL iterator % initwithFTLinkedListClass(list)
 !
 !        -------------------------------------------------
 !        Gather the nodes and positions along the boundary
@@ -671,7 +671,7 @@
             j = j + 1
          END DO
 
-         CALL releaseFTLinkedListIterator(self = iterator)
+         CALL releaseFTLinkedListIteratorClass(self = iterator)
 
       END FUNCTION GatheredNodes
 !
@@ -776,7 +776,7 @@
 
             CALL cast(obj,edgeList)
             ALLOCATE(edgeListIterator)
-            CALL edgeListIterator % initWithFTLinkedList(edgeList)
+            CALL edgeListIterator % initwithFTLinkedListClass(edgeList)
 
             CALL edgeListIterator % setToStart()
 
@@ -791,7 +791,7 @@
             IF (chainID == UNDEFINED )     THEN
                WRITE(msg,*) "Boundary curve chain ",chainID," not assigned for a boundary edge ", edge % id
                CALL ThrowErrorExceptionOfType("LocateEdgeImagesOnBoundaries",msg,FT_ERROR_FATAL)
-               CALL releaseFTLinkedListIterator(self = edgeListIterator)
+               CALL releaseFTLinkedListIteratorClass(self = edgeListIterator)
                RETURN
             END IF
 
@@ -804,7 +804,7 @@
             IF ( .NOT.ASSOCIATED(chain) )     THEN
                WRITE(msg,*) "Chain with id ", chainID, " Not found in model"
                CALL ThrowErrorExceptionOfType("LocateEdgeImagesOnBoundaries",msg,FT_ERROR_FATAL)
-               CALL releaseFTLinkedListIterator(self = edgeListIterator)
+               CALL releaseFTLinkedListIteratorClass(self = edgeListIterator)
                RETURN
             END IF
 !
@@ -817,7 +817,7 @@
             END IF
 !
             CALL AssociateBoundaryEdgesToCurve( edgeList, chain, isInnerBoundaryCurve )
-            CALL releaseFTLinkedListIterator(self = edgeListIterator)
+            CALL releaseFTLinkedListIteratorClass(self = edgeListIterator)
 
          END DO
 
@@ -1076,7 +1076,7 @@
 !     --------------------------------------------------------------------
 !
       IMPLICIT NONE
-      CLASS(FTLinkedListIterator), POINTER :: nodeIterator
+      TYPE (FTLinkedListIterator), POINTER :: nodeIterator
       CLASS(FTObject)            , POINTER :: obj  => NULL()
       TYPE (SMNode)              , POINTER :: node => NULL()
       CALL nodeIterator % setToStart()
@@ -1167,7 +1167,7 @@
                      CYCLE
                   END IF
 
-                  CALL iterator % setLinkedList(currentEdgeList)
+                  CALL iterator % setLinkedListClass(currentEdgeList)
                   CALL iterator % setToStart()
                   DO WHILE ( .NOT.iterator % isAtEnd() )
                      obj => iterator % object()
@@ -1209,7 +1209,7 @@
             END IF
             CALL deallocateElementToEdgeConnections()
          END IF
-         CALL releaseFTLinkedListIterator(self = iterator)
+         CALL releaseFTLinkedListIteratorClass(self = iterator)
          CALL deallocateNodeToElementConnections()
 
       END SUBROUTINE SetNodeActiveStatus
@@ -1246,7 +1246,7 @@
 !        --------------------------------------------------------------------
 !
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(boundaryNodesList)
+         CALL iterator % initwithFTLinkedListClass(boundaryNodesList)
          CALL iterator % setToStart()
 
          DO WHILE ( .NOT.iterator % isAtEnd() )
@@ -1275,7 +1275,7 @@
             CALL iterator % moveToNext()
          END DO
 
-         CALL releaseFTLinkedListIterator(self = iterator)
+         CALL releaseFTLinkedListIteratorClass(self = iterator)
 
       END SUBROUTINE FindCurveLocationsforNodes
 !
@@ -1587,7 +1587,7 @@
 !        Arguments
 !        ---------
 !
-         CLASS(FTLinkedListIterator), POINTER :: allNodesIterator
+         TYPE (FTLinkedListIterator), POINTER :: allNodesIterator
          CLASS(FTLinkedList)        , POINTER :: boundaryNodesList
 !
 !        ---------------
@@ -1633,7 +1633,7 @@
 !        ---------
 !
          INTEGER                                 :: numBoundaryChains
-         CLASS(FTLinkedListIterator), POINTER    :: nodesIterator
+         TYPE(FTLinkedListIterator), POINTER     :: nodesIterator
          TYPE(JaggedNodeArray)                   :: chainNodesArray(:)
 !
 !        ---------------
@@ -1676,7 +1676,7 @@
 !        --------------------------------------------------------
 !
          ALLOCATE(boundaryNodesIterator)
-         CALL boundaryNodesIterator % initWithFTLinkedList(boundaryNodesList)
+         CALL boundaryNodesIterator % initwithFTLinkedListClass(boundaryNodesList)
          CALL boundaryNodesIterator % setToStart()
 
          DO WHILE ( .NOT.boundaryNodesIterator % isAtEnd() )
@@ -1698,7 +1698,7 @@
          CALL listIterator % init()
          DO id = 1, SIZE(boundaryNodesArray)
             list => boundaryNodesArray(id) % list
-            CALL listIterator % setLinkedList(list)
+            CALL listIterator % setLinkedListClass(list)
 
             previousRecord => listIterator % currentRecord()
             obj            => listIterator % object()
@@ -1757,13 +1757,13 @@
 !        -------
 !
          DO id = 1, numBoundaryChains
-            CALL releaseFTLinkedList(boundaryNodesArray(id) % list)
+            CALL releaseFTLinkedListClass(boundaryNodesArray(id) % list)
          END DO
          DEALLOCATE( boundaryNodesArray )
 
-         CALL releaseFTLinkedListIterator(listIterator)
-         CALL releaseFTLinkedListIterator(boundaryNodesIterator)
-         CALL releaseFTLinkedList(boundaryNodesList)
+         CALL releaseFTLinkedListIteratorClass(listIterator)
+         CALL releaseFTLinkedListIteratorClass(boundaryNodesIterator)
+         CALL releaseFTLinkedListClass(boundaryNodesList)
 !
 !         !DEBUG
 !         DO id = 1, numBoundaryChains

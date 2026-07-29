@@ -2590,7 +2590,7 @@
 !        ---------------------------------------------------------------
 !
          CALL mesh % nodes % addObjectsFromList(newNodes)
-         CALL releaseFTLinkedList(newNodes)
+         CALL releaseFTLinkedListClass(newNodes)
          
          CALL elemItr % setToStart()
          DO WHILE(.NOT. elemItr % isAtEnd()) 
@@ -2631,8 +2631,8 @@
 !        Clean up
 !        --------
 !
-         CALL releaseFTLinkedList(newNodes)
-         CALL releaseFTLinkedList(savedElements)
+         CALL releaseFTLinkedListClass(newNodes)
+         CALL releaseFTLinkedListClass(savedElements)
          CALL deallocateNodeToElementConnections
          
       END SUBROUTINE ReflectMesh

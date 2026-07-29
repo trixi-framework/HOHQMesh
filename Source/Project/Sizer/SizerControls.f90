@@ -292,7 +292,7 @@
          IF ( ASSOCIATED(controlsList) )     THEN
          
             ALLOCATE(iterator)
-            CALL iterator % initwithFTLinkedList(controlsList)
+            CALL iterator % initwithFTLinkedListClass(controlsList)
             CALL iterator % setToStart()
             
             hFunInv = TINY(hFunInv)

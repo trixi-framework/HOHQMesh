@@ -334,7 +334,7 @@
                ALLOCATE(exception)
                CALL exception % initFatalException( "Syntax error in control file line: "// TRIM(ADJUSTL(line)) // &
                                                      ". Commands are lower case.")
-               CALL throw(exceptionToThrow = exception)
+               CALL throw(exception)
                CALL releaseFTException(exception)
                RETURN 
             ELSE 
@@ -397,7 +397,7 @@
               CALL newList % init()
               obj => newList
               CALL newDict % addObjectForKey(obj,"LIST")
-              CALL releaseFTLinkedList(self = newList)
+              CALL releaseFTLinkedListClass(self = newList)
               
               IF(objectName == "CHAIN" .OR. objectName == "OUTER_BOUNDARY")     THEN ! Read (possible) chain parameters
                  DO 
@@ -445,8 +445,8 @@
             PRINT *, msg
             ALLOCATE(exception)
             CALL exception % initFatalException(msg)
-            CALL throw(exceptionToThrow = exception)
-            CALL releaseFTException(self = exception)
+            CALL throw(exception)
+            CALL releaseFTException(exception)
             RETURN 
          END IF 
          blockStack(blockStackTop) = ""
@@ -541,8 +541,8 @@
                   PRINT *, errMsg
                   ALLOCATE(exception)
                   CALL exception % initFatalException(errMsg)
-                  CALL throw(exceptionToThrow = exception)
-                  CALL releaseFTException(self = exception)
+                  CALL throw(exception)
+                  CALL releaseFTException(exception)
                END IF 
                blockStack(blockStackTop) = ""
                blockStackTop = blockStackTop - 1
@@ -686,14 +686,14 @@
             IF ( j <= 0 )     THEN
                ALLOCATE(exception)
                CALL exception % initFatalException( "No \end{SPLINE_DATA} marker for spline data" )
-               CALL throw(exceptionToThrow = exception)
+               CALL throw(exception)
                CALL releaseFTException(exception)
             END IF 
             
          ELSE 
             ALLOCATE(exception)
             CALL exception % initFatalException( "Malformed Spline data. No nKnots" )
-            CALL throw(exceptionToThrow = exception)
+            CALL throw(exception)
             CALL releaseFTException(exception)
          END IF 
           
