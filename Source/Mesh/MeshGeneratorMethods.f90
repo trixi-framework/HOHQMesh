@@ -2882,7 +2882,7 @@
          
          CLASS(SMModel)                , POINTER  :: model               !An alias
          CLASS(FTMutableObjectArray)   , POINTER  :: boundaryPolynomials !An alias
-         CLASS(FTMutableObjectArray)   , POINTER  :: modelChains         !An alias
+         TYPE(ObjectPointerWrapper)    , POINTER  :: modelChains(:)      !An alias
          CLASS(FTObject)               , POINTER  :: obj                 !An Alias
          
          CLASS(SMChainedCurve)         , POINTER  :: modelChain
@@ -2945,7 +2945,7 @@
 !           project at the same index.
 !           -----------------------------------------------------
 !
-            obj => modelChains % objectAtIndex(j)
+            obj => modelChains(j) % object
             CALL castToSMChainedCurve(obj, modelChain)
 !
 !           ----------------------------------------------------

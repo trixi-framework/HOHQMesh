@@ -63,7 +63,7 @@
 !
       TYPE(SMModel)                 , POINTER  :: model               !An alias
       CLASS(FTMutableObjectArray)   , POINTER  :: boundaryPolynomials !An alias
-      CLASS(FTMutableObjectArray)   , POINTER  :: modelChains         !An alias
+      CLASS(ObjectPointerWrapper)   , POINTER  :: modelChains(:)      !An alias
 
       CLASS(SMChainedCurve)         , POINTER  :: modelChain
       CLASS(MultiSegmentCurve)      , POINTER  :: boundaryPolynomial
@@ -116,7 +116,7 @@
 !        project at the same index.
 !        ------------------------------------------------------------------
 !
-         obj => modelChains % objectAtIndex(j)
+         obj => modelChains(j) % object
          CALL castToSMChainedCurve(obj, modelChain)
          obj => boundaryPolynomials % objectAtIndex(j)
          CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
@@ -208,7 +208,7 @@
 !
       TYPE(SMModel)                 , POINTER  :: model               !An alias
       CLASS(FTMutableObjectArray)   , POINTER  :: boundaryPolynomials !An alias
-      CLASS(FTMutableObjectArray)   , POINTER  :: modelChains         !An alias
+      TYPE (ObjectPointerWrapper)   , POINTER  :: modelChains(:)         !An alias
       CLASS(FTObject)               , POINTER  :: obj
       CLASS(SMChainedCurve)         , POINTER  :: modelChain
       CLASS(MultiSegmentCurve)      , POINTER  :: boundaryPolynomial
@@ -253,7 +253,7 @@
 !     ----------
 !
       DO j = 1, model % numberOfChains()
-         obj => modelChains % objectAtIndex(j)
+         obj => modelChains(j) % object
          CALL castToSMChainedCurve(obj, modelChain)
          WRITE(normUnit,*) TRIM(modelChain % curveName())
 

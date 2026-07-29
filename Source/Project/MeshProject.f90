@@ -1152,7 +1152,7 @@
 !           Only resize if the bound is requested
 !           ------------------------------------------
 !
-            obj => self % model % allChains % objectAtIndex(curveID)
+            obj => self % model % allChains(curveID) % object
             CALL castToSMChainedCurve(obj, outerBoundary)
 
             IF(outerBoundary % optimization .ne. NONE) THEN
