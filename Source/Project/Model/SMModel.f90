@@ -1988,7 +1988,7 @@
                obj => objArray % objectAtIndex(j)
                CALL castToSMChainedCurve(obj,chain)
                chains(chain % id()) % object => obj
-            CALL obj % retain()
+               CALL obj % retain()
             END DO
             CALL releaseFTMutableObjectArray(objArray)
          END IF
@@ -1999,7 +1999,7 @@
                obj => objArray % objectAtIndex(j)
                CALL castToSMChainedCurve(obj,chain)
                chains(chain % id()) % object => obj
-            CALL obj % retain()
+               CALL obj % retain()
             END DO
             CALL releaseFTMutableObjectArray(objArray)
          END IF
