@@ -187,7 +187,7 @@
                PRINT *, "Boundary Error Quality:" 
                WRITE(6,"(A32,4x,A12,A16)") "Boundary Name", "Max L2 Error", "Max H1Error"
                DO k = 1, SIZE(project % L2ErrorMax)
-                  obj => project % model % allChains % objectAtIndex(k)
+                  obj => project % model % allChains(k) % object
                   CALL castToSMCurve(obj,boundaryCurve)
                   str = boundaryCurve % curveName()
                   WRITE(6,"(A32, 2(1PE16.8))") TRIM(str), project % L2ErrorMax(k), project % H1ErrorMax(k) 

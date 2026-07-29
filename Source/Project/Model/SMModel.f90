@@ -64,6 +64,10 @@
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: H1NORM_KEY                     = "H1Norm"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: L2NORM_KEY                     = "L2Norm"
+      
+      TYPE ObjectPointerWrapper
+         CLASS(FTObject), POINTER ::  object => NULL()
+      END TYPE ObjectPointerWrapper
 !
 !     ---------------------
 !     Class type definition
@@ -82,7 +86,7 @@
          TYPE(FTLinkedList)         , POINTER     :: interfaceBoundaries => NULL()
          TYPE(FTLinkedListIterator) , POINTER     :: innerBoundariesIterator => NULL()
          TYPE(FTLinkedListIterator) , POINTER     :: interfaceBoundariesIterator => NULL()
-         TYPE(FTMutableObjectArray) , POINTER     :: allChains  => NULL()
+         TYPE(ObjectPointerWrapper) , POINTER     :: allChains(:)
          CLASS(SMTopography)        , POINTER     :: topography => NULL()
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
@@ -135,17 +139,23 @@
          IMPLICIT NONE
          TYPE(SMModel)            :: self
          CLASS(FTObject), POINTER :: obj
-
-         obj => self % innerBoundariesIterator
-         CALL release(self = obj)
-         obj => self % interfaceBoundariesIterator
-         CALL release(self = obj)
-         obj => self % innerBoundaries
-         CALL release(self = obj)
-         obj => self % interfaceBoundaries
-         CALL release(self = obj)
-         obj => self % outerBoundary
-         CALL release(obj)
+         INTEGER                  :: j
+         
+         IF ( ASSOCIATED(self % innerBoundariesIterator) )     THEN
+            CALL releaseFTLinkedListIterator(self % innerBoundariesIterator) 
+         END IF
+         
+         IF ( ASSOCIATED(self % interfaceBoundariesIterator) )     THEN
+            CALL releaseFTLinkedListIterator(self % interfaceBoundariesIterator) 
+         END IF
+         
+         IF ( ASSOCIATED(self % innerBoundaries) )     THEN
+            CALL releaseFTLinkedList(self % innerBoundaries) 
+         END IF
+         
+         IF ( ASSOCIATED(self % outerBoundary) )     THEN
+            CALL releaseChainedCurveClass(self % outerBoundary)
+         END IF
 
          IF ( ASSOCIATED(self % sweepCurve) )     THEN
             obj => self % sweepCurve
@@ -171,7 +181,11 @@
          END IF
 
          IF ( ASSOCIATED(self % allChains) )     THEN
-            CALL releaseFTMutableObjectArray(self % allChains)
+            DO j = 1, SIZE(self % allChains) 
+               obj => self % allChains(j) % object
+               CALL release(obj) 
+            END DO
+            DEALLOCATE( self % allChains)
          END IF
 
       END SUBROUTINE destructModel
@@ -1951,25 +1965,12 @@
 !
          CLASS(FTObject)            , POINTER :: obj
          TYPE (FTMutableObjectArray), POINTER :: objArray
-         CLASS(FTMutableObjectArray), POINTER :: chains   !Used as an alias for self % allChains
+         TYPE(ObjectPointerWrapper) , POINTER :: chains(:)   !Used as an alias for self % allChains
          CLASS(SMChainedCurve)      , POINTER :: chain
          INTEGER                              :: j
 
-         ALLOCATE(self % allChains)
-         CALL self % allChains % initWithSize(self % numberOfChains())
+         ALLOCATE(self % allChains(self % numberOfChains()))
          chains => self % allChains !Just an alias
-!
-!        -----------------------------------------------------------------
-!        TODO: FTMutableObjectArray needs a way to update the count to
-!        allow replacement rather than add. The following gets around that
-!        omission
-!        -----------------------------------------------------------------
-!
-         ALLOCATE(obj)
-         CALL obj % init()
-         DO j = 1, self % numberOfChains()
-            CALL chains % addObject(obj)
-         END DO
 !
 !        -----------------
 !        Gather the chains
@@ -1977,29 +1978,28 @@
 !
          IF ( self % numberOfOuterCurves == 1 )     THEN !(There is either 0 or 1)
             obj => self % outerBoundary
-            CALL chains % replaceObjectAtIndexWithObject(indx        = self % outerBoundary % id(), &
-                                                         replacement = obj)
+            chains(self % outerBoundary % id()) % object => obj
+            CALL obj % retain()
          END IF
-
-         !TODO: Someday add a "append array" procedure to
-         ! FTMutableObjectArray to replace these two blocks
 
          IF ( self % numberOfInnerCurves > 0 )     THEN
             objArray => self % innerBoundaries % allObjects()
-            DO j = 1, objArray % COUNT()! numberOfItems(objArray)
+            DO j = 1, objArray % COUNT()
                obj => objArray % objectAtIndex(j)
                CALL castToSMChainedCurve(obj,chain)
-               CALL chains % replaceObjectAtIndexWithObject(chain % id(),obj)
+               chains(chain % id()) % object => obj
+            CALL obj % retain()
             END DO
             CALL releaseFTMutableObjectArray(objArray)
          END IF
 
          IF ( self % numberOfInterfaceCurves > 0 )     THEN
             objArray => self % interfaceBoundaries % allObjects()
-            DO j = 1, objArray % COUNT() !numberOfItems(objArray)
+            DO j = 1, objArray % COUNT()
                obj => objArray % objectAtIndex(j)
                CALL castToSMChainedCurve(obj,chain)
-               CALL chains % replaceObjectAtIndexWithObject(chain % id(),obj)
+               chains(chain % id()) % object => obj
+            CALL obj % retain()
             END DO
             CALL releaseFTMutableObjectArray(objArray)
          END IF

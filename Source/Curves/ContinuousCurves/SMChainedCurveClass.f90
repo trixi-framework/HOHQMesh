@@ -167,8 +167,7 @@
          CLASS(FTObject), POINTER :: obj
 
          IF ( ASSOCIATED(self % curvesArray) )     THEN
-            obj => self % curvesArray
-            CALL release(obj)
+            CALL releaseFTMutableObjectArrayClass(self % curvesArray)
          END IF
 
       END SUBROUTINE destructChainedCurve
@@ -188,6 +187,22 @@
             self => NULL()
          END IF
       END SUBROUTINE releaseChainedCurve
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE releaseChainedCurveClass(self)
+         IMPLICIT NONE
+         CLASS (SMChainedCurve), POINTER :: self
+         CLASS(FTObject)       , POINTER :: obj
+
+         IF(.NOT. ASSOCIATED(self)) RETURN
+
+         obj => self
+         CALL releaseFTObject(self = obj)
+         IF ( .NOT. ASSOCIATED(obj) )     THEN
+            self => NULL()
+         END IF
+      END SUBROUTINE releaseChainedCurveClass
 !
 !////////////////////////////////////////////////////////////////////////
 !
