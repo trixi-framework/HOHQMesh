@@ -89,15 +89,6 @@
       INTEGER, PARAMETER :: FIXED_CONSTRAINT    = -1
       INTEGER, PARAMETER :: PERIODIC_CONSTRAINT = -2
       INTEGER, PARAMETER :: H1O_OK = 0, H1O_CONVERT = 1
-!!
-!!     --------------------------------
-!!     Utility to use to compute errors
-!!     --------------------------------
-!!
-!      TYPE GaussQuadratureType
-!         INTEGER                    :: N
-!         REAL(KIND=RP), ALLOCATABLE :: nodes(:), weights(:)
-!      END TYPE GaussQuadratureType
 
       TYPE OptimizerOptions
          INTEGER       :: internalConstraint ! Default = 0
@@ -145,20 +136,6 @@
 !     ========
       CONTAINS
 !     ========
-!
-!!
-!!////////////////////////////////////////////////////////////////////////
-!!
-!   SUBROUTINE ConstructGaussQuadrature(self, N)
-!      IMPLICIT NONE
-!      TYPE(GaussQuadratureType) :: self
-!      INTEGER                   :: N
-!
-!      self % N = N
-!      ALLOCATE(self % nodes(0:N), self % weights(0:N))
-!      CALL GaussLegendreNodesAndWeights( N, self % nodes, self % weights )
-!
-!   END SUBROUTINE ConstructGaussQuadrature
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -724,7 +701,7 @@
        INTEGER, INTENT(OUT), DIMENSION(n)           :: pivots
 
        ! Local variables
-       INTEGER :: j, k, pivot_idx
+       INTEGER :: i, j, k, pivot_idx
        REAL(KIND=RP), DIMENSION(n) :: pivot_row
 
        ! Fill pivots vector with the default order of the matrix
@@ -755,9 +732,14 @@
            ! This requires an outer product
            !       A(j+1:n,j) * A(j,j+1:n)
            ! which we achieve using SPREAD
-           A(j+1:n,j+1:n) = A(j+1:n,j+1:n) - &
-                               SPREAD(A(j+1:n,j), dim=2, ncopies=n-j) * &
-                               SPREAD(A(j,j+1:n), dim=1, ncopies=n-j)
+!           A(j+1:n,j+1:n) = A(j+1:n,j+1:n) - &
+!                               SPREAD(A(j+1:n,j), dim=2, ncopies=n-j) * &
+!                               SPREAD(A(j,j+1:n), dim=1, ncopies=n-j)
+            DO k = j+1,n
+              DO i = j+1,n
+                 A(i,k) = A(i,k) - A(i,j) * A(j,k)
+              END DO ! i
+           END DO ! k
        END DO ! j
 
        RETURN
