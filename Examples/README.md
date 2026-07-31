@@ -12,6 +12,7 @@ For this reason, we have reduced the storage requirements in the following ways:
    found in `HOHQMesh/Benchmarks/PlotFiles/Benchmarks`:
 
    - AllFeatures
+   - BlobAdapt
    - BoneAndMarrow
    - BottomFromFile
    - Box3D
@@ -47,27 +48,28 @@ For this reason, we have reduced the storage requirements in the following ways:
 The table below provides a short summary of each two-dimensional example as well as a listing of the different features
 they exercise.
 
-| **Name** | **Description** | **Outer Boundary** | **Inner boundaries** | **Parametric Equation** | **Circular Arc** | **Elliptic Arc** | **Spline** | **Line** | **Refinement Center** | **Refinement Line** | **Multiple Materials** |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **All Features**          | Toy example; exercises (almost) all features       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Bone and Marrow**       | Circular domain with two embedded boundaries       | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| **Box with refinement**   | Square domain with refinement regions              | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| **Cavity Ramp**           | Cavity domain with a sloping ramp on the exit side | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **Circles3**              | Two circles enclosed by a large circle             | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **East Coast US**         | Portion of US East coast from NYC to Jacksonville  | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Ellipse and 4 Circles** | Four circles enclosed by an ellipse                | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Gingerbread Man**       | Geometry with lots of holes                        | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Half Circle**           | Upper half circle                                  | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **Indian Ocean**          | Complex domain with islands and inlets             | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **KT3 Element**           | Three element Karman-Treffitz airfoil              | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Lake Superior**         | Coastline of Lake Superior with islands            | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Malpasset**             | Scene of the Malpasset Dam failure                 | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **NACA0012**              | Standard Airfoil geometry                          | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
-| **PacMan**                | A curved domain reflected about a line             | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **Pill**                  | Oblong domain with interior circles                | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **RotatedEllipseWithSubregions** | Multiple ellipses and arcs                  | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Spline Geometry**       | Free form domain defined as a spline               | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Square**                | Uniform Cartesian mesh                             | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Name** | **Description** | **Outer Boundary** | **Inner boundaries** | **Parametric Equation** | **Circular Arc** | **Elliptic Arc** | **Spline** | **Line** | **Refinement Center** | **Refinement Line** | **Multiple Materials** | **Error Controlled Meshing** |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **All Features**          | Toy example; exercises (almost) all features       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Blob Adapt**            | Boundary curves optimized in $\mathbb{H}^1$ norm   | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Bone and Marrow**       | Circular domain with two embedded boundaries       | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Box with refinement**   | Square domain with refinement regions              | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
+| **Cavity Ramp**           | Cavity domain with a sloping ramp on the exit side | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Circles3**              | Two circles enclosed by a large circle             | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **East Coast US**         | Portion of US East coast from NYC to Jacksonville  | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Ellipse and 4 Circles** | Four circles enclosed by an ellipse                | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Gingerbread Man**       | Geometry with lots of holes                        | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Half Circle**           | Upper half circle                                  | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Indian Ocean**          | Complex domain with islands and inlets             | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **KT3 Element**           | Three element Karman-Treffitz airfoil              | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Lake Superior**         | Coastline of Lake Superior with islands            | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Malpasset**             | Scene of the Malpasset Dam failure                 | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **NACA0012**              | Standard Airfoil geometry                          | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **PacMan**                | A curved domain reflected about a line             | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Pill**                  | Oblong domain with interior circles                | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **RotatedEllipseWithSubregions** | Multiple ellipses and arcs                  | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Spline Geometry**       | Free form domain defined as a spline               | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Square**                | Uniform Cartesian mesh                             | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ## Overview of 3D Examples
 

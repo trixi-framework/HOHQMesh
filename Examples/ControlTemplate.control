@@ -168,6 +168,21 @@
 %	  Add curves as in outer boundary
 %
        \end{CHAIN}
+
+%
+%      Boundary optimized curve, can also be
+%      placed in outer boundary
+%
+       \begin{CHAIN}
+          name =
+          optimize =
+          tolerance =
+          continuity =
+          connect =
+%
+%	  Add curves as in outer boundary
+%
+       \end{CHAIN}
 %
 %      Add as many chains as inner boundaries
 %      

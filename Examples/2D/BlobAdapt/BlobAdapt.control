@@ -1,0 +1,44 @@
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Examples/2D/BlobAdapt/BlobAdapt.mesh
+      plot file name   = Examples/2D/BlobAdapt/BlobAdapt.tec
+      stats file name  = Examples/2D/BlobAdapt/BlobAdapt.txt
+      mesh file format = ISM
+      polynomial order = 6
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+
+
+   \begin{MESH_PARAMETERS}
+      element type = quad
+   \end{MESH_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.90,0.90,0.0]
+   \end{BACKGROUND_GRID}
+
+    \begin{SPRING_SMOOTHER}
+       smoothing            = ON
+       smoothing type       = LinearAndCrossBarSpring
+       number of iterations = 30
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+	\begin{OUTER_BOUNDARY}
+	   optimize   = H1Norm
+	   continuity = 1
+	   tolerance  = 1.0e-3
+	   \begin{PARAMETRIC_EQUATION_CURVE}
+		 name = blob
+		 xEqn = x(t) = 4*cos(2*pi*t) - 3/5*cos(8*pi*t)^3
+		 yEqn = y(t) = 4*sin(2*pi*t) - 0.5*sin(11*pi*t)^2
+		 zEqn = z(t) = 0.0
+	   \end{PARAMETRIC_EQUATION_CURVE}
+	\end{OUTER_BOUNDARY}
+
+\end{MODEL}
+\end{FILE}
