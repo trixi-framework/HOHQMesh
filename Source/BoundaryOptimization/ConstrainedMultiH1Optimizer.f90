@@ -731,10 +731,6 @@
            ! Rank-1 update for elimination in the "active" matrix.
            ! This requires an outer product
            !       A(j+1:n,j) * A(j,j+1:n)
-           ! which we achieve using SPREAD
-!           A(j+1:n,j+1:n) = A(j+1:n,j+1:n) - &
-!                               SPREAD(A(j+1:n,j), dim=2, ncopies=n-j) * &
-!                               SPREAD(A(j,j+1:n), dim=1, ncopies=n-j)
             DO k = j+1,n
               DO i = j+1,n
                  A(i,k) = A(i,k) - A(i,j) * A(j,k)

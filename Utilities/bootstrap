@@ -5,5 +5,4 @@ set -exo pipefail
 rm -rf Contrib/FTObjectLibrary
 
 # Clone FTObjectLibrary into Contrib
-# TODO: change back to main once TypeMods2 is merged
-git clone --branch TypeMods2 https://github.com/trixi-framework/FTObjectLibrary.git Contrib/FTObjectLibrary
+git clone https://github.com/trixi-framework/FTObjectLibrary.git Contrib/FTObjectLibrary
