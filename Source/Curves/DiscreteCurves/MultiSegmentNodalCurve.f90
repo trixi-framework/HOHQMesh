@@ -303,7 +303,7 @@
 !     Test parameters
 !     ---------------
 !
-      INTEGER                                :: polyOrder  = 6
+      INTEGER                                  :: polyOrder  = 6
 !
 !     ---------------
 !     Local Variables

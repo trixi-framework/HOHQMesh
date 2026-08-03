@@ -58,7 +58,7 @@
       LOGICAL         :: fail
       INTEGER         :: numberOfBreaks
       INTEGER         :: j, k
-      REAL(KIND=RP) :: c
+      REAL(KIND=RP)   :: c
 
       flagged = 0
       CALL scanner % initWithString(connectionString,delims = ",-")
@@ -86,7 +86,6 @@
          breaks(k) = j*c
          k = k + 1
       END DO
-
 
    END SUBROUTINE ScanForBreaks
 !
@@ -148,7 +147,7 @@
 !
 !        --------------------------------------------------------
 !        After the integer is scanned, the next delimiter must be
-!        either a comma or an end of string. It cannot be a -
+!        either a comma or an end of string. It cannot be a "-"
 !        --------------------------------------------------------
 !
          IF ( scanner % lastDelimiter() .EQ. "-")     THEN

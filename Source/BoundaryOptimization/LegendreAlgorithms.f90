@@ -106,12 +106,12 @@
 !
       INTEGER       :: k
 
-      L(0)      = 1.0_rp
-      LPrime(0) = 0.0_rp
+      L(0)      = 1.0_RP
+      LPrime(0) = 0.0_RP
       IF(N==0)    RETURN
 
       L(1)      = x
-      LPrime(1) = 1.0_rp
+      LPrime(1) = 1.0_RP
       IF( N == 1)  RETURN
 
       DO k = 2, N
@@ -326,16 +326,16 @@
       REAL(KIND=RP) :: L_NM1, L_NM2, LPrime_NM2, LPrime_NM1
 
       IF( N == 0 )     THEN
-         L_N      = 1.0_rp
-         LPrime_N = 0.0_rp
+         L_N      = 1.0_RP
+         LPrime_N = 0.0_RP
       ELSE IF ( N == 1 )     THEN
          L_N      = x
-         LPrime_N = 1.0_rp
+         LPrime_N = 1.0_RP
       ELSE
-         L_NM2 = 1.0_rp
-         LPrime_NM2 = 0.0_rp
+         L_NM2 = 1.0_RP
+         LPrime_NM2 = 0.0_RP
          L_NM1 = x
-         LPrime_NM1 = 1.0_rp
+         LPrime_NM1 = 1.0_RP
          DO k = 2, N
             L_N        = ((2*k-1)*x*L_NM1 - (k-1)*L_NM2)/k
             LPrime_N   = LPrime_NM2 + (2*k-1)*L_NM1

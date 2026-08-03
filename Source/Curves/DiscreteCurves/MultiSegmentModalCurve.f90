@@ -172,7 +172,7 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER       :: k
+         INTEGER :: k
          
          k = findInterval(self % cuts,t)
          x = valueInSegment(self, k ,t, which)

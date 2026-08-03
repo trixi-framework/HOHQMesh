@@ -71,7 +71,7 @@
 !        ---------
 !
          CLASS(MultiSegmentCurve) :: self
-         CLASS(SMCurve), POINTER       :: parentCurve
+         CLASS(SMCurve), POINTER  :: parentCurve
          REAL(KIND=RP)            :: cuts(0:)
          INTEGER                  :: N
          CHARACTER(LEN=*)         :: curveName
@@ -102,7 +102,7 @@
       SUBROUTINE releaseMultiSegmentCurve(self)  
          IMPLICIT NONE
          TYPE (MultiSegmentCurve), POINTER :: self
-         CLASS(FTObject)              , POINTER :: obj
+         CLASS(FTObject)         , POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
          
@@ -118,8 +118,8 @@
       FUNCTION EvaluateMultiSegmentCurve(self,t)  RESULT(x)
          IMPLICIT NONE  
          CLASS(MultiSegmentCurve) :: self
-         REAL(KIND=RP)                 :: t
-         REAL(KIND=RP)                 :: x(3)
+         REAL(KIND=RP)            :: t
+         REAL(KIND=RP)            :: x(3)
          
          x = 0.0_RP
          
@@ -130,8 +130,8 @@
       FUNCTION EvaluateMultiSegmentCurveD(self,t)  RESULT(x)
          IMPLICIT NONE  
          CLASS(MultiSegmentCurve) :: self
-         REAL(KIND=RP)                 :: t
-         REAL(KIND=RP)                 :: x(3)
+         REAL(KIND=RP)            :: t
+         REAL(KIND=RP)            :: x(3)
 
          x = 0.0_RP     
              
@@ -170,15 +170,15 @@
 !     Arguments
 !     ---------
 !
-      CLASS(MultiSegmentCurve) :: self
-      TYPE(GaussQuadratureType)     :: gQuad
+      CLASS(MultiSegmentCurve)  :: self
+      TYPE(GaussQuadratureType) :: gQuad
 !
 !     ----------------
 !     Local variables 
 !     ----------------
 !
-      INTEGER                    :: nSegments
-      INTEGER                    :: k
+      INTEGER                   :: nSegments
+      INTEGER                   :: k
       
       nSegments = self % nSegments
       
@@ -212,12 +212,12 @@
 !     Local variables 
 !     ----------------
 !
-      INTEGER                    :: N
-      INTEGER                    :: qOrder
-      INTEGER                    :: nSegments
-      INTEGER                    :: j
-      REAL(KIND=RP)              :: t, h, e1(3)
-      REAL(KIND=RP)              :: dsdt
+      INTEGER                  :: N
+      INTEGER                  :: qOrder
+      INTEGER                  :: nSegments
+      INTEGER                  :: j
+      REAL(KIND=RP)            :: t, h, e1(3)
+      REAL(KIND=RP)            :: dsdt
       
       nSegments = self % nSegments
 
