@@ -43,6 +43,7 @@
       USE ValueSettingModule
       USE HexMeshObjectsModule
       USE Geometry3DModule
+      USE CurveOptimization
       IMPLICIT NONE
 !
 !     ---------
@@ -157,7 +158,6 @@
          TYPE(ScaleTransform)                :: scaleTransformer
          CHARACTER(LEN=32)                   :: backgroundMaterialName
          INTEGER                             :: numberOfLevelsUsed
-         REAL(KIND=RP)                       :: boundaryErrorTolerance
          REAL(KIND=RP)         , ALLOCATABLE :: L2ErrorMax(:), H1ErrorMax(:)
          TYPE(JaggedRealArray) , ALLOCATABLE :: L2BoundaryError(:), H1BoundaryError(:)
 !
@@ -213,7 +213,6 @@
 !        ------------------------------------
 !
          self % numberOfLevelsUsed     = 0
-         self % boundaryErrorTolerance = 1.0d-3 !DEBUG move this to a control file parameter
 
          obj         => masterControlDictionary % objectForKey(key = "CONTROL_INPUT")
          IF ( .NOT. ASSOCIATED(obj) )     THEN
@@ -937,9 +936,6 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE ComputeOptimizedSegments(curve, breaks, cuts, segmentsSizes, polyOrder)
-        USE MultiSegmentModalCurveClass
-        USE ConstrainedMultiH1Optimization
-        USE CurveOptimization
         IMPLICIT NONE
 !
 !        ---------

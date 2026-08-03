@@ -620,8 +620,11 @@
             IF ( curveDict % containsKey(CHAIN_BREAKS_KEY) )     THEN
 !
 !              -------------------------------------------------------------------------------
-!              Chain breaks are defined by the end of the numbered curve in the chain, e.g.
-!              with five curves in the chain, putting a break at the end of curve 2 and curve
+!              Chain breaks are defined by the end of the numbered curve in the chain. Breaks
+!              are assumed at the end of every segment of the chain. Segments can be connected
+!              by removing breaks (this is easier than specifying which segments should have
+!              breaks.) For example, 
+!              with five curves in the chain, connecting curve 2 and curve
 !              3, write
 !                 connect = 2-3
 !              and to connect 2 & 3 and 4&5,

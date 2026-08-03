@@ -1764,16 +1764,6 @@
          CALL releaseFTLinkedListIteratorClass(listIterator)
          CALL releaseFTLinkedListIteratorClass(boundaryNodesIterator)
          CALL releaseFTLinkedListClass(boundaryNodesList)
-!
-!         !DEBUG
-!         DO id = 1, numBoundaryChains
-!            DO j = 1, SIZE(chainNodesArray(id) % array)
-!            currentNode => chainNodesArray(id) % array(j) % node
-!            WRITE(0,*) currentNode % gWhereOnBoundary, currentNode % bCurveChainID, &
-!                       currentNode % bCurveID, currentNode % whereOnBoundary, currentNode % x(1:2)
-!            END DO
-!            WRITE(0,*)
-!         END DO
 
       END SUBROUTINE SortBoundaryNodesToChains
 

@@ -230,7 +230,6 @@
 
          errorRatio = options % toler/e
          options % toler = options % toler*errorRatio
-!         IF(errorRatio < 1.0_RP) WRITE(0,*) "Error required adjusting", e, errorRatio, TRIM(curve % curveName()) !DEBUG
 !
          IF ( n < 3 )     THEN
             DEALLOCATE(errors)
