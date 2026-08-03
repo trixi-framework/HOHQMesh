@@ -208,7 +208,7 @@
 !
       TYPE(SMModel)                 , POINTER  :: model               !An alias
       CLASS(FTMutableObjectArray)   , POINTER  :: boundaryPolynomials !An alias
-      TYPE (ObjectPointerWrapper)   , POINTER  :: modelChains(:)         !An alias
+      TYPE (ObjectPointerWrapper)   , POINTER  :: modelChains(:)      !An alias
       CLASS(FTObject)               , POINTER  :: obj
       CLASS(SMChainedCurve)         , POINTER  :: modelChain
       CLASS(MultiSegmentCurve)      , POINTER  :: boundaryPolynomial

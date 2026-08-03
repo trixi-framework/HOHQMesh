@@ -91,6 +91,7 @@
          TYPE (FTValueDictionary), POINTER :: modelDict, controlDict
          CLASS(SMCurve)          , POINTER :: symmetryCurve => NULL()
          CLASS(SMCurve)          , POINTER :: boundaryCurve => NULL()
+
          CHARACTER(LEN=SM_CURVE_NAME_LENGTH) :: str
 !
 !        -----------------------------------------------------

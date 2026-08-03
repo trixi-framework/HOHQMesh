@@ -226,7 +226,7 @@
                             gQuad          = gQuad,    &
                             errors         = errors)
          e = MAXVAL(errors(:,USER_NORM))
-         IF ( e .le. options % toler )     EXIT
+         IF ( e .LE. options % toler )     EXIT
 
          errorRatio = options % toler/e
          options % toler = options % toler*errorRatio
@@ -481,12 +481,12 @@
          tN   = tR; fN   = fR
          tNm1 = tL; fNm1 = fL
 
-       ! Important note. This assumes that
+         ! Important note. This assumes that
          ! fN and fNm1 have opposite sign, otherwise it won't bracket.
          DO n = 1, maxIterS
-          ! Regula Falsi position
+            ! Regula Falsi position
             ! (Intersection of secant line with the t axis)
-          ! tNp1 = tN - (tN - tNm1) * fN / (fN - fNm1)
+            ! tNp1 = tN - (tN - tNm1) * fN / (fN - fNm1)
             tNp1 = (fN * tNm1 - tN * fNm1) / (fN - fNm1)
             cuts(1) = tNp1
             fNp1    = marchingFunction(curve, polyOrder, cuts, options, gQuad)

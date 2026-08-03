@@ -238,7 +238,7 @@
          ELSE IF(t == 0.0_RP)   THEN
             x0 = self % positionAt(t)
             x1 = self % positionAt(t + dt)
-            x2 = self % positionAt(t+ 2.0_RP*dt)
+            x2 = self % positionAt(t + 2.0_RP*dt)
             x  = (-3.0_RP*x0 + 4.0_RP*x1 - x2)/(2.0_RP*dt)
          ELSE
             tp = MIN(1.0_RP,t + dt)

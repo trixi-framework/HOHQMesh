@@ -1967,7 +1967,7 @@
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
          CLASS(FTMutableObjectArray), POINTER  :: boundaryPolynomials !An alias
          CLASS(MultiSegmentCurve)   , POINTER  :: boundaryPolynomial
-         CLASS(FTObject)               , POINTER  :: obj
+         CLASS(FTObject)            , POINTER  :: obj
 
          REAL(KIND=RP)            :: tStart(4), tEnd(4), t_j, deltaT
          INTEGER                  :: curveId(4)
