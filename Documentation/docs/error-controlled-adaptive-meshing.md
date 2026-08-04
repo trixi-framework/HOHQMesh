@@ -15,7 +15,7 @@ Error control is added chain-by-chain in the model by telling HOHQMesh what norm
 	\begin{CHAIN}
 		optimize = L2Norm OR H1Norm OR none
 		tolerance = <real value>
-		continuity = <integer value>
+		continuity = <integer value> = highest derivative to be made smooth
 		connect = <see below>
 		.
 		.
@@ -52,7 +52,50 @@ The options are:
 * If the tolerance is chosen too low, it is possible to hit the depth limit, or take an inordinate amount of time. Think about how accurate of a mesh is needed before choosing something like $10^{-10}$. It is also possible to choose tolerances inconsistent with internal tolerances used by HOHQMesh.
 
 ## Boundary Error Output
-HOHQMesh can optionally write out the boundary approximation errors to files for later analysis, whether or not the adaptive procedure is requested. Two files can be written prepended with the name of the control file. One contains the point-wise error along each boundary as a function of the chain curve parameter. The other contains the integrated ($\mathbb L^2$ or $\mathbb H^1$ norms), grouped by chain. To have these files written, include the following key in the [RUN_PARAMETERS](the-control-input.md#RunParameters) block:
+
+Whether or not boundary optimization is chosen, HOHQMesh will write out the maximum $L^2$ and $H^1$ boundary edge errors. Running the [`Examples/2D/BlobAdapt/BlobAdapt.control`](https://github.com/trixi-framework/HOHQMesh/blob/main/Examples/2D/BlobAdapt/BlobAdapt.control) example and requesting an H1Norm tolerance of $10^{-4}$ and first derivative continuity by 
+
+	\begin{OUTER_BOUNDARY}
+	   optimize   = H1Norm
+	   continuity = 1
+	   tolerance  = 1.0e-4
+	   \begin{PARAMETRIC_EQUATION_CURVE}
+		 name = blob
+		 xEqn = x(t) = 4*cos(2*pi*t) - 3/5*cos(8*pi*t)^3
+		 yEqn = y(t) = 4*sin(2*pi*t) - 0.5*sin(11*pi*t)^2
+		 zEqn = z(t) = 0.0
+	   \end{PARAMETRIC_EQUATION_CURVE}
+	\end{OUTER_BOUNDARY}
+
+produces the output:
+
+    *******************
+    2D Mesh Statistics:
+    *******************
+    Total time             =   0.57661399999999996     
+    Number of nodes        =          570
+    Number of Edges        =         1059
+    Number of Elements     =          490
+    Number of Subdivisions =            4
+  
+	 Mesh Quality:
+         Measure         Minimum         Maximum         Average  Acceptable Low Acceptable High       Reference
+     Signed Area      0.00122001      0.82263252      0.10243554      0.00000000    999.99900000      1.00000000
+    Aspect Ratio      1.02370049      2.84878712      1.32371594      1.00000000    999.99900000      1.00000000
+       Condition      1.00112287      3.80020102      1.21708413      1.00000000      4.00000000      1.00000000
+      Edge Ratio      1.02962316      6.00757565      1.63781443      1.00000000      4.00000000      1.00000000
+        Jacobian      0.00049569      0.75891397      0.07875994      0.00000000    999.99900000      1.00000000
+    Minimum Angle     34.57990654     87.89988997     68.98664291     40.00000000     90.00000000     90.00000000
+    Maximum Angle     91.84435669    150.95227640    114.13256251     90.00000000    135.00000000     90.00000000
+       Area Sign      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000
+  
+	 Boundary Error Quality:
+                   Boundary Name    Max L2 Error     Max H1Error
+                  Outer Boundary  5.13545249E-08  5.45735801E-05
+
+In addition to the usual element quality measures, one sees that the $H^1$ error is indeed bounded by the requested tolerance. If there is more than one boundary, they are listed by boundary name.
+
+HOHQMesh can optionally write out the boundary approximation errors to files for plotting and later analysis, whether or not the adaptive procedure is requested. Two files can be written prepended with the name of the control file. One contains the point-wise error along each boundary as a function of the chain curve parameter. The other contains the integrated ($\mathbb L^2$ or $\mathbb H^1$ norms), grouped by chain. To have these files written, include the following key in the [RUN_PARAMETERS](the-control-input.md#RunParameters) block:
 
 		error file name = <path_to_desired_file>
 

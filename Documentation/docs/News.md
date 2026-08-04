@@ -3,6 +3,7 @@
 ## v1.5.5
 
 - Add boundary curve L2/H1 optimization and error controlled adaptive meshing capability (#166).
+- Whether or not boundary curve optimization is requested, HOHQMesh reports the maximum $L^2$ and $H^1$ errors along the boundaries.
 - Fixes a bug where material properties where not properly assigned when there was no outer boundary.
 - Refinement for bottom topography uses the maximum principal curvature now.
 - Documentation now explains that bottom topography refinement can be applied to two-dimensional meshes, too.
