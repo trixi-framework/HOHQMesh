@@ -3,7 +3,7 @@
 !!! danger "Caution"
     The error controlled adaptive meshing is a new addition to HOHQMesh, and is still under development.
     It should be used only with some understanding of how it works, and the assumptions involved.<br>
-    Be prepared for failure in the meshing, and let us know when this occurs.
+    Be prepared for failure in the meshing or that a chosen error tolerance may not be achieved, and let us know when this occurs.
 
 HOHQMesh automatically sizes elements according to a number of criteria, including the local radius of curvature of the boundary curves, the distance between curves, and user-defined refinement regions.
 
@@ -24,6 +24,8 @@ Error control is added chain-by-chain in the model by telling HOHQMesh what norm
 
 An `OUTER_BOUNDARY` implicitly includes a chain. So, the optimization keywords can directly
 be added to a `\begin{OUTER_BOUNDARY} ... \end{OUTER_BOUNDARY}` block.
+An example control file that uses the error based adaptive mesh refinement is available in
+[`Examples/2D/BlobAdapt/BlobAdapt.control`](https://github.com/trixi-framework/HOHQMesh/blob/main/Examples/2D/BlobAdapt/BlobAdapt.control).
 
 HOHQMesh will then find the best polynomial approximation of each curve in the chain to the order defined by `polynomial order` in the `RUN_PARAMETERS` section of the `CONTROL_INPUT` [block](the-control-input.md#RunParameters).
 
