@@ -59,9 +59,9 @@
 !        ----
 !
          INTEGER                                     :: polynomialOrder
-         CLASS(FTLinkedList), POINTER                :: nodes    => NULL()
-         CLASS(FTLinkedList), POINTER                :: elements => NULL()
-         CLASS(FTLinkedList), POINTER                :: edges    => NULL()
+         TYPE(FTLinkedList), POINTER                 :: nodes    => NULL()
+         TYPE(FTLinkedList), POINTER                 :: elements => NULL()
+         TYPE(FTLinkedList), POINTER                 :: edges    => NULL()
          INTEGER, DIMENSION(:)         , ALLOCATABLE :: curveTypeForID
          CHARACTER(LEN=:), DIMENSION(:), ALLOCATABLE :: materialNameForID
 !
@@ -69,9 +69,9 @@
 !        Iterators
 !        ---------
 !
-         TYPE (FTLinkedListIterator), POINTER :: nodesIterator => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: edgesIterator => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: elementsIterator => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: nodesIterator               => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: edgesIterator               => NULL()
+         TYPE (FTLinkedListIterator), POINTER :: elementsIterator            => NULL()
 
          INTEGER, PRIVATE :: elementID = 0, nodeID = 0, edgeID = 0
 !
@@ -164,7 +164,7 @@
          interiorCurves     => NULL()
          interfaceCurves    => NULL()
          boundaryEdgesArray => NULL()
-
+         
       END SUBROUTINE initSMMesh
 !
 !////////////////////////////////////////////////////////////////////////

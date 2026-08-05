@@ -46,6 +46,7 @@
       USE SMTopographyClass
       USE SMEquationTopographyClass
       USE SMTopographyFromFileClass
+      USE ScanningModule
       IMPLICIT NONE
 !
 !     ---------
@@ -61,7 +62,12 @@
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INNER_BOUNDARIES_BLOCK_KEY     = "INNER_BOUNDARIES"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INTERFACE_BOUNDARIES_BLOCK_KEY = "INTERFACE_BOUNDARIES"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
-
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: H1NORM_KEY                     = "H1Norm"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: L2NORM_KEY                     = "L2Norm"
+      
+      TYPE ObjectPointerWrapper
+         CLASS(FTObject), POINTER ::  object => NULL()
+      END TYPE ObjectPointerWrapper
 !
 !     ---------------------
 !     Class type definition
@@ -76,10 +82,11 @@
          CLASS(SMChainedCurve)      , POINTER     :: outerBoundary       => NULL()
          CLASS(SMChainedCurve)      , POINTER     :: sweepCurve          => NULL()
          CLASS(SMChainedCurve)      , POINTER     :: scaleCurve          => NULL()
-         CLASS(FTLinkedList)        , POINTER     :: innerBoundaries     => NULL()
-         CLASS(FTLinkedList)        , POINTER     :: interfaceBoundaries => NULL()
+         TYPE(FTLinkedList)         , POINTER     :: innerBoundaries     => NULL()
+         TYPE(FTLinkedList)         , POINTER     :: interfaceBoundaries => NULL()
          TYPE(FTLinkedListIterator) , POINTER     :: innerBoundariesIterator => NULL()
          TYPE(FTLinkedListIterator) , POINTER     :: interfaceBoundariesIterator => NULL()
+         TYPE(ObjectPointerWrapper) , POINTER     :: allChains(:)
          CLASS(SMTopography)        , POINTER     :: topography => NULL()
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
@@ -93,6 +100,7 @@
          PROCEDURE :: chainWithID
          PROCEDURE :: curveWithID => curveInModelWithID
          PROCEDURE :: symmetryCurve
+         PROCEDURE :: numberOfChains
       END TYPE SMModel
 !
 !     ========
@@ -114,6 +122,7 @@
          self % innerBoundariesIterator     => NULL()
          self % interfaceBoundariesIterator => NULL()
          self % topography                  => NULL()
+         self % allChains                   => NULL()
          self % curveCount                  =  0
          self % numberOfOuterCurves         =  0
          self % numberOfInnerCurves         =  0
@@ -130,17 +139,23 @@
          IMPLICIT NONE
          TYPE(SMModel)            :: self
          CLASS(FTObject), POINTER :: obj
-
-         obj => self % innerBoundariesIterator
-         CALL release(self = obj)
-         obj => self % interfaceBoundariesIterator
-         CALL release(self = obj)
-         obj => self % innerBoundaries
-         CALL release(self = obj)
-         obj => self % interfaceBoundaries
-         CALL release(self = obj)
-         obj => self % outerBoundary
-         CALL release(obj)
+         INTEGER                  :: j
+         
+         IF ( ASSOCIATED(self % innerBoundariesIterator) )     THEN
+            CALL releaseFTLinkedListIterator(self % innerBoundariesIterator) 
+         END IF
+         
+         IF ( ASSOCIATED(self % interfaceBoundariesIterator) )     THEN
+            CALL releaseFTLinkedListIterator(self % interfaceBoundariesIterator) 
+         END IF
+         
+         IF ( ASSOCIATED(self % innerBoundaries) )     THEN
+            CALL releaseFTLinkedList(self % innerBoundaries) 
+         END IF
+         
+         IF ( ASSOCIATED(self % outerBoundary) )     THEN
+            CALL releaseChainedCurveClass(self % outerBoundary)
+         END IF
 
          IF ( ASSOCIATED(self % sweepCurve) )     THEN
             obj => self % sweepCurve
@@ -163,6 +178,14 @@
          IF ( ASSOCIATED(self % topography) )     THEN
             obj => self % topography
             CALL release(obj)
+         END IF
+
+         IF ( ASSOCIATED(self % allChains) )     THEN
+            DO j = 1, SIZE(self % allChains) 
+               obj => self % allChains(j) % object
+               CALL release(obj) 
+            END DO
+            DEALLOCATE( self % allChains)
          END IF
 
       END SUBROUTINE destructModel
@@ -204,7 +227,7 @@
          CLASS(FTValueDictionary), POINTER :: outerBoundaryDict, innerBoundariesDict, sweepCurveDict
          CLASS(FTValueDictionary), POINTER :: topographyDict
          CLASS(FTValueDictionary), POINTER :: scaleCurveDict
-         CLASS(FTLinkedList)     , POINTER :: innerBoundariesList
+         TYPE (FTLinkedList)     , POINTER :: innerBoundariesList
          CLASS(FTObject)         , POINTER :: obj
 !
 !        ----------
@@ -268,7 +291,7 @@
             obj                 => innerBoundariesDict % objectForKey(key = "LIST")
             innerBoundariesList => linkedListFromObject(obj)
 
-            CALL ConstructInnerBoundaries( self, INTERFACE_BOUNDARY_BLOCK,innerBoundariesList )
+            CALL ConstructInnerBoundaries( self, INTERFACE_BOUNDARY_BLOCK, innerBoundariesList )
             IF(ReturnOnFatalError())     RETURN
 
          END IF
@@ -335,6 +358,7 @@
 !        ---------
 !
          CALL MakeCurveToChainConnections(self)
+         CALL GatherAllChains(self)
 
       END SUBROUTINE constructModelFromDictionary
 !
@@ -381,11 +405,15 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(FTLinkedList)       , POINTER :: curveList
-         CLASS(FTObject)           , POINTER :: obj
-         CLASS(FTValueDictionary)  , POINTER :: blockDict
-         TYPE(FTLinkedListIterator)          :: iterator
-
+         TYPE (FTLinkedList)       , POINTER     :: curveList
+         CLASS(FTObject)           , POINTER     :: obj
+         CLASS(FTValueDictionary)  , POINTER     :: blockDict
+         TYPE(FTLinkedListIterator)              :: iterator
+!
+!        ---------------------------------
+!        Construct the curves in the chain
+!        ---------------------------------
+!
          obj       => curveDict % objectForKey(key = "LIST")
          curveList => linkedListFromObject(obj)
          CALL iterator % initWithFTLinkedList(list = curveList)
@@ -404,6 +432,7 @@
 !        ------------------
 !
          CALL curveChain % complete(innerOrOuterCurve = innerOrOuter,chainMustClose = chainMustClose)
+         CALL SetChainOptimizationParameters(curveChain, curveDict)
 
       END SUBROUTINE AssembleChainCurve
 !
@@ -418,7 +447,7 @@
 !
          CLASS(SMModel)               :: self
          INTEGER                      :: blockType
-         CLASS(FTLinkedList), POINTER :: boundariesList
+         TYPE (FTLinkedList), POINTER :: boundariesList
 !
 !        ---------------
 !        Local variables
@@ -427,7 +456,7 @@
          CLASS(FTLinkedListIterator), POINTER    :: innerBoundariesIterator, listOfCurvesIterator
          CLASS(FTValueDictionary)   , POINTER    :: chainDict, curveDict, ibDict
          CLASS(FTObject)            , POINTER    :: obj
-         CLASS(FTLinkedList)        , POINTER    :: listOfCurves
+         TYPE (FTLinkedList)        , POINTER    :: listOfCurves
 
          CLASS(SMChainedCurve), POINTER          :: chain => NULL()
          CHARACTER(LEN=BLOCK_NAME_STRING_LENGTH) :: chainName, ibType
@@ -461,6 +490,7 @@
                ALLOCATE(chain)
                CALL chain % initChainWithNameAndID(chainName,0)
                CALL ConstructCurve(self, chain, ibDict )
+               CALL SetChainOptimizationParameters(chain, ibDict)
 
             ELSE
                chainDict => ibDict !This is just an alias
@@ -483,6 +513,7 @@
                   curveDict => valueDictionaryFromObject(obj)
 
                   CALL ConstructCurve(self, chain, curveDict )
+                  CALL SetChainOptimizationParameters(chain, chainDict)
 
                   CALL listOfCurvesIterator % moveToNext()
                END DO
@@ -524,6 +555,100 @@
          CALL release(self = obj)
 
       END SUBROUTINE ConstructInnerBoundaries
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SetChainOptimizationParameters(curveChain, curveDict)
+         USE SMScannerClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTValueDictionary), POINTER :: curveDict
+         CLASS(SMChainedCurve)   , POINTER :: curveChain
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         INTEGER      , PARAMETER                :: DONT_SKIP = 0, SKIP = 1
+         INTEGER                                 :: j
+
+!
+         curveChain % optimization = NONE
+         IF ( curveDict % containsKey(CHAIN_OPTIMIZATION_KEY) )     THEN
+            str = curveDict % stringValueForKey(CHAIN_OPTIMIZATION_KEY)
+            SELECT CASE ( str )
+               CASE( H1NORM_KEY )
+                  curveChain % optimization = H1_NORM
+               CASE( L2NORM_KEY )
+                  curveChain % optimization = L2_NORM
+               CASE DEFAULT
+                  curveChain % optimization = NONE
+            END SELECT
+         END IF
+
+         IF ( curveChain % optimization /= NONE )     THEN
+
+            IF ( curveDict % containsKey(CHAIN_CONTINUITY_KEY) )     THEN
+               curveChain % continuity = curveDict % integerValueForKey(CHAIN_CONTINUITY_KEY)
+            ELSE
+               curveChain % continuity = 0
+               str = "Optimization continuity key not found in " // &
+                      TRIM(curveDict % stringValueForKey("name")) // &
+                      " Defaulting to 0"
+               CALL ThrowErrorExceptionOfType(poster = "SetChainOptimizationParameters",&
+                                              msg    = str, &
+                                              typ    = FT_ERROR_WARNING)
+            END IF
+
+            IF ( curveDict % containsKey(CHAIN_TOLERANCE_KEY) )     THEN
+               curveChain % tolerance = curveDict % realValueForKey(CHAIN_TOLERANCE_KEY)
+            ELSE
+               curveChain % tolerance = 1.0d-3
+               str = "Optimization tolerance key not found in " // &
+                      TRIM(curveDict % stringValueForKey("name")) // &
+                     ". Defaulting to 1.0d-3."
+               CALL ThrowErrorExceptionOfType(poster = "SetChainOptimizationParameters",&
+                                              msg    = str, &
+                                              typ    = FT_ERROR_WARNING)
+            END IF
+
+            IF ( curveDict % containsKey(CHAIN_BREAKS_KEY) )     THEN
+!
+!              -------------------------------------------------------------------------------
+!              Chain breaks are defined by the end of the numbered curve in the chain. Breaks
+!              are assumed at the end of every segment of the chain. Segments can be connected
+!              by removing breaks (this is easier than specifying which segments should have
+!              breaks.) For example, 
+!              with five curves in the chain, connecting curve 2 and curve
+!              3, write
+!                 connect = 2-3
+!              and to connect 2 & 3 and 4&5,
+!                 connect = 2-3, 4-5
+!              where the separator is a comma. (Spaces are ignored)
+!              -------------------------------------------------------------------------------
+!
+               IF ( curveChain % COUNT() == 1 )     THEN ! No breaks if there is only one curve
+                  curveChain % breaks = [0.0_RP, 1.0_RP]
+               ELSE
+                  str = curveDict % stringValueForKey(CHAIN_BREAKS_KEY)
+                  CALL ScanForBreaks(str, curveChain % breaks, curveChain % COUNT() )
+               END IF
+            ELSE
+               IF ( curveChain % COUNT() == 1 )     THEN ! No breaks if there is only one curve
+                  curveChain % breaks = [0.0_RP, 1.0_RP]
+               ELSE                                      ! Break all curves
+                  ALLOCATE(curveChain % breaks(0:curveChain % COUNT()))
+                  curveChain % breaks = [(REAL(j,RP)/REAL(curveChain % COUNT(), RP),j=0,curveChain % COUNT())]
+               END IF
+            END IF
+         END IF
+
+      END SUBROUTINE SetChainOptimizationParameters
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1334,7 +1459,7 @@
          IF ( units == "degrees" )     THEN
             startAngle = startAngle*DEGREES_TO_RADIANS
             endAngle   = endAngle  *DEGREES_TO_RADIANS
-            rotation   = rotation  *DEGREES_TO_RADIANS 
+            rotation   = rotation  *DEGREES_TO_RADIANS
          END IF
 
          ALLOCATE(cCurve)
@@ -1693,12 +1818,12 @@
 
       END FUNCTION curveInModelWithID
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION symmetryCurve(self)  RESULT(curve)
 !
 !     ------------------------------------------------------------
-!     Returns the first curve in the outer boundary with the name 
+!     Returns the first curve in the outer boundary with the name
 !     SYMMETRY_CURVE_NAME
 !     ------------------------------------------------------------
 !
@@ -1719,28 +1844,28 @@
          INTEGER :: i
          CLASS(SMCurve)        , POINTER :: chainCurve
          CHARACTER(SM_CURVE_NAME_LENGTH) :: str
-         
+
          NULLIFY(curve)
          chain => self % outerBoundary
          IF(.NOT. ASSOCIATED( chain)) RETURN
-         
-         DO i = 1, chain % COUNT() 
+
+         DO i = 1, chain % COUNT()
             chainCurve => chain % curveAtIndex(i)
             str = chainCurve % curveName()
             CALL toLower(str)
             IF( str == SYMMETRY_CURVE_NAME) THEN
                curve => chainCurve
                RETURN
-            END IF 
-         END DO 
-         
+            END IF
+         END DO
+
       END FUNCTION symmetryCurve
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION allSymmetryCurvesAreColinear(self) RESULT(r)
          USE LineReflectionModule
-         IMPLICIT NONE  
+         IMPLICIT NONE
 !
 !        ---------
 !        Arguments
@@ -1760,29 +1885,29 @@
          REAL(KIND=RP)                  :: a1, b1, c1
          REAL(KIND=RP)                  :: a , b , c
          REAL(KIND=RP)                  :: x0(3), x1(3)
-         
+
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
-         
+
          r = .TRUE.
          chain => self % outerBoundary
          IF(.NOT. ASSOCIATED( chain)) RETURN
          NULLIFY(firstCurve)
-         
-         DO i = 1, chain % COUNT() 
-            chainCurve => chain % curveAtIndex(i) 
-            
+
+         DO i = 1, chain % COUNT()
+            chainCurve => chain % curveAtIndex(i)
+
             str = chainCurve % curveName()
             CALL toLower(str)
             IF( str == SYMMETRY_CURVE_NAME) THEN
-               
+
                IF ( .NOT. curveIsStraight(chainCurve) )     THEN
                   WRITE(str,'(A,i3,A)') "Symmetry curve ", i, " is not straight"
                   CALL ThrowErrorExceptionOfType(poster = "allSymmetryCurvesAreColinear",&
                                                  msg    = str                           , &
                                                  typ    = FT_ERROR_WARNING)
                   r = .FALSE.
-               END IF 
-           
+               END IF
+
                IF ( .NOT. ASSOCIATED(firstCurve) )     THEN
                   firstCurve => chainCurve
                   firstID = firstCurve % id()
@@ -1795,18 +1920,93 @@
                x0 = chainCurve % positionAt(t = 0.0_RP)
                x1 = chainCurve % positionAt(t = 1.0_RP)
                CALL ComputeLineCoefs(x0,x1,a,b,c)
-               
+
                IF ( .NOT. linesAreColinear(a,b,c, a1,b1,c1) )     THEN
                   WRITE(str,'(A,i3,i3,A)') "Symmetry curves ", firstID, i, " are not colinear"
                   CALL ThrowErrorExceptionOfType(poster = "allSymmetryCurvesAreColinear",&
                                                  msg    = str                           , &
                                                  typ    = FT_ERROR_WARNING)
                   r = .FALSE.
-               END IF 
-              
-            END IF 
-         END DO 
-          
+               END IF
+
+            END IF
+         END DO
+
       END FUNCTION allSymmetryCurvesAreColinear
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION numberOfChains(self)
+         IMPLICIT NONE
+         CLASS(SMModel)  :: self
+         numberOfChains = self % numberOfInnerCurves +     &
+                          self % numberOfInterfaceCurves + &
+                          self % numberOfOuterCurves
+      END FUNCTION numberOfChains
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE GatherAllChains(self)
+!
+!     -----------------------------------------------------------------
+!     For convenience, gather all of the boundary curve chains into an
+!     array for easier stepping without needing separate iterators.
+!     Enables access by chainID
+!     -----------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMModel)  :: self
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTObject)            , POINTER :: obj
+         TYPE (FTMutableObjectArray), POINTER :: objArray
+         TYPE(ObjectPointerWrapper) , POINTER :: chains(:)   !Used as an alias for self % allChains
+         CLASS(SMChainedCurve)      , POINTER :: chain
+         INTEGER                              :: j
+
+         ALLOCATE(self % allChains(self % numberOfChains()))
+         chains => self % allChains !Just an alias
+!
+!        -----------------
+!        Gather the chains
+!        -----------------
+!
+         IF ( self % numberOfOuterCurves == 1 )     THEN !(There is either 0 or 1)
+            obj => self % outerBoundary
+            chains(self % outerBoundary % id()) % object => obj
+            CALL obj % retain()
+         END IF
+
+         IF ( self % numberOfInnerCurves > 0 )     THEN
+            objArray => self % innerBoundaries % allObjects()
+            DO j = 1, objArray % COUNT()
+               obj => objArray % objectAtIndex(j)
+               CALL castToSMChainedCurve(obj,chain)
+               chains(chain % id()) % object => obj
+               CALL obj % retain()
+            END DO
+            CALL releaseFTMutableObjectArray(objArray)
+         END IF
+
+         IF ( self % numberOfInterfaceCurves > 0 )     THEN
+            objArray => self % interfaceBoundaries % allObjects()
+            DO j = 1, objArray % COUNT()
+               obj => objArray % objectAtIndex(j)
+               CALL castToSMChainedCurve(obj,chain)
+               chains(chain % id()) % object => obj
+               CALL obj % retain()
+            END DO
+            CALL releaseFTMutableObjectArray(objArray)
+         END IF
+
+      END SUBROUTINE GatherAllChains
 
       END Module SMModelClass

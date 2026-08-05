@@ -17,7 +17,7 @@ To use HOHQMesh to generate all-quadrilateral meshes with arbitrary order bounda
 
 HOHQMesh will automatically generate a mesh with curved elements sized according to the geometry, like the curvature of the boundary curves and bottom topography, and the distance between boundary curves. It will generate a mesh that is symmetric about a symmetry line if segments of the outer boundary are defined as [symmetry boundaries](the-model.md#Symmetry).
 
-Additionally, you can generate an all [hexahedral](three-dimensional-hexahedral-meshes) mesh by extruding a quadrilateral mesh by
+Additionally, you can generate an all [hexahedral](three-dimensional-hexahedral-meshes.md) mesh by extruding a quadrilateral mesh by
 
 - [Simple extrusion](three-dimensional-hexahedral-meshes.md#Extrusion) along a coordinate direction
 - [Simple rotation](three-dimensional-hexahedral-meshes.md#Rotation) about an axis

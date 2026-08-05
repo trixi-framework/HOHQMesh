@@ -21,3 +21,4 @@ Benchmarks/ControlFiles/Box3DRotated.control
 Benchmarks/ControlFiles/BoneAndMarrow.control
 Benchmarks/ControlFiles/PacMan.control
 Benchmarks/ControlFiles/RotatedEllipseWithSubregions.control
+Benchmarks/ControlFiles/BlobAdapt.control

@@ -146,7 +146,7 @@
 !        ---------------
 !
          CLASS(FTLinkedList)        , POINTER :: newlyExposedBoundaryEdges  => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          TYPE (SMElement)           , POINTER :: e => NULL()
          TYPE (SMEdge)              , POINTER :: currentEdge, newBoundaryEdge, edge
          TYPE (SMNode)              , POINTER :: node1, node2
@@ -166,7 +166,7 @@
 !        ----------------------------------------
 !
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(boundaryEdgeList)
+         CALL iterator % initWithFTLinkedListClass(boundaryEdgeList)
          CALL iterator % setToStart()
 
          obj => iterator % object()
@@ -262,8 +262,8 @@
 !
          CALL removeMarkedEdges(iterator)
 !
-         CALL releaseFTLinkedListIterator(iterator)
-         CALL releaseFTLinkedList(newlyExposedBoundaryEdges)
+         CALL releaseFTLinkedListIteratorClass(iterator)
+         CALL releaseFTLinkedListClass(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveCloseElements
 !
@@ -292,7 +292,7 @@
          CLASS(FTLinkedList)        , POINTER      :: newlyExposedBoundaryEdges => NULL()
          TYPE (SMElement)           , POINTER      :: e => NULL()
          TYPE (SMEdge)              , POINTER      :: currentEdge => NULL(), newBoundaryEdge => NULL()
-         TYPE (FTLinkedListIterator), POINTER      :: iterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER      :: iterator => NULL()
          CLASS(FTObject)            , POINTER      :: obj => NULL()
          INTEGER                                   :: k, nB, interiorEdgeNumber
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
@@ -305,7 +305,7 @@
          CALL newlyExposedBoundaryEdges % init()
 
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(boundaryEdgeList)
+         CALL iterator % initWithFTLinkedListClass(boundaryEdgeList)
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
@@ -397,8 +397,8 @@
 !
          CALL removeMarkedEdges(iterator)
 
-         CALL releaseFTLinkedListIterator(iterator)
-         CALL releaseFTLinkedList(newlyExposedBoundaryEdges)
+         CALL releaseFTLinkedListIteratorClass(iterator)
+         CALL releaseFTLinkedListClass(newlyExposedBoundaryEdges)
 
       END SUBROUTINE RemoveBumpOuts
 !
@@ -423,12 +423,12 @@
          TYPE (SMNode)              , POINTER :: node        => NULL()
          CLASS(SMCurve)             , POINTER :: cEnd        => NULL()
          CLASS(SMChainedCurve)      , POINTER :: chain       => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: iterator    => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator    => NULL()
          INTEGER                              :: k
          REAL(KIND=RP)                        :: t
 
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(boundaryEdgeList)
+         CALL iterator % initWithFTLinkedListClass(boundaryEdgeList)
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
 
@@ -447,7 +447,7 @@
 
             CALL iterator % moveToNext()
          END DO
-         CALL releaseFTLinkedListIterator(iterator)
+         CALL releaseFTLinkedListIteratorClass(iterator)
 
       END SUBROUTINE MoveInterfaceNodesToBoundary
 !
@@ -461,7 +461,7 @@
 !        from the edge list
 !        ----------------------------------------------
 !
-         TYPE (FTLinkedListIterator), POINTER :: iterator
+         CLASS(FTLinkedListIterator), POINTER :: iterator
          CLASS(FTobject)            , POINTER :: obj         => NULL()
          TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
          LOGICAL                              :: takeStep

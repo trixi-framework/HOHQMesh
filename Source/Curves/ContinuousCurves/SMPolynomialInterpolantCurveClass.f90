@@ -24,37 +24,43 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-!      SMLine.f90
-!      Created: July 30, 2013 4:04 PM 
+!      SMPolynomialInterpolant.f90
+!      Created: April 13, 2026 at 3:10 PM 
 !      By: David Kopriva  
+!
+!      This class is  a wrapper around the older
+!      CurveInterpolantClass to make it a subclass of SMCurve. It
+!      defines a curve by a Lagrange interpolating polynomial
+!      through a set of nodes and values.
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      Module SMLineClass
+      Module SMPolynomialInterpolantClass
       USE SMCurveClass
       USE SMConstants
+      USE CurveInterpolantClass
+      
       IMPLICIT NONE
 !
 !     ---------------------
 !     Class type definition
 !     ---------------------
 !
-      TYPE, EXTENDS(SMCurve) :: SMLine
-         REAL(KIND=RP) :: xStart(3), xEnd(3) 
+      TYPE, EXTENDS(SMCurve) :: SMPolynomialInterpolant
+         TYPE(CurveInterpolant) :: selfInterpolant 
 !
 !        ========
          CONTAINS
 !        ========
 !
-         PROCEDURE :: initWithStartEndNameAndID
-         FINAL     :: destructLine
-         PROCEDURE :: positionAt       => positionOnLineAt
-         PROCEDURE :: tangentAt        => tangentOnLineAt
-         PROCEDURE :: printDescription => printLineDescription
-         PROCEDURE :: className        => LineClassName
-      END TYPE SMLine
-      
-      CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH), PARAMETER :: SM_LINE_CLASS_NAME = "Line"
+         PROCEDURE :: initWithNodesValuesAndID
+         FINAL     :: destructPoly
+         PROCEDURE :: positionAt       => positionOnPolyAt
+         PROCEDURE :: tangentAt        => tangentOnPolyAt
+         PROCEDURE :: derivativeAt     => derivativeOnPolyAt
+         PROCEDURE :: printDescription => printPolyDescription
+         PROCEDURE :: className        => PolyClassName
+      END TYPE SMPolynomialInterpolant
 !
 !     ========
       CONTAINS
@@ -62,36 +68,35 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE initWithStartEndNameAndID( self, xStart, xEnd, cName, id )  
+      SUBROUTINE initWithNodesValuesAndID( self, N, nodes, values, cName, id )  
          IMPLICIT NONE
-         CLASS(SMLine)    :: self
-         CHARACTER(LEN=*) :: cName
-         INTEGER          :: id
-         REAL(KIND=RP)    :: xStart(3), xEnd(3)
+         CLASS(SMPolynomialInterpolant)    :: self
+         CHARACTER(LEN=*)                             :: cName
+         INTEGER                                      :: id
+         INTEGER                        , INTENT(IN)  :: N
+         REAL(KIND=RP), DIMENSION(0:N)  , INTENT(IN)  :: nodes
+         REAL(KIND=RP), DIMENSION(0:N,3), INTENT(IN)  :: values
          
          CALL self % SMCurve % initWithNameAndID(cName,id)
-         
-         self % xStart = xStart
-         self % xEnd   = xEnd
+         CALL ConstructCurveInterpolant( self % selfInterpolant, N, nodes, values)
                   
-      END SUBROUTINE initWithStartEndNameAndID
+      END SUBROUTINE initWithNodesValuesAndID
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE destructLine(self)  
+      SUBROUTINE destructPoly(self)  
          IMPLICIT NONE
-         TYPE(SMLine) :: self
+         TYPE(SMPolynomialInterpolant) :: self
          
-         self % xStart = 0.0_RP
-         self % xEnd   = 0.0_RP
+         CALL DestructCurveInterpolant(self % selfInterpolant)
          
-      END SUBROUTINE destructLine
+      END SUBROUTINE destructPoly
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE releaseLine(self)  
+      SUBROUTINE releasePoly(self)  
          IMPLICIT NONE
-         TYPE (SMLine)  , POINTER :: self
+         TYPE (SMPolynomialInterpolant)  , POINTER :: self
          CLASS(FTObject), POINTER :: obj
          
          IF(.NOT. ASSOCIATED(self)) RETURN
@@ -101,43 +106,54 @@
          IF ( .NOT. ASSOCIATED(obj) )     THEN
             self => NULL() 
          END IF      
-      END SUBROUTINE releaseLine
+      END SUBROUTINE releasePoly
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-     FUNCTION positionOnLineAt(self,t)  RESULT(x)
+     FUNCTION positionOnPolyAt(self,t)  RESULT(x)
         IMPLICIT NONE  
-        CLASS(SMLine) :: self
+        CLASS(SMPolynomialInterpolant) :: self
         REAL(KIND=RP) :: t
         REAL(KIND=RP) :: x(3)
         
-        x = self%xStart + t*(self%xEnd - self%xStart)
+        CALL EvaluateAt(self % selfInterpolant,t,x)
         
-     END FUNCTION positionOnLineAt
+     END FUNCTION positionOnPolyAt
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-     FUNCTION tangentOnLineAt(self,t)  RESULT(x)
+     FUNCTION tangentOnPolyAt(self,t)  RESULT(x)
         IMPLICIT NONE  
-        CLASS(SMLine) :: self
+        CLASS(SMPolynomialInterpolant) :: self
         REAL(KIND=RP) :: t
         REAL(KIND=RP) :: x(3)
         
-        x = self%xEnd - self%xStart
+        CALL Derivative_At(self % selfInterpolant,t,x)
         x = x/SQRT(x(1)**2 + x(2)**2 + x(3)**2)
-        t = t
         
-     END FUNCTION tangentOnLineAt
+     END FUNCTION tangentOnPolyAt
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-     SUBROUTINE printLineDescription(self,iUnit)  
+     FUNCTION derivativeOnPolyAt(self,t)  RESULT(x)
+        IMPLICIT NONE  
+        CLASS(SMPolynomialInterpolant) :: self
+        REAL(KIND=RP) :: t
+        REAL(KIND=RP) :: x(3)
+        
+        CALL Derivative_At(self % selfInterpolant,t,x)
+        
+     END FUNCTION derivativeOnPolyAt
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+     SUBROUTINE printPolyDescription(self,iUnit)  
         IMPLICIT NONE
-        CLASS(SMLine) :: self
+        CLASS(SMPolynomialInterpolant) :: self
         INTEGER       :: iUnit
-        WRITE(iUnit,'(A)') "SMLine Object"
+        WRITE(iUnit,'(A)') "SMPolynomialInterpolant Object"
         IF(self % refCount() >= 0)     CONTINUE 
-     END SUBROUTINE printLineDescription
+     END SUBROUTINE printPolyDescription
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -147,16 +163,16 @@
 !>  ### Usage:
 !>
 !>        PRINT *,  obj % className()
-!>        if( obj % className = "Line")
+!>        if( obj % className = "Poly")
 !>
-      FUNCTION LineClassName(self)  RESULT(s)
+      FUNCTION PolyClassName(self)  RESULT(s)
          IMPLICIT NONE  
-         CLASS(SMLine)                              :: self
+         CLASS(SMPolynomialInterpolant)                              :: self
          CHARACTER(LEN=CLASS_NAME_CHARACTER_LENGTH) :: s
          
-         s = SM_LINE_CLASS_NAME
+         s = "Polynomial Interpolant"
          IF( self % refCount() >= 0 ) CONTINUE 
  
-      END FUNCTION LineClassName
- 
-      END Module SMLineClass
+      END FUNCTION PolyClassName
+      
+      END Module SMPolynomialInterpolantClass

@@ -26,6 +26,7 @@ nav:
     - Introduction: 'introduction.md'
     - The Model: 'the-model.md'
     - The Control Input: 'the-control-input.md'
+    - Error Controlled Meshing: 'error-controlled-adaptive-meshing.md'
     - Three Dimensional Hexahedral Meshes: 'three-dimensional-hexahedral-meshes.md'
     - The Control File: 'the-control-file.md'
     - The HOHQMesh Mesh File Formats: 'TheISMMeshFileFormats.md'
@@ -36,6 +37,7 @@ nav:
   - 'For Developers':
     - How HOHQMesh Works: 'how-hohqmesh-works.md'
     - Assumptions and Algorithms: 'assumptions-and-algorithms.md'
+    - Boundary Curve Optimization: 'boundary-curve-optimization-details.md'
     - Building the Documentation: 'building-the-documentation.md'
     - Adding a New Test: 'adding-a-new-test.md'
     - Releasing a New Version: 'releasing-a-new-version.md'
@@ -46,6 +48,7 @@ nav:
 # Additional settings
 # * support for MathJax: https://squidfunk.github.io/mkdocs-material/reference/mathjax/
 markdown_extensions:
+  - admonition
   - pymdownx.arithmatex:
       generic: true
   - toc:

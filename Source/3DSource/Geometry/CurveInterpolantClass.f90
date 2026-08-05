@@ -33,7 +33,7 @@
 !         ALGORITHM 97: CurveInterpolantProcedures
 !            SUBROUTINE ConstructCurveInterpolant( this, N, nodes, values)
 !            SUBROUTINE EvaluateAt( this, atLocation, givingResult )
-!            SUBROUTINE DerivativeAt( this, atLocation, givingResult )
+!            SUBROUTINE Derivative_At( this, atLocation, givingResult )
 !
 !      this version is modified so that the curves are defined in 3-space, (x,y,z). 6/5/15, 3:46 PM
 !
@@ -74,7 +74,7 @@
       SUBROUTINE ConstructCurveInterpolant( this, N, nodes, values)
 !
 !-------------------------------------------------------------------
-! Constructor pfor a curve interpolant
+! Constructor for a curve interpolant
 !-------------------------------------------------------------------
 !
          TYPE(CurveInterpolant)         , INTENT(OUT) :: this
@@ -98,7 +98,7 @@
       SUBROUTINE SetValues( this, values )
 !
 !-------------------------------------------------------------------
-! Constructor pfor a curve interpolant
+! Constructor for a curve interpolant
 !-------------------------------------------------------------------
 !
          TYPE(CurveInterpolant)        , INTENT(INOUT) :: this
@@ -140,7 +140,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE DerivativeAt( this, atLocation, givingResult ) 
+      SUBROUTINE Derivative_At( this, atLocation, givingResult ) 
 !
 !     -------------------------------------------------------------------
 !     Evaluate the derivative of the interpolant of this at atLocation
@@ -158,6 +158,6 @@
          givingResult(3) = LagrangeInterpolantDerivative( atLocation, this%numberOfNodes, &
                            this%nodes, this%values(:,3), this%bWeights)
   
-      END SUBROUTINE DerivativeAt
+      END SUBROUTINE Derivative_At
 
       END MODULE CurveInterpolantClass

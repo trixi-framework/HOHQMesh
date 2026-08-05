@@ -47,15 +47,15 @@
 !     ---------------------
 !
       TYPE, EXTENDS(FTObject) :: MeshSizer
-         INTEGER                               :: noOfInnerBoundaries
-         INTEGER                               :: noOfInterfaceBoundaries
-         REAL(KIND=RP)                         :: baseSize
-         REAL(KIND=RP)                         :: xMin(3), xMax(3)
-         CLASS(FTLinkedList)         , POINTER :: controlsList            => NULL()
-         CLASS(ChainedSegmentedCurve), POINTER :: outerBoundary           => NULL()
-         CLASS(FTLinkedList)         , POINTER :: innerBoundariesList     => NULL()
-         CLASS(FTLinkedList)         , POINTER :: interfaceBoundariesList => NULL()
-         CLASS(SMTopography)         , POINTER :: topography              => NULL()
+         INTEGER                                   :: noOfInnerBoundaries
+         INTEGER                                   :: noOfInterfaceBoundaries
+         REAL(KIND=RP)                             :: baseSize
+         REAL(KIND=RP)                             :: xMin(3), xMax(3)
+         CLASS(FTLinkedList)         , POINTER     :: controlsList            => NULL()
+         CLASS(ChainedSegmentedCurve), POINTER     :: outerBoundary           => NULL()
+         CLASS(FTLinkedList)         , POINTER     :: innerBoundariesList     => NULL()
+         CLASS(FTLinkedList)         , POINTER     :: interfaceBoundariesList => NULL()
+         CLASS(SMTopography)         , POINTER     :: topography              => NULL()
 !
 !        ========
          CONTAINS
@@ -77,6 +77,7 @@
       TYPE SizerCurvePtr
          CLASS(ChainedSegmentedCurve), POINTER :: curve => NULL()
       END TYPE SizerCurvePtr
+
 !
 !     ========
       CONTAINS
@@ -180,7 +181,7 @@
             obj => self % outerBoundary
             CALL release(obj)
          END IF
-
+         
          NULLIFY(self % outerBoundary)
          NULLIFY(self % interfaceBoundariesList)
          NULLIFY(self % innerBoundariesList)
@@ -292,6 +293,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION sizeFunctionMinimumOnBox( sizer, xMin, xMax ) RESULT(hMin)
+         USE IntervalSearchModule
          !TODO: Should switch to a good minimization algorithm. Use linear search for now.
          IMPLICIT NONE
 !
@@ -388,7 +390,7 @@
 
          IF ( ASSOCIATED(sizer % interfaceBoundariesList) )     THEN
             ALLOCATE(iterator)
-            CALL iterator % initwithFTLinkedList(sizer % interfaceBoundariesList)
+            CALL iterator % initwithFTLinkedListClass(sizer % interfaceBoundariesList)
             CALL iterator % setToStart
             DO WHILE (.NOT.iterator % isAtEnd())
                obj => iterator % object()
@@ -420,6 +422,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE cSizeForCurvesInList( list, cSize, xMin, xMax )
+         USE IntervalSearchModule
          IMPLICIT NONE
 !
 !        ---------
@@ -437,15 +440,18 @@
          CLASS(FTLinkedListIterator) , POINTER :: iterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain => NULL()
+         INTEGER                               :: j
 
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(list)
+         CALL iterator % initWithFTLinkedListClass(list)
          CALL iterator % setToStart()
 
+         j = 0
          DO WHILE (.NOT.iterator % isAtEnd())
             obj => iterator % object()
             CALL castToChainedSegmentedCurve(obj,segmentedCurveChain)
             cSize = MAX( cSize, invCurveSizeForBox(segmentedCurveChain, xMin, xMax ) )
+            j = j + 1
             CALL iterator % moveToNext()
          END DO
          obj => iterator
@@ -485,7 +491,7 @@
          IF ( ASSOCIATED(self % controlsList) )     THEN
 
             ALLOCATE(iterator)
-            CALL iterator % initwithFTLinkedList( self % controlsList)
+            CALL iterator % initwithFTLinkedListClass( self % controlsList)
             CALL iterator % setToStart()
 
             DO WHILE (.NOT.iterator % isAtEnd())
@@ -551,7 +557,7 @@
             DO j = 1, c % COUNT()
                x = c % positionAtIndex(j)
                IF ( PointInQuad(nodes,x) )     THEN
-                  s = c % invScaleAtIndex(j)
+                  s    = c % invScaleAtIndex(j)
                   invCurveSizeForBox =  MAX(s, invCurveSizeForBox)
                END IF
             END DO
@@ -580,7 +586,7 @@
 !        ---------------
 !
          TYPE(SizerCurvePtr)        , DIMENSION(:), ALLOCATABLE :: innerCurvesArray
-         TYPE(FTLinkedListIterator) , POINTER                   :: iterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER                   :: iterator => NULL()
          CLASS(FTObject)            , POINTER                   :: obj => NULL()
 
          CLASS(ChainedSegmentedCurve), POINTER                  :: innerSegmentedCurveChain => NULL()
@@ -599,7 +605,7 @@
          IF( self % noOfInnerBoundaries > 0 )     THEN
             ALLOCATE(iterator)
 
-            CALL iterator % initwithFTLinkedList(self % innerBoundariesList)
+            CALL iterator % initwithFTLinkedListClass(self % innerBoundariesList)
             CALL iterator % setToStart()
             DO WHILE (.NOT.iterator % isAtEnd())
                obj     => iterator % object()
@@ -608,13 +614,13 @@
                k = k + 1
                CALL iterator % moveToNext()
             END DO
-            CALL releaseFTLinkedListIterator(iterator)
+            CALL releaseFTLinkedListIteratorClass(iterator)
          END IF
 
          IF ( self % noOfInterfaceBoundaries > 0 )     THEN
             ALLOCATE(iterator)
 
-            CALL iterator % initwithFTLinkedList(self % interfaceBoundariesList)
+            CALL iterator % initwithFTLinkedListClass(self % interfaceBoundariesList)
             CALL iterator % setToStart
             DO WHILE (.NOT.iterator % isAtEnd())
                obj     => iterator % object()
@@ -623,7 +629,7 @@
                k                           = k + 1
                CALL iterator % moveToNext()
             END DO
-            CALL releaseFTLinkedListIterator(iterator)
+            CALL releaseFTLinkedListIteratorClass(iterator)
          END IF
 !
 !        -----------------------------------------------
@@ -981,7 +987,7 @@
          IF ( self % noOfInterfaceBoundaries == 0 )     RETURN
 
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(self % interfaceBoundariesList)
+         CALL iterator % initWithFTLinkedListClass(self % interfaceBoundariesList)
          CALL iterator % setToStart
          DO WHILE (.NOT.iterator % isAtEnd())
             obj => iterator % object()
@@ -1180,7 +1186,7 @@
          REAL(KIND=RP)                         :: tSize
 
          ALLOCATE(iterator)
-         CALL iterator % initWithFTLinkedList(list)
+         CALL iterator % initWithFTLinkedListClass(list)
          CALL iterator % setToStart()
 
          DO WHILE (.NOT.iterator % isAtEnd())

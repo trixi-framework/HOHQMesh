@@ -72,10 +72,18 @@
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:)
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath, path, str
       INTEGER                                 :: k, fUnit, nControlFiles
-      EXTERNAL                                :: TestCurves, TestPrincipalCurvature
-      EXTERNAL                                :: TestBiCubicInterpolation, MiscTests
       LOGICAL                                 :: exst
       CHARACTER(LEN=ERROR_MESSAGE_LENGTH)     :: msg
+!
+!     --------------
+!     Test functions
+!     --------------
+!
+      EXTERNAL :: TestCurves, TestPrincipalCurvature
+      EXTERNAL :: TestBiCubicInterpolation, MiscTests
+      EXTERNAL :: polynomialApproximationTest, BlobCurveTest
+      EXTERNAL :: legendreApproximationTests, SmoothnessCheck, CircleTest, BlobBreaksTest
+      EXTERNAL :: ScannerTests, SegmentedCurveCheck, MultiSegmentNodalCurveTest, NodalCircleTest
 !
 !     ------------------------------------------------------------------------------------
 !     The control files are located in a Benchmarks directory at the end of (if not empty)
@@ -93,6 +101,16 @@
       CALL testSuite % addTestSubroutineWithName(TestPrincipalCurvature,"Principal Curvature evaluation tests")
       CALL testSuite % addTestSubroutineWithName(TestBiCubicInterpolation,"BiCubic Interpolation tests")
       CALL testSuite % addTestSubroutineWithName(MiscTests,"Miscellaneous Tests")
+      CALL testSuite % addTestSubroutineWithName(legendreApproximationTests,"Legendre Tests")
+      CALL testSuite % addTestSubroutineWithName(polynomialApproximationTest,"Polynomial Approximation Tests")
+      CALL testSuite % addTestSubroutineWithName(SmoothnessCheck,"Smoothness check Tests")
+      CALL testSuite % addTestSubroutineWithName(BlobCurveTest,"Blob curve Tests")
+      CALL testSuite % addTestSubroutineWithName(CircleTest,"Circle Tests")
+      CALL testSuite % addTestSubroutineWithName(BlobBreaksTest,"Breaks Tests")
+      CALL testSuite % addTestSubroutineWithName(ScannerTests,"Scanner Tests")
+      CALL testSuite % addTestSubroutineWithName(SegmentedCurveCheck,"Segmented Curve Tests")
+      CALL testSuite % addTestSubroutineWithName(MultiSegmentNodalCurveTest,"MultiSegment Nodal Curve Tests")
+      CALL testSuite % addTestSubroutineWithName(NodalCircleTest,"MultiSegment Nodal Circle Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...

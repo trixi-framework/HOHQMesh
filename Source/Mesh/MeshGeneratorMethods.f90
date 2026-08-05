@@ -39,6 +39,7 @@
       USE ErrorTypesModule
       USE MeshOutputMethods
       USE MeshSizerClass
+      USE BoundaryErrorModule
       IMPLICIT NONE
 
 !
@@ -64,8 +65,37 @@
 !        ---------------
 !
          INTEGER :: k
+         LOGICAL :: needsRemesh
+         INTEGER :: numberOfTries = 3
+         INTEGER :: j
 
-         CALL GenerateAQuadMesh( project, errorCode )
+         needsRemesh = .FALSE.
+         
+         DO j = 1, numberOfTries 
+            CALL GenerateAQuadMesh( project, errorCode )
+!
+!           -----------------------------------
+!           Gather and set boundary information
+!           and from that, create boundary 
+!           polynomial approximations to the 
+!           boundary chains.
+!           -----------------------------------
+!
+            CALL ComputeBoundaryApproximations(project, .FALSE.)
+            CALL ComputeBoundaryErrors(project)
+            CALL ResetInverseScales(project, needsRemesh)
+!
+!        -----------------------------------------------
+!        If the mesh needs to be remeshed because errors
+!        are too large someplace, do so
+!        -----------------------------------------------
+!
+            IF ( .NOT. needsRemesh )     EXIT
+            
+            IF( j < numberOfTries) CALL ResetProject(project)
+            IF(printMessage)       PRINT *, "Remeshing for accuracy..."
+           
+         END DO 
 !
 !        ------------------------------------------------------------------------
 !        If there is a problem, usually it is because the initial background grid
@@ -87,13 +117,21 @@
 
                CALL ResetProject(project)
                CALL clearBoundaryCurves(project % sizer)
-               CALL BuildSizerBoundaryCurves(self = project)
+               CALL BuildSizerBoundaryCurves(project)
 
                CALL GenerateAQuadMesh(project,errorCode)
 
                IF( errorCode == A_OK_ERROR_CODE)     EXIT
             END DO
         END IF
+!
+!       -------------------------------------------------------------
+!       Re-compute the boundary polynomials with the optimized curves
+!       if that has been requested
+!       -------------------------------------------------------------
+!
+        CALL ResetProjectBoundaryObjects(project)
+        CALL ComputeBoundaryApproximations(project, .TRUE.)
 
       END SUBROUTINE GenerateQuadMesh
 !
@@ -109,6 +147,12 @@
 !
          CLASS(MeshProject), POINTER :: project
          INTEGER                     :: errorCode
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE (SMModel)       , POINTER     :: model
 !
          IF(PrintMessage) PRINT *, "Generate 2D mesh..."
 !
@@ -163,31 +207,23 @@
             IF(PrintMessage) PRINT *, "   final Smoothing done."
          END IF
 !
-!        -----------------------------------------
-!        Set boundary information for the elements
-!        and compute the patch interpolated points
-!        inside the element
-!        -----------------------------------------
+!        ----------------------------------------------------------
+!        If this is a multi-material mesh, then set each element's
+!        materialID and materialName
+!        ----------------------------------------------------------
 !
-         CALL CompleteElementConstruction(project)
+         IF ( ASSOCIATED(interfaceCurves) .AND. &
+            project % runParams % meshFileFormat == ISM_MM)     THEN
+            CALL SetMaterialProperties(mesh = project % mesh)
+         END IF
 !
-!     ----------------------------------------------------------
-!     If this is a multi-material mesh, then set each element's
-!     materialID and materialName
-!     ----------------------------------------------------------
+!        -------------------------------------
+!        We no longer need the boundary arrays
+!        -------------------------------------
 !
-      IF ( ASSOCIATED(interfaceCurves) .AND. &
-           project % runParams % meshFileFormat == ISM_MM)     THEN
-         CALL SetMaterialProperties(mesh = project % mesh)
-      END IF
-!
-!     -------------------------------------
-!     We no longer need the boundary arrays
-!     -------------------------------------
-!
-      CALL destroyTemporaryBoundaryArrays
+         CALL destroyTemporaryBoundaryArrays
 
-      IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
+         IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
 
       END SUBROUTINE GenerateAQuadMesh
 !
@@ -1885,7 +1921,7 @@
             obj => iterator % object()
             CALL castToSMElement(obj,e)
             CALL ElementBoundaryInfoInit( e % boundaryInfo, N)
-            CALL gatherElementBoundaryInfo( e, model )
+            CALL gatherElementBoundaryInfo( e, project )
 
             CALL iterator % moveToNext()
          END DO
@@ -1894,7 +1930,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE gatherElementBoundaryInfo( e, model  )
+      SUBROUTINE gatherElementBoundaryInfo( e, project  )
 !
 !     --------------------------------------------------------------------------
 !     Gather together the boundary information for the four
@@ -1917,22 +1953,28 @@
 !        ---------
 !
          TYPE (SMElement)         , POINTER :: e
-         TYPE (SMModel)           , POINTER :: model
+         TYPE (MeshProject)        :: project
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
+         TYPE (SMModel)       , POINTER :: model
          INTEGER                        :: j, k
          INTEGER                        :: N
          TYPE (SMNode)        , POINTER :: node1 => NULL(), node2 => NULL()
          CLASS(SMCurve)       , POINTER :: c     => NULL()
          CLASS(SMChainedCurve), POINTER :: chain => NULL()
+         CLASS(FTMutableObjectArray), POINTER  :: boundaryPolynomials !An alias
+         CLASS(MultiSegmentCurve)   , POINTER  :: boundaryPolynomial
+         CLASS(FTObject)            , POINTER  :: obj
 
          REAL(KIND=RP)            :: tStart(4), tEnd(4), t_j, deltaT
          INTEGER                  :: curveId(4)
          CHARACTER(LEN=32)        :: noCurveName(-4:-1) = (/"Right ", "Left  ", "Bottom", "Top   " /)
 
+         model => project % model
+         boundaryPolynomials => project % boundaryPolynomialsArray
          N = SIZE(e % boundaryInfo%x,2)-1
 !
 !        -----
@@ -1970,11 +2012,11 @@
 !
                e % boundaryInfo % bCurveFlag(k) = ON
                IF( node2 % whereOnBoundary == 0.0_RP .OR. node2 % whereOnBoundary == 1.0_RP )     THEN
-                  curveID(k)    = node1 % bCurveID
                   c             => model % curveWithID(node1 % bCurveID, chain)
+                  curveID(k)    = chain % id()
                ELSE
-                  curveID(k)    = node2 % bCurveID
                   c             => model % curveWithID(node2 % bCurveID, chain)
+                  curveID(k)    = chain % id()
                END IF
 
                e % boundaryInfo % bCurveName(k) = c % curveName()
@@ -2005,7 +2047,8 @@
 
             IF( e % boundaryInfo % bCurveFlag(k) == ON )     THEN ! Use boundary curves to compute interpolant
 
-              c      => model % curveWithID(curveID(k), chain)
+              obj => boundaryPolynomials % objectAtIndex(curveID(k))
+              CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
 
               deltaT = tEnd(k) - tStart(k)
               IF( deltaT > maxParameterChange )     THEN !Crossing over the start
@@ -2013,6 +2056,7 @@
               ELSE IF (deltaT < -maxParameterChange ) THEN
                  deltaT = 1.0_RP + deltaT
               END IF
+              
 
               DO j = 0, N
 
@@ -2023,7 +2067,7 @@
                      t_j = t_j + 1.0_RP
                   END IF
 
-                  e % boundaryInfo % x(:,j,k) = chain % PositionAt( t_j )
+                  e % boundaryInfo % x(:,j,k) = boundaryPolynomial % PositionAt( t_j )
 
                 END DO
              ELSE ! Use a straight line between end nodes
@@ -2132,7 +2176,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CompleteElementConstruction(project)
+      SUBROUTINE ComputeFacePatches(project)
 !
 !     ---------------------------------------------------------------
 !     Compute the boundary and interior face patch interpolant points
@@ -2158,15 +2202,10 @@
          CLASS(FTObject)            , POINTER :: obj
          TYPE (SMElement)           , POINTER :: e
          TYPE(TransfiniteQuadMap)             :: quadMap
-         TYPE(CurveInterpolant)     , POINTER :: boundaryCurves(:)
+         
+         TYPE(CurveInterpolant)       , POINTER     :: boundaryCurves(:)
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: values
-!
-!        --------------------
-!        Boundary information
-!        --------------------
-!
-         CALL setElementBoundaryInfo(project)
 !
 !        -------------------
 !        Interior face patch
@@ -2204,7 +2243,7 @@
 
          DEALLOCATE( boundaryCurves)
 
-      END SUBROUTINE CompleteElementConstruction
+      END SUBROUTINE ComputeFacePatches
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -2399,7 +2438,7 @@
 !        ---------------------------------------------------------------
 !
          CALL mesh % nodes % addObjectsFromList(newNodes)
-         CALL releaseFTLinkedList(newNodes)
+         CALL releaseFTLinkedListClass(newNodes)
          
          CALL elemItr % setToStart()
          DO WHILE(.NOT. elemItr % isAtEnd()) 
@@ -2440,8 +2479,8 @@
 !        Clean up
 !        --------
 !
-         CALL releaseFTLinkedList(newNodes)
-         CALL releaseFTLinkedList(savedElements)
+         CALL releaseFTLinkedListClass(newNodes)
+         CALL releaseFTLinkedListClass(savedElements)
          CALL deallocateNodeToElementConnections
          
       END SUBROUTINE ReflectMesh
@@ -2469,7 +2508,7 @@
          REAL(KIND=RP) :: values(0:N,3)
          INTEGER       :: i, j, k
 
-         ALLOCATE(e % xPatch(3,0:N,0:N))
+         IF(.NOT. ALLOCATED(e % xPatch)) ALLOCATE(e % xPatch(3,0:N,0:N))
 !
 !        -------------------
 !        Set up the quad map
@@ -2658,5 +2697,272 @@
          END DO
 
       END SUBROUTINE RotationTransformMesh
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE ComputeBoundaryPolynomials( project, chainNodesArray, performOptimization)
+!
+!     -----------------------------------------------------------------
+!     Generate multisegment curves that span the curve segments in the 
+!     chainNodesArray. This procedure creates polynomial approximations
+!     to the model's curves referenced in allCurves and stores them in
+!     the project's boundaryPolynomialsArray. The approximation error
+!     can be computed from the difference between the two.
+!     -----------------------------------------------------------------
+!
+         USE MultiSegmentNodalCurveClass
+         USE MultiSegmentModalCurveClass
+         USE CurveOptimization
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(MeshProject)     :: project
+         TYPE(JaggedNodeArray) :: chainNodesArray(:) !Array of arrays of nodes along the boundary
+         LOGICAL               :: performOptimization
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         
+         CLASS(SMModel)                , POINTER  :: model               !An alias
+         CLASS(FTMutableObjectArray)   , POINTER  :: boundaryPolynomials !An alias
+         TYPE(ObjectPointerWrapper)    , POINTER  :: modelChains(:)      !An alias
+         CLASS(FTObject)               , POINTER  :: obj                 !An Alias
+         
+         CLASS(SMChainedCurve)         , POINTER  :: modelChain
+         CLASS(MultiSegmentNodalCurve) , POINTER  :: boundaryPolynomial
+         CLASS(MultiSegmentModalCurve) , POINTER  :: optimizedCurve
+         CLASS(SMCurve)                , POINTER  :: crv, crvPtr
+         
+         TYPE(OptimizerOptions)                   :: options
+         REAL(KIND=RP)              , ALLOCATABLE :: nodeTs(:), chebyPoints(:)
+         REAL(KIND=RP)              , ALLOCATABLE :: values(:,:)
+         INTEGER                    , ALLOCATABLE :: ends(:)
+         
+         INTEGER                                  :: j, k, nNodes, N, m
+         INTEGER                                  :: nChains, nCurves
+         REAL(KIND=RP)                            :: t, dt
+         REAL(KIND=RP)                            :: nodeTol = 1.0d-12 ! TODO: put into a constant.
+!
+!        -----------
+!        Set aliases
+!        -----------
+!
+         model               => project % model
+         modelChains         => model % allChains
+         boundaryPolynomials => project % boundaryPolynomialsArray
+         
+         nChains = model % numberOfChains()
+         N       = project % runParams % polynomialOrder
+!
+!        ---------------------------------------
+!        Allocate Chebyshev Gauss-Lobatto points
+!        for use with non-optimized boundary
+!        curves.
+!        ---------------------------------------
+!
+         ALLOCATE(chebyPoints(0:N))
+         ALLOCATE(values(0:N,3))
+         DO m = 0, N 
+            chebyPoints(m) = (1.0_RP - COS(m*PI/N))/2.0_RP
+         END DO 
+!
+!        ---------------------------------------------------------------------------------
+!        For each chained curve, generate a new curve from the
+!        curves in the source chain. The new curves added to the chain includes
+!        (a) pointers to a new SMCurve of type MultiSegmentModalCurve if the curve
+!            is to be optimized. This may include coalescing several curves in the chain
+!            if the user requests them to be connected
+!        (b) pointers to a new MultiSegmentNodalCurve subclasses for polynomials defined
+!            between two pairs of nodes along boundaries.
+!        ---------------------------------------------------------------------------------
+!
+         DO j = 1, nChains ! For each boundary curve chain
+            boundaryPolynomial => NULL()
+            optimizedCurve     => NULL()
+!
+!           -----------------------------------------------------
+!           Get the curve chain from the model.
+!           modelChain is the exact chain.
+!           boundaryPolynomial is its approximation by a (PW) polynomial
+!           which is saved in the boundaryPolynomialsArray of the
+!           project at the same index.
+!           -----------------------------------------------------
+!
+            obj => modelChains(j) % object
+            CALL castToSMChainedCurve(obj, modelChain)
+!
+!           ----------------------------------------------------
+!           Collect all the parametric locations along the chain
+!           ----------------------------------------------------
+!
+            nNodes = SIZE(chainNodesArray(j) % array)
+            ALLOCATE(nodeTs(0:nNodes))
+            
+            IF ( chainNodesArray(j) % array(1) % node % gWhereOnBoundary == 0.0_RP )     THEN
+               DO k = 0, nNodes-1
+                  nodeTs(k) = chainNodesArray(j) % array(k+1) % node % gWhereOnBoundary
+               END DO  
+               nodeTs(nNodes) = 1.0_RP
+            ELSE 
+               nodeTs(0) = 0.0_RP
+               DO k = 1, nNodes
+                  nodeTs(k) = chainNodesArray(j) % array(k) % node % gWhereOnBoundary
+               END DO  
+            END IF
+!
+!           ---------------------------------------------
+!           Find the indices of the ends of each segment
+!           in the model chain.
+!           ---------------------------------------------
+!
+            nCurves = modelChain % COUNT()
+            dt      = 1.0_RP/REAL(nCurves, RP)
+            
+            ALLOCATE(ends(0:nCurves), source = 0)
+            ends(0)       = 0
+            ends(nCurves) = nNodes
+            
+            m = 1
+            DO k = 1, nNodes-1
+               t = m*dt
+               IF ( ABS(nodeTs(k) - t) <= nodeTol )     THEN
+                  ends(m)   = k
+                  nodeTs(k) = t
+                  m = m + 1 
+               END IF 
+            END DO
+!
+!           -------------------------------------------------------------
+!           Create a polynomial approximation for each curve in the chain
+!           depending on if optimization is requested or not.
+!           -------------------------------------------------------------
+!
+            crv => modelChain
+            IF ( modelChain % optimization /= NONE .AND. performOptimization)     THEN
+      
+               CALL SetDefaultOptions(options)
+               options % whichNorm = modelChain % optimization
+               CALL OptimizeCurve(curve              = crv,                     &
+                                  polyOrder          = N,                       &
+                                  cuts               = nodeTs,                  &
+                                  breakIndices       = ends,                    &
+                                  options            = options,                 &
+                                  newName            = modelChain % curveName(),&
+                                  newID              = modelChain % id(),       &
+                                  optimized          = crvPtr)
+               CALL castToMultiSegmentModalCurve(crvPtr, optimizedCurve)
+               obj => optimizedCurve
+               CALL boundaryPolynomials % addObject(obj)
+            ELSE 
+               ALLOCATE(boundaryPolynomial)
+               CALL boundaryPolynomial % ConstructMultiSegmentNodalCurve(crv, nodeTs, N, &
+                                                      modelChain % curveName(), modelChain % id() )
+               obj => boundaryPolynomial
+               CALL boundaryPolynomials % addObject(obj)
+            END IF 
+!
+!           -------
+!           Cleanup
+!           -------
+!
+            DEALLOCATE(ends)
+            DEALLOCATE(nodeTs)
+            IF(ASSOCIATED(boundaryPolynomial)) CALL releaseMultiSegmentNodalCurve(boundaryPolynomial)
+            IF(ASSOCIATED(optimizedCurve))     CALL releaseMultiSegmentModalCurve(optimizedCurve)
+           
+         END DO !All boundary curves
+         
+      END SUBROUTINE ComputeBoundaryPolynomials
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE MakeMeshSymmetric(project, symmetryCurve) 
+      IMPLICIT NONE  
+!
+!     -----------------------------------------------------------
+!     Perform symmetric transform if there is a symmetry boundary
+!     -----------------------------------------------------------
+!
+!
+!      ---------
+!      Arguments
+!      ---------
+!
+       CLASS(SMCurve)      , POINTER :: symmetryCurve
+       CLASS( MeshProject ), POINTER :: project
+!
+!      ---------------
+!      Local variables
+!      ---------------
+!
+       INTEGER :: errorCode
+            
+       IF ( allSymmetryCurvesAreColinear(project % model) )     THEN
+          CALL ReflectMesh(project % mesh, symmetryCurve)
+!
+!         --------------------------------
+!         Smooth mesh (again) if requested
+!         --------------------------------
+!
+          IF(ASSOCIATED(project % smoother))     THEN
+            IF(PrintMessage) PRINT *, "   Begin Smoothing (after reflection across a symmetry boundary)..."
+            CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
+            IF(PrintMessage) PRINT *, "   Smoothing done."
+          END IF
+       ELSE
+           CALL ThrowErrorExceptionOfType(poster = "HOHQMesh", &
+                                          msg    = "A symmetry curve is is not straight or colinear. Ignoring...", &
+                                          typ    = FT_ERROR_WARNING)
+       END IF
+         
+   END SUBROUTINE MakeMeshSymmetric
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+   SUBROUTINE ComputeBoundaryApproximations(project, optimize)  
+      IMPLICIT NONE  
+      
+      CLASS(MeshProject), POINTER :: project
+      LOGICAL                     :: optimize
+!
+!     ---------------
+!     Local Variables
+!     ---------------
+!
+      TYPE(JaggedNodeArray), ALLOCATABLE :: chainNodesArray(:)
+      TYPE (SMModel)       , POINTER     :: model
+      INTEGER                            :: numBoundaryChains
+!
+!     -----------------------------------
+!     Gather and set boundary information
+!     and from that, create boundary 
+!     polynomial approximations to the 
+!     boundary chains.
+!     -----------------------------------
+!
+      model => project % model
+      numBoundaryChains = model % numberOfChains()
+      ALLOCATE(chainNodesArray(numBoundaryChains))
+      CALL SortBoundaryNodesToChains(project % mesh % nodesIterator, &
+                                     numBoundaryChains, chainNodesArray)
+      CALL ComputeBoundaryPolynomials( project, chainNodesArray, optimize)
+      CALL setElementBoundaryInfo(project)
+!
+!     -----------------------------------------
+!     Compute the patch of interpolated points
+!     inside the elements
+!     -----------------------------------------
+!
+      CALL ComputeFacePatches(project)
+      
+      DEALLOCATE(chainNodesArray)
+      
+   END SUBROUTINE ComputeBoundaryApproximations
+   
    END MODULE MeshGenerationMethods
 !

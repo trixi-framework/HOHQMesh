@@ -133,6 +133,22 @@
          \end{SPLINE_DATA}
        \end{SPLINE_CURVE}
 
+      \begin{SPLINE_CURVE}
+         name =
+         file =
+       \end{SPLINE_CURVE}
+
+       \begin{ELLIPTIC_ARC}
+	   name    =
+	   center  = [ , ,0.0]
+	   xRadius =  
+	   yRadius =  
+	   start angle =  
+	   end angle = 
+	   units = degrees OR radians
+	   rotation = 
+	\end{ELLIPTIC_ARC}
+
      \end{OUTER_BOUNDARY}
 %
 %   *** INNER BOUNDARY DESCRIPTIONS ***
@@ -148,6 +164,21 @@
 
        \begin{CHAIN}
           name =
+%
+%	  Add curves as in outer boundary
+%
+       \end{CHAIN}
+
+%
+%      Boundary optimized curve, can also be
+%      placed in outer boundary
+%
+       \begin{CHAIN}
+          name =
+          optimize =
+          tolerance =
+          continuity =
+          connect =
 %
 %	  Add curves as in outer boundary
 %

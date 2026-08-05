@@ -104,7 +104,7 @@
          CLASS(FTLinkedList)        , POINTER :: newElementsList => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
          TYPE (SMNode)              , POINTER :: node            => NULL()
-         TYPE (FTLinkedListIterator), POINTER :: interfaceElementIterator => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: interfaceElementIterator => NULL()
          INTEGER                              :: interfaceNodeCount, k
          INTEGER                              :: boundaryNodeNumber, oppositeNodeNumber
          
@@ -126,7 +126,7 @@
 !        -----------------------------------------------
 !
          ALLOCATE(interfaceElementIterator)
-         CALL interfaceElementIterator % initWithFTLinkedList(interfaceElements)
+         CALL interfaceElementIterator % initWithFTLinkedListClass(interfaceElements)
          CALL interfaceElementIterator % setToStart()
          DO WHILE ( .NOT.interfaceElementIterator % isAtEnd() )
             obj => interfaceElementIterator % object()
@@ -211,8 +211,8 @@
 !        -------------------------------------------------
 !
          CALL mesh % elements % addObjectsFromList(newElementsList)
-         CALL releaseFTLinkedListIterator(interfaceElementIterator)
-         CALL releaseFTLinkedList(newElementsList)
+         CALL releaseFTLinkedListIteratorClass(interfaceElementIterator)
+         CALL releaseFTLinkedListClass(newElementsList)
 
       END SUBROUTINE SplitInterfaceElements
 !
