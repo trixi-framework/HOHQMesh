@@ -53,7 +53,7 @@ The options are:
 
 ## Boundary Error Output
 
-Whether or not boundary optimization is chosen, HOHQMesh will write out the maximum $\mathbb L^2$ and $\mathbb H^1$ boundary edge errors. Running the [`Examples/2D/BlobAdapt/BlobAdapt.control`](https://github.com/trixi-framework/HOHQMesh/blob/main/Examples/2D/BlobAdapt/BlobAdapt.control) example and requesting an H1Norm tolerance of $10^{-4}$ and first derivative continuity by
+Whether or not boundary optimization is chosen, HOHQMesh will write out the maximum $\mathbb L^2$ and $\mathbb H^1$ boundary edge errors. Running the [`Examples/2D/BlobAdapt/BlobAdapt.control`](https://github.com/trixi-framework/HOHQMesh/blob/main/Examples/2D/BlobAdapt/BlobAdapt.control) example and requesting an `H1Norm` tolerance of $10^{-4}$ and first derivative continuity by
 
 	\begin{OUTER_BOUNDARY}
 	   optimize   = H1Norm
