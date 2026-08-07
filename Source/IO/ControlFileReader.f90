@@ -317,7 +317,17 @@
 
            IF(iStat /= 0)   EXIT
            CALL replaceTabs(line)
-            
+!
+!          ---------------------------
+!          Skip comment or blank lines
+!          ---------------------------
+!
+           IF (TRIM(line) == "" .OR. line(1:1) == "%") CYCLE
+!
+!          --------------
+!          Parse the line
+!          --------------
+!
             IF ( INDEX(STRING = line, SUBSTRING = "begin{") > 0)     THEN !Start reading a block
                CALL startNewCollectionInCollection(fileUnit,line,collection)
                IF(catch(FATAL_ERROR_EXCEPTION)) EXIT 
@@ -327,8 +337,6 @@
                CALL completeBlock(line,objectName)
                RETURN ! Done with this block, one way or another
                
-            ELSE IF (TRIM(line) == "" .OR. line(1:1) == "%") THEN   !Skip blank lines 
-               CYCLE
             ELSE IF (INDEX(STRING = line, SUBSTRING = "{") > 0 .OR. &
                      INDEX(STRING = line, SUBSTRING = "}") > 0)     THEN 
                ALLOCATE(exception)
