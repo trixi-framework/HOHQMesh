@@ -266,7 +266,7 @@
             eL2Norm = project % L2BoundaryError(j) % array(c)
             eH1Norm = project % H1BoundaryError(j) % array(c)
 
-            WRITE(normUnit,*) 0.5_RP*(gTStart + gTEnd), LOG10(eL2Norm + 1.0d-15), LOG10(eH1Norm + 1.0d-15)
+            WRITE(normUnit,*) gTStart, gTEnd, eL2Norm, eH1Norm
 
          END DO
 
