@@ -194,6 +194,35 @@
 !////////////////////////////////////////////////////////////////////////
 !
    SUBROUTINE WriteBoundaryErrors(project)
+!
+!  ----------------------------------------------------------------------------
+!  Write the L2 and H1 errors within each segment along each boundary.
+!  It writes to the path of the error file name appended with the string
+!  "_Norms" provided in the control file unless that value is "none" or
+!  not included.
+!   
+!  The format is:
+! 
+!  "Number of boundary curves = " # boundary curves  
+!  For each boundary curve
+!     Boundary name,  # Segments
+!     For each segment
+!        t_{start}  x_{start}  y_{start}  t_{end}  x_{end}  y_{end}  L2Error  H1Error
+!     end
+!  end
+!   
+!  where
+!  t_{start}           = start parametrization for the segment
+!  t_{end}             = end parametrization for the segment
+!  x_{start},y_{start} = physical space location of segment start
+!  x_{end},y_{end}     = physical space location of segment end
+!  L2Error             = L2Error of the segment
+!  H1Error             = H1 Error of the segment
+!
+!  The format is redundant in that it duplicates the start and end points,
+!  but should make it easier to read the file and draw from it.
+!  ----------------------------------------------------------------------------
+!
       IMPLICIT NONE
 !
 !     ---------
@@ -215,6 +244,7 @@
 
       CHARACTER(DEFAULT_CHARACTER_LENGTH)      :: str
       REAL(KIND=RP)                            :: gTStart, gTEnd
+      REAL(KIND=RP)                            :: xs(3), xe(3)
       REAL(KIND=RP)                            :: eL2Norm, eH1Norm
       INTEGER                                  :: normUnit
       INTEGER                                  :: m, j, c
@@ -252,21 +282,25 @@
 !     Write them
 !     ----------
 !
+      WRITE(normUnit,*) "Number of boundary curves = ", model % numberOfChains()
       DO j = 1, model % numberOfChains()
          obj => modelChains(j) % object
          CALL castToSMChainedCurve(obj, modelChain)
-         WRITE(normUnit,*) TRIM(modelChain % curveName())
 
          obj => boundaryPolynomials % objectAtIndex(j)
          CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
+         
+         WRITE(normUnit,*) TRIM(modelChain % curveName()), ",", boundaryPolynomial % nSegments
 
          DO c = 1, boundaryPolynomial % nSegments
             gTStart = boundaryPolynomial % cuts(c-1)
             gTEnd   = boundaryPolynomial % cuts(c)
             eL2Norm = project % L2BoundaryError(j) % array(c)
             eH1Norm = project % H1BoundaryError(j) % array(c)
+            xs      = boundaryPolynomial % positionAt(gTStart)
+            xe      = boundaryPolynomial % positionAt(gTEnd)
 
-            WRITE(normUnit,*) gTStart, gTEnd, eL2Norm, eH1Norm
+            WRITE(normUnit,*) gTStart, xs(1:2), gTEnd, xe(1:2), eL2Norm, eH1Norm
 
          END DO
 
