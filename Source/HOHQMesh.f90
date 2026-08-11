@@ -186,7 +186,7 @@
          IF ( .NOT.test )     THEN
             IF ( SIZE(project % L2ErrorMax) > 0 )     THEN
                PRINT *, "Boundary Error Quality:"
-               WRITE(6,"(A32,4x,A12,A16)") "Boundary Name", "Max L2 Error", "Max H1Error"
+               WRITE(6,"(A32,4x,A12,A16)") "Boundary Name", "Max L2 Error", "Max H1 Error"
                DO k = 1, SIZE(project % L2ErrorMax)
                   obj => project % model % allChains(k) % object
                   CALL castToSMCurve(obj,boundaryCurve)

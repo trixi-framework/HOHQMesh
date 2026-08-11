@@ -90,7 +90,7 @@ produces the output:
        Area Sign      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000
 
 	 Boundary Error Quality:
-                   Boundary Name    Max L2 Error     Max H1Error
+                   Boundary Name    Max L2 Error     Max H1 Error
                   Outer Boundary  5.13545249E-08  5.45735801E-05
 
 In addition to the usual element quality measures, one sees that the $\mathbb H^1$ error is indeed bounded by the requested tolerance. If there is more than one boundary, they are listed by boundary name.
