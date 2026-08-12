@@ -153,7 +153,7 @@
 !        grid based method is set to 11.
 !        -----------------------------------------------------
 !
-         errorCode = NONE
+         errorCode = A_OK_ERROR_CODE
          CALL deallocateNodeToElementConnections
 
          numNodes = mesh % nodes % COUNT()

@@ -515,6 +515,7 @@
          IF ( ALLOCATED(source % nodes) )     THEN
             copy % nodes = source % nodes
             DO j = 1, copy % eType 
+               copy % nodes(j) % node => source % nodes(j) % node
                CALL copy % nodes(j) % node % retain() 
             END DO 
          END IF 
