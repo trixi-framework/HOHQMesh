@@ -1515,7 +1515,7 @@
                                            poster     = "SetRunParametersBlock")
 
          params % statsFileName = "none"
-         msg = "Control file is missing the stats file name. Stats and boundary errors not written."
+         msg = "Control file is missing the stats file name. Stats and boundary errors are not written."
          CALL SetStringValueFromDictionary(valueToSet = params % statsFileName, &
                                            sourceDict = paramsDict,             &
                                            key        = STATS_FILE_NAME_KEY,    &
