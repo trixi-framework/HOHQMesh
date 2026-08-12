@@ -490,7 +490,6 @@
                ALLOCATE(chain)
                CALL chain % initChainWithNameAndID(chainName,0)
                CALL ConstructCurve(self, chain, ibDict )
-               CALL SetChainOptimizationParameters(chain, ibDict)
 
             ELSE
                chainDict => ibDict !This is just an alias
@@ -513,7 +512,6 @@
                   curveDict => valueDictionaryFromObject(obj)
 
                   CALL ConstructCurve(self, chain, curveDict )
-                  CALL SetChainOptimizationParameters(chain, chainDict)
 
                   CALL listOfCurvesIterator % moveToNext()
                END DO
@@ -532,6 +530,7 @@
 !           Finalize the chain
 !           ------------------
 !
+            CALL SetChainOptimizationParameters(chain, ibDict)
             CALL chain % complete(innerOrOuterCurve = INNER, chainMustClose = .TRUE.)
             obj => chain
             CALL release(obj)
@@ -576,7 +575,6 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
          INTEGER      , PARAMETER                :: DONT_SKIP = 0, SKIP = 1
          INTEGER                                 :: j
-
 !
          curveChain % optimization = NONE
          IF ( curveDict % containsKey(CHAIN_OPTIMIZATION_KEY) )     THEN
