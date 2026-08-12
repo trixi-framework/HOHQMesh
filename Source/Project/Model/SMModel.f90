@@ -64,7 +64,7 @@
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: H1NORM_KEY                     = "H1Norm"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: L2NORM_KEY                     = "L2Norm"
-      
+
       TYPE ObjectPointerWrapper
          CLASS(FTObject), POINTER ::  object => NULL()
       END TYPE ObjectPointerWrapper
@@ -140,19 +140,19 @@
          TYPE(SMModel)            :: self
          CLASS(FTObject), POINTER :: obj
          INTEGER                  :: j
-         
+
          IF ( ASSOCIATED(self % innerBoundariesIterator) )     THEN
-            CALL releaseFTLinkedListIterator(self % innerBoundariesIterator) 
+            CALL releaseFTLinkedListIterator(self % innerBoundariesIterator)
          END IF
-         
+
          IF ( ASSOCIATED(self % interfaceBoundariesIterator) )     THEN
-            CALL releaseFTLinkedListIterator(self % interfaceBoundariesIterator) 
+            CALL releaseFTLinkedListIterator(self % interfaceBoundariesIterator)
          END IF
-         
+
          IF ( ASSOCIATED(self % innerBoundaries) )     THEN
-            CALL releaseFTLinkedList(self % innerBoundaries) 
+            CALL releaseFTLinkedList(self % innerBoundaries)
          END IF
-         
+
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             CALL releaseChainedCurveClass(self % outerBoundary)
          END IF
@@ -181,9 +181,9 @@
          END IF
 
          IF ( ASSOCIATED(self % allChains) )     THEN
-            DO j = 1, SIZE(self % allChains) 
+            DO j = 1, SIZE(self % allChains)
                obj => self % allChains(j) % object
-               CALL release(obj) 
+               CALL release(obj)
             END DO
             DEALLOCATE( self % allChains)
          END IF
@@ -621,11 +621,11 @@
 !              Chain breaks are defined by the end of the numbered curve in the chain. Breaks
 !              are assumed at the end of every segment of the chain. Segments can be connected
 !              by removing breaks (this is easier than specifying which segments should have
-!              breaks.) For example, 
+!              breaks.) For example,
 !              with five curves in the chain, connecting curve 2 and curve
 !              3, write
 !                 connect = 2-3
-!              and to connect 2 & 3 and 4&5,
+!              and to connect 2 & 3 and 4 & 5,
 !                 connect = 2-3, 4-5
 !              where the separator is a comma. (Spaces are ignored)
 !              -------------------------------------------------------------------------------

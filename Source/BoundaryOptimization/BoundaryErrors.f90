@@ -194,6 +194,35 @@
 !////////////////////////////////////////////////////////////////////////
 !
    SUBROUTINE WriteBoundaryErrors(project)
+!
+!  ----------------------------------------------------------------------------
+!  Write the L2 and H1 errors within each segment along each boundary.
+!  It writes to the path of the stats file name appended with the string
+!  "_ErrorNorms" provided in the control file unless the value for the
+!  stats file name is "none" or not included.
+!
+!  The format is:
+!
+!  "Number of boundary curves = " # boundary curves
+!  For each boundary curve
+!     Boundary name,  # Segments
+!     For each segment
+!        t_{start}  x_{start}  y_{start}  t_{end}  x_{end}  y_{end}  L2Error  H1Error
+!     end
+!  end
+!
+!  where
+!  t_{start}           = start parametrization for the segment
+!  t_{end}             = end parametrization for the segment
+!  x_{start},y_{start} = physical space location of segment start
+!  x_{end},y_{end}     = physical space location of segment end
+!  L2Error             = L2Error of the segment
+!  H1Error             = H1 Error of the segment
+!
+!  The format is redundant in that it duplicates the start and end points,
+!  but should make it easier to read the file and draw from it.
+!  ----------------------------------------------------------------------------
+!
       IMPLICIT NONE
 !
 !     ---------
@@ -215,11 +244,16 @@
 
       CHARACTER(DEFAULT_CHARACTER_LENGTH)      :: str
       REAL(KIND=RP)                            :: gTStart, gTEnd
+      REAL(KIND=RP)                            :: xs(3), xe(3)
       REAL(KIND=RP)                            :: eL2Norm, eH1Norm
       INTEGER                                  :: normUnit
       INTEGER                                  :: m, j, c
-
-      IF ( project % runParams % errorFileName == "none" )     RETURN
+!
+!     ----------------------------------------------------------------------
+!     If stats are not requested then boundary errors are not written either
+!     ----------------------------------------------------------------------
+!
+      IF ( project % runParams % statsFileName == "none" )     RETURN
 !
 !     -------
 !     Aliases
@@ -233,12 +267,12 @@
 !     Where to write the results
 !     --------------------------
 !
-      m = INDEX(STRING = project % runParams % errorFileName, SUBSTRING = ".")
+      m = INDEX(STRING = project % runParams % statsFileName, SUBSTRING = ".")
       IF ( m == -1 )     THEN
-         OPEN(NEWUNIT = normUnit, FILE = project % runParams % errorFileName //"_Norms")
+         OPEN(NEWUNIT = normUnit, FILE = project % runParams % statsFileName //"_ErrorNorms")
       ELSE
-         str = project % runParams % errorFileName
-         str = str(1:m-1) //"_Norms.txt"
+         str = project % runParams % statsFileName
+         str = str(1:m-1) //"_ErrorNorms.txt"
          OPEN(NEWUNIT = normUnit, FILE = str)
       END IF
 !
@@ -252,21 +286,25 @@
 !     Write them
 !     ----------
 !
+      WRITE(normUnit,*) "Number of boundary curves = ", model % numberOfChains()
       DO j = 1, model % numberOfChains()
          obj => modelChains(j) % object
          CALL castToSMChainedCurve(obj, modelChain)
-         WRITE(normUnit,*) TRIM(modelChain % curveName())
 
          obj => boundaryPolynomials % objectAtIndex(j)
          CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
+
+         WRITE(normUnit,*) TRIM(modelChain % curveName()), ",", boundaryPolynomial % nSegments
 
          DO c = 1, boundaryPolynomial % nSegments
             gTStart = boundaryPolynomial % cuts(c-1)
             gTEnd   = boundaryPolynomial % cuts(c)
             eL2Norm = project % L2BoundaryError(j) % array(c)
             eH1Norm = project % H1BoundaryError(j) % array(c)
+            xs      = boundaryPolynomial % positionAt(gTStart)
+            xe      = boundaryPolynomial % positionAt(gTEnd)
 
-            WRITE(normUnit,*) 0.5_RP*(gTStart + gTEnd), LOG10(eL2Norm + 1.0d-15), LOG10(eH1Norm + 1.0d-15)
+            WRITE(normUnit,*) gTStart, xs(1:2), gTEnd, xe(1:2), eL2Norm, eH1Norm
 
          END DO
 

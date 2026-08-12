@@ -56,7 +56,6 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_NAME_KEY         = "mesh file name"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FILE_NAME_KEY         = "plot file name"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: STATS_FILE_NAME_KEY        = "stats file name"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ERROR_FILE_NAME_KEY        = "error file name"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_FILE_FORMAT_NAME_KEY  = "mesh file format"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: POLYNOMIAL_ORDER_KEY       = "polynomial order"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FORMAT_KEY            = "plot file format"
@@ -101,7 +100,6 @@
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: MeshFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: plotFileName
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: errorFileName
          INTEGER                                 :: meshFileFormat
          INTEGER                                 :: polynomialOrder
          INTEGER                                 :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
@@ -1517,7 +1515,7 @@
                                            poster     = "SetRunParametersBlock")
 
          params % statsFileName = "none"
-         msg = "Control file is missing the stats file name. Stats not written."
+         msg = "Control file is missing the stats file name. Stats and boundary errors are not written."
          CALL SetStringValueFromDictionary(valueToSet = params % statsFileName, &
                                            sourceDict = paramsDict,             &
                                            key        = STATS_FILE_NAME_KEY,    &
@@ -1531,19 +1529,6 @@
                                            key        = MESH_FILE_FORMAT_NAME_KEY, &
                                            errorLevel = FT_ERROR_WARNING,          &
                                            message    = msg,                       &
-                                           poster     = "SetRunParametersBlock")
-!
-!        --------------------------------------------------------------------------------
-!        For now, no warnings or anything for not requesting the errors to be written out
-!        --------------------------------------------------------------------------------
-!
-         params % errorFileName = "none"
-         msg = "Control file is missing the errors file name. Errors not written."
-         CALL SetStringValueFromDictionary(valueToSet = params % errorFileName, &
-                                           sourceDict = paramsDict,             &
-                                           key        = ERROR_FILE_NAME_KEY,    &
-                                           errorLevel = FT_ERROR_NONE,          &
-                                           message    = msg,                    &
                                            poster     = "SetRunParametersBlock")
 
          IF( fileFormat == "Basic" )     THEN
