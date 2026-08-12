@@ -2,9 +2,8 @@
 
    \begin{RUN_PARAMETERS}
       mesh file name   = Benchmarks/MeshFiles/Tests/BlobAdapt.mesh
-      plot file name   = Benchmarks/MeshFiles/Tests/BlobAdapt.tec
-      stats file name  = none
-      error file name  = Benchmarks/MeshFiles/Tests/BlobAdaptErrors.txt
+      plot file name   = Benchmarks/PlotFiles/Tests/BlobAdapt.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/BlobAdapt.txt
       test file name   = Benchmarks/BenchmarkData/BlobAdapt.txt
       mesh file format = ISM
       polynomial order = 6

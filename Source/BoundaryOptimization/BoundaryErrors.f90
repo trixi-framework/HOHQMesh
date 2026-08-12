@@ -197,20 +197,20 @@
 !
 !  ----------------------------------------------------------------------------
 !  Write the L2 and H1 errors within each segment along each boundary.
-!  It writes to the path of the error file name appended with the string
-!  "_Norms" provided in the control file unless that value is "none" or
-!  not included.
-!   
+!  It writes to the path of the stats file name appended with the string
+!  "_ErrorNorms" provided in the control file unless the value for the
+!  stats file name is "none" or not included.
+!
 !  The format is:
-! 
-!  "Number of boundary curves = " # boundary curves  
+!
+!  "Number of boundary curves = " # boundary curves
 !  For each boundary curve
 !     Boundary name,  # Segments
 !     For each segment
 !        t_{start}  x_{start}  y_{start}  t_{end}  x_{end}  y_{end}  L2Error  H1Error
 !     end
 !  end
-!   
+!
 !  where
 !  t_{start}           = start parametrization for the segment
 !  t_{end}             = end parametrization for the segment
@@ -248,8 +248,12 @@
       REAL(KIND=RP)                            :: eL2Norm, eH1Norm
       INTEGER                                  :: normUnit
       INTEGER                                  :: m, j, c
-
-      IF ( project % runParams % errorFileName == "none" )     RETURN
+!
+!     ----------------------------------------------------------------------
+!     If stats are not requested then boundary errors are not written either
+!     ----------------------------------------------------------------------
+!
+      IF ( project % runParams % statsFileName == "none" )     RETURN
 !
 !     -------
 !     Aliases
@@ -263,12 +267,12 @@
 !     Where to write the results
 !     --------------------------
 !
-      m = INDEX(STRING = project % runParams % errorFileName, SUBSTRING = ".")
+      m = INDEX(STRING = project % runParams % statsFileName, SUBSTRING = ".")
       IF ( m == -1 )     THEN
-         OPEN(NEWUNIT = normUnit, FILE = project % runParams % errorFileName //"_Norms")
+         OPEN(NEWUNIT = normUnit, FILE = project % runParams % statsFileName //"_ErrorNorms")
       ELSE
-         str = project % runParams % errorFileName
-         str = str(1:m-1) //"_Norms.txt"
+         str = project % runParams % statsFileName
+         str = str(1:m-1) //"_ErrorNorms.txt"
          OPEN(NEWUNIT = normUnit, FILE = str)
       END IF
 !
@@ -289,7 +293,7 @@
 
          obj => boundaryPolynomials % objectAtIndex(j)
          CALL castObjToMultiSegmentCurve(obj,boundaryPolynomial)
-         
+
          WRITE(normUnit,*) TRIM(modelChain % curveName()), ",", boundaryPolynomial % nSegments
 
          DO c = 1, boundaryPolynomial % nSegments

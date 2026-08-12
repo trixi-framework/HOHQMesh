@@ -95,8 +95,12 @@ produces the output:
 
 In addition to the usual element quality measures, one sees that the $\mathbb H^1$ error is indeed bounded by the requested tolerance. If there is more than one boundary, they are listed by boundary name.
 
-HOHQMesh can optionally write out the boundary approximation errors to files for plotting and later analysis, whether or not the adaptive procedure is requested. The file can be written prepended with the name of the control file. It contains the integrated $\mathbb L^2$ and $\mathbb H^1$ norms, grouped by chain. To have these files written, include the following key in the [RUN_PARAMETERS](the-control-input.md#RunParameters) block:
+HOHQMesh can optionally write out the boundary approximation errors to a file for plotting and later analysis, whether or not the adaptive procedure is requested. If the statistics file key is present in the [RUN_PARAMETERS](the-control-input.md#RunParameters) block, e.g.,
 
-    error file name = <path_to_desired_file>
+    stats file name = path/desiredFileName.txt
 
-Choose the name to be `none` to turn off printing out the errors, or simply delete the line from the control file.
+then the boundary errors will be written to a separate file with the same name appended with `_ErrorNorms`.
+It contains the integrated $\mathbb L^2$ and $\mathbb H^1$ norms, grouped by chain.
+For the example above the boundary error file would be located in the same `path` as the statistics file
+with the name `desiredFileName_ErrorNorms.txt`.
+Choose the `stats file name` to be `none` to turn off printing out the errors, or simply delete the line from the control file.
