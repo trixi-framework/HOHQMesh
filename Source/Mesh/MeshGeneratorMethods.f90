@@ -2359,6 +2359,16 @@
                   newElement % boundaryInfo % bCurveName(j)          = NO_BC_STRING
                   oldElement % boundaryInfo % bCurveFlag(j)          = NONE
                   newElement % boundaryInfo % bCurveFlag(j)          = NONE
+!
+!                 -------------------------------------------------------------------------
+!                 Mark that the nodes that were on the symmetry boundary are off of it now.
+!                 The amount doesn't matter.
+!                 -------------------------------------------------------------------------
+!
+                  oldElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0 
+                  oldElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0
+                  newElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0 
+                  newElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0
                END IF 
             END DO
             
@@ -2386,8 +2396,7 @@
          
          DO WHILE( .NOT. nodeItr % isAtEnd() )
          
-            obj => nodeItr % object()
-            CALL castToSMNode(obj,oldNode)
+            CALL castToSMNode(nodeItr % object(),oldNode)
 !
             IF ( oldNode % bCurveID /= bCurveID )     THEN !Skip over nodes along the symmetry axis
 !
@@ -2414,7 +2423,7 @@
 !
                DO i = 1, numElementsForNode(oldNode % id) 
                   e => elementsForNodes(i, oldNode % id) % element
-                  DO j = 1, e % eType 
+                  DO j = 1, e % eType
                      IF ( ASSOCIATED(e % nodes(j) % node, oldNode) )     THEN
                         e % nodes(j) % node => newNode 
                         e % boundaryInfo % nodeIDs(j) = newNode % id
@@ -2479,7 +2488,6 @@
 !        Clean up
 !        --------
 !
-         CALL releaseFTLinkedListClass(newNodes)
          CALL releaseFTLinkedListClass(savedElements)
          CALL deallocateNodeToElementConnections
          
