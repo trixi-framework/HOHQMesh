@@ -424,9 +424,9 @@
          IMPLICIT NONE  
          INTEGER :: iUnit, s
 !
-!        ------------------------------------------------------------------
-!        Test printing the help message that the scatch file actually opens
-!        ------------------------------------------------------------------
+!        -------------------------------------------------------------------
+!        Test printing the help message that the scratch file actually opens
+!        -------------------------------------------------------------------
 !
          OPEN(NEWUNIT = iUnit, STATUS='SCRATCH', IOSTAT = s)
             CALL FTAssertEqual(expectedValue = 0,actualValue = s,msg = "Scratch file not opening")
