@@ -275,4 +275,33 @@
          END IF
 
       END SUBROUTINE ConvertToPath
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE RemoveWhitespace(str)
+!
+!     ------------------------------------------------------
+!     Removes whitespace, ' ',  in a string while destroying
+!     the string.
+!     ------------------------------------------------------
+!
+        IMPLICIT NONE
+      
+        CHARACTER(LEN=*), INTENT(INOUT) :: str
+        INTEGER                         :: i, j, n
+      
+        n = LEN(str)
+        j = 1
+      
+        DO i = 1, n
+           IF (str(i:i) /= ' ') THEN
+              str(j:j) = str(i:i)
+              j = j + 1
+           END IF
+        END DO
+      
+        ! Fill the remainder with blanks
+        IF (j <= n) str(j:n) = ' '
+      
+      END SUBROUTINE RemoveWhitespace
 

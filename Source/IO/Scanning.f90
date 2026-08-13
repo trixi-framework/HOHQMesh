@@ -12,7 +12,7 @@
    USE SMScannerClass
    IMPLICIT NONE
    PRIVATE
-   PUBLIC :: ScanForBreaks, ScanForBreaksIsOK, flaggingIsOK
+   PUBLIC :: ScanForBreaks, ScanForBreaksIsOK, flaggingIsOK, connectFormatCheck
 !
 !  ========
    CONTAINS
@@ -61,7 +61,7 @@
       REAL(KIND=RP)   :: c
 
       flagged = 0
-      CALL scanner % initWithString(connectionString,delims = ",-")
+      CALL scanner % initScannerWithString(connectionString,delims = ",-")
 !
 !     -------------------------------------------------------------
 !     Flag the locations (with a 1) where breaks will NOT be placed
@@ -173,7 +173,82 @@
       END DO
 
    END SUBROUTINE flagSegments
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION connectFormatCheck(str)
+!
+!     ---------------------------------------------------------------
+!     Takes a string and checks to see if it is in the format
+!     integer-integer[,integer-integer,...]
+!     where the first integer in each sequence is always to be 
+!     less than the second. Returns false if the format is incorrect.
+!     ---------------------------------------------------------------
+!
+        IMPLICIT NONE
+      
+        CHARACTER(LEN=*), INTENT(IN) :: str
+        INTEGER                      :: i, n, first, second
+        INTEGER                      :: start_pos, end_pos
+      
+        connectFormatCheck = .FALSE.
+        n = LEN_TRIM(str)
+      
+        IF (n == 0) RETURN
+      
 
+        i = 1
+      
+        DO
+           ! Read first integer
+           start_pos = i
+      
+           IF (i > n) RETURN
+           IF (str(i:i) < '0' .OR. str(i:i) > '9') RETURN
+      
+           DO WHILE (i <= n)
+              IF (str(i:i) < '0' .OR. str(i:i) > '9') EXIT
+              i = i + 1
+           END DO
+      
+           READ(str(start_pos:i-1), *) first
+      
+           ! Require '-'
+           IF (i > n) RETURN
+           IF (str(i:i) /= '-') RETURN
+           i = i + 1
+      
+           ! Read second integer
+           end_pos = i
+      
+           IF (i > n) RETURN
+           IF (str(i:i) < '0' .OR. str(i:i) > '9') RETURN
+      
+           DO WHILE (i <= n)
+              IF (str(i:i) < '0' .OR. str(i:i) > '9') EXIT
+              i = i + 1
+           END DO
+      
+           READ(str(end_pos:i-1), *) second
+      
+           ! First integer must be less than second
+           IF (first >= second) RETURN
+      
+           ! End of string: valid
+           IF (i > n) THEN
+              connectFormatCheck = .TRUE.
+              RETURN
+           END IF
+      
+           ! Otherwise require ','
+           IF (str(i:i) /= ',') RETURN
+           i = i + 1
+      
+           ! Comma must be followed by another range
+           IF (i > n) RETURN
+        END DO
+      
+      END FUNCTION connectFormatCheck
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -196,7 +271,7 @@
       LOGICAL         :: fail
 
       flagged = 0
-      CALL scanner % initWithString(str,delims = ",-")
+      CALL scanner % initScannerWithString(str,delims = ",-")
 
       CALL flagSegments(scanner, flagged, flagCount, 1, fail)
 
