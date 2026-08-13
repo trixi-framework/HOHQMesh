@@ -574,7 +574,7 @@
 !
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
          INTEGER      , PARAMETER                :: DONT_SKIP = 0, SKIP = 1
-         INTEGER                                 :: j
+         TYPE(FTException), POINTER              :: e
 !
          curveChain % optimization = NONE
          IF ( curveDict % containsKey(CHAIN_OPTIMIZATION_KEY) )     THEN
@@ -634,19 +634,47 @@
                   curveChain % breaks = [0.0_RP, 1.0_RP]
                ELSE
                   str = curveDict % stringValueForKey(CHAIN_BREAKS_KEY)
-                  CALL ScanForBreaks(str, curveChain % breaks, curveChain % COUNT() )
+                  CALL RemoveWhitespace(str)
+                  
+                  IF ( .NOT.connectFormatCheck(str) )     THEN
+!
+!                    --------------------------------------------------------------
+!                    Ill-formed connect string. Post a warning exception and ignore
+!                    --------------------------------------------------------------
+!
+                     ALLOCATE(e)
+                     CALL e % initWarningException("Format Error in connect statement:" // TRIM(str)//". Ignoring.")
+                     CALL throw(e)
+                     CALL releaseFTException(e)
+                     CALL SetDefaultBreaks(curveChain)
+                  ELSE
+
+                     CALL ScanForBreaks(str, curveChain % breaks, curveChain % COUNT() )
+
+                  END IF 
                END IF
             ELSE
-               IF ( curveChain % COUNT() == 1 )     THEN ! No breaks if there is only one curve
-                  curveChain % breaks = [0.0_RP, 1.0_RP]
-               ELSE                                      ! Break all curves
-                  ALLOCATE(curveChain % breaks(0:curveChain % COUNT()))
-                  curveChain % breaks = [(REAL(j,RP)/REAL(curveChain % COUNT(), RP),j=0,curveChain % COUNT())]
-               END IF
+               CALL SetDefaultBreaks(curveChain)
             END IF
          END IF
 
       END SUBROUTINE SetChainOptimizationParameters
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE SetDefaultBreaks(curveChain)  
+         IMPLICIT NONE  
+         CLASS(SMChainedCurve), POINTER :: curveChain
+         INTEGER                        :: j
+         
+         IF ( curveChain % COUNT() == 1 )     THEN ! No breaks if there is only one curve
+            curveChain % breaks = [0.0_RP, 1.0_RP]
+         ELSE                                      ! Break all curves
+            ALLOCATE(curveChain % breaks(0:curveChain % COUNT()))
+            curveChain % breaks = [(REAL(j,RP)/REAL(curveChain % COUNT(), RP),j=0,curveChain % COUNT())]
+         END IF
+
+      END SUBROUTINE SetDefaultBreaks
 !
 !////////////////////////////////////////////////////////////////////////
 !

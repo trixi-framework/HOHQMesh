@@ -69,8 +69,7 @@
 !
       CALL flagSegments(scanner, flagged, flagCount, 1, fail)
       IF ( fail )     THEN
-         WRITE(0,*) "Scanning of the following connection lines failed with a syntax error"
-         WRITE(0,*) TRIM(connectionString)
+         WRITE(0,*) "Error in connectionString: ", TRIM(connectionString)
          RETURN
       END IF
 
@@ -98,6 +97,9 @@
 !  in the form of start-stop, e.g. 4-6, separated by commas. Set
 !  the entry in the array flagged to flagOn for each element of each group
 !  For this procedure, the scanner must include "-" and "," as the delimiters.
+!
+!  BEFORE CALLING THIS PROCEDURE, ENSURE THAT connectFormatCheck HAS BEEN
+!  CALLED ON THE SCANNER'S STRING. NO FORMAT CHECKING IS DONE HERE.
 !  -----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -131,35 +133,13 @@
 !        ------------------------
 !
          strt = scanInt(scanner)
-!
-!        ---------------------------------------------------
-!        The delimiter that stops this scan must be a "-" or
-!        there is an error in the string
-!        ---------------------------------------------------
-!
-         IF ( scanner % lastDelimiter() .NE. "-" )     THEN
-            WRITE(0,*) "String start configuration error"
-            fail = .TRUE.
-            RETURN
-         END IF
-
-         stp = scanInt(scanner)
-!
-!        --------------------------------------------------------
-!        After the integer is scanned, the next delimiter must be
-!        either a comma or an end of string. It cannot be a "-"
-!        --------------------------------------------------------
-!
-         IF ( scanner % lastDelimiter() .EQ. "-")     THEN
-            WRITE(0,*) "String stop configuration error"
-            fail = .TRUE.
-            RETURN
-         END IF
+         stp  = scanInt(scanner)
 !
 !        --------------------------------------------------------
 !        At the end of the string, we don't flag the last segment
 !        --------------------------------------------------------
 !
+         stp = MIN(stp,fSize)
          DO k = strt, stp-1
             flagged(k) = flagOn
             flagCount  = flagCount + 1
