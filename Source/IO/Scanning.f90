@@ -12,7 +12,7 @@
    USE SMScannerClass
    IMPLICIT NONE
    PRIVATE
-   PUBLIC :: ScanForBreaks, ScanForBreaksIsOK, flaggingIsOK
+   PUBLIC :: ScanForBreaks, ScanForBreaksIsOK, flaggingIsOK, connectFormatCheck
 !
 !  ========
    CONTAINS
@@ -61,7 +61,7 @@
       REAL(KIND=RP)   :: c
 
       flagged = 0
-      CALL scanner % initWithString(connectionString,delims = ",-")
+      CALL scanner % initScannerWithString(connectionString,delims = ",-")
 !
 !     -------------------------------------------------------------
 !     Flag the locations (with a 1) where breaks will NOT be placed
@@ -69,8 +69,7 @@
 !
       CALL flagSegments(scanner, flagged, flagCount, 1, fail)
       IF ( fail )     THEN
-         WRITE(0,*) "Scanning of the following connection lines failed with a syntax error"
-         WRITE(0,*) TRIM(connectionString)
+         WRITE(0,*) "Error in connectionString: ", TRIM(connectionString)
          RETURN
       END IF
 
@@ -98,6 +97,9 @@
 !  in the form of start-stop, e.g. 4-6, separated by commas. Set
 !  the entry in the array flagged to flagOn for each element of each group
 !  For this procedure, the scanner must include "-" and "," as the delimiters.
+!
+!  BEFORE CALLING THIS PROCEDURE, ENSURE THAT connectFormatCheck HAS BEEN
+!  CALLED ON THE SCANNER'S STRING. NO FORMAT CHECKING IS DONE HERE.
 !  -----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -131,35 +133,13 @@
 !        ------------------------
 !
          strt = scanInt(scanner)
-!
-!        ---------------------------------------------------
-!        The delimiter that stops this scan must be a "-" or
-!        there is an error in the string
-!        ---------------------------------------------------
-!
-         IF ( scanner % lastDelimiter() .NE. "-" )     THEN
-            WRITE(0,*) "String start configuration error"
-            fail = .TRUE.
-            RETURN
-         END IF
-
-         stp = scanInt(scanner)
-!
-!        --------------------------------------------------------
-!        After the integer is scanned, the next delimiter must be
-!        either a comma or an end of string. It cannot be a "-"
-!        --------------------------------------------------------
-!
-         IF ( scanner % lastDelimiter() .EQ. "-")     THEN
-            WRITE(0,*) "String stop configuration error"
-            fail = .TRUE.
-            RETURN
-         END IF
+         stp  = scanInt(scanner)
 !
 !        --------------------------------------------------------
 !        At the end of the string, we don't flag the last segment
 !        --------------------------------------------------------
 !
+         stp = MIN(stp,fSize)
          DO k = strt, stp-1
             flagged(k) = flagOn
             flagCount  = flagCount + 1
@@ -173,7 +153,82 @@
       END DO
 
    END SUBROUTINE flagSegments
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION connectFormatCheck(str)
+!
+!     ---------------------------------------------------------------
+!     Takes a string and checks to see if it is in the format
+!     integer-integer[,integer-integer,...]
+!     where the first integer in each sequence is always to be 
+!     less than the second. Returns false if the format is incorrect.
+!     ---------------------------------------------------------------
+!
+        IMPLICIT NONE
+      
+        CHARACTER(LEN=*), INTENT(IN) :: str
+        INTEGER                      :: i, n, first, second
+        INTEGER                      :: start_pos, end_pos
+      
+        connectFormatCheck = .FALSE.
+        n = LEN_TRIM(str)
+      
+        IF (n == 0) RETURN
+      
 
+        i = 1
+      
+        DO
+           ! Read first integer
+           start_pos = i
+      
+           IF (i > n) RETURN
+           IF (str(i:i) < '0' .OR. str(i:i) > '9') RETURN
+      
+           DO WHILE (i <= n)
+              IF (str(i:i) < '0' .OR. str(i:i) > '9') EXIT
+              i = i + 1
+           END DO
+      
+           READ(str(start_pos:i-1), *) first
+      
+           ! Require '-'
+           IF (i > n) RETURN
+           IF (str(i:i) /= '-') RETURN
+           i = i + 1
+      
+           ! Read second integer
+           end_pos = i
+      
+           IF (i > n) RETURN
+           IF (str(i:i) < '0' .OR. str(i:i) > '9') RETURN
+      
+           DO WHILE (i <= n)
+              IF (str(i:i) < '0' .OR. str(i:i) > '9') EXIT
+              i = i + 1
+           END DO
+      
+           READ(str(end_pos:i-1), *) second
+      
+           ! First integer must be less than second
+           IF (first >= second) RETURN
+      
+           ! End of string: valid
+           IF (i > n) THEN
+              connectFormatCheck = .TRUE.
+              RETURN
+           END IF
+      
+           ! Otherwise require ','
+           IF (str(i:i) /= ',') RETURN
+           i = i + 1
+      
+           ! Comma must be followed by another range
+           IF (i > n) RETURN
+        END DO
+      
+      END FUNCTION connectFormatCheck
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -196,7 +251,7 @@
       LOGICAL         :: fail
 
       flagged = 0
-      CALL scanner % initWithString(str,delims = ",-")
+      CALL scanner % initScannerWithString(str,delims = ",-")
 
       CALL flagSegments(scanner, flagged, flagCount, 1, fail)
 

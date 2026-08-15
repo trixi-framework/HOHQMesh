@@ -423,10 +423,51 @@
          USE FTAssertions
          IMPLICIT NONE  
          INTEGER :: iUnit, s
-         
+!
+!        -------------------------------------------------------------------
+!        Test printing the help message that the scratch file actually opens
+!        -------------------------------------------------------------------
+!
          OPEN(NEWUNIT = iUnit, STATUS='SCRATCH', IOSTAT = s)
             CALL FTAssertEqual(expectedValue = 0,actualValue = s,msg = "Scratch file not opening")
             CALL PrintHelpMessage(iUnit)
          CLOSE(iUnit)
-
+!
+!        -------------------------------
+!        Add test for whitespace removal
+!        -------------------------------
+!
+         CALL test_RemoveWhitespace()
+         
       END SUBROUTINE MiscTests
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE test_RemoveWhitespace()
+         USE TestSuiteManagerClass
+         USE FTAssertions
+         IMPLICIT NONE
+      
+        CHARACTER(LEN=30) :: str
+      
+        str = '1 - 10, 20 - 30'
+        CALL RemoveWhitespace(str)
+        CALL FTAssert(TRIM(str) == '1-10,20-30',"WHITESPACE TEST FAILED: basic whitespace")
+      
+        str = '   1-10   '
+        CALL RemoveWhitespace(str)
+        CALL FTAssert(TRIM(str) == '1-10',"WHITESPACE TEST FAILED: leading/trailing whitespace")
+      
+        str = '1  -  10,  20  -  30'
+        CALL RemoveWhitespace(str)
+        CALL FTAssert(TRIM(str) == '1-10,20-30',"WHITESPACE TEST FAILED: multiple spaces")
+      
+        str = '1-10'
+        CALL RemoveWhitespace(str)
+        CALL FTAssert(TRIM(str) == '1-10',"WHITESPACE TEST FAILED: no whitespace")
+      
+        str = '     '
+        CALL RemoveWhitespace(str)
+        CALL FTAssert(LEN_TRIM(str) == 0,"WHITESPACE TEST FAILED: all whitespace")
+      
+      END SUBROUTINE test_RemoveWhitespace

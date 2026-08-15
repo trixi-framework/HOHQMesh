@@ -10,7 +10,7 @@
 !>      Usage:
 !>
 !>         Initialization
-!>            self % initWithString(str, delims)
+!>            self % initScannerWithString(str, delims)
 !>
 !>               str    is the string to be scanned
 !>               delims is a string of the delimiters, e.g. "[,]" to delimit
@@ -47,7 +47,7 @@
 !>
 !>            CHARACTER(LEN = 12) :: str  = "[124, 2.718]"
 !>            CHARACTER(LEN=3)    :: dlms = "[],"
-!>            CALL scanner % initWithString(str,dlms)
+!>            CALL scanner % initScannerWithString(str,dlms)
 !>            done       = scanner % scanUpToString("[")
 !>            intResult  = scanner % scanInt()  ! = 124
 !>            realResult = scanner % scanReal() ! = 2.178
@@ -71,7 +71,7 @@
       CONTAINS
 !     ========
 !
-      PROCEDURE :: initWithString
+      PROCEDURE :: initScannerWithString
       PROCEDURE :: reset
       PROCEDURE :: scanUpToString
       PROCEDURE :: scanInt
@@ -90,7 +90,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   SUBROUTINE initWithString(self, str, delims)
+   SUBROUTINE initScannerWithString(self, str, delims)
       IMPLICIT NONE
       CLASS(SMScanner)  :: self
       CHARACTER(LEN=*)  :: str
@@ -103,7 +103,7 @@
       self % endPos     = LEN_TRIM(str)
       self % delm       = ""
 
-   END SUBROUTINE initWithString
+   END SUBROUTINE initScannerWithString
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -330,7 +330,7 @@
 
       scanUpToTest = .TRUE.
 
-      CALL scanner % initWithString(str,dlms)
+      CALL scanner % initScannerWithString(str,dlms)
       done = scanner % scanUpToString("[")
       IF(done) scanUpToTest = .FALSE.
       scanUpToTest = scanUpToTest .AND. scanner % cursorPos == p(1)
@@ -361,7 +361,7 @@
       INTEGER             :: intResult
       REAL(KIND(1.0d0))   :: realResult
 
-      CALL scanner % initWithString(str,dlms)
+      CALL scanner % initScannerWithString(str,dlms)
       done     = scanner % scanUpToString("[")
       scanTest = .NOT.done
 !
@@ -426,7 +426,7 @@
 !     Failures
 !     --------
 !
-      CALL scanner % initWithString(str2,dlms)
+      CALL scanner % initScannerWithString(str2,dlms)
       done     = scanner % scanUpToString("[")
       scanTest = .NOT.done
 !
@@ -472,7 +472,7 @@
 !     Test success
 !     ------------
 !
-      CALL scanner % initWithString(str,dlms)
+      CALL scanner % initScannerWithString(str,dlms)
       done     = scanner % scanUpToString("=")
       scanArrayTest = .NOT.done
       IF(done) RETURN
@@ -485,7 +485,7 @@
 !     Test failure
 !     ------------
 !
-      CALL scanner % initWithString(failStr,dlms)
+      CALL scanner % initScannerWithString(failStr,dlms)
       done     = scanner % scanUpToString("=")
       scanArrayTest = scanArrayTest .AND. .NOT.done
       IF(done) RETURN
