@@ -917,7 +917,7 @@
 !
 !        TODO: ResizeSegmentedCurves is introduced to solve the dilemma that
 !              in order to determine the distances curves are from eachother,
-!              they must be discetized, but once the distances are found, it
+!              they must be discretized, but once the distances are found, it
 !              may be true that the spacing between the points is large in
 !              comparison. ResizeSegmentedCurves goes back and compares the
 !              spacing between the points in the segmented curves to the

@@ -56,6 +56,7 @@
 !        -----------------------------
 !
          INTEGER, PARAMETER :: ROW_END = 1, ROW_SIDE = 2, ROW_REVERSAL = 3, CORNER_NODE = 4, ROW_CORNER = 5
+         INTEGER, PARAMETER :: ROW_SIDE_JOINT = 6
 !
 !        ---------------------------
 !        Meshing operation constants
