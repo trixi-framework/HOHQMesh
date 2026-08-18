@@ -2837,7 +2837,7 @@
 !
             crv => modelChain
             IF ( modelChain % optimization /= NONE .AND. performOptimization)     THEN
-      
+     
                CALL SetDefaultOptions(options)
                options % whichNorm = modelChain % optimization
                CALL OptimizeCurve(curve              = crv,                     &
@@ -3085,8 +3085,9 @@
                                    chain           = modelChain)
             END DO 
          END DO 
-         
+
          DEALLOCATE(chainNodesArray)
+!         DEALLOCATE(modelChains)
          
       END SUBROUTINE RedistributeNodesAlongBoundaries
 !
