@@ -3084,6 +3084,13 @@
                                    shft            = shft,                       &
                                    chain           = modelChain)
             END DO 
+!
+!           --------------------------------------------
+!           Release local memory for next boundary chain
+!           --------------------------------------------
+!
+            DEALLOCATE(ends)
+            DEALLOCATE(nodeTs)
          END DO 
 
          DEALLOCATE(chainNodesArray)
