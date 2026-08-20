@@ -668,7 +668,7 @@
 
             SELECT CASE ( jointType )
 
-               CASE( NONE, ROW_SIDE, ROW_SIDE_JOINT )
+               CASE( NONE, ROW_SIDE )
 !
 !                 ---------------------------------------------------------------
 !                 Create one element by projecting the edge to the boundary curve
@@ -1741,7 +1741,7 @@
          REAL(KIND=RP)                             :: t, dt, t0, t1, x, dMin, d
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
 
-         nodeArray     => GatheredNodes( list )
+        nodeArray     => GatheredNodes( list )
          nodeArraySize = SIZE(nodeArray)
 !
 !        -------------------------
@@ -1798,28 +1798,17 @@
               CALL ThrowErrorExceptionOfType("FlagEndNodes", msg, FT_ERROR_FATAL)
               RETURN
            END IF
-           nodeArray(jNode0) % node % whereOnBoundary  = 0.0_RP
-           nodeArray(jNode0) % node % gWhereOnBoundary = 0.0_RP
-           IF ( boundaryCurve % jointClassification(0) == ROW_SIDE )     THEN
-              nodeArray(jNode0) % node % nodeType =  ROW_SIDE_JOINT
-           ELSE 
-              nodeArray(jNode0) % node % nodeType = boundaryCurve % jointClassification(0)
-           END IF 
-           nodeArray(jNode0) % node % bCurveID = boundaryCurve % myCurveIDs(1)
+           nodeArray(jNode0) % node % whereOnBoundary = 0.0_RP
+           nodeArray(jNode0) % node % nodeType        = boundaryCurve % jointClassification(0)
+           nodeArray(jNode0) % node % bCurveID        = boundaryCurve % myCurveIDs(1)
          ELSE
            IF ( jNode1 < 0 )     THEN
               WRITE(msg,*) "Joint node 1 not found"
               CALL ThrowErrorExceptionOfType("FlagEndNodes", msg, FT_ERROR_FATAL)
               RETURN
            END IF
-           nodeArray(jNode1) % node % whereOnBoundary  = 1.0_RP
-           nodeArray(jNode1) % node % gWhereOnBoundary = 1.0_RP
-           IF ( boundaryCurve % jointClassification(0) == ROW_SIDE )     THEN
-              nodeArray(jNode1) % node % nodeType = ROW_SIDE_JOINT
-           ELSE 
-              nodeArray(jNode1) % node % nodeType = boundaryCurve % jointClassification(0)
-           END IF 
-           nodeArray(jNode0) % node % bCurveID = boundaryCurve % myCurveIDs(boundaryCurve % numberOfCurvesInChain)
+           nodeArray(jNode1) % node % whereOnBoundary = 1.0_RP
+           nodeArray(jNode1) % node % nodeType        = boundaryCurve % jointClassification(0)
          END IF
 !
 !       --------------------

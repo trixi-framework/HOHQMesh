@@ -700,7 +700,6 @@
          REAL(KIND=RP)  , ALLOCATABLE :: x(:,:)
          INTEGER                      :: nNodes, j, k
 
-
          nodeArray => GatheredNodes( list )
          nNodes    = SIZE(nodeArray)
          ALLOCATE( x(3,nNodes) )
@@ -859,7 +858,6 @@
          REAL(KIND=RP)                            :: d, dMin, dt
          INTEGER                                  :: j, k, M
          INTEGER                                  :: totalCurvePoints
-
          nodePtrs => GatheredNodes( list )
 !
 !        -----------------------------------------------------------------
