@@ -1,6 +1,6 @@
 # Examples
 
-HOHQMesh comes with 19 example control, mesh, and plot files for two-dimensional meshes found in the *Examples/2D* directory. These examples illustrate the use of the the control and model features, and the resulting meshes and plot files.
+HOHQMesh comes with 19 example control, mesh, and plot files for two-dimensional meshes found in the *Examples/2D* directory. These examples illustrate the use of the the control and model features, and the resulting meshes and plot files. They are set up to be run out-of-the-box from the main HOHQMesh directory. To use them in other directories, simply change the file paths for the output files in the control file, as described in the [documentation](Documentation/docs/the-control-input.md) for the control file.
 
 Also included in the Examples directory is a control template: ControlTemplate.control,
 that can (like any of the examples) be modified at will.
