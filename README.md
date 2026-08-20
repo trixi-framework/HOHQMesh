@@ -183,19 +183,26 @@ To mesh a control file, type
 where `-f` allows you to provide the path to the control file for which you want
 to create your mesh.
 
-For example, if you are inside the HOHQMesh root directory, you can run
+## Examples
+
+About thirty examples can be found in the `Examples` directory. These examples are set up to run out-of-the-box from the main HOHQMesh directory. 
+
+For example, from inside the HOHQMesh root directory, you can run
 ```shell
 ./HOHQMESH -f Examples/2D/GingerbreadMan/GingerbreadMan.control
 ```
-to generate a mesh for a gingerbread man geometry. This will produce three files,
+to generate a mesh for a gingerbread man geometry. This will produce four files,
 ```
 Examples/2D/GingerbreadMan/GingerbreadManMesh.mesh
 Examples/2D/GingerbreadMan/GingerbreadManPlot.tec
 Examples/2D/GingerbreadMan/GingerbreadManStats.txt
+Examples/2D/GingerbreadMan/GingerbreadManStats_ErrorNorms.txt
 ```
 where the `.mesh` file stores the actual mesh, the `.tec` file is a Tecplot-compatible
-visualization file, and the `.txt` file contains statistical information on the mesh
+visualization file, and the two `.txt` file contain statistical and error norm information on the mesh
 quality.
+
+You can, however, work from any directory you like by changing the file paths in the control files, see the [documentation](Documentation/docs/the-control-input.md).
 
 The Tecplot file can be visualized, e.g., using the open-source software
 [ParaView](https://www.paraview.org), which has a built-in Tecplot reader. In the case of
