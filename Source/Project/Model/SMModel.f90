@@ -604,7 +604,7 @@
             END IF
 
             IF ( curveDict % containsKey(CHAIN_TOLERANCE_KEY) )     THEN
-               curveChain % tolerance = curveDict % realValueForKey(CHAIN_TOLERANCE_KEY)
+               curveChain % tolerance = curveDict % doublePrecisionValueForKey(CHAIN_TOLERANCE_KEY)
             ELSE
                curveChain % tolerance = 1.0d-3
                str = "Optimization tolerance key not found in " // &

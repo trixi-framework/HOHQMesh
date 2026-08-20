@@ -364,7 +364,7 @@
 !
 !     ----------------------------------------
 !     Actually do the deletion. At this point,
-!     any temoraries are out of sync.
+!     any temporaries are out of sync.
 !     ----------------------------------------
 !
       CALL DoLazyDelete( mesh )
