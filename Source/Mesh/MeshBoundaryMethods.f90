@@ -1563,7 +1563,8 @@
          INTEGER                              :: id, j, i, k, n
          REAL(KIND=RP)                        :: prevT, currentT
          LOGICAL                              :: reOrder
-         TYPE(SMNodePtr)                      :: tmpNode
+         TYPE(SMNode)               , POINTER :: tmpNode
+         REAL(KIND=RP) :: startTime, endtime!DEBUG
 !
 !
 !        -----------------------------------------------------
@@ -1664,28 +1665,31 @@
                CALL listIterator % moveToNext()
             END DO
 !
-!           ------------------------------------
-!           Ensure the boundary nodes in a chain
-!           are ordered. Particularly important
-!           for any interfaceBoundaries. This
-!           uses a simple insertion sort.
-!           ------------------------------------
+!           --------------------------------------------------------------------------
+!           Ensure the boundary nodes in a chain are ordered. Particularly important
+!           for any interfaceBoundaries. This uses a simple insertion sort. Code is
+!           included to do a quickSort on this data at the end of the module, should
+!           there be a switch desired. But in early testing on the meshes that we
+!           generate, the insertion sort wins in cpu time, so we're going with that.
+!           -------------------------------------------------------------------------
 !
             ! TODO: Maybe add a Circulation check here
             ! So this only happens when necessary?
             n = SIZE(chainNodesArray(id) % array)
+!            CALL QuickSort(chainNodesArray(id) % array, 1, n)
+
             DO i = 2, n
-               tmpNode = chainNodesArray(id) % array(i)
+               tmpNode => chainNodesArray(id) % array(i) % node
 
                k = i - 1
-               currentT = tmpNode % node % gWhereOnBoundary
-               DO WHILE (k >= 1 .AND. &
-                         chainNodesArray(id) % array(k) % node % gWhereOnBoundary > currentT)
-                  chainNodesArray(id) % array(k+1) = chainNodesArray(id) % array(k)
+               currentT = tmpNode % gWhereOnBoundary
+               DO WHILE (chainNodesArray(id) % array(k) % node % gWhereOnBoundary > currentT)
+                  chainNodesArray(id) % array(k+1) % node => chainNodesArray(id) % array(k) % node
                   k = k - 1
+                  IF(k == 0) EXIT
                END DO
 
-               chainNodesArray(id) % array(k+1) = tmpNode
+               chainNodesArray(id) % array(k+1) % node => tmpNode
             END DO
          END DO
 !
@@ -1703,5 +1707,99 @@
          CALL releaseFTLinkedListClass(boundaryNodesList)
 
       END SUBROUTINE SortBoundaryNodesToChains
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      RECURSIVE SUBROUTINE QuickSort(nodeArray, left, right)
+        TYPE(SMNodePtr), INTENT(INOUT) :: nodeArray(:)
+        INTEGER        , INTENT(IN)    :: left, right
+
+        INTEGER               :: i, j
+        REAL(KIND=RP)         :: pivot
+        TYPE(SMNode), POINTER :: temp
+
+        IF (right - left <= 20) THEN
+            CALL InsertionSort(nodeArray, left, right)
+            RETURN
+        END IF
+
+        ! Median-of-three pivot selection
+        pivot = MedianOfThree(nodeArray(left)  % node % gWhereOnBoundary,         &
+                             (nodeArray(left)  % node % gWhereOnBoundary +        &
+                              nodeArray(left)  % node % gWhereOnBoundary)/2.0_RP, &
+                              nodeArray(right) % node % gWhereOnBoundary)
+        i = left
+        j = right
+
+        DO
+            DO WHILE (nodeArray(i) % node % gWhereOnBoundary < pivot)
+                i = i + 1
+            END DO
+
+            DO WHILE (nodeArray(j) % node % gWhereOnBoundary > pivot)
+                j = j - 1
+            END DO
+
+            IF (i <= j) THEN
+                temp => nodeArray(i) % node
+                nodeArray(i) % node => nodeArray(j) % node
+                nodeArray(j) % node => temp
+
+                i = i + 1
+                j = j - 1
+            END IF
+
+            IF (i > j) EXIT
+        END DO
+
+        IF (left < j)  CALL quickSort(nodeArray, left, j)
+        IF (i < right) CALL quickSort(nodeArray, i, right)
+
+    END SUBROUTINE QuickSort
+!
+!////////////////////////////////////////////////////////////////////////
+!
+    PURE FUNCTION MedianOfThree(x, y, z) RESULT(median)
+        REAL(KIND=RP), INTENT(IN) :: x, y, z
+        REAL(KIND=RP)             :: median
+
+        median = MAX(MIN(x, y), MIN(MAX(x, y), z))
+    END FUNCTION MedianOfThree
+!
+!////////////////////////////////////////////////////////////////////////
+!
+    SUBROUTINE InsertionSort(nodeArray, left, right)
+!
+!      ---------
+!      Arguments
+!      ---------
+!
+        TYPE(SMNodePtr), INTENT(INOUT) :: nodeArray(:)
+        INTEGER, INTENT(IN)            :: left, right
+        REAL(KIND=RP)                  :: key
+!
+!       ---------------
+!       Local variables
+!       ---------------
+!
+        TYPE(SMNode), POINTER :: tmpNode
+        INTEGER               :: i, j
+
+        DO i = left + 1, right
+            tmpNode => nodeArray(i) % node
+            key     = tmpNode % gWhereOnBoundary
+            j       = i - 1
+
+            DO WHILE (j >= left)
+                IF (nodeArray(j) % node % gWhereOnBoundary <= key) EXIT
+
+                nodeArray(j + 1) % node => nodeArray(j) % node
+                j = j - 1
+            END DO
+
+            nodeArray(j + 1) % node => tmpNode
+        END DO
+
+    END SUBROUTINE InsertionSort
 
    END MODULE MeshBoundaryMethodsModule
