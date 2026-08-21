@@ -1610,11 +1610,11 @@
             obj => iterator
            CALL release(obj)
         END IF
-!!
-!!        --------------------
-!!        Interface boundaries
-!!        --------------------
-!!
+!
+!        --------------------
+!        Interface boundaries
+!        --------------------
+!
          IF( ASSOCIATED( self % interfaceBoundaries ) )     THEN
             ALLOCATE(iterator)
             CALL iterator % initWithFTLinkedList(self % interfaceBoundaries)
@@ -1638,7 +1638,6 @@
 !              Component curve settings
 !              ------------------------
 !
-
                DO j = 1, chain % COUNT()
                    obj => chain % curvesArray % objectAtIndex(j)
                    CALL cast(obj,currentCurve)
