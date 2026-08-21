@@ -797,7 +797,7 @@
             chain => model % chainWithID(chainID)
 !
 !           --------------------------------------------------------
-!           Bail of the chain for this edge curve ID cannot be found
+!           Bail if the chain for this edge curve ID cannot be found
 !           --------------------------------------------------------
 !
             IF ( .NOT.ASSOCIATED(chain) )     THEN
@@ -937,7 +937,7 @@
             tStart = t - dt
             tEnd   = t + dt
             IF(tStart < 0.0_RP) tStart = 0.0_RP
-            IF(tEnd> 1.0_RP) tEnd = 1.0_RP
+            IF(tEnd > 1.0_RP) tEnd = 1.0_RP
 !
 !           --------------------------------------------
 !           Make sure that the locations do not straddle
@@ -1560,9 +1560,10 @@
          TYPE (SMNode)              , POINTER :: currentNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          CLASS(FTLinkedListRecord)  , POINTER :: previousRecord, currentRecord
-         INTEGER                              :: id, j
+         INTEGER                              :: id, j, i, k, n
          REAL(KIND=RP)                        :: prevT, currentT
          LOGICAL                              :: reOrder
+         TYPE(SMNodePtr)                      :: tmpNode
 !
 !
 !        -----------------------------------------------------
@@ -1661,6 +1662,30 @@
                CALL castToSMNode(obj,currentNode)
                chainNodesArray(id) % array(j) % node => currentNode
                CALL listIterator % moveToNext()
+            END DO
+!
+!           ------------------------------------
+!           Ensure the boundary nodes in a chain
+!           are ordered. Particularly important
+!           for any interfaceBoundaries. This
+!           uses a simple insertion sort.
+!           ------------------------------------
+!
+            ! TODO: Maybe add a Circulation check here
+            ! So this only happens when necessary?
+            n = SIZE(chainNodesArray(id) % array)
+            DO i = 2, n
+               tmpNode = chainNodesArray(id) % array(i)
+
+               k = i - 1
+               currentT = tmpNode % node % gWhereOnBoundary
+               DO WHILE (k >= 1 .AND. &
+                         chainNodesArray(id) % array(k) % node % gWhereOnBoundary > currentT)
+                  chainNodesArray(id) % array(k+1) = chainNodesArray(id) % array(k)
+                  k = k - 1
+               END DO
+
+               chainNodesArray(id) % array(k+1) = tmpNode
             END DO
          END DO
 !
