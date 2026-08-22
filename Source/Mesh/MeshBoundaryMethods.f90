@@ -1709,96 +1709,96 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE QuickSort(nodeArray, left, right)
-        TYPE(SMNodePtr), INTENT(INOUT) :: nodeArray(:)
-        INTEGER        , INTENT(IN)    :: left, right
-
-        INTEGER               :: i, j
-        REAL(KIND=RP)         :: pivot
-        TYPE(SMNode), POINTER :: temp
-
-        IF (right - left <= 20) THEN
-            CALL InsertionSort(nodeArray, left, right)
-            RETURN
-        END IF
-
-        ! Median-of-three pivot selection
-        pivot = MedianOfThree(nodeArray(left)  % node % gWhereOnBoundary,         &
-                             (nodeArray(left)  % node % gWhereOnBoundary +        &
-                              nodeArray(left)  % node % gWhereOnBoundary)/2.0_RP, &
-                              nodeArray(right) % node % gWhereOnBoundary)
-        i = left
-        j = right
-
-        DO
-            DO WHILE (nodeArray(i) % node % gWhereOnBoundary < pivot)
-                i = i + 1
-            END DO
-
-            DO WHILE (nodeArray(j) % node % gWhereOnBoundary > pivot)
-                j = j - 1
-            END DO
-
-            IF (i <= j) THEN
-                temp => nodeArray(i) % node
-                nodeArray(i) % node => nodeArray(j) % node
-                nodeArray(j) % node => temp
-
-                i = i + 1
-                j = j - 1
-            END IF
-
-            IF (i > j) EXIT
-        END DO
-
-        IF (left < j)  CALL quickSort(nodeArray, left, j)
-        IF (i < right) CALL quickSort(nodeArray, i, right)
-
-    END SUBROUTINE QuickSort
+!      RECURSIVE SUBROUTINE QuickSort(nodeArray, left, right)
+!        TYPE(SMNodePtr), INTENT(INOUT) :: nodeArray(:)
+!        INTEGER        , INTENT(IN)    :: left, right
 !
-!////////////////////////////////////////////////////////////////////////
+!        INTEGER               :: i, j
+!        REAL(KIND=RP)         :: pivot
+!        TYPE(SMNode), POINTER :: temp
 !
-    PURE FUNCTION MedianOfThree(x, y, z) RESULT(median)
-        REAL(KIND=RP), INTENT(IN) :: x, y, z
-        REAL(KIND=RP)             :: median
-
-        median = MAX(MIN(x, y), MIN(MAX(x, y), z))
-    END FUNCTION MedianOfThree
+!        IF (right - left <= 20) THEN
+!            CALL InsertionSort(nodeArray, left, right)
+!            RETURN
+!        END IF
 !
-!////////////////////////////////////////////////////////////////////////
+!        ! Median-of-three pivot selection
+!        pivot = MedianOfThree(nodeArray(left)  % node % gWhereOnBoundary,         &
+!                             (nodeArray(left)  % node % gWhereOnBoundary +        &
+!                              nodeArray(left)  % node % gWhereOnBoundary)/2.0_RP, &
+!                              nodeArray(right) % node % gWhereOnBoundary)
+!        i = left
+!        j = right
 !
-    SUBROUTINE InsertionSort(nodeArray, left, right)
+!        DO
+!            DO WHILE (nodeArray(i) % node % gWhereOnBoundary < pivot)
+!                i = i + 1
+!            END DO
 !
-!      ---------
-!      Arguments
-!      ---------
+!            DO WHILE (nodeArray(j) % node % gWhereOnBoundary > pivot)
+!                j = j - 1
+!            END DO
 !
-        TYPE(SMNodePtr), INTENT(INOUT) :: nodeArray(:)
-        INTEGER, INTENT(IN)            :: left, right
-        REAL(KIND=RP)                  :: key
+!            IF (i <= j) THEN
+!                temp => nodeArray(i) % node
+!                nodeArray(i) % node => nodeArray(j) % node
+!                nodeArray(j) % node => temp
 !
-!       ---------------
-!       Local variables
-!       ---------------
+!                i = i + 1
+!                j = j - 1
+!            END IF
 !
-        TYPE(SMNode), POINTER :: tmpNode
-        INTEGER               :: i, j
-
-        DO i = left + 1, right
-            tmpNode => nodeArray(i) % node
-            key     = tmpNode % gWhereOnBoundary
-            j       = i - 1
-
-            DO WHILE (j >= left)
-                IF (nodeArray(j) % node % gWhereOnBoundary <= key) EXIT
-
-                nodeArray(j + 1) % node => nodeArray(j) % node
-                j = j - 1
-            END DO
-
-            nodeArray(j + 1) % node => tmpNode
-        END DO
-
-    END SUBROUTINE InsertionSort
+!            IF (i > j) EXIT
+!        END DO
+!
+!        IF (left < j)  CALL quickSort(nodeArray, left, j)
+!        IF (i < right) CALL quickSort(nodeArray, i, right)
+!
+!    END SUBROUTINE QuickSort
+!!
+!!////////////////////////////////////////////////////////////////////////
+!!
+!    PURE FUNCTION MedianOfThree(x, y, z) RESULT(median)
+!        REAL(KIND=RP), INTENT(IN) :: x, y, z
+!        REAL(KIND=RP)             :: median
+!
+!        median = MAX(MIN(x, y), MIN(MAX(x, y), z))
+!    END FUNCTION MedianOfThree
+!!
+!!////////////////////////////////////////////////////////////////////////
+!!
+!    SUBROUTINE InsertionSort(nodeArray, left, right)
+!!
+!!      ---------
+!!      Arguments
+!!      ---------
+!!
+!        TYPE(SMNodePtr), INTENT(INOUT) :: nodeArray(:)
+!        INTEGER, INTENT(IN)            :: left, right
+!        REAL(KIND=RP)                  :: key
+!!
+!!       ---------------
+!!       Local variables
+!!       ---------------
+!!
+!        TYPE(SMNode), POINTER :: tmpNode
+!        INTEGER               :: i, j
+!
+!        DO i = left + 1, right
+!            tmpNode => nodeArray(i) % node
+!            key     = tmpNode % gWhereOnBoundary
+!            j       = i - 1
+!
+!            DO WHILE (j >= left)
+!                IF (nodeArray(j) % node % gWhereOnBoundary <= key) EXIT
+!
+!                nodeArray(j + 1) % node => nodeArray(j) % node
+!                j = j - 1
+!            END DO
+!
+!            nodeArray(j + 1) % node => tmpNode
+!        END DO
+!
+!    END SUBROUTINE InsertionSort
 
    END MODULE MeshBoundaryMethodsModule
