@@ -3105,7 +3105,6 @@
 !        local Variables
 !        ---------------
 !
-         INTEGER       :: numberOfSmooths = 10
          INTEGER       :: j, k
          REAL(KIND=RP) :: tm, tp, t
 !
@@ -3113,7 +3112,7 @@
 !        Smooth the parametrized locations
 !        ---------------------------------
 !
-         DO k = 1, numberOfSmooths 
+         DO k = 1, numBoundarySmoothPasses ! Defined in ProgramGlobals 
             DO j = startID+1, endID-1 
                tm = nodeTs(j-1)
                t  = nodeTs(j)

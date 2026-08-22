@@ -1564,7 +1564,6 @@
          REAL(KIND=RP)                        :: prevT, currentT
          LOGICAL                              :: reOrder
          TYPE(SMNode)               , POINTER :: tmpNode
-         REAL(KIND=RP) :: startTime, endtime!DEBUG
 !
 !
 !        -----------------------------------------------------
