@@ -2758,7 +2758,7 @@
          REAL(KIND=RP)              , ALLOCATABLE :: values(:,:)
          INTEGER                    , ALLOCATABLE :: ends(:)
          
-         INTEGER                                  :: j, N, m, shft
+         INTEGER                                  :: j, N, m, shift
          INTEGER                                  :: nChains
 !
 !        -----------
@@ -2817,7 +2817,7 @@
                                      nCurves         = modelChain % COUNT(),       &
                                      nodeTs          = nodeTs,                     &
                                      ends            = ends,                       &
-                                     shft            = shft)
+                                     shift           = shift)
 !
 !           -------------------------------------------------------------
 !           Create a polynomial approximation for each curve in the chain
@@ -2863,7 +2863,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE GatherNodeTsAndEnds( chainNodesArray, nCurves, nodeTs, ends, shft )  
+      SUBROUTINE GatherNodeTsAndEnds( chainNodesArray, nCurves, nodeTs, ends, shift )  
          IMPLICIT NONE
 !
 !        ---------
@@ -2874,7 +2874,7 @@
          REAL(KIND=RP), ALLOCATABLE :: nodeTs(:)
          INTEGER      , ALLOCATABLE :: ends(:)
          INTEGER                    :: nCurves
-         INTEGER                    :: shft
+         INTEGER                    :: shift
 !
 !        ---------------
 !        Local variables
@@ -2893,13 +2893,13 @@
                nodeTs(k) = chainNodesArray(k+1) % node % gWhereOnBoundary
             END DO  
             nodeTs(nNodes) = 1.0_RP
-            shft = 1
+            shift = 1
          ELSE 
             nodeTs(0) = 0.0_RP
             DO k = 1, nNodes
                nodeTs(k) = chainNodesArray(k) % node % gWhereOnBoundary
             END DO
-            shft = 0
+            shift = 0
          END IF
 !
 !        ---------------------------------------------
@@ -3033,7 +3033,7 @@
          CLASS(SMChainedCurve)     , POINTER  :: modelChain
          
          INTEGER :: nCurves
-         INTEGER :: j, k, shft
+         INTEGER :: j, k, shift
 !
 !        --------------------------------
 !        Gather boundary node information
@@ -3059,7 +3059,7 @@
                                      nCurves         = nCurves,                    &
                                      nodeTs          = nodeTs,                     &
                                      ends            = ends,                       &
-                                     shft            = shft)
+                                     shift           = shift)
 !
 !           ----------------------------------------------------------------
 !           Smooth the node locations along the boundary within each segment
@@ -3070,7 +3070,7 @@
                                    nodeTs          = nodeTs                    , &
                                    startID         = ends(k-1),                  &
                                    endID           = ends(k),                    &
-                                   shft            = shft,                       &
+                                   shift           = shift,                      &
                                    chain           = modelChain)
             END DO 
 !
@@ -3089,7 +3089,7 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE SmoothSegments( chainNodesArray, nodeTs, startID, endID, shft, chain)  
+      SUBROUTINE SmoothSegments( chainNodesArray, nodeTs, startID, endID, shift, chain)  
          IMPLICIT NONE
 !
 !        ---------
@@ -3098,7 +3098,7 @@
 !
          TYPE(SMNodePtr)       :: chainNodesArray(:) !Array of nodes along a boundary
          REAL(KIND=RP)         :: nodeTs(0:)
-         INTEGER               :: startID, endID, shft
+         INTEGER               :: startID, endID, shift
          CLASS(SMChainedCurve) :: chain
 !
 !        ---------------
@@ -3137,9 +3137,9 @@
             
             t = nodeTs(j)
             
-            chainNodesArray(j+shft) % node % gWhereOnBoundary = t
-            chainNodesArray(j+shft) % node % x                = chain % positionAt(t)
-            chainNodesArray(j+shft) % node % whereOnBoundary  = chain % curveTForChainT(t)
+            chainNodesArray(j+shift) % node % gWhereOnBoundary = t
+            chainNodesArray(j+shift) % node % x                = chain % positionAt(t)
+            chainNodesArray(j+shift) % node % whereOnBoundary  = chain % curveTForChainT(t)
             
          END DO 
 
