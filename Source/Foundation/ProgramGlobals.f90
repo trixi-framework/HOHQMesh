@@ -113,6 +113,7 @@
          REAL(KIND=RP) :: straightLineTol         = 1.0d-5
          LOGICAL       :: boundarySlipping        = .FALSE.
          INTEGER       :: maxLevelLimit           = 8      ! allow at most maxLevelLimit levels of subdivision
+         INTEGER       :: numBoundarySmoothPasses = 10
 !
 !        --------------------
 !        For printing history

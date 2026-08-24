@@ -177,6 +177,13 @@
          CALL PerformTopologyCleanup(project % mesh, errorCode)
          IF(errorCode > A_OK_ERROR_CODE)     RETURN
 !
+!        ---------------------------------------
+!        Redistribute nodes along the boundaries
+!        as a smoothing technique
+!        ---------------------------------------
+!
+         CALL RedistributeNodesAlongBoundaries(project % mesh, project % model )
+!
 !        ------------------------
 !        Smooth mesh if requested
 !        ------------------------
@@ -357,7 +364,7 @@
 !
 !     ----------------------------------------
 !     Actually do the deletion. At this point,
-!     any temoraries are out of sync.
+!     any temporaries are out of sync.
 !     ----------------------------------------
 !
       CALL DoLazyDelete( mesh )
@@ -445,7 +452,6 @@
          obj => boundaryEdgesArray % objectAtIndex(j)
          CALL cast(obj,list)
          CALL FlagEndNodes( list, model )
-         CALL SmoothBoundaryLocations( list, model )
       END DO
 !
 !     ------------------------------------------
@@ -1837,9 +1843,10 @@
 !           Set the node information
 !           ------------------------
 !
-            nodeArray(jNode) % node % bCurveID        = boundaryCurve % myCurveIDs(k+1)
-            nodeArray(jNode) % node % whereOnBoundary = 0.0_RP
-            nodeArray(jNode) % node % nodeType        = boundaryCurve % jointClassification(k)
+            nodeArray(jNode) % node % bCurveID         = boundaryCurve % myCurveIDs(k+1)
+            nodeArray(jNode) % node % whereOnBoundary  = 0.0_RP
+            nodeArray(jNode) % node % gWhereOnBoundary = t
+            nodeArray(jNode) % node % nodeType         = boundaryCurve % jointClassification(k)
          END DO
 !
 !        ---------------------------------------------------------------------------------
@@ -2751,10 +2758,8 @@
          REAL(KIND=RP)              , ALLOCATABLE :: values(:,:)
          INTEGER                    , ALLOCATABLE :: ends(:)
          
-         INTEGER                                  :: j, k, nNodes, N, m
-         INTEGER                                  :: nChains, nCurves
-         REAL(KIND=RP)                            :: t, dt
-         REAL(KIND=RP)                            :: nodeTol = 1.0d-12 ! TODO: put into a constant.
+         INTEGER                                  :: j, N, m, shift
+         INTEGER                                  :: nChains
 !
 !        -----------
 !        Set aliases
@@ -2808,42 +2813,11 @@
 !           Collect all the parametric locations along the chain
 !           ----------------------------------------------------
 !
-            nNodes = SIZE(chainNodesArray(j) % array)
-            ALLOCATE(nodeTs(0:nNodes))
-            
-            IF ( chainNodesArray(j) % array(1) % node % gWhereOnBoundary == 0.0_RP )     THEN
-               DO k = 0, nNodes-1
-                  nodeTs(k) = chainNodesArray(j) % array(k+1) % node % gWhereOnBoundary
-               END DO  
-               nodeTs(nNodes) = 1.0_RP
-            ELSE 
-               nodeTs(0) = 0.0_RP
-               DO k = 1, nNodes
-                  nodeTs(k) = chainNodesArray(j) % array(k) % node % gWhereOnBoundary
-               END DO  
-            END IF
-!
-!           ---------------------------------------------
-!           Find the indices of the ends of each segment
-!           in the model chain.
-!           ---------------------------------------------
-!
-            nCurves = modelChain % COUNT()
-            dt      = 1.0_RP/REAL(nCurves, RP)
-            
-            ALLOCATE(ends(0:nCurves), source = 0)
-            ends(0)       = 0
-            ends(nCurves) = nNodes
-            
-            m = 1
-            DO k = 1, nNodes-1
-               t = m*dt
-               IF ( ABS(nodeTs(k) - t) <= nodeTol )     THEN
-                  ends(m)   = k
-                  nodeTs(k) = t
-                  m = m + 1 
-               END IF 
-            END DO
+            CALL GatherNodeTsAndEnds(chainNodesArray = chainNodesArray(j) % array, &
+                                     nCurves         = modelChain % COUNT(),       &
+                                     nodeTs          = nodeTs,                     &
+                                     ends            = ends,                       &
+                                     shift           = shift)
 !
 !           -------------------------------------------------------------
 !           Create a polynomial approximation for each curve in the chain
@@ -2852,7 +2826,7 @@
 !
             crv => modelChain
             IF ( modelChain % optimization /= NONE .AND. performOptimization)     THEN
-      
+     
                CALL SetDefaultOptions(options)
                options % whichNorm = modelChain % optimization
                CALL OptimizeCurve(curve              = crv,                     &
@@ -2886,6 +2860,70 @@
          END DO !All boundary curves
          
       END SUBROUTINE ComputeBoundaryPolynomials
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE GatherNodeTsAndEnds( chainNodesArray, nCurves, nodeTs, ends, shift )  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(SMNodePtr)            :: chainNodesArray(:) !Array of nodes along a boundary
+         REAL(KIND=RP), ALLOCATABLE :: nodeTs(:)
+         INTEGER      , ALLOCATABLE :: ends(:)
+         INTEGER                    :: nCurves
+         INTEGER                    :: shift
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER       :: nNodes
+         INTEGER       :: k, m
+         REAL(KIND=RP) :: dt, t
+         REAL(KIND=RP) :: nodeTol = 1.0d-12 ! TODO: put into a constant.
+         
+         nNodes = SIZE(chainNodesArray)
+         ALLOCATE(nodeTs(0:nNodes))
+         
+         IF ( chainNodesArray(1) % node % gWhereOnBoundary == 0.0_RP )     THEN
+            DO k = 0, nNodes-1
+               nodeTs(k) = chainNodesArray(k+1) % node % gWhereOnBoundary
+            END DO  
+            nodeTs(nNodes) = 1.0_RP
+            shift = 1
+         ELSE 
+            nodeTs(0) = 0.0_RP
+            DO k = 1, nNodes
+               nodeTs(k) = chainNodesArray(k) % node % gWhereOnBoundary
+            END DO
+            shift = 0
+         END IF
+!
+!        ---------------------------------------------
+!        Find the indices of the ends of each segment
+!        in the model chain.
+!        ---------------------------------------------
+!
+         dt = 1.0_RP/REAL(nCurves, RP)
+         
+         ALLOCATE(ends(0:nCurves), source = 0)
+         ends(0)       = 0
+         ends(nCurves) = nNodes
+         
+         m = 1
+         DO k = 1, nNodes-1
+            t = m*dt
+            IF ( ABS(nodeTs(k) - t) <= nodeTol )     THEN
+               ends(m)   = k
+               nodeTs(k) = t
+               m = m + 1 
+            END IF 
+         END DO
+         
+      END SUBROUTINE GatherNodeTsAndEnds
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -2971,6 +3009,141 @@
       DEALLOCATE(chainNodesArray)
       
    END SUBROUTINE ComputeBoundaryApproximations
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE RedistributeNodesAlongBoundaries( mesh, model )  
+         USE SMModelClass
+         IMPLICIT NONE
+         
+         TYPE(SMMesh)  :: mesh
+         TYPE(SMModel) :: model
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         TYPE(JaggedNodeArray), ALLOCATABLE :: chainNodesArray(:)
+         INTEGER                            :: numBoundaryChains
+         REAL(KIND=RP)        , ALLOCATABLE :: nodeTs(:)
+         INTEGER              , ALLOCATABLE :: ends(:)
+         
+         TYPE(ObjectPointerWrapper), POINTER  :: modelChains(:)      !An alias
+         CLASS(FTObject)           , POINTER  :: obj                 !An Alias
+         CLASS(SMChainedCurve)     , POINTER  :: modelChain
+         
+         INTEGER :: nCurves
+         INTEGER :: j, k, shift
+!
+!        --------------------------------
+!        Gather boundary node information
+!        --------------------------------
+!
+         numBoundaryChains = model % numberOfChains() 
+         ALLOCATE(chainNodesArray(numBoundaryChains))
+         CALL SortBoundaryNodesToChains(mesh % nodesIterator, &
+                                        numBoundaryChains, chainNodesArray)
+!
+!        -----------------------------
+!        For each boundary curve chain
+!        -----------------------------
+!
+         modelChains => model % allChains
+         
+         DO j = 1, numBoundaryChains
+            obj => modelChains(j) % object
+            CALL castToSMChainedCurve(obj, modelChain)
+            nCurves = modelChain % COUNT()
+
+            CALL GatherNodeTsAndEnds(chainNodesArray = chainNodesArray(j) % array, &
+                                     nCurves         = nCurves,                    &
+                                     nodeTs          = nodeTs,                     &
+                                     ends            = ends,                       &
+                                     shift           = shift)
+!
+!           ----------------------------------------------------------------
+!           Smooth the node locations along the boundary within each segment
+!           ----------------------------------------------------------------
+!
+            DO k = 1, nCurves
+               CALL SmoothSegments(chainNodesArray = chainNodesArray(j) % array, &
+                                   nodeTs          = nodeTs                    , &
+                                   startID         = ends(k-1),                  &
+                                   endID           = ends(k),                    &
+                                   shift           = shift,                      &
+                                   chain           = modelChain)
+            END DO 
+!
+!           --------------------------------------------
+!           Release local memory for next boundary chain
+!           --------------------------------------------
+!
+            DEALLOCATE(ends)
+            DEALLOCATE(nodeTs)
+         END DO 
+
+         DEALLOCATE(chainNodesArray)
+!         DEALLOCATE(modelChains)
+         
+      END SUBROUTINE RedistributeNodesAlongBoundaries
+!
+!//////////////////////////////////////////////////////////////////////// 
+! 
+      SUBROUTINE SmoothSegments( chainNodesArray, nodeTs, startID, endID, shift, chain)  
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(SMNodePtr)       :: chainNodesArray(:) !Array of nodes along a boundary
+         REAL(KIND=RP)         :: nodeTs(0:)
+         INTEGER               :: startID, endID, shift
+         CLASS(SMChainedCurve) :: chain
+!
+!        ---------------
+!        local Variables
+!        ---------------
+!
+         INTEGER       :: j, k
+         REAL(KIND=RP) :: tm, tp, t
+!
+!        ---------------------------------
+!        Smooth the parametrized locations
+!        ---------------------------------
+!
+         DO k = 1, numBoundarySmoothPasses ! Defined in ProgramGlobals 
+            DO j = startID+1, endID-1 
+               tm = nodeTs(j-1)
+               t  = nodeTs(j)
+               tp = nodeTs(j+1)
+                
+               nodeTs(j) = 0.25_RP*(tm + 2.0_RP*t + tp)               
+            END DO 
+            DO j = endID-1, startID+1, -1
+               tm = nodeTs(j-1)
+               t  = nodeTs(j)
+               tp = nodeTs(j+1)
+                
+               nodeTs(j) = 0.25_RP*(tm + 2.0_RP*t + tp)               
+            END DO 
+         END DO 
+!
+!        ---------------
+!        Reset the nodes
+!        ---------------
+!
+         DO j = startID+1, endID-1
+            
+            t = nodeTs(j)
+            
+            chainNodesArray(j+shift) % node % gWhereOnBoundary = t
+            chainNodesArray(j+shift) % node % x                = chain % positionAt(t)
+            chainNodesArray(j+shift) % node % whereOnBoundary  = chain % curveTForChainT(t)
+            
+         END DO 
+
+      END SUBROUTINE SmoothSegments
    
    END MODULE MeshGenerationMethods
 !

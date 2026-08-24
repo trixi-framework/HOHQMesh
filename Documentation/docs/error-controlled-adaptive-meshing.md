@@ -72,26 +72,26 @@ produces the output:
     *******************
     2D Mesh Statistics:
     *******************
-       Total time             =   0.89582899999999999
-       Number of nodes        =          570
-       Number of Edges        =         1059
-       Number of Elements     =          490
-       Number of Subdivisions =            4
+        Total time             =   0.17223600000000000
+        Number of nodes        =          277
+        Number of Edges        =          509
+        Number of Elements     =          233
+        Number of Subdivisions =            3
 
     Mesh Quality:
             Measure         Minimum         Maximum         Average  Acceptable Low Acceptable High       Reference
-        Signed Area      0.00122001      0.82263252      0.10243554      0.00000000    999.99900000      1.00000000
-       Aspect Ratio      1.02370049      2.84878712      1.32371594      1.00000000    999.99900000      1.00000000
-          Condition      1.00112287      3.80020102      1.21708413      1.00000000      4.00000000      1.00000000
-         Edge Ratio      1.02962316      6.00757565      1.63781443      1.00000000      4.00000000      1.00000000
-           Jacobian      0.00049569      0.75891397      0.07875994      0.00000000    999.99900000      1.00000000
-      Minimum Angle     34.57990654     87.89988997     68.98664291     40.00000000     90.00000000     90.00000000
-      Maximum Angle     91.84435669    150.95227640    114.13256251     90.00000000    135.00000000     90.00000000
-          Area Sign      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000
+        Signed Area      0.00162075      1.10525107      0.21516168      0.00000000    999.99900000      1.00000000
+        Aspect Ratio      1.01277612      3.40688097      1.42967492      1.00000000    999.99900000      1.00000000
+        Condition      1.00148338      9.41902454      1.39837659      1.00000000      4.00000000      1.00000000
+        Edge Ratio      1.02335130      6.03459137      1.75914337      1.00000000      4.00000000      1.00000000
+            Jacobian      0.00113974      0.98007706      0.16482649      0.00000000    999.99900000      1.00000000
+    Minimum Angle     29.10516655     87.95641650     64.42221347     40.00000000     90.00000000     90.00000000
+    Maximum Angle     92.10488424    173.02933448    118.92638886     90.00000000    135.00000000     90.00000000
+        Area Sign      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000
 
     Boundary Error Quality:
-                      Boundary Name    Max L2 Error    Max H1 Error
-                     Outer Boundary  6.97837728E-08  5.63742411E-05
+                    Boundary Name    Max L2 Error    Max H1 Error
+                    Outer Boundary  7.34383332E-09  8.92126854E-06
 
 In addition to the usual element quality measures, one sees that the $\mathbb H^1$ error is indeed bounded by the requested tolerance. If there is more than one boundary, they are listed by boundary name.
 
