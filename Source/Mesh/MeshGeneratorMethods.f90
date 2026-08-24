@@ -1741,7 +1741,7 @@
          REAL(KIND=RP)                             :: t, dt, t0, t1, x, dMin, d
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
 
-        nodeArray     => GatheredNodes( list )
+         nodeArray     => GatheredNodes( list )
          nodeArraySize = SIZE(nodeArray)
 !
 !        -------------------------
@@ -2907,7 +2907,7 @@
 !        in the model chain.
 !        ---------------------------------------------
 !
-         dt      = 1.0_RP/REAL(nCurves, RP)
+         dt = 1.0_RP/REAL(nCurves, RP)
          
          ALLOCATE(ends(0:nCurves), source = 0)
          ends(0)       = 0
