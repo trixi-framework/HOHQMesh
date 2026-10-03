@@ -10,7 +10,7 @@
    \end{RUN_PARAMETERS}
 
    \begin{BACKGROUND_GRID}
-      background grid size = [1.0,1.0,1.0]
+      background grid size = [1.0,1.0,0.0]
    \end{BACKGROUND_GRID}
 
    \begin{SPRING_SMOOTHER}
