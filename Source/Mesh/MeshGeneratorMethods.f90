@@ -70,14 +70,14 @@
          INTEGER :: j
 
          needsRemesh = .FALSE.
-         
-         DO j = 1, numberOfTries 
+
+         DO j = 1, numberOfTries
             CALL GenerateAQuadMesh( project, errorCode )
 !
 !           -----------------------------------
 !           Gather and set boundary information
-!           and from that, create boundary 
-!           polynomial approximations to the 
+!           and from that, create boundary
+!           polynomial approximations to the
 !           boundary chains.
 !           -----------------------------------
 !
@@ -91,11 +91,11 @@
 !        -----------------------------------------------
 !
             IF ( .NOT. needsRemesh )     EXIT
-            
+
             IF( j < numberOfTries) CALL ResetProject(project)
             IF(printMessage)       PRINT *, "Remeshing for accuracy..."
-           
-         END DO 
+
+         END DO
 !
 !        ------------------------------------------------------------------------
 !        If there is a problem, usually it is because the initial background grid
@@ -452,6 +452,7 @@
          obj => boundaryEdgesArray % objectAtIndex(j)
          CALL cast(obj,list)
          CALL FlagEndNodes( list, model )
+         CALL SpreadCollapsedBoundaryLocations( list, model )
       END DO
 !
 !     ------------------------------------------
@@ -466,6 +467,7 @@
          CALL cast(obj,list)
          CALL GenerateBoundaryElements( mesh, model, list )
       END DO
+      CALL WriteSkeletonToTecplot(mesh = mesh,fName = "beforeDeletion.tec")
 !
 !     -------------------------------
 !     The edges are no longer in sync
@@ -2063,7 +2065,7 @@
               ELSE IF (deltaT < -maxParameterChange ) THEN
                  deltaT = 1.0_RP + deltaT
               END IF
-              
+
 
               DO j = 0, N
 
@@ -2092,9 +2094,9 @@
 
       END SUBROUTINE gatherElementBoundaryInfo
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE MakeBoundaryInfoRightHanded(bInfo, a, b, c)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE MakeBoundaryInfoRightHanded(bInfo, a, b, c)
          USE LineReflectionModule
          IMPLICIT NONE
 !
@@ -2129,7 +2131,7 @@
          idSwap                = bInfo % bCurveFlag(2)
          bInfo % bCurveFlag(2) = bInfo % bCurveFlag(3)
          bInfo % bCurveFlag(3) = idSwap
-         
+
          idSwap                = bInfo % bCurveFlag(1)
          bInfo % bCurveFlag(1) = bInfo % bCurveFlag(4)
          bInfo % bCurveFlag(4) = idSwap
@@ -2143,7 +2145,7 @@
          bInfo % bCurveName(2) = bInfo % bCurveName(3)
          IF(bInfo % bCurveName(2) .ne. NO_BC_STRING) bInfo % bCurveName(2) = TRIM(bInfo % bCurveName(2))//"_R"
          bInfo % bCurveName(3) = strSwap
-         
+
          strSwap               = bInfo % bCurveName(1)
          IF(strSwap .ne. NO_BC_STRING) strSwap = TRIM(strSwap)  //"_R"
          bInfo % bCurveName(1) = bInfo % bCurveName(4)
@@ -2156,29 +2158,29 @@
 !        --------------------------------------------------------
 !
          IF ( ALLOCATED(bInfo % x) )     THEN
-         
-            N = UBOUND(bInfo % x,2) 
+
+            N = UBOUND(bInfo % x,2)
             ALLOCATE(x, source = bInfo % x)
-            
-            DO k = 1, 3, 2 
-               DO j = 0,N 
+
+            DO k = 1, 3, 2
+               DO j = 0,N
                   x(:,j,k) = reflectAboutLine(bInfo % x(:,j,k), a, b, c)
-               END DO 
+               END DO
             END DO
-            DO k = 2, 4, 2 
-               DO j = 0,N 
+            DO k = 2, 4, 2
+               DO j = 0,N
                   x(:,j,k) = reflectAboutLine(bInfo % x(:,N-j,k), a, b, c)
-               END DO 
+               END DO
             END DO
-            
+
             bInfo % x(:,:,4) = x(:,:,1)
             bInfo % x(:,:,1) = x(:,:,4)
             bInfo % x(:,:,3) = x(:,:,2)
             bInfo % x(:,:,2) = x(:,:,3)
 
-         END IF 
+         END IF
 
-          
+
       END SUBROUTINE MakeBoundaryInfoRightHanded
 !
 !////////////////////////////////////////////////////////////////////////
@@ -2209,7 +2211,7 @@
          CLASS(FTObject)            , POINTER :: obj
          TYPE (SMElement)           , POINTER :: e
          TYPE(TransfiniteQuadMap)             :: quadMap
-         
+
          TYPE(CurveInterpolant)       , POINTER     :: boundaryCurves(:)
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: nodes
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: values
@@ -2281,8 +2283,8 @@
 
       END SUBROUTINE Perform2DMeshTransformations
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE ReflectMesh( mesh, symmetryCurve)
          USE ConnectionsModule
          USE LineReflectionModule
@@ -2321,7 +2323,7 @@
          x0 = symmetryCurve % positionAt(t = 0.0_RP)
          x1 = symmetryCurve % positionAt(t = 1.0_RP)
          CALL ComputeLineCoefs(x0,x1,a,b,c)
-         
+
          bCurveID = symmetryCurve % id()
 !
 !        -----------------------------------------------------------
@@ -2333,17 +2335,17 @@
 !
          ALLOCATE(savedElements)
          CALL savedElements % init()
-         
+
          elemItr => mesh % elementsIterator
          elemID  = newElementID(mesh)
-         
+
          CALL elemItr % setToStart()
-                  
+
          DO WHILE(.NOT. elemItr % isAtEnd())
-            
+
             obj => elemItr % object()
             CALL castToSMElement(obj,oldElement)
-            
+
             newElement => SMElementCopy(oldElement)
             obj        => newElement
             newElement % id = elemID
@@ -2360,8 +2362,8 @@
                str = oldElement % boundaryInfo % bCurveName(j)
                CALL toLower(str)
                IF ( str == SYMMETRY_CURVE_NAME )     THEN
-                  oldElement % nodes(edgeMap(1,j)) % node % bCurveID = bCurveID 
-                  oldElement % nodes(edgeMap(2,j)) % node % bCurveID = bCurveID 
+                  oldElement % nodes(edgeMap(1,j)) % node % bCurveID = bCurveID
+                  oldElement % nodes(edgeMap(2,j)) % node % bCurveID = bCurveID
                   oldElement % boundaryInfo % bCurveName(j)          = NO_BC_STRING
                   newElement % boundaryInfo % bCurveName(j)          = NO_BC_STRING
                   oldElement % boundaryInfo % bCurveFlag(j)          = NONE
@@ -2372,16 +2374,16 @@
 !                 The amount doesn't matter.
 !                 -------------------------------------------------------------------------
 !
-                  oldElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0 
+                  oldElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0
                   oldElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0
-                  newElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0 
+                  newElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0
                   newElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0
-               END IF 
+               END IF
             END DO
-            
+
             elemID = elemID + 1
             CALL elemItr % MoveToNext()
-            
+
          END DO
 !
 !        ---------------------------------------------------
@@ -2391,18 +2393,18 @@
 !
          CALL deallocateNodeToElementConnections
          !(Ignore error code since ReflectMesh won't be called otherwise.)
-         CALL makeNodeToElementConnections(mesh, errorCode) 
-         
+         CALL makeNodeToElementConnections(mesh, errorCode)
+
          ALLOCATE(newNodes)
          CALL newNodes % init()
-         
+
          nodeItr => mesh % nodesIterator
          nodeID  = newNodeID(mesh)
-         
+
          CALL nodeItr % setToStart()
-         
+
          DO WHILE( .NOT. nodeItr % isAtEnd() )
-         
+
             CALL castToSMNode(nodeItr % object(),oldNode)
 !
             IF ( oldNode % bCurveID /= bCurveID )     THEN !Skip over nodes along the symmetry axis
@@ -2415,11 +2417,11 @@
                ALLOCATE(newNode)
                CALL newNode % init()
                CALL copyNodeType(oldNode,newNode)
-   
+
                newNode % x  = reflectAboutLine(oldNode % x, a, b, c)
                newNode % id = nodeID
                nodeID       = nodeID + 1
-               
+
                obj => newNode
                CALL newNodes % add(obj)
                CALL release(obj)
@@ -2428,20 +2430,20 @@
 !              Reassign pointers in the elements that use the oldNode to the newNode
 !              ---------------------------------------------------------------------
 !
-               DO i = 1, numElementsForNode(oldNode % id) 
+               DO i = 1, numElementsForNode(oldNode % id)
                   e => elementsForNodes(i, oldNode % id) % element
                   DO j = 1, e % eType
                      IF ( ASSOCIATED(e % nodes(j) % node, oldNode) )     THEN
-                        e % nodes(j) % node => newNode 
+                        e % nodes(j) % node => newNode
                         e % boundaryInfo % nodeIDs(j) = newNode % id
                         CALL newNode % retain()
-                     END IF 
-                  END DO 
-               END DO 
+                     END IF
+                  END DO
+               END DO
             END IF
-            
+
             CALL nodeItr % moveToNext()
-         END DO 
+         END DO
 !
 !        ---------------------------------------------------------------
 !        Finish up by
@@ -2455,34 +2457,34 @@
 !
          CALL mesh % nodes % addObjectsFromList(newNodes)
          CALL releaseFTLinkedListClass(newNodes)
-         
+
          CALL elemItr % setToStart()
-         DO WHILE(.NOT. elemItr % isAtEnd()) 
-         
+         DO WHILE(.NOT. elemItr % isAtEnd())
+
             obj => elemItr % object()
             CALL castToSMElement(obj,e)
-            DO j = 1, e % eType 
-               e % boundaryInfo % nodeIDs(j) = e % nodes(j) % node % id 
-            END DO 
+            DO j = 1, e % eType
+               e % boundaryInfo % nodeIDs(j) = e % nodes(j) % node % id
+            END DO
             IF ( .NOT. elementIsRightHanded(e) )     THEN
                CALL MakeElement_RightHanded(e)
                CALL MakeBoundaryInfoRightHanded(e % boundaryInfo, a, b, c)
-            END IF 
+            END IF
 
             IF ( ALLOCATED(e % xPatch) )     THEN
-               DO j = 0, UBOUND(e % xPatch,3) 
+               DO j = 0, UBOUND(e % xPatch,3)
                   DO i = 0, UBOUND(e % xPatch, 2)
                      x = reflectAboutLine(e % xPatch(:,i,j),a,b,c)
                      e % xPatch(:,i,j) = x
-                  END DO  
-               END DO 
-            END IF 
-            
+                  END DO
+               END DO
+            END IF
+
             CALL elemItr % moveToNext()
-         END DO 
-         
+         END DO
+
          CALL mesh % elements % addObjectsFromList(savedElements)
-         
+
          CALL releaseFTLinkedListIterator(mesh % edgesIterator)
          CALL releaseFTLinkedList(mesh % edges)
          ALLOCATE(mesh % edges)
@@ -2497,7 +2499,7 @@
 !
          CALL releaseFTLinkedListClass(savedElements)
          CALL deallocateNodeToElementConnections
-         
+
       END SUBROUTINE ReflectMesh
 !
 !////////////////////////////////////////////////////////////////////////
@@ -2713,12 +2715,12 @@
 
       END SUBROUTINE RotationTransformMesh
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE ComputeBoundaryPolynomials( project, chainNodesArray, performOptimization)
 !
 !     -----------------------------------------------------------------
-!     Generate multisegment curves that span the curve segments in the 
+!     Generate multisegment curves that span the curve segments in the
 !     chainNodesArray. This procedure creates polynomial approximations
 !     to the model's curves referenced in allCurves and stores them in
 !     the project's boundaryPolynomialsArray. The approximation error
@@ -2742,22 +2744,22 @@
 !        Local variables
 !        ---------------
 !
-         
+
          CLASS(SMModel)                , POINTER  :: model               !An alias
          CLASS(FTMutableObjectArray)   , POINTER  :: boundaryPolynomials !An alias
          TYPE(ObjectPointerWrapper)    , POINTER  :: modelChains(:)      !An alias
          CLASS(FTObject)               , POINTER  :: obj                 !An Alias
-         
+
          CLASS(SMChainedCurve)         , POINTER  :: modelChain
          CLASS(MultiSegmentNodalCurve) , POINTER  :: boundaryPolynomial
          CLASS(MultiSegmentModalCurve) , POINTER  :: optimizedCurve
          CLASS(SMCurve)                , POINTER  :: crv, crvPtr
-         
+
          TYPE(OptimizerOptions)                   :: options
          REAL(KIND=RP)              , ALLOCATABLE :: nodeTs(:), chebyPoints(:)
          REAL(KIND=RP)              , ALLOCATABLE :: values(:,:)
          INTEGER                    , ALLOCATABLE :: ends(:)
-         
+
          INTEGER                                  :: j, N, m, shift
          INTEGER                                  :: nChains
 !
@@ -2768,7 +2770,7 @@
          model               => project % model
          modelChains         => model % allChains
          boundaryPolynomials => project % boundaryPolynomialsArray
-         
+
          nChains = model % numberOfChains()
          N       = project % runParams % polynomialOrder
 !
@@ -2780,9 +2782,9 @@
 !
          ALLOCATE(chebyPoints(0:N))
          ALLOCATE(values(0:N,3))
-         DO m = 0, N 
+         DO m = 0, N
             chebyPoints(m) = (1.0_RP - COS(m*PI/N))/2.0_RP
-         END DO 
+         END DO
 !
 !        ---------------------------------------------------------------------------------
 !        For each chained curve, generate a new curve from the
@@ -2826,7 +2828,7 @@
 !
             crv => modelChain
             IF ( modelChain % optimization /= NONE .AND. performOptimization)     THEN
-     
+
                CALL SetDefaultOptions(options)
                options % whichNorm = modelChain % optimization
                CALL OptimizeCurve(curve              = crv,                     &
@@ -2840,13 +2842,13 @@
                CALL castToMultiSegmentModalCurve(crvPtr, optimizedCurve)
                obj => optimizedCurve
                CALL boundaryPolynomials % addObject(obj)
-            ELSE 
+            ELSE
                ALLOCATE(boundaryPolynomial)
                CALL boundaryPolynomial % ConstructMultiSegmentNodalCurve(crv, nodeTs, N, &
                                                       modelChain % curveName(), modelChain % id() )
                obj => boundaryPolynomial
                CALL boundaryPolynomials % addObject(obj)
-            END IF 
+            END IF
 !
 !           -------
 !           Cleanup
@@ -2856,14 +2858,14 @@
             DEALLOCATE(nodeTs)
             IF(ASSOCIATED(boundaryPolynomial)) CALL releaseMultiSegmentNodalCurve(boundaryPolynomial)
             IF(ASSOCIATED(optimizedCurve))     CALL releaseMultiSegmentModalCurve(optimizedCurve)
-           
+
          END DO !All boundary curves
-         
+
       END SUBROUTINE ComputeBoundaryPolynomials
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE GatherNodeTsAndEnds( chainNodesArray, nCurves, nodeTs, ends, shift )  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE GatherNodeTsAndEnds( chainNodesArray, nCurves, nodeTs, ends, shift )
          IMPLICIT NONE
 !
 !        ---------
@@ -2884,17 +2886,17 @@
          INTEGER       :: k, m
          REAL(KIND=RP) :: dt, t
          REAL(KIND=RP) :: nodeTol = 1.0d-12 ! TODO: put into a constant.
-         
+
          nNodes = SIZE(chainNodesArray)
          ALLOCATE(nodeTs(0:nNodes))
-         
+
          IF ( chainNodesArray(1) % node % gWhereOnBoundary == 0.0_RP )     THEN
             DO k = 0, nNodes-1
                nodeTs(k) = chainNodesArray(k+1) % node % gWhereOnBoundary
-            END DO  
+            END DO
             nodeTs(nNodes) = 1.0_RP
             shift = 1
-         ELSE 
+         ELSE
             nodeTs(0) = 0.0_RP
             DO k = 1, nNodes
                nodeTs(k) = chainNodesArray(k) % node % gWhereOnBoundary
@@ -2908,27 +2910,27 @@
 !        ---------------------------------------------
 !
          dt = 1.0_RP/REAL(nCurves, RP)
-         
+
          ALLOCATE(ends(0:nCurves), source = 0)
          ends(0)       = 0
          ends(nCurves) = nNodes
-         
+
          m = 1
          DO k = 1, nNodes-1
             t = m*dt
             IF ( ABS(nodeTs(k) - t) <= nodeTol )     THEN
                ends(m)   = k
                nodeTs(k) = t
-               m = m + 1 
-            END IF 
+               m = m + 1
+            END IF
          END DO
-         
+
       END SUBROUTINE GatherNodeTsAndEnds
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE MakeMeshSymmetric(project, symmetryCurve) 
-      IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+   SUBROUTINE MakeMeshSymmetric(project, symmetryCurve)
+      IMPLICIT NONE
 !
 !     -----------------------------------------------------------
 !     Perform symmetric transform if there is a symmetry boundary
@@ -2947,7 +2949,7 @@
 !      ---------------
 !
        INTEGER :: errorCode
-            
+
        IF ( allSymmetryCurvesAreColinear(project % model) )     THEN
           CALL ReflectMesh(project % mesh, symmetryCurve)
 !
@@ -2965,14 +2967,14 @@
                                           msg    = "A symmetry curve is is not straight or colinear. Ignoring...", &
                                           typ    = FT_ERROR_WARNING)
        END IF
-         
+
    END SUBROUTINE MakeMeshSymmetric
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-   SUBROUTINE ComputeBoundaryApproximations(project, optimize)  
-      IMPLICIT NONE  
-      
+!////////////////////////////////////////////////////////////////////////
+!
+   SUBROUTINE ComputeBoundaryApproximations(project, optimize)
+      IMPLICIT NONE
+
       CLASS(MeshProject), POINTER :: project
       LOGICAL                     :: optimize
 !
@@ -2986,8 +2988,8 @@
 !
 !     -----------------------------------
 !     Gather and set boundary information
-!     and from that, create boundary 
-!     polynomial approximations to the 
+!     and from that, create boundary
+!     polynomial approximations to the
 !     boundary chains.
 !     -----------------------------------
 !
@@ -3005,17 +3007,17 @@
 !     -----------------------------------------
 !
       CALL ComputeFacePatches(project)
-      
+
       DEALLOCATE(chainNodesArray)
-      
+
    END SUBROUTINE ComputeBoundaryApproximations
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE RedistributeNodesAlongBoundaries( mesh, model )  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE RedistributeNodesAlongBoundaries( mesh, model )
          USE SMModelClass
          IMPLICIT NONE
-         
+
          TYPE(SMMesh)  :: mesh
          TYPE(SMModel) :: model
 !
@@ -3027,11 +3029,11 @@
          INTEGER                            :: numBoundaryChains
          REAL(KIND=RP)        , ALLOCATABLE :: nodeTs(:)
          INTEGER              , ALLOCATABLE :: ends(:)
-         
+
          TYPE(ObjectPointerWrapper), POINTER  :: modelChains(:)      !An alias
          CLASS(FTObject)           , POINTER  :: obj                 !An Alias
          CLASS(SMChainedCurve)     , POINTER  :: modelChain
-         
+
          INTEGER :: nCurves
          INTEGER :: j, k, shift
 !
@@ -3039,7 +3041,7 @@
 !        Gather boundary node information
 !        --------------------------------
 !
-         numBoundaryChains = model % numberOfChains() 
+         numBoundaryChains = model % numberOfChains()
          ALLOCATE(chainNodesArray(numBoundaryChains))
          CALL SortBoundaryNodesToChains(mesh % nodesIterator, &
                                         numBoundaryChains, chainNodesArray)
@@ -3049,7 +3051,7 @@
 !        -----------------------------
 !
          modelChains => model % allChains
-         
+
          DO j = 1, numBoundaryChains
             obj => modelChains(j) % object
             CALL castToSMChainedCurve(obj, modelChain)
@@ -3072,7 +3074,7 @@
                                    endID           = ends(k),                    &
                                    shift           = shift,                      &
                                    chain           = modelChain)
-            END DO 
+            END DO
 !
 !           --------------------------------------------
 !           Release local memory for next boundary chain
@@ -3080,16 +3082,21 @@
 !
             DEALLOCATE(ends)
             DEALLOCATE(nodeTs)
-         END DO 
+         END DO
 
          DEALLOCATE(chainNodesArray)
 !         DEALLOCATE(modelChains)
-         
+
       END SUBROUTINE RedistributeNodesAlongBoundaries
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE SmoothSegments( chainNodesArray, nodeTs, startID, endID, shift, chain)  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SmoothSegments( chainNodesArray, nodeTs, startID, endID, shift, chain)
+!        --------------------------------------------------------------------------------
+!        This routine applies a 1-2-1 filter to move the boundary nodes along a curve.
+!        The movement is anchored by the initial position to avoid excessive movement
+!        in regions of high curvature. The `anchorStrength` is set as a global parameter.
+!        --------------------------------------------------------------------------------
          IMPLICIT NONE
 !
 !        ---------
@@ -3105,45 +3112,52 @@
 !        local Variables
 !        ---------------
 !
-         INTEGER       :: j, k
-         REAL(KIND=RP) :: tm, tp, t
+         INTEGER                                 :: j, k
+         REAL(KIND=RP)                           :: tm, tp, t
+         REAL(KIND=RP), DIMENSION(startID:endID) :: t0
 !
-!        ---------------------------------
+!        ------------------------
+!        Copy the existing values
+!        ------------------------
+!
+         t0 = nodeTs(startID:endID)
+!
+!        ----------------------------------
 !        Smooth the parametrized locations
-!        ---------------------------------
+!        Values for numBoundarySmoothPasses
+!        and anchorStrength are defined in
+!        ProgramGlobals
+!        ----------------------------------
 !
-         DO k = 1, numBoundarySmoothPasses ! Defined in ProgramGlobals 
-            DO j = startID+1, endID-1 
+         DO k = 1, numBoundarySmoothPasses
+            DO j = startID+1, endID-1
                tm = nodeTs(j-1)
                t  = nodeTs(j)
                tp = nodeTs(j+1)
-                
-               nodeTs(j) = 0.25_RP*(tm + 2.0_RP*t + tp)               
-            END DO 
+
+               nodeTs(j) = anchorStrength*t0(j) + (1.0_RP - anchorStrength)*(0.25_RP*(tm + 2.0_RP*t + tp))
+            END DO
             DO j = endID-1, startID+1, -1
                tm = nodeTs(j-1)
                t  = nodeTs(j)
                tp = nodeTs(j+1)
-                
-               nodeTs(j) = 0.25_RP*(tm + 2.0_RP*t + tp)               
-            END DO 
-         END DO 
+
+               nodeTs(j) = anchorStrength*t0(j) + (1.0_RP - anchorStrength)*(0.25_RP*(tm + 2.0_RP*t + tp))
+            END DO
+         END DO
 !
 !        ---------------
 !        Reset the nodes
 !        ---------------
 !
          DO j = startID+1, endID-1
-            
             t = nodeTs(j)
-            
+
             chainNodesArray(j+shift) % node % gWhereOnBoundary = t
             chainNodesArray(j+shift) % node % x                = chain % positionAt(t)
             chainNodesArray(j+shift) % node % whereOnBoundary  = chain % curveTForChainT(t)
-            
-         END DO 
+         END DO
 
       END SUBROUTINE SmoothSegments
-   
+
    END MODULE MeshGenerationMethods
-!
