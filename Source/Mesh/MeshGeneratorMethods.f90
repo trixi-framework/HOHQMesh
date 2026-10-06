@@ -467,7 +467,6 @@
          CALL cast(obj,list)
          CALL GenerateBoundaryElements( mesh, model, list )
       END DO
-      CALL WriteSkeletonToTecplot(mesh = mesh,fName = "beforeDeletion.tec")
 !
 !     -------------------------------
 !     The edges are no longer in sync
