@@ -1565,7 +1565,6 @@
          LOGICAL                              :: reOrder
          TYPE(SMNode)               , POINTER :: tmpNode
 !
-!
 !        -----------------------------------------------------
 !        Temporary storage for the nodes along each curve chain
 !        -----------------------------------------------------
@@ -1646,6 +1645,7 @@
                list % tail           => previousRecord
                previousRecord % next => NULL()
             END IF
+            reOrder = .FALSE. ! Reset value for next boundary chain
 !
 !           ------------------------------------
 !           Copy each chain into an array
