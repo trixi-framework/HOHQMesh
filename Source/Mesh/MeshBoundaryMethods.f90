@@ -1770,6 +1770,13 @@
 !           ----------------------------------------------------------
 !
             IF( node % nodeType /= ROW_SIDE )     CYCLE
+!
+!           -------------------------------------------------------
+!           Avoid moving any smooth joint-related nodes on ROW_SIDE
+!           -------------------------------------------------------
+!
+            IF( AlmostEqual(node % whereOnBoundary, 0.0_RP) .OR. &
+                AlmostEqual(node % whereOnBoundary, 1.0_RP) )     CYCLE
 
             jm = Loop(j-1,n)
             jp = Loop(j+1,n)
