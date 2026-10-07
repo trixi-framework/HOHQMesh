@@ -1618,6 +1618,7 @@
             prevT = currentNode % gWhereOnBoundary
             CALL listIterator % moveToNext()
 
+            reorder = .FALSE.
             DO WHILE ( .NOT.listIterator % isAtEnd() )
                currentRecord => listIterator % currentRecord()
                obj           => listIterator % object()
@@ -1645,7 +1646,6 @@
                list % tail           => previousRecord
                previousRecord % next => NULL()
             END IF
-            reOrder = .FALSE. ! Reset value for next boundary chain
 !
 !           ------------------------------------
 !           Copy each chain into an array
