@@ -1618,7 +1618,7 @@
             prevT = currentNode % gWhereOnBoundary
             CALL listIterator % moveToNext()
 
-            reorder = .FALSE.
+            reOrder = .FALSE.
             DO WHILE ( .NOT.listIterator % isAtEnd() )
                currentRecord => listIterator % currentRecord()
                obj           => listIterator % object()
