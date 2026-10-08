@@ -108,7 +108,7 @@ as an in-source build, thus populating your HOHQMesh root directory with build a
 The CMake-based build is slightly more involved but also allows you to do out-of-source
 builds.
 
-HOHQMesh is tested to run with the `gfortran` and `ifort` compilers. We recommend the `gfortran` compiler. Our experience on the test suite is that it runs about 50% slower with the `ifort` compiler.
+HOHQMesh is tested to run with the `gfortran` compiler.
 
 #### Using plain `make`
 Enter the HOHQMesh directory and execute
@@ -185,7 +185,7 @@ to create your mesh.
 
 ## Examples
 
-About thirty examples can be found in the `Examples` directory. These examples are set up to run out-of-the-box from the main HOHQMesh directory. 
+About thirty examples can be found in the `Examples` directory. These examples are set up to run out-of-the-box from the main HOHQMesh directory.
 
 For example, from inside the HOHQMesh root directory, you can run
 ```shell

@@ -1565,7 +1565,6 @@
          LOGICAL                              :: reOrder
          TYPE(SMNode)               , POINTER :: tmpNode
 !
-!
 !        -----------------------------------------------------
 !        Temporary storage for the nodes along each curve chain
 !        -----------------------------------------------------
@@ -1619,6 +1618,7 @@
             prevT = currentNode % gWhereOnBoundary
             CALL listIterator % moveToNext()
 
+            reOrder = .FALSE.
             DO WHILE ( .NOT.listIterator % isAtEnd() )
                currentRecord => listIterator % currentRecord()
                obj           => listIterator % object()
@@ -1706,6 +1706,147 @@
          CALL releaseFTLinkedListClass(boundaryNodesList)
 
       END SUBROUTINE SortBoundaryNodesToChains
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SpreadCollapsedBoundaryLocations( list, model )
+!        ----------------------------------------------------------------------
+!        Guards against collapsed or reversed boundary node images before the
+!        boundary elements are generated.
+!
+!        Each node on the ragged (background grid) boundary has an "image": its
+!        projection onto the boundary curve, stored as the chain parameter
+!        `gWhereOnBoundary`. Where the grid and curve disagree (sharp bends,
+!        features smaller than a grid cell), the images of neighboring nodes
+!        can land almost on top of each other or in the wrong order along the
+!        curve. The boundary element built from such a pair is degenerate or
+!        inverted (e.g. a bow tie).
+!
+!        For each movable node (ROW_SIDE only; joint-related nodes stay
+!        pinned), the image is moved to the parametric midpoint of its two
+!        neighbor images when either
+!          - an image is not ahead of its neighbor along the curve (dt <= 0), or
+!          - the distance to a neighboring image is less than minRatio (0.4)
+!            times the length of the corresponding ragged grid edge.
+!        ----------------------------------------------------------------------
+         USE SMModelClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(FTLinkedList), POINTER :: list
+         TYPE (SMModel)     , POINTER :: model
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(SMChainedCurve)        , POINTER :: chain => NULL()
+         TYPE(SMNodePtr), DIMENSION(:), POINTER :: nodeArray => NULL()
+         TYPE (SMNode)                , POINTER :: node => NULL()
+
+         INTEGER                                :: j, jm, jp, n
+         REAL(KIND=RP)                          :: t0, tm, tp, dtm, dtp, span, tNew
+         REAL(KIND=RP)                          :: xm(3), x0(3), xp(3)
+         REAL(KIND=RP)                          :: pm(3), p0(3), pp(3)
+         REAL(KIND=RP)                          :: lRaggedM, lRaggedP, lImageM, lImageP
+
+         REAL(KIND=RP), PARAMETER               :: minRatio  = 0.4_RP ! tunable
+
+         INTEGER, EXTERNAL :: Loop
+
+         nodeArray => GatheredNodes(list)
+         n =  SIZE(nodeArray)
+         chain => model % chainWithID(nodeArray(1) % node % bCurveChainID)
+
+         DO j = 1, n
+            node => nodeArray(j) % node
+!
+!           ----------------------------------------------------------
+!           Only ROW_SIDE targets are movable. Joint-related nodes
+!           (ROW_END, ROW_CORNER, ROW_REVERSAL) are pinned to corners.
+!           ----------------------------------------------------------
+!
+            IF( node % nodeType /= ROW_SIDE )     CYCLE
+!
+!           -------------------------------------------------------
+!           Avoid moving any smooth joint-related nodes on ROW_SIDE
+!           -------------------------------------------------------
+!
+            IF( AlmostEqual(node % whereOnBoundary, 0.0_RP) .OR. &
+                AlmostEqual(node % whereOnBoundary, 1.0_RP) )     CYCLE
+
+            jm = Loop(j-1,n)
+            jp = Loop(j+1,n)
+
+            t0 = node % gWhereOnBoundary
+            tm = nodeArray(jm) % node % gWhereOnBoundary
+            tp = nodeArray(jp) % node % gWhereOnBoundary
+
+            dtm  = wrapDifference(t0 - tm)
+            dtp  = wrapDifference(tp - t0)
+            span = wrapDifference(tp - tm)
+!
+!           -----------------------------------------------------
+!           If the neighbors themselves are out of order there is
+!           nothing sensible to center between. Leave it alone.
+!           -----------------------------------------------------
+!
+            IF( span <= 0.0_RP )     CYCLE
+!
+!           ------------------------------------------------
+!           Lengths of the ragged edges the images came from
+!           ------------------------------------------------
+!
+            xm = nodeArray(jm) % node % x
+            x0 = node % x
+            xp = nodeArray(jp) % node % x
+            lRaggedM = NORM2(x0 - xm)
+            lRaggedP = NORM2(xp - x0)
+!
+!           ------------------------------------
+!           Lengths between the projected images
+!           ------------------------------------
+!
+            pm = chain % positionAt(tm)
+            p0 = chain % positionAt(t0)
+            pp = chain % positionAt(tp)
+            lImageM = NORM2(p0 - pm)
+            lImageP = NORM2(pp - p0)
+
+            IF( dtm <= 0.0_RP .OR. dtp <= 0.0_RP .OR.           &
+               lImageM < minRatio*lRaggedM .OR.                 &
+               lImageP < minRatio*lRaggedP )     THEN
+!
+!              --------------------------------------
+!              Center the image between its neighbors
+!              --------------------------------------
+!
+               tNew = MODULO(tm + 0.5_RP*span, 1.0_RP)
+               node % gWhereOnBoundary = tNew
+               node % whereOnBoundary  = chain % curveTForChainT(tNew)
+            END IF
+
+         END DO
+
+         RETURN
+      END SUBROUTINE SpreadCollapsedBoundaryLocations
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION wrapDifference(d) RESULT(w)
+!
+!        ---------------------------------------------------------------
+!        Wrap a parameter difference into (-0.5, 0.5] for a closed chain
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: d, w
+         w = d
+         IF( w .GT.  0.5_RP ) w = w - 1.0_RP
+         IF( w .LE. -0.5_RP ) w = w + 1.0_RP
+      END FUNCTION wrapDifference
 !
 !////////////////////////////////////////////////////////////////////////
 !

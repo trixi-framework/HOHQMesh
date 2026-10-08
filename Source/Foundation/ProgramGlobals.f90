@@ -112,8 +112,9 @@
          REAL(KIND=RP) :: boundingBoxOverlapTol   = 1.0d-5
          REAL(KIND=RP) :: straightLineTol         = 1.0d-5
          LOGICAL       :: boundarySlipping        = .FALSE.
-         INTEGER       :: maxLevelLimit           = 8      ! allow at most maxLevelLimit levels of subdivision
+         INTEGER       :: maxLevelLimit           = 8       ! allow at most maxLevelLimit levels of subdivision
          INTEGER       :: numBoundarySmoothPasses = 10
+         REAL(KIND=RP) :: anchorStrength          = 0.15_RP
 !
 !        --------------------
 !        For printing history

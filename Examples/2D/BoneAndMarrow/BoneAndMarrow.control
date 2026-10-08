@@ -85,8 +85,8 @@
           name = Marrow
           \begin{PARAMETRIC_EQUATION_CURVE}
              name = Circle2
-             xEqn = f(t) = -1.5 + 1.5*cos(2*pi*t)
-             yEqn = f(t) = 1.5*sin(2*pi*t) + 0.5
+             xEqn = f(t) = -1.0 + 1.5*cos(2*pi*t)
+             yEqn = f(t) = 1.5*sin(2*pi*t)
              zEqn = z(t) = 0.0
           \end{PARAMETRIC_EQUATION_CURVE}
        \end{CHAIN}
