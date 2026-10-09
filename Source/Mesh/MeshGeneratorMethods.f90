@@ -221,7 +221,7 @@
 !
          IF ( ASSOCIATED(interfaceCurves) .AND. &
             project % runParams % meshFileFormat == ISM_MM)     THEN
-            CALL SetMaterialProperties(mesh = project % mesh)
+            CALL SetMaterialProperties(mesh = project % mesh, model = project % model)
          END IF
 !
 !        -------------------------------------
@@ -294,11 +294,15 @@
       grid  => project % grid
       sizer => project % sizer
 !
-!     ----------------------------------------------------------
+!     ----------------------------------------------------------------
 !     Save the polynomial order and the curve names to the mesh.
 !     Material names are associated with the bounding interface
-!     curves.
-!     ----------------------------------------------------------
+!     curves. The background material has BACKGROUND_MATERIAL_ID (0)
+!     and the regions inside the interface curves are numbered 1, 2,...
+!     Chain IDs number the outer boundary first, then the inner
+!     boundaries, then the interfaces, so the material ID of an
+!     interface is its chain ID minus the number of the other chains.
+!     ----------------------------------------------------------------
 !
       mesh % polynomialOrder =  project % runParams % polynomialOrder
       numberOfBoundaries = model % numberOfInnerCurves + model % numberOfOuterCurves &
@@ -306,7 +310,7 @@
 
       IF ( model % numberOfInterfaceCurves > 0 )     THEN
 
-            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:numberOfBoundaries))
+            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:model % numberOfInterfaceCurves))
             mesh % materialNameForID = project % backgroundMaterialName
 
             iterator => model % interfaceBoundariesIterator
@@ -315,7 +319,8 @@
                obj => iterator % object()
                CALL castToSMChainedCurve(obj,chain)
 
-               mesh % materialNameForID(chain % id()) = chain % curveName()
+               mesh % materialNameForID(chain % id() - model % numberOfOuterCurves &
+                                                     - model % numberOfInnerCurves) = chain % curveName()
 
                CALL iterator % moveToNext()
             END DO
@@ -1504,7 +1509,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE SetMaterialProperties( mesh )
+      SUBROUTINE SetMaterialProperties( mesh, model )
 !
 !     ---------------------------------------------------------------------
 !     This procedure is intended to be called after any topology/element
@@ -1521,6 +1526,7 @@
 !        ---------
 !
          TYPE (SMMesh)              , POINTER :: mesh
+         TYPE (SMModel)             , POINTER :: model
 !
 !        ---------------
 !        Local variables
@@ -1536,8 +1542,17 @@
          INTEGER                              :: k, l
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
+         INTEGER                              :: chainIDOffset
+         REAL(KIND=RP)                        :: center(3)
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
+!
+!        ---------------------------------------------------------------
+!        Material ID of an interface = chain ID - chainIDOffset, see
+!        where the materialNameForID are set in GenerateQuadMeshFromGrid
+!        ---------------------------------------------------------------
+!
+         chainIDOffset = model % numberOfOuterCurves + model % numberOfInnerCurves
 !
          elements => mesh % elements
          elementIterator => mesh % elementsIterator
@@ -1563,9 +1578,21 @@
                   numInside  = 0
                   numOutside = 0
                   location   = UNDEFINED
-
+!
+!                 -----------------------------------------------------------------
+!                 Count the nodes inside and outside of 'curveArray', the interface
+!                 curve treated in this pass of the loop over l. Nodes that were
+!                 moved onto curveArray are not counted. The winding number test
+!                 uses a polygon through points of the curve, and a node on the
+!                 curve itself is on the outside of the polygon when the curve
+!                 is convex and on the inside where it is concave. Counting those
+!                 nodes mislabels elements along the concave parts of the curve.
+!                 -----------------------------------------------------------------
+!
                   DO k = 1, 4
                      node => e % nodes(k) % node
+                     IF ( node % distToBoundary == 0.0_RP .AND. &
+                          node % bCurveChainID == curveArray % id )     CYCLE
 
                      w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
                      IF ( abs(w) == 0 ) THEN
@@ -1578,12 +1605,27 @@
                      END IF
                   END DO
 !
-!                 -----------------------------------------
-!                 Set the material ID as the inner curve ID
-!                 -----------------------------------------
+!                 --------------------------------------------------------
+!                 If the remaining nodes do not decide, e.g. all nodes are
+!                 on the interface, use the center of the element
+!                 --------------------------------------------------------
 !
-                  IF ( numInside >= 2 )     THEN
-                     e % materialID   = curveArray % id
+                  IF ( numInside == numOutside )     THEN
+                     center = 0.0_RP
+                     DO k = 1, 4
+                        center = center + 0.25_RP*e % nodes(k) % node % x
+                     END DO
+                     w = ACWindingFunction( center, curveArray % x, curveArray % nSegments-1 )
+                     IF ( abs(w) /= 0 )     numInside = numInside + 1
+                  END IF
+!
+!                 ------------------------------------------------
+!                 Set the material ID of the region inside the
+!                 interface curve
+!                 ------------------------------------------------
+!
+                  IF ( numInside > numOutside )     THEN
+                     e % materialID   = curveArray % id - chainIDOffset
                   END IF
                END IF
 
