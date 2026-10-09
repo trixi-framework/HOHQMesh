@@ -1581,12 +1581,12 @@
 !
 !                 -----------------------------------------------------------------
 !                 Count the nodes inside and outside of 'curveArray', the interface
-!                 curve treated in this pass of the loop over l. Nodes that were
-!                 moved onto curveArray are not counted. The winding number test
-!                 uses a polygon through points of the curve, and a node on the
-!                 curve itself is on the outside of the polygon when the curve
-!                 is convex and on the inside where it is concave. Counting those
-!                 nodes mislabels elements along the concave parts of the curve.
+!                 curve treated in this pass of the loop. Nodes that were moved
+!                 onto curveArray are not counted. The winding number test uses a
+!                 polygon through points of the curve, and a node on the curve
+!                 itself is on the outside of the polygon when the curve is convex
+!                 and on the inside where it is concave. Simply counting those nodes
+!                 would mislabel elements along the concave parts of the curve.
 !                 -----------------------------------------------------------------
 !
                   DO k = 1, 4
@@ -1619,10 +1619,9 @@
                      IF ( abs(w) /= 0 )     numInside = numInside + 1
                   END IF
 !
-!                 ------------------------------------------------
-!                 Set the material ID of the region inside the
-!                 interface curve
-!                 ------------------------------------------------
+!                 ------------------------------------------------------------
+!                 Set the material ID of the region inside the interface curve
+!                 ------------------------------------------------------------
 !
                   IF ( numInside > numOutside )     THEN
                      e % materialID   = curveArray % id - chainIDOffset
