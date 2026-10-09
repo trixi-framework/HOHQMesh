@@ -384,7 +384,7 @@
                              model%numberOfInterfaceCurves
 
       CALL AllocateBoundaryEdgesArray(numBoundaryEdgeLists)
-      CALL CollectBoundaryEdges( mesh, errorCode )
+      CALL CollectBoundaryEdges( mesh, errorCode, useElementSides = .TRUE. )
 
       IF( errorCode > A_OK_ERROR_CODE)     RETURN
 
@@ -453,6 +453,7 @@
          CALL cast(obj,list)
          CALL FlagEndNodes( list, model )
          CALL SpreadCollapsedBoundaryLocations( list, model )
+         IF( boundaryEdgesType(j) == INTERFACE_EDGES )     CALL MoveInterfaceNodesToImages( list, model )
       END DO
 !
 !     ------------------------------------------
@@ -1227,7 +1228,7 @@
                               segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
                               IF( segmentLength > 0.25_RP*hMin )     THEN
                                  mSteps = NINT(segmentLength/hMin)*5
-                                 dz = 1.0_RP/DBLE(mSteps)
+                                 dz = 1.0_RP/REAL(mSteps, KIND=RP)
                                  DO m = 1, mSteps-1
                                     z = x1 + m*dz*(x2 - x1)
                                     IF ( PointInQuad( nodes, z ) )     THEN
@@ -1453,7 +1454,7 @@
 
                         IF( segmentLength > 0.25*hMin )     THEN
                            mSteps = NINT(segmentLength/hMin)*5
-                           dz = 1.0_RP/DBLE(mSteps)
+                           dz = 1.0_RP/REAL(mSteps, KIND=RP)
                            DO m = 1, mSteps-1
                               z = x1 + m*dz*(x2 - x1)
                               IF ( PointInQuad( nodes, z ) )     THEN
@@ -3155,6 +3156,7 @@
             chainNodesArray(j+shift) % node % gWhereOnBoundary = t
             chainNodesArray(j+shift) % node % x                = chain % positionAt(t)
             chainNodesArray(j+shift) % node % whereOnBoundary  = chain % curveTForChainT(t)
+            chainNodesArray(j+shift) % node % bCurveID         = chain % myCurveIDs(chain % curveNumberForLocation(t))
          END DO
 
       END SUBROUTINE SmoothSegments

@@ -537,6 +537,13 @@
                IF( shapeMeasures(AREA_SIGN,k ) < 0.0_RP ) CALL MakeElement_RightHanded( e )
             END DO
 !
+!           ------------------------------------------------------------
+!           Reordering the nodes changes which side of an element each
+!           edge is on, so the edges must be rebuilt before they are used
+!           ------------------------------------------------------------
+!
+            IF ( ANY(shapeMeasures(AREA_SIGN,:) < 0.0_RP) ) CALL mesh % syncEdges()
+!
 !           -------------------------------
 !           Fix triangular/chevron elements
 !           -------------------------------
@@ -646,12 +653,12 @@
 !        ---------------
 !
          INTEGER                              :: numBoundaries
-         INTEGER                              :: j, k, nodeCount
+         INTEGER                              :: j
          CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
          CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
          TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
          CLASS(SMElement)           , POINTER :: e => NULL()
-         TYPE (SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
+         TYPE (SMNode)              , POINTER :: meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          CLASS(FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
@@ -752,10 +759,13 @@
                CALL releaseFTLinkedListIteratorClass(edgeListIterator)
            END DO
 !
-!          ----------------------------------------------------
-!          It is also possible that a single node of an element
-!          falls on the interface boundary.
-!          ----------------------------------------------------
+!          -------------------------------------------------------
+!          Elements that only touch the interface at their corners
+!          (one node, or two opposite nodes) must be split as well
+!          to keep the mesh conforming. Add all elements that have
+!          a node on the interface. Duplicates are skipped when
+!          splitting.
+!          -------------------------------------------------------
 !
             CALL makeNodeToElementConnections(mesh, errorCode)
 
@@ -766,39 +776,26 @@
                   obj => nodesIterator % object()
                   CALL castToSMNode(obj,meshNode)
 !
-!              ------------------------------
-!              See it this is a boundary node
-!              ------------------------------
+!                 --------------------------------
+!                 Check if this is a boundary node
+!                 --------------------------------
 !
                   IF ( meshNode % bCurveID > UNDEFINED .AND. meshNode % distToBoundary == 0.0_RP )     THEN
 !
-!                 --------------------------------------------
-!                 See if it is a boundary node on an interface
-!                 --------------------------------------------
+!                    ----------------------------------------------
+!                    Check if it is a boundary node on an interface
+!                    ----------------------------------------------
 !
-                     IF ( boundaryEdgesType(meshNode % bCurveID) == INTERFACE_EDGES )     THEN
+                     IF ( boundaryEdgesType(meshNode % bCurveChainID) == INTERFACE_EDGES )     THEN
 !
-!                    ------------------------------------------------
-!                    Find the elements associated with this node that
-!                    have only one node on the boundary
-!                    ------------------------------------------------
+!                       ------------------------------------------
+!                       Add the elements associated with this node
+!                       ------------------------------------------
 !
                         DO j = 1, numElementsForNode( meshNode % id )
-                           e         => elementsForNodes(j,meshNode % id) % element
-                           nodecount = 0
-                           DO k = 1, 4
-                              elementNode => e % nodes(k) % node
-
-                              IF ( elementNode % distToBoundary == 0.0_RP )     THEN
-                                 nodeCount = nodeCount + 1
-                              END IF
-                           END DO
-
-                           IF ( nodeCount == 1 )     THEN
-                              obj => e
-                              CALL interfaceElements % add(obj)
-                           END IF
-
+                           e   => elementsForNodes(j,meshNode % id) % element
+                           obj => e
+                           CALL interfaceElements % add(obj)
                         END DO
                      END IF
                   END IF
