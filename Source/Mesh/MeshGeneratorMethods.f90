@@ -74,6 +74,14 @@
          DO j = 1, numberOfTries
             CALL GenerateAQuadMesh( project, errorCode )
 !
+!           --------------------------------------------------------
+!           A failed attempt leaves the boundary edge lists in an
+!           unknown state. Skip the boundary approximations and let
+!           the retry with a smaller background grid below handle it
+!           --------------------------------------------------------
+!
+            IF ( errorCode > A_OK_ERROR_CODE )     EXIT
+!
 !           -----------------------------------
 !           Gather and set boundary information
 !           and from that, create boundary
@@ -124,6 +132,13 @@
                IF( errorCode == A_OK_ERROR_CODE)     EXIT
             END DO
         END IF
+!
+!       ------------------------------------------------------
+!       Still no valid mesh: the caller reports the error, see
+!       ReportMeshGenerationFailure
+!       ------------------------------------------------------
+!
+        IF ( errorCode > A_OK_ERROR_CODE )     RETURN
 !
 !       -------------------------------------------------------------
 !       Re-compute the boundary polynomials with the optimized curves
