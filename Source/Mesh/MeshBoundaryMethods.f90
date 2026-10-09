@@ -848,7 +848,7 @@
          CLASS(FTObject)            , POINTER     :: obj => NULL()
          INTEGER                    , ALLOCATABLE :: nodeCount(:,:)
          INTEGER                                  :: numEdges, i, j, k, m
-         LOGICAL                                  :: edgeRemoved
+         LOGICAL                                  :: edgeRemoved, foundDanglingEdge
 
          edgeRemoved = .TRUE.
          DO WHILE ( edgeRemoved )
@@ -893,34 +893,40 @@
                END DO
             END DO
 !
-!           ------------------------------
+!           -------------------------------
 !           First look for a dangling edge
-!           ------------------------------
+!           -------------------------------
 !
-            DanglingSearch: DO i = 1, numEdges
+            foundDanglingEdge = .FALSE.
+            DO i = 1, numEdges
                DO k = 1, 2
                   IF ( nodeCount(k,i) == 1 )     THEN
                      edge         => edgeArray(i) % edge
                      danglingNode => edge % nodes(k) % node
                      danglingNode % bCurveSide = OUTSIDE
+
                      edgeRemoved  = .TRUE.
-                     EXIT DanglingSearch
+                     foundDanglingEdge = .TRUE.
+                     EXIT
                   END IF
                END DO
-            END DO DanglingSearch
+
+               IF (foundDanglingEdge) EXIT
+            END DO
 !
 !           -------------------------------------------
 !           then look for a chord between branch points
 !           -------------------------------------------
 !
             IF ( .NOT.edgeRemoved )     THEN
-               ChordSearch: DO i = 1, numEdges
+               DO i = 1, numEdges
                   IF ( nodeCount(1,i) < 3 .OR. nodeCount(2,i) < 3 )     CYCLE
                   IF ( EdgeBordersOutsideNode(edgeArray(i) % edge) )   CYCLE
                   edge        => edgeArray(i) % edge
+
                   edgeRemoved = .TRUE.
-                  EXIT ChordSearch
-               END DO ChordSearch
+                  EXIT
+               END DO
             END IF
             DEALLOCATE(edgeArray, nodeCount)
 
