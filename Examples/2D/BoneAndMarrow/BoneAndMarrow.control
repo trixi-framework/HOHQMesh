@@ -10,7 +10,7 @@
 \begin{CONTROL_INPUT}
 %
 %  Plot and stats file names can be "none" if no output
-%  is desired. 
+%  is desired.
 %
    \begin{RUN_PARAMETERS}
       mesh file name   = Examples/2D/BoneAndMarrow/BoneAndMarrow.mesh
@@ -34,7 +34,7 @@
 %
    \begin{SPRING_SMOOTHER}
       smoothing type       = LinearAndCrossBarSpring
-      number of iterations = 25
+      number of iterations = 100
    \end{SPRING_SMOOTHER}
 
 \end{CONTROL_INPUT}
@@ -44,7 +44,7 @@
 % -----------
 %
 \begin{MODEL}
-   
+
    \begin{MATERIALS}
       background material name = Muscle
    \end{MATERIALS}
@@ -65,8 +65,8 @@
      \end{OUTER_BOUNDARY}
 
 %
-%   There are an arbitrary number of inner boundaries. 
-%   Each is a chain of curves, even if there is only 
+%   There are an arbitrary number of inner boundaries.
+%   Each is a chain of curves, even if there is only
 %   one curve in the chain.
 %
     \begin{INTERFACE_BOUNDARIES}
@@ -80,7 +80,7 @@
              zEqn = z(t) = 0.0
           \end{PARAMETRIC_EQUATION_CURVE}
        \end{CHAIN}
-      
+
        \begin{CHAIN}
           name = Marrow
           \begin{PARAMETRIC_EQUATION_CURVE}
