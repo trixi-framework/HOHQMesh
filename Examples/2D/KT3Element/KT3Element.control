@@ -1,6 +1,5 @@
 %
 %   This control file is for meshing a three element Karman-Trefftz airfoil
-%   Note, run with option -sLimit 9 to generate the mesh 
 %
 \begin{CONTROL_INPUT}
 
@@ -12,11 +11,11 @@
       polynomial order = 4
       plot file format = skeleton
    \end{RUN_PARAMETERS}
-   
+
    \begin{BACKGROUND_GRID}
        x0 = [-30.0, -30.0, 0.0]
-       dx = [4.0, 4.0, 4.0]
-       N  = [15,15,1]
+       dx = [4.0, 4.0, 0.0]
+       N  = [15,15,0]
    \end{BACKGROUND_GRID}
 
    \begin{SPRING_SMOOTHER}
