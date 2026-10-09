@@ -64,6 +64,12 @@
       USE MeshProjectClass
       IMPLICIT NONE
 !
+!     An element with three interface nodes whose middle node is pinned at a
+!     joint of the interface curve and has an angle smaller than this (in
+!     degrees) is at a corner of the curve, see SplitCornerElementIntoTwo
+!
+      REAL(KIND=RP), PARAMETER, PRIVATE :: MAX_CORNER_ANGLE = 135.0_RP
+!
 !-------------------------------------------------------------------
 ! Define procedures for modifying elements in the neighborhood of
 ! material interface boundaries
@@ -220,11 +226,18 @@
                CASE( 3 )
 !              ---------
 !
-!                 -------------------------
-!                 Split into three elements
-!                 -------------------------
+!                 --------------------------------------------------------------
+!                 Split into three elements, unless the middle interface node is
+!                 pinned at a corner of the interface curve. Then split into two
+!                 so that the corner angle is not cut in half.
+!                 --------------------------------------------------------------
 !
-                  CALL SplitElementIntoThree( oppositeNodeNumber, e, newElementsList, mesh )
+                  IF ( e % nodes(Loop(oppositeNodeNumber+2,4)) % node % nodeType /= ROW_SIDE .AND. &
+                       InterfaceCornerAngle( e, oppositeNodeNumber ) < MAX_CORNER_ANGLE )     THEN
+                     CALL SplitCornerElementIntoTwo( oppositeNodeNumber, e, newElementsList, mesh )
+                  ELSE
+                     CALL SplitElementIntoThree( oppositeNodeNumber, e, newElementsList, mesh )
+                  END IF
                   e % remove = .true.
 
                CASE DEFAULT
@@ -721,6 +734,139 @@
          IsInterfaceNode = boundaryEdgesType(chainID) == INTERFACE_EDGES
 
       END FUNCTION IsInterfaceNode
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION InterfaceCornerAngle( e, freeNode )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------
+!        Interior angle (in degrees) of the element at the interface
+!        node opposite to freeNode, i.e. the middle one of the three
+!        interface nodes
+!        -----------------------------------------------------------
+!
+         TYPE (SMElement), POINTER :: e
+         INTEGER                   :: freeNode
+         INTEGER, EXTERNAL         :: Loop
+         REAL(KIND=RP)             :: a(2), b(2), c(2), u(2), v(2)
+
+         a = e % nodes(Loop(freeNode+1,4)) % node % x(1:2)
+         b = e % nodes(Loop(freeNode+2,4)) % node % x(1:2)
+         c = e % nodes(Loop(freeNode+3,4)) % node % x(1:2)
+         u = a - b
+         v = c - b
+         InterfaceCornerAngle = ACOS( MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(u,v)/(NORM2(u)*NORM2(v)))) )*180.0_RP/PI
+
+      END FUNCTION InterfaceCornerAngle
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SplitCornerElementIntoTwo( freeNode, e, newElementsList, mesh )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------------
+!        Split an element with three interface nodes that turn a sharp
+!        corner. The two edges at freeNode are split at their midpoints,
+!        P (towards freeNode+1) and M (towards freeNode-1), as for the
+!        three-way split, so the neighbors still conform. The resulting
+!        hexagon (f, P, f+1, f+2, f+3, M) is cut into two quads by the
+!        diagonal P-(f+3) or M-(f+1), whichever gives the better elements.
+!        The corner node f+2 then belongs to one element only, keeping its
+!        full angle.
+!        -----------------------------------------------------------------
+!
+         TYPE (SMMesh)      , POINTER :: mesh
+         TYPE (SMElement)   , POINTER :: e
+         CLASS(FTLinkedList), POINTER :: newElementsList
+         INTEGER                      :: freeNode
+
+         TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, quadA1, quadA2, quadB1, quadB2
+         TYPE (SMNode)   , POINTER     :: nodeP => NULL(), nodeM => NULL(), node => NULL()
+         TYPE (SMEdge)   , POINTER     :: edge  => NULL()
+         INTEGER                       :: id, f, f1, f2, f3
+         REAL(KIND=RP)                 :: x(3)
+         INTEGER, EXTERNAL             :: Loop
+
+         id = e % id
+         f  = freeNode
+         f1 = Loop(f+1,4); f2 = Loop(f+2,4); f3 = Loop(f+3,4)
+!
+!        -----------------------------------------------------
+!        Midpoints of the two edges at the free node,
+!        shared with the neighbors (see SplitElementIntoThree)
+!        -----------------------------------------------------
+!
+         edge => edgesForElements(f,id) % edge
+         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
+            nodeP => edge % auxiliaryNode
+         ELSE
+            x = 0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
+            CALL constructNewNode(mesh,x,edge,node)
+            nodeP => node
+         END IF
+
+         edge => edgesForElements(Loop(f-1,4),id) % edge
+         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
+            nodeM => edge % auxiliaryNode
+         ELSE
+            x = 0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
+            CALL constructNewNode(mesh,x,edge,node)
+            nodeM => node
+         END IF
+!
+!        --------------------------
+!        Two candidate subdivisions
+!        --------------------------
+!
+         quadA1(1) % node => nodeP; quadA1(2) % node => e % nodes(f1) % node
+         quadA1(3) % node => e % nodes(f2) % node; quadA1(4) % node => e % nodes(f3) % node
+         quadA2(1) % node => e % nodes(f) % node; quadA2(2) % node => nodeP
+         quadA2(3) % node => e % nodes(f3) % node; quadA2(4) % node => nodeM
+
+         quadB1(1) % node => e % nodes(f1) % node; quadB1(2) % node => e % nodes(f2) % node
+         quadB1(3) % node => e % nodes(f3) % node; quadB1(4) % node => nodeM
+         quadB2(1) % node => e % nodes(f) % node; quadB2(2) % node => nodeP
+         quadB2(3) % node => e % nodes(f1) % node; quadB2(4) % node => nodeM
+
+         IF ( MIN(QuadMinScaledJacobian(quadA1), QuadMinScaledJacobian(quadA2)) >= &
+              MIN(QuadMinScaledJacobian(quadB1), QuadMinScaledJacobian(quadB2)) )     THEN
+            elementNodes = quadA1
+            CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
+            elementNodes = quadA2
+            CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
+         ELSE
+            elementNodes = quadB1
+            CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
+            elementNodes = quadB2
+            CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
+         END IF
+
+      END SUBROUTINE SplitCornerElementIntoTwo
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION QuadMinScaledJacobian( q )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------
+!        Smallest sine of the corner angles (negative if folded)
+!        -------------------------------------------------------
+!
+         TYPE(SMNodePtr), DIMENSION(4) :: q
+         INTEGER                       :: k
+         INTEGER, EXTERNAL             :: Loop
+         REAL(KIND=RP)                 :: u(2), v(2)
+
+         QuadMinScaledJacobian = HUGE(1.0_RP)
+         DO k = 1, 4
+            u = q(Loop(k+1,4)) % node % x(1:2) - q(k) % node % x(1:2)
+            v = q(Loop(k-1,4)) % node % x(1:2) - q(k) % node % x(1:2)
+            QuadMinScaledJacobian = MIN( QuadMinScaledJacobian, &
+                                        (u(1)*v(2) - u(2)*v(1))/(NORM2(u)*NORM2(v)) )
+         END DO
+
+      END FUNCTION QuadMinScaledJacobian
 !
 !////////////////////////////////////////////////////////////////////////
 !

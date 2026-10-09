@@ -1783,6 +1783,7 @@
          INTEGER                                   :: j, k, jNode, id, jNode0, jNode1
          REAL(KIND=RP)                             :: t, dt, t0, t1, x, dMin, d
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
+         LOGICAL                                   :: isInterface
 
          nodeArray     => GatheredNodes( list )
          nodeArraySize = SIZE(nodeArray)
@@ -1801,6 +1802,14 @@
 !
          id            = nodeArray(1) % node % bCurveChainID
          boundaryCurve => model % chainWithID(id)
+!
+!        ----------------------------------------------------------------
+!        Interface nodes are not replaced by new boundary nodes, they keep
+!        their (chain) parameter values, so the chain parameter of the
+!        node pinned to the start of the chain must be set as well
+!        ----------------------------------------------------------------
+!
+         isInterface = boundaryEdgesType(id) == INTERFACE_EDGES
 !
 !        -----------------------------------------------------------
 !        For each joint in the boundary curve, find the closest
@@ -1844,6 +1853,7 @@
            nodeArray(jNode0) % node % whereOnBoundary = 0.0_RP
            nodeArray(jNode0) % node % nodeType        = boundaryCurve % jointClassification(0)
            nodeArray(jNode0) % node % bCurveID        = boundaryCurve % myCurveIDs(1)
+           IF ( isInterface )     nodeArray(jNode0) % node % gWhereOnBoundary = 0.0_RP
          ELSE
            IF ( jNode1 < 0 )     THEN
               WRITE(msg,*) "Joint node 1 not found"
@@ -1852,6 +1862,10 @@
            END IF
            nodeArray(jNode1) % node % whereOnBoundary = 1.0_RP
            nodeArray(jNode1) % node % nodeType        = boundaryCurve % jointClassification(0)
+           IF ( isInterface )     THEN
+              nodeArray(jNode1) % node % gWhereOnBoundary = 1.0_RP
+              nodeArray(jNode1) % node % bCurveID         = boundaryCurve % myCurveIDs(boundaryCurve % numberOfCurvesInChain)
+           END IF
          END IF
 !
 !       --------------------
