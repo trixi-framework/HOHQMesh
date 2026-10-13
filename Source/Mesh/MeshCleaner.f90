@@ -268,6 +268,7 @@
          TYPE(SMEdgePtr)               :: sharedEdgePointers(2), newEdgePointers(2)
 
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
+         LOGICAL                                   :: isOnNeighbor
 !
 !        ------------------------
 !        Make current connections
@@ -306,18 +307,20 @@
 !           See if this edge is along the target element
 !           --------------------------------------------
 !
+!           A boundary edge has only one element, so elements(2) must be
+!           checked before it is used. (Fortran does not short-circuit the
+!           ELSE IF test below.) A boundary edge cannot flank the target.
+!
+            IF ( .NOT.ASSOCIATED(edge % elements(2) % element) )             CYCLE
+
             IF ( edge % elements(1) % element % id == eTarget % id )          THEN
-               IF ( ASSOCIATED(edge % elements(2) % element) )              THEN
-                  cnt                       = cnt + 1
-                  eNeighbors(cnt) % element => edge % elements(2) % element
-                  sharedEdgePointers(cnt) % edge => edge
-               END IF
+               cnt                       = cnt + 1
+               eNeighbors(cnt) % element => edge % elements(2) % element
+               sharedEdgePointers(cnt) % edge => edge
             ELSE IF ( edge % elements(2) % element % id == eTarget % id )   THEN
-               IF ( ASSOCIATED(edge % elements(1) % element) )                  THEN
-                  cnt                     = cnt + 1
-                  eNeighbors(cnt) % element => edge % elements(1) % element
-                  sharedEdgePointers(cnt) % edge => edge
-              END IF
+               cnt                     = cnt + 1
+               eNeighbors(cnt) % element => edge % elements(1) % element
+               sharedEdgePointers(cnt) % edge => edge
             END IF
             IF(cnt == 2) EXIT
          END DO
@@ -352,8 +355,11 @@
 !           ------------------------------------------------------
 !
             DO j = 1, 2
-               IF ( edge % elements(1) % element % id == eNeighbors(j) % element % id .OR. &
-                  ( edge % elements(2) % element % id == eNeighbors(j) % element % id )) THEN
+               isOnNeighbor = edge % elements(1) % element % id == eNeighbors(j) % element % id
+               IF ( ASSOCIATED(edge % elements(2) % element) )     THEN ! Not a boundary edge
+                  isOnNeighbor = isOnNeighbor .OR. edge % elements(2) % element % id == eNeighbors(j) % element % id
+               END IF
+               IF ( isOnNeighbor ) THEN
                   cnt                       = cnt + 1
                   newEdgePointers(cnt) % edge => edge
                END IF
