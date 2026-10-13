@@ -276,6 +276,21 @@
          CALL MakeNodeToElementConnections( mesh, errorCode )
          CALL MakeNodeToEdgeConnections   ( mesh )
 !
+!        ----------------------------------------------------------------
+!        Do not change the valence of a node on a boundary or interface
+!        curve (as for the diamonds, see DeleteElementIfDiamond): the new
+!        node is not on the curve, and the elements moved to it would no
+!        longer follow the curve.
+!        ----------------------------------------------------------------
+!
+         e    => elementsForNodes(1,id) % element
+         node => e % nodes(ElementLocalNodeIDForNodeID(id, e)) % node
+         IF ( node % bCurveID /= UNDEFINED )     THEN
+            CALL deallocateNodeToEdgeConnections()
+            CALL deallocateNodeToElementConnections()
+            RETURN
+         END IF
+!
 !        ---------------------------------------
 !        Find the element with the largest angle
 !        ---------------------------------------
