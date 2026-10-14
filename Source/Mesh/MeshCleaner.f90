@@ -318,13 +318,12 @@
          DO k = 1, numEdgesForNodes(id)
             edge => edgesForNodes(k,id) % edge
 !
-!           --------------------------------------------
+!           ----------------------------------------------------
 !           See if this edge is along the target element
-!           --------------------------------------------
-!
-!           A boundary edge has only one element, so elements(2) must be
-!           checked before it is used. (Fortran does not short-circuit the
-!           ELSE IF test below.) A boundary edge cannot flank the target.
+!           A boundary edge has only one element, so elements(2)
+!           must be checked before it is used. A boundary edge
+!           cannot flank the target.
+!           ----------------------------------------------------
 !
             IF ( .NOT.ASSOCIATED(edge % elements(2) % element) )             CYCLE
 
