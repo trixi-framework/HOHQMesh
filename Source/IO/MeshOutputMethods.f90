@@ -158,7 +158,7 @@
             WRITE(fUnit,*) "ZONE I=", N+1, ",J=",N+1,", F=POINT"
             DO j= 0, N
                DO i = 0, N
-                  WRITE(fUnit,'(3E13.5,1X,I0)') e % xPatch(1, i, j), e % xPatch(2, i, j), e % xPatch(3, i, j), &
+                  WRITE(fUnit,'(3ES24.16,1X,I0)') e % xPatch(1, i, j), e % xPatch(2, i, j), e % xPatch(3, i, j), &
                                              e % materialID
                END DO
             END DO
