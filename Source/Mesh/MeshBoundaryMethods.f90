@@ -621,7 +621,8 @@
 
          IF ( pinchNodeID /= 0 )     THEN
             CALL ThrowErrorExceptionOfType( "CollectInterfaceEdgesFromElementSides", &
-                                            "Unable to remove all bumps and pinch nodes on interface "//TRIM(curveArray % boundaryName()), &
+                                            "Unable to remove all bumps and pinch nodes on interface "&
+                                            //TRIM(curveArray % boundaryName()), &
                                             FT_ERROR_WARNING )
          END IF
 !
