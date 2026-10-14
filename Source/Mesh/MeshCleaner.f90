@@ -279,7 +279,7 @@
 !
 !        ----------------------------------------------------------------
 !        Do not change the valence of a node on a boundary or interface
-!        curve (as for the diamonds, see DeleteElementIfDiamond): the new
+!        curve (as for the diamonds, see DeleteElementIfDiamond). The new
 !        node is not on the curve, and the elements moved to it would no
 !        longer follow the curve.
 !        ----------------------------------------------------------------
