@@ -314,7 +314,7 @@
                      IF( printMessage )     THEN
                         WRITE(stderr,*)  " "
                         WRITE(stderr,*)  "**************************************************************************"
-                        WRITE(stderr,*)  "edge list not associated"
+                        WRITE(stderr,*)  "Edge list not associated"
                         WRITE(stderr,*)  ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
                         WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
                         WRITE(stderr,*)  "**************************************************************************"
