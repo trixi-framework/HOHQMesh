@@ -181,7 +181,7 @@
             obj => self % outerBoundary
             CALL release(obj)
          END IF
-         
+
          NULLIFY(self % outerBoundary)
          NULLIFY(self % interfaceBoundariesList)
          NULLIFY(self % innerBoundariesList)
@@ -666,13 +666,14 @@
 !
          IF(ASSOCIATED(self % outerBoundary))     THEN
             CALL CurveToCurveBoundaryDistances(segmentedCurveChain = self % outerBoundary, &
-                                               isOuterBoundary = .TRUE.)
+                                               isOuterBoundary = .TRUE., isInterface = .FALSE.)
          END IF
 
          IF ( numberOfInsideBoundaries > 0 )     THEN
             DO k = 1, numberOfInsideBoundaries
                CALL CurveToCurveBoundaryDistances(segmentedCurveChain = innerCurvesArray(k) % curve, &
-                                                  isOuterBoundary = .FALSE. )
+                                                  isOuterBoundary = .FALSE.,                   &
+                                                  isInterface = k > self % noOfInnerBoundaries )
             END DO
          END IF
 !
@@ -1020,11 +1021,13 @@
 !
 !////////////////////////////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CurveToCurveBoundaryDistances(segmentedCurveChain, isOuterBoundary )
+      SUBROUTINE CurveToCurveBoundaryDistances(segmentedCurveChain, isOuterBoundary, isInterface )
 !
-!      ----------------------------------------
-!      Find the distance from a curve to itself
-!      ----------------------------------------
+!      ---------------------------------------------------------------
+!      Find the distance from a curve to itself. An interface curve is
+!      meshed on both sides, so the distance across its inside counts
+!      as well as the distance across the outside.
+!      ---------------------------------------------------------------
 !
       IMPLICIT NONE
 !
@@ -1034,6 +1037,7 @@
 !
       CLASS(ChainedSegmentedCurve), POINTER :: segmentedCurveChain
       LOGICAL                               :: isOuterBoundary
+      LOGICAL                               :: isInterface
 !
 !     ---------------
 !     Local variables
@@ -1085,10 +1089,12 @@
                   targetDot  = DOT_PRODUCT(vecToTarget,nHatOuter)
 
 
-                  IF ( isOuterBoundary )     THEN
-                     isProperTarget =  normalsDot  < -closeCurveNormalAlignment .AND. targetDot   < -normalTangentMin
+                  IF ( isInterface )     THEN
+                     isProperTarget = normalsDot < -closeCurveNormalAlignment .AND. ABS(targetDot) > normalTangentMin
+                  ELSE IF ( isOuterBoundary )     THEN
+                     isProperTarget = normalsDot < -closeCurveNormalAlignment .AND. targetDot < -normalTangentMin
                   ELSE
-                     isProperTarget =  normalsDot  <  -closeCurveNormalAlignment .AND. targetDot   > normalTangentMin
+                     isProperTarget = normalsDot < -closeCurveNormalAlignment .AND. targetDot > normalTangentMin
                   END IF
 
                   IF( isProperTarget )     THEN
