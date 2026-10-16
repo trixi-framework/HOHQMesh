@@ -425,7 +425,7 @@
 
          TYPE (SMElementPtr), ALLOCATABLE :: elementForID(:)
          TYPE (SMEdgePtr)   , ALLOCATABLE :: meshEdges(:)
-         LOGICAL            , ALLOCATABLE :: isInside(:), isInterfaceEdge(:)
+         LOGICAL            , ALLOCATABLE :: isInside(:), isInterfaceEdge(:), flippedAtCorner(:)
          REAL(KIND=RP)      , ALLOCATABLE :: insideFraction(:)
          INTEGER            , ALLOCATABLE :: interfaceEdgeCount(:), elementEdgeCount(:)
          TYPE (SMElement)   , POINTER     :: e => NULL(), eFlip => NULL()
@@ -455,7 +455,8 @@
          END DO
 
          ALLOCATE( elementForID(maxElementID), isInside(maxElementID), insideFraction(maxElementID) )
-         ALLOCATE( elementEdgeCount(maxElementID) )
+         ALLOCATE( elementEdgeCount(maxElementID), flippedAtCorner(maxElementID) )
+         flippedAtCorner = .FALSE.
          isInside       = .FALSE.
          insideFraction = -1.0_RP
 
@@ -582,6 +583,21 @@
                CYCLE
             END IF
 !
+!           ------------------------------------------------------------
+!           An element whose two interface edges meet at a node keeps
+!           three nodes on the curve. If the curve between the outer two
+!           bends toward the element, as at a reflex corner, the element
+!           has to wrap the corner and folds once its nodes are on the
+!           curve. Switch its side (once) so that the interface runs
+!           through its fourth node instead, which then takes the corner.
+!           ------------------------------------------------------------
+!
+            IF ( FlipCornerWrappingElements( curveArray, elementForID, meshEdges, isInterfaceEdge, &
+                                             isInside, flippedAtCorner ) )     THEN
+               pinchNodeID = -1
+               CYCLE
+            END IF
+!
 !           -----------------------------------------------------
 !           A node with more than two interface edges is a pinch.
 !           Reclassify the least certain element that touches it
@@ -656,9 +672,233 @@
 !        ----------------------------
 !
          DEALLOCATE(elementForID, meshEdges, isInside, isInterfaceEdge)
-         DEALLOCATE(insideFraction, interfaceEdgeCount, elementEdgeCount)
+         DEALLOCATE(insideFraction, interfaceEdgeCount, elementEdgeCount, flippedAtCorner)
 
       END SUBROUTINE CollectInterfaceEdgesFromElementSides
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION FlipCornerWrappingElements( curveArray, elementForID, meshEdges, &
+                                                   isInterfaceEdge, isInside, flippedAtCorner )
+         USE Geometry
+         IMPLICIT NONE
+!
+!     ------------------------------------------------------------------
+!     For CollectInterfaceEdgesFromElementSides: an element whose two
+!     interface edges meet at a node keeps three nodes on the curve. If
+!     the curve between the outer two bends toward the element, as at a
+!     reflex corner, switch the side of the element (once, recorded in
+!     flippedAtCorner). True if any element was switched.
+!     ------------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         TYPE (SMElementPtr)                 :: elementForID(:)
+         TYPE (SMEdgePtr)                    :: meshEdges(:)
+         LOGICAL                             :: isInterfaceEdge(:), isInside(:), flippedAtCorner(:)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, ALLOCATABLE   :: edgesOfElement(:,:), numFound(:)
+         TYPE (SMEdge), POINTER :: edgeA => NULL(), edgeB => NULL()
+         TYPE (SMNode), POINTER :: nodeP => NULL(), nodeA => NULL(), nodeB => NULL(), nodeF => NULL()
+         TYPE (SMElement), POINTER :: e => NULL()
+         INTEGER                :: id, kA, kB, kk, j, k, maxElementID, numEdges
+         REAL(KIND=RP), PARAMETER :: MIN_FLIP_CORNER_ANGLE = 90.0_RP ! convex side, degrees
+         LOGICAL                :: hasCorner
+         REAL(KIND=RP)          :: corner(2), cornerAngle, aImage(2), bImage(2)
+
+         FlipCornerWrappingElements = .FALSE.
+         maxElementID = SIZE(elementForID)
+         numEdges     = SIZE(meshEdges)
+         ALLOCATE( edgesOfElement(2,maxElementID), numFound(maxElementID) )
+         numFound = 0
+         DO j = 1, numEdges
+            IF ( .NOT.isInterfaceEdge(j) )     CYCLE
+            DO k = 1, 2
+               id = meshEdges(j) % edge % elements(k) % element % id
+               numFound(id) = numFound(id) + 1
+               IF( numFound(id) <= 2 )     edgesOfElement(numFound(id),id) = j
+            END DO
+         END DO
+
+         DO id = 1, maxElementID
+            IF ( numFound(id) /= 2 .OR. flippedAtCorner(id) )     CYCLE
+            edgeA => meshEdges(edgesOfElement(1,id)) % edge
+            edgeB => meshEdges(edgesOfElement(2,id)) % edge
+!
+!           ---------------------------------------------
+!           The shared node and the two nodes on either side
+!           ---------------------------------------------
+!
+            nodeP => NULL()
+            DO kA = 1, 2
+               DO kB = 1, 2
+                  IF ( edgeA % nodes(kA) % node % id == edgeB % nodes(kB) % node % id )     THEN
+                     nodeP => edgeA % nodes(kA) % node
+                     nodeA => edgeA % nodes(3-kA) % node
+                     nodeB => edgeB % nodes(3-kB) % node
+                  END IF
+               END DO
+            END DO
+            IF ( .NOT.ASSOCIATED(nodeP) )     CYCLE
+
+            e => elementForID(id) % element
+            DO kk = 1, 4
+               nodeF => e % nodes(kk) % node
+               IF ( nodeF % id /= nodeP % id .AND. nodeF % id /= nodeA % id .AND. &
+                    nodeF % id /= nodeB % id )     EXIT
+            END DO
+
+            CALL FindCornerTowardPoint( nodeA % x, nodeB % x, nodeF % x, curveArray, &
+                                        hasCorner, corner, cornerAngle, aImage, bImage )
+            IF ( .NOT.hasCorner )     CYCLE
+!
+!           ----------------------------------------------------------
+!           Switching the element adds an element to the convex side,
+!           which does not fit into a sharp corner. If the shared node
+!           is on the other side of the curve and one of its neighbors
+!           has its image next to the corner, the corner is already
+!           taken by that neighbor's node, so leave the element as is.
+!           ----------------------------------------------------------
+!
+            IF ( cornerAngle < MIN_FLIP_CORNER_ANGLE .AND. &
+                 ((ACWindingFunction( nodeP % x, curveArray % x, curveArray % nSegments-1 ) /= 0) &
+                  .NEQV. isInside(id)) )     THEN
+               IF ( NORM2(aImage - corner) < 0.5_RP*NORM2(nodeA % x(1:2) - nodeP % x(1:2)) .OR. &
+                    NORM2(bImage - corner) < 0.5_RP*NORM2(nodeB % x(1:2) - nodeP % x(1:2)) )     CYCLE
+            END IF
+
+            isInside(id)               = .NOT.isInside(id)
+            flippedAtCorner(id)        = .TRUE.
+            FlipCornerWrappingElements = .TRUE.
+         END DO
+
+         DEALLOCATE( edgesOfElement, numFound )
+
+      END FUNCTION FlipCornerWrappingElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE FindCornerTowardPoint( a, b, f, curveArray, hasCorner, corner, cornerAngle, aImage, bImage )
+         IMPLICIT NONE
+!
+!     -----------------------------------------------------------------
+!     Find whether the piece of the segmented curve between the points
+!     a' and b' nearest to a and b has a corner, sharper than
+!     MAX_CORNER_ANGLE, that points toward f, i.e. whether a quad with
+!     nodes f, a', corner, b' would have a reflex angle at the corner.
+!     cornerAngle is the angle between a' and b' seen from the corner,
+!     on the side away from f, in degrees.
+!     -----------------------------------------------------------------
+!
+         REAL(KIND=RP)                       :: a(3), b(3), f(3)
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         LOGICAL                             :: hasCorner
+         REAL(KIND=RP)                       :: corner(2), cornerAngle, aImage(2), bImage(2)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP), PARAMETER :: MAX_CORNER_ANGLE = 160.0_RP ! degrees
+         INTEGER                  :: N, j, jStart, jEnd, jMax, i
+         REAL(KIND=RP)            :: sA, sB, sTmp, p1(2), p2(2), chord(2), side
+         REAL(KIND=RP)            :: depth, depthMax, u(2), v(2)
+
+         hasCorner   = .FALSE.
+         corner      = 0.0_RP
+         cornerAngle = 180.0_RP
+         N = curveArray % nSegments
+
+         CALL NearestPointOnSegmentedCurve( a, curveArray, sA, aImage )
+         CALL NearestPointOnSegmentedCurve( b, curveArray, sB, bImage )
+         p1 = aImage
+         p2 = bImage
+         IF ( sB < sA )     THEN
+            sTmp = sA
+            sA   = sB
+            sB   = sTmp
+            p1 = bImage
+            p2 = aImage
+         END IF
+         chord = p2 - p1
+         IF ( NORM2(chord) == 0.0_RP )     RETURN
+         side = SIGN(1.0_RP, chord(1)*(f(2) - p1(2)) - chord(2)*(f(1) - p1(1)))
+!
+!        ---------------------------------------------------------
+!        Vertices strictly between the two images, the shorter way
+!        around the closed curve
+!        ---------------------------------------------------------
+!
+         IF ( sB - sA <= 0.5_RP*N )     THEN
+            jStart = FLOOR(sA) + 1
+            jEnd   = CEILING(sB) - 1
+         ELSE
+            jStart = FLOOR(sB) + 1
+            jEnd   = CEILING(sA) - 1 + N
+         END IF
+
+         depthMax = 0.0_RP
+         jMax     = -1
+         DO i = jStart, jEnd
+            j     = MODULO(i, N)
+            depth = side*(chord(1)*(curveArray % x(2,j) - p1(2)) - chord(2)*(curveArray % x(1,j) - p1(1)))
+            IF ( depth > depthMax )     THEN
+               depthMax = depth
+               jMax     = j
+            END IF
+         END DO
+         IF ( jMax < 0 )     RETURN
+
+         u = aImage - curveArray % x(1:2,jMax)
+         v = bImage - curveArray % x(1:2,jMax)
+         IF ( NORM2(u) == 0.0_RP .OR. NORM2(v) == 0.0_RP )     RETURN
+         cornerAngle = AngleBetween(u, v)
+         hasCorner   = cornerAngle < MAX_CORNER_ANGLE
+         corner      = curveArray % x(1:2,jMax)
+
+      END SUBROUTINE FindCornerTowardPoint
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE NearestPointOnSegmentedCurve( p, curveArray, s, pImage )
+         IMPLICIT NONE
+!
+!     -----------------------------------------------------------------
+!     Point on the segments of a segmented curve nearest to p, and its
+!     location s = j + fraction along segment j (from x(:,j) to x(:,j+1))
+!     -----------------------------------------------------------------
+!
+         REAL(KIND=RP)                       :: p(3), s, pImage(2)
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+
+         INTEGER       :: j
+         REAL(KIND=RP) :: a(2), d(2), t, lengthSquared, dist, distMin
+
+         distMin = HUGE(distMin)
+         s       = 0.0_RP
+         pImage  = curveArray % x(1:2,0)
+         DO j = 0, curveArray % nSegments - 1
+            a = curveArray % x(1:2,j)
+            d = curveArray % x(1:2,j+1) - a
+            lengthSquared = DOT_PRODUCT(d,d)
+            t = 0.0_RP
+            IF ( lengthSquared > 0.0_RP )     t = MAX(0.0_RP, MIN(1.0_RP, DOT_PRODUCT(p(1:2) - a, d)/lengthSquared))
+            dist = NORM2(p(1:2) - a - t*d)
+            IF ( dist < distMin )     THEN
+               distMin = dist
+               s       = j + t
+               pImage  = a + t*d
+            END IF
+         END DO
+
+      END SUBROUTINE NearestPointOnSegmentedCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -2497,6 +2737,19 @@
          DEALLOCATE( nodeArray )
 
       END SUBROUTINE MoveInterfaceNodesToImages
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION AngleBetween( v1, v2 )
+         IMPLICIT NONE
+!
+!        ------------------------------------
+!        Angle between two vectors in degrees
+!        ------------------------------------
+!
+         REAL(KIND=RP) :: v1(2), v2(2)
+         AngleBetween = ACOS( MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(v1,v2)/(NORM2(v1)*NORM2(v2)))) )*180.0_RP/PI
+      END FUNCTION AngleBetween
 !
 !////////////////////////////////////////////////////////////////////////
 !

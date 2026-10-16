@@ -55,6 +55,7 @@
          REAL(KIND=RP) :: deltaT
          INTEGER       :: springType
          INTEGER       :: numSmoothingSteps
+         INTEGER       :: numberOfSmoothings = 0 ! times smoothMesh has been called
 !
 !        ========
          CONTAINS
@@ -92,7 +93,8 @@
 !     SetInterfaceCornerConstraints
 !     ----------------------------------------------------------------
 !
-      REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE, PRIVATE :: cornerDirection
+      REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE, PRIVATE :: cornerDirection, cornerOrigin
+      REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE, PRIVATE :: cornerMinDistance
       LOGICAL      , DIMENSION(:)  , ALLOCATABLE, PRIVATE :: hasCornerConstraint
       REAL(KIND=RP), PARAMETER                  , PRIVATE :: MAX_CONSTRAINED_CORNER_ANGLE = 150.0_RP
 !
@@ -126,6 +128,7 @@
          self % mass               = mass
          self % deltaT             = deltaT
          self % numSmoothingSteps  = numSteps
+         self % numberOfSmoothings = 0
       END SUBROUTINE initSmoother
 !
 !////////////////////////////////////////////////////////////////////////
@@ -182,8 +185,18 @@
          END DO
          CALL SetNodeActiveStatus( mesh, model, errorCode )
 
-         ALLOCATE( cornerDirection(3,N), hasCornerConstraint(N) )
-         CALL SetInterfaceCornerConstraints( mesh )
+         ALLOCATE( cornerDirection(3,N), cornerOrigin(3,N), cornerMinDistance(N), hasCornerConstraint(N) )
+!
+!        -------------------------------------------------------------
+!        The nodes next to a corner are held on the extensions of its
+!        sides only in the first smoothing. By the next smoothing, on
+!        interface boundaries, the elements at the corner have been
+!        split (SplitInterfaceElements) and holding the new nodes on
+!        those lines squeezes the elements between them into slivers.
+!        -------------------------------------------------------------
+!
+         CALL SetInterfaceCornerConstraints( mesh, constrainToSides = self % numberOfSmoothings == 0 )
+         self % numberOfSmoothings = self % numberOfSmoothings + 1
 !
 !        ------------------------
 !        Do spring-mass smoothing
@@ -204,6 +217,7 @@
                nodeVelocity(:,nodeID) = nodeVelocity(:,nodeID) + &
                                         self % deltaT*( nodeAcceleration(:,nodeID) - &
                                         self % dampingCoefficient*nodeVelocity(:,nodeID) )
+               IF ( hasCornerConstraint(nodeID) )     CALL KeepNodeAwayFromCorner( node, nodeVelocity(:,nodeID) )
                CALL mesh % nodesIterator % moveToNext()
                maxV = MAX(maxV, ABS(nodeVelocity(1,nodeID)), ABS(nodeVelocity(2,nodeID)) )
             END DO
@@ -216,7 +230,7 @@
 !
          DEALLOCATE( nodeAcceleration )
          DEALLOCATE( nodeVelocity )
-         DEALLOCATE( cornerDirection, hasCornerConstraint )
+         DEALLOCATE( cornerDirection, cornerOrigin, cornerMinDistance, hasCornerConstraint )
 !
 !        --------------------------------------------------------------------
 !        The boundary nodes have been moved. Find their parameterized location
@@ -421,7 +435,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE SetInterfaceCornerConstraints( mesh )
+      SUBROUTINE SetInterfaceCornerConstraints( mesh, constrainToSides )
          IMPLICIT NONE
 !
 !     ---------------------------------------------------------------------
@@ -437,8 +451,15 @@
 !     are moved onto the extensions of the sides and constrained to move
 !     only along them, like boundary nodes along their curve.
 !
+!     If the reflex side is shared by only two elements, the one edge
+!     between them is moved onto the bisector of the reflex angle and
+!     constrained to it, so that the two elements share the reflex angle
+!     equally (e.g. 135 + 135 degrees at a 90 degree corner) instead of
+!     one element getting nearly all of it and folding.
+!
 !     Corners where the mesh around the corner do not have this layout
-!     are left alone.
+!     are left alone. The constraint to the extensions of the sides is
+!     only applied when constrainToSides is .TRUE.
 !     ---------------------------------------------------------------------
 !
 !        ---------
@@ -446,6 +467,7 @@
 !        ---------
 !
          TYPE (SMMesh), POINTER :: mesh
+         LOGICAL                :: constrainToSides
 !
 !        ---------------
 !        Local variables
@@ -459,24 +481,31 @@
          TYPE (SMNode)   , POINTER     :: node => NULL(), nb => NULL()
          TYPE (SMEdge)   , POINTER     :: edge => NULL()
          CLASS(FTObject) , POINTER     :: obj  => NULL()
-         INTEGER                       :: N, id, j, k, m, chainID
+         INTEGER                       :: N, id, k, m, chainID
          INTEGER                       :: sideNodes(2), freeNodes(MAX_NEIGHBORS), numSide, numFree, numReflex
          INTEGER                       :: reflexNodes(MAX_NEIGHBORS)
          REAL(KIND=RP)                 :: xC(2), d(2,2), u(2), cornerAngle, a1, a2, dots(2,2), s
+         REAL(KIND=RP)                 :: bisector(2), minDistance
 
          N = SIZE(hasCornerConstraint)
          hasCornerConstraint = .FALSE.
          cornerDirection     = 0.0_RP
+         cornerOrigin        = 0.0_RP
+         cornerMinDistance   = 0.0_RP
          IF ( .NOT.ALLOCATED(boundaryEdgesType) )     RETURN
 
          ALLOCATE( nodeForID(N), numNeighbors(N), neighbors(MAX_NEIGHBORS,N), isCorner(N) )
          numNeighbors = 0
          isCorner     = .FALSE.
 !
-!        --------------------------------------------
-!        Corner nodes: interface nodes pinned at a
-!        joint of the curve that is not a smooth side
-!        --------------------------------------------
+!        --------------------------------------------------------------
+!        Corner candidates: interface nodes pinned at a joint of the
+!        curve. Whether the curve really turns there is decided below
+!        from the angle between the two interface edges at the node.
+!        The node type does not tell, since it counts the elements only
+!        on one side (a concave corner with two elements on that side
+!        is a ROW_SIDE node).
+!        --------------------------------------------------------------
 !
          CALL mesh % nodesIterator % setToStart()
          DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
@@ -485,7 +514,7 @@
             nodeForID(node % id) % node => node
             chainID = node % bCurveChainID
             IF ( node % distToBoundary == 0.0_RP .AND. chainID >= 1 .AND. chainID <= SIZE(boundaryEdgesType) )     THEN
-               IF ( boundaryEdgesType(chainID) == INTERFACE_EDGES .AND. node % nodeType /= ROW_SIDE .AND. &
+               IF ( boundaryEdgesType(chainID) == INTERFACE_EDGES .AND. &
                     (node % whereOnBoundary == 0.0_RP .OR. node % whereOnBoundary == 1.0_RP) )     isCorner(node % id) = .TRUE.
             END IF
             CALL mesh % nodesIterator % moveToNext()
@@ -541,9 +570,11 @@
 !           Directions continuing the two sides beyond the corner
 !           -----------------------------------------------------
 !
+            minDistance = 0.0_RP
             DO k = 1, 2
-               d(:,k) = xC - nodeForID(sideNodes(k)) % node % x(1:2)
-               d(:,k) = d(:,k)/NORM2(d(:,k))
+               d(:,k)      = xC - nodeForID(sideNodes(k)) % node % x(1:2)
+               minDistance = minDistance + 0.25_RP*NORM2(d(:,k))
+               d(:,k)      = d(:,k)/NORM2(d(:,k))
             END DO
             cornerAngle = AngleBetween(-d(:,1), -d(:,2))
             IF ( cornerAngle > MAX_CONSTRAINED_CORNER_ANGLE )     CYCLE
@@ -563,7 +594,29 @@
                   reflexNodes(numReflex) = freeNodes(m)
                END IF
             END DO
-            IF ( numReflex /= 2 )     CYCLE
+            IF ( numReflex == 1 )     THEN
+!
+!              ---------------------------------------------------------
+!              Two elements on the reflex side. Put an edge between them
+!              on the bisector of the reflex angle, which points away
+!              from the sharp wedge, i.e., along d(:,1) + d(:,2)
+!              ---------------------------------------------------------
+!
+               bisector = d(:,1) + d(:,2)
+               IF ( NORM2(bisector) < 1.0d-6 )     CYCLE
+               bisector = bisector/NORM2(bisector)
+!
+!              Project the node onto the bisector, but keep at least half
+!              its distance from the corner, so that a node lying nearly at
+!              right angles to the bisector does not end up at the corner
+!
+               nb => nodeForID(reflexNodes(1)) % node
+               s  =  MAX( DOT_PRODUCT(nb % x(1:2) - xC, bisector), 0.5_RP*NORM2(nb % x(1:2) - xC), minDistance )
+               nb % x(1:2) = xC + s*bisector
+               CALL SetCornerConstraint( nb % id, xC, bisector, minDistance )
+               CYCLE
+            END IF
+            IF ( numReflex /= 2 .OR. .NOT.constrainToSides )     CYCLE
 !
 !           -----------------------------------------------------
 !           Pair the two nodes with the two directions, then move
@@ -585,21 +638,61 @@
                nb => nodeForID(reflexNodes(m)) % node
                s  =  DOT_PRODUCT(nb % x(1:2) - xC, d(:,m))
                IF ( s <= 0.0_RP )     s = NORM2(nb % x(1:2) - xC)
+               s  =  MAX( s, minDistance )
                nb % x(1:2) = xC + s*d(:,m)
-               hasCornerConstraint(nb % id)  = .TRUE.
-               cornerDirection(1:2, nb % id) = d(:,m)
-               cornerDirection(3  , nb % id) = 0.0_RP
+               CALL SetCornerConstraint( nb % id, xC, d(:,m), minDistance )
             END DO
          END DO
 
-         CONTAINS
-
-            REAL(KIND=RP) FUNCTION AngleBetween( v1, v2 )
-               REAL(KIND=RP) :: v1(2), v2(2)
-               AngleBetween = ACOS( MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(v1,v2)/(NORM2(v1)*NORM2(v2)))) )*180.0_RP/PI
-            END FUNCTION AngleBetween
-
       END SUBROUTINE SetInterfaceCornerConstraints
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SetCornerConstraint( id, xC, direction, minDistance )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        Constrain node id to the ray from the corner xC along the
+!        unit vector direction, at least minDistance from the corner
+!        ------------------------------------------------------------
+!
+         INTEGER       :: id
+         REAL(KIND=RP) :: xC(2), direction(2), minDistance
+
+         hasCornerConstraint(id)   = .TRUE.
+         cornerDirection(1:2, id)  = direction
+         cornerDirection(3  , id)  = 0.0_RP
+         cornerOrigin(1:2, id)     = xC
+         cornerOrigin(3  , id)     = 0.0_RP
+         cornerMinDistance(id)     = minDistance
+
+      END SUBROUTINE SetCornerConstraint
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE KeepNodeAwayFromCorner( node, velocity )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------------
+!        The springs can pull a node that is constrained to a line from
+!        a corner (see SetInterfaceCornerConstraints) right up to the
+!        corner, which collapses the elements between it and the corner.
+!        Stop it at its minimum distance from the corner.
+!        ----------------------------------------------------------------
+!
+         TYPE (SMNode), POINTER :: node
+         REAL(KIND=RP)          :: velocity(3)
+         REAL(KIND=RP)          :: s
+         INTEGER                :: id
+
+         id = node % id
+         s  = DOT_PRODUCT(node % x(1:2) - cornerOrigin(1:2,id), cornerDirection(1:2,id))
+         IF ( s >= cornerMinDistance(id) )     RETURN
+
+         node % x(1:2) = cornerOrigin(1:2,id) + cornerMinDistance(id)*cornerDirection(1:2,id)
+         IF ( DOT_PRODUCT(velocity(1:2), cornerDirection(1:2,id)) < 0.0_RP )     velocity = 0.0_RP
+
+      END SUBROUTINE KeepNodeAwayFromCorner
 !
 !////////////////////////////////////////////////////////////////////////
 !

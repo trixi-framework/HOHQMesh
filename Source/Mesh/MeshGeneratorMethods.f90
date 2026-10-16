@@ -214,6 +214,13 @@
             IF(PrintMessage) PRINT *, "   final Smoothing done."
          END IF
 !
+!        --------------------------------------------------------------
+!        Move interior nodes out of any inverted elements that are left
+!        --------------------------------------------------------------
+!
+         CALL UntangleInvertedElements( project % mesh, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+!
 !        ----------------------------------------------------------
 !        If this is a multi-material mesh, then set each element's
 !        materialID and materialName
@@ -1352,6 +1359,7 @@
          REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
          LOGICAL                              :: isInterfaceElement
          INTEGER                              :: numInside, numOutside, location(4)
+         REAL(KIND=RP)                        :: curveBox(4), elementBox(4), margin
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1364,6 +1372,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
+            curveBox   =  CurvePointsBox( curveArray % x )
 
             CALL elementIterator % setToStart()
 !
@@ -1387,7 +1396,7 @@
                   location   = UNDEFINED
                   DO k = 1, 4
                      node => e % nodes(k) % node
-                     w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
+                     w = ACWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
                      IF ( ABS(w) > 0.6_RP ) THEN
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
@@ -1430,14 +1439,31 @@
                         hMin = MIN( h, hMin )
                      END DO
 !
+!                    -----------------------------------------------------------
+!                    Bounding box of the element. A point that PointInQuad finds
+!                    inside lies in it, up to the tolerance of PointInQuad and
+!                    rounding, which the margin covers. Curve segments that do
+!                    not reach the box are skipped below.
+!                    -----------------------------------------------------------
+!
+                     elementBox = [MINVAL(nodes(1,:)), MAXVAL(nodes(1,:)), MINVAL(nodes(2,:)), MAXVAL(nodes(2,:))]
+                     margin     = 1.0E-6_RP*MAX(elementBox(2) - elementBox(1), elementBox(4) - elementBox(3)) &
+                                + 8.0_RP*EPSILON(1.0_RP)/MAX(hMin, TINY(hMin))                                &
+                                + 8.0_RP*SPACING(MAXVAL(ABS(elementBox)))
+                     elementBox = elementBox + margin*[-1.0_RP, 1.0_RP, -1.0_RP, 1.0_RP]
+!
 !                    ----------------------------------------------------------------------
 !                    See if any of the curve points are inside the element. If the elements
 !                    are small compared to the spacing on the curve, linearly interpolate
 !                    the curve segment and see if those fall inside the element. HACK:
 !                    the decision on how big is too big is arbitrary at the moment.
-!                    -----------------------------------------------------------------------
+!                    ----------------------------------------------------------------------
 !
                      DO j = 1, curveArray % nSegments-1
+                        IF ( MAX(curveArray % x(1,j), curveArray % x(1,j+1)) < elementBox(1) .OR. &
+                             MIN(curveArray % x(1,j), curveArray % x(1,j+1)) > elementBox(2) .OR. &
+                             MAX(curveArray % x(2,j), curveArray % x(2,j+1)) < elementBox(3) .OR. &
+                             MIN(curveArray % x(2,j), curveArray % x(2,j+1)) > elementBox(4) )     CYCLE
 !
 !                       ---------------------------------------------------
 !                       See if one of the boundary points is in the element
@@ -1488,7 +1514,7 @@
 !                    ------------------------------------------------------------------
 !
                      IF(node % bCurveSide == UNDEFINED )     THEN
-                        w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
+                        w = ACWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
 
                         IF ( ABS(w) > 0.6_RP ) THEN
                            aPointInsidetheCurve(:,curveArray % id) = node % x
@@ -1543,7 +1569,7 @@
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
          INTEGER                              :: chainIDOffset
-         REAL(KIND=RP)                        :: center(3)
+         REAL(KIND=RP)                        :: center(3), curveBox(4)
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1559,6 +1585,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
+            curveBox   =  CurvePointsBox( curveArray % x )
 
             CALL elementIterator % setToStart()
 !
@@ -1594,7 +1621,7 @@
                      IF ( node % distToBoundary == 0.0_RP .AND. &
                           node % bCurveChainID == curveArray % id )     CYCLE
 
-                     w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
+                     w = ACWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
                      IF ( abs(w) == 0 ) THEN
                         location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
@@ -1615,7 +1642,7 @@
                      DO k = 1, 4
                         center = center + 0.25_RP*e % nodes(k) % node % x
                      END DO
-                     w = ACWindingFunction( center, curveArray % x, curveArray % nSegments-1 )
+                     w = ACWindingFunctionInBox( center, curveArray % x, curveArray % nSegments-1, curveBox )
                      IF ( abs(w) /= 0 )     numInside = numInside + 1
                   END IF
 !
@@ -2940,7 +2967,7 @@
          INTEGER       :: nNodes
          INTEGER       :: k, m
          REAL(KIND=RP) :: dt, t
-         REAL(KIND=RP) :: nodeTol = 1.0d-12 ! TODO: put into a constant.
+         REAL(KIND=RP) :: nodeTol = 1.0E-12_RP ! TODO: put into a constant.
 
          nNodes = SIZE(chainNodesArray)
          ALLOCATE(nodeTs(0:nNodes))
