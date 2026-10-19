@@ -1227,7 +1227,7 @@
                               segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
                               IF( segmentLength > 0.25_RP*hMin )     THEN
                                  mSteps = NINT(segmentLength/hMin)*5
-                                 dz = 1.0_RP/DBLE(mSteps)
+                                 dz = 1.0_RP/REAL(mSteps, RP)
                                  DO m = 1, mSteps-1
                                     z = x1 + m*dz*(x2 - x1)
                                     IF ( PointInQuad( nodes, z ) )     THEN
@@ -1453,7 +1453,7 @@
 
                         IF( segmentLength > 0.25*hMin )     THEN
                            mSteps = NINT(segmentLength/hMin)*5
-                           dz = 1.0_RP/DBLE(mSteps)
+                           dz = 1.0_RP/REAL(mSteps, RP)
                            DO m = 1, mSteps-1
                               z = x1 + m*dz*(x2 - x1)
                               IF ( PointInQuad( nodes, z ) )     THEN

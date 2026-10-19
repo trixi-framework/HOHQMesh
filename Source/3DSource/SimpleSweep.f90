@@ -404,7 +404,7 @@
 !              Interpolate between top and bottom
 !              ----------------------------------
 !
-               xi = DBLE(j)/DBLE(numberOfLayers)
+               xi = REAL(j, RP)/REAL(numberOfLayers, RP)
                z  = quadMeshNodes(k) % node % x(pMutation)*(1.0_RP - xi) + h*xi
                hex8Mesh % nodes(k,j) % x  = extrudedNodeLocation(baseLocation = quadMeshNodes(k) % node % x, &
                                                                  delta        = z, &
@@ -456,7 +456,7 @@
             obj => quadElementsArray % objectAtIndex(l)
             CALL castToSMelement(obj,e)
             DO m = 1, hex8Mesh % numberofLayers
-               xi = DBLE(m-1)/DBLE(nLev)
+               xi = REAL(m-1, RP)/REAL(nLev, RP)
                DO k = 0, N
                   eta = 0.5_RP*(1.0 - COS(k*PI/N))
                   DO j = 0, N
