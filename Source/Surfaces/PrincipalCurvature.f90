@@ -279,9 +279,9 @@
       REAL(KIND=RP) :: x, y
       REAL(KIND=RP) :: exact(2,2), computed(2,2)
 
-      exact      = 2.0
-      exact(2,1) = 0.0
-      exact(1,2) = 0.0
+      exact      = 2.0_RP
+      exact(2,1) = 0.0_RP
+      exact(1,2) = 0.0_RP
 
       CALL ComputeApproximateHessian(QuadSurf, x, y, computed)
 

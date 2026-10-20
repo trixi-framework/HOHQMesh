@@ -458,7 +458,7 @@
             DO m = 1, hex8Mesh % numberofLayers
                xi = REAL(m-1, RP)/REAL(nLev, RP)
                DO k = 0, N
-                  eta = 0.5_RP*(1.0 - COS(k*PI/N))
+                  eta = 0.5_RP*(1.0_RP - COS(k*PI/N))
                   DO j = 0, N
                      DO i = 0, N
                         delta = (h - e % xPatch(pMutation,i,j))/nLev

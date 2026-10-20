@@ -410,7 +410,7 @@
 !
             exact = 0.0_RP
             DO m = 0, 2*N-1
-               exact = exact + coefs(m)*(1.0_RP - (-1.0)**(m+1))/(m+1)
+               exact = exact + coefs(m)*(1.0_RP - (-1.0_RP)**(m+1))/(m+1)
             END DO
 !
 !           ----------------------

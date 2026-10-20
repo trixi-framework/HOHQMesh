@@ -67,7 +67,7 @@
          IMPLICIT NONE
          TYPE(RotationTransform) :: self
 
-         self % rotMatrix      = 0.0
+         self % rotMatrix      = 0.0_RP
          self % rotMatrix(1,1) = 1.0_RP
          self % rotMatrix(2,2) = 1.0_RP
          self % rotMatrix(3,3) = 1.0_RP

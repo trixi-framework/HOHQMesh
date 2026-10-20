@@ -365,7 +365,7 @@
 !     ------------------------------------------------------------------
 !
       fR = marchingfunction(curve, polyOrder, cuts, options, gQuad)
-      IF(fr .le. 0.0) RETURN
+      IF(fr .le. 0.0_RP) RETURN
 !
 !     --------------------------
 !     Find the intervals in turn
