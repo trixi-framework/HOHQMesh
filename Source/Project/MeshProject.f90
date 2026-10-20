@@ -331,8 +331,8 @@
 !        ----------------------------------------------------
 !
          IF ( self % model % numberOfChains() > 0 )     THEN
-            ALLOCATE(self % L2ErrorMax(self % model % numberOfChains()), source = HUGE(1.0d0))
-            ALLOCATE(self % H1ErrorMax(self % model % numberOfChains()), source = HUGE(1.0d0))
+            ALLOCATE(self % L2ErrorMax(self % model % numberOfChains()), source = HUGE(1.0_RP))
+            ALLOCATE(self % H1ErrorMax(self % model % numberOfChains()), source = HUGE(1.0_RP))
          END IF
 
       END SUBROUTINE initWithDictionary

@@ -64,12 +64,12 @@
 !      SUBROUTINE ExactAndComputedQuadraticHessian(x,y,exact,computed)
 !      SUBROUTINE ExactAndComputedHyParCurvature(x, y, exact, computed)
 !
-!   All should return results equal to a tolerance of 2d-8
+!   All should return results equal to a tolerance of 2.0E-8
 !
 ! For formulas, see: https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node32.html
 !-------------------------------------------------------------------
 !
-   REAL(KIND=RP), PRIVATE  :: gc_dx = 1.0d-4, gc_dx2 = 1.0d-8
+   REAL(KIND=RP), PRIVATE  :: gc_dx = 1.0E-4_RP, gc_dx2 = 1.0E-8_RP
 
    INTERFACE PrincipalCurvature
       MODULE PROCEDURE :: PrincipalCurvatureWithDerivs, PrincipalCurvatureWithFun

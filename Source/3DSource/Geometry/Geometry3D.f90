@@ -51,7 +51,7 @@
          LOGICAL, PRIVATE :: isIdentityScale
       END TYPE ScaleTransform
 
-      REAL(KIND=RP), PRIVATE :: vectorDifferenceTolerance = 1.0d-3
+      REAL(KIND=RP), PRIVATE :: vectorDifferenceTolerance = 1.0E-3_RP
 !
 !     ========
       CONTAINS

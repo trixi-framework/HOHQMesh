@@ -2884,7 +2884,7 @@
          INTEGER       :: nNodes
          INTEGER       :: k, m
          REAL(KIND=RP) :: dt, t
-         REAL(KIND=RP) :: nodeTol = 1.0d-12 ! TODO: put into a constant.
+         REAL(KIND=RP) :: nodeTol = 1.0E-12_RP ! TODO: put into a constant.
 
          nNodes = SIZE(chainNodesArray)
          ALLOCATE(nodeTs(0:nNodes))

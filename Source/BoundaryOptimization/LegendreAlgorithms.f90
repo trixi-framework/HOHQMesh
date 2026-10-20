@@ -368,7 +368,7 @@
          INTEGER                                  :: N, j, m, nMax
          REAL(KIND=RP)                            :: sm, fInt, exact
          REAL(KIND=RP)                            :: maxError, maxSumError
-         REAL(KIND=RP)                            :: tol = 1.0d-9
+         REAL(KIND=RP)                            :: tol = 1.0E-9_RP
 
          nMax = 20
          ALLOCATE(x(0:nMax),w(0:nMax), f(0:nMax), coefs(0:2*nMax-1))
@@ -434,7 +434,7 @@
         INTEGER, PARAMETER :: N = 4
         REAL(KIND=RP)      :: a(0:N), b(0:N)
         REAL(KIND=RP)      :: nodes(0:N), weights(0:N)
-        REAL(KIND=RP)      :: nrm, tol = 1.0d-8
+        REAL(KIND=RP)      :: nrm, tol = 1.0E-8_RP
         INTEGER            :: j
 
         CALL GaussLegendreNodesAndWeights( N, nodes, weights )
@@ -469,7 +469,7 @@
       LOGICAL FUNCTION LegendrePolyAndDerivIsOK()
          IMPLICIT NONE
          INTEGER      , PARAMETER  :: N = 4
-         REAL(KIND=RP)             :: x, dx, tol = 1.0d-8
+         REAL(KIND=RP)             :: x, dx, tol = 1.0E-8_RP
          REAL(KIND=RP)             :: L(0:N)     , LPrime(0:N)
          REAL(KIND=RP)             :: LExact(0:N), LPrimeExact(0:N)
          INTEGER                   :: j
@@ -511,7 +511,7 @@
 !
          IMPLICIT NONE
          INTEGER, PARAMETER :: N = 4
-         REAL(KIND=RP)      :: tol = 1.0d-8
+         REAL(KIND=RP)      :: tol = 1.0E-8_RP
          REAL(KIND=RP)      :: coefs(0:N)
 
          CALL LegendreCoefsForTestPolynomial(coefs)
@@ -523,7 +523,7 @@
 !
       LOGICAL FUNCTION legendreSeriesIsOK()
          IMPLICIT NONE
-         REAL(KIND=RP) :: tol = 1.0d-8
+         REAL(KIND=RP) :: tol = 1.0E-8_RP
          REAL(KIND=RP) :: x, dx
          INTEGER       :: j
 

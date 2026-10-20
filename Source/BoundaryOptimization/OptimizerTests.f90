@@ -63,7 +63,7 @@
       REAL(KIND=RP), ALLOCATABLE :: errors(:,:)
       INTEGER      , ALLOCATABLE :: breakIndices(:)
       CHARACTER(LEN=64)          :: xEqn, yEqn, zEqn
-      REAL(KIND=RP)              :: tol = 1.0d-7
+      REAL(KIND=RP)              :: tol = 1.0E-7_RP
 
       CALL SetDefaultOptions(options)
       options % whichNorm = optType
@@ -142,7 +142,7 @@
       INTEGER                                :: polyOrder  = 6
       INTEGER                                :: smoothness = 2 ! C^2 smoothness
       REAL(KIND=RP)                          :: toler      = 0.1_RP
-      REAL(KIND=RP)                          :: testTol    = 2.0d-9
+      REAL(KIND=RP)                          :: testTol    = 2.0E-9_RP
 !
 !     ---------------
 !     Local Variables
@@ -162,16 +162,16 @@
 !     If algorithms change, these values will have to change
 !     ------------------------------------------------------
 !
-      REAL(KIND=RP), DIMENSION(0:14) :: targetCuts = [0.0000000000000000d0, 8.1265069873694071d-002, 0.15045565047752610d0, &
-                                                      0.22077110332899968d0, 0.29160293158998757d0 , 0.36571518148058291d0, &
-                                                      0.43544720244301666d0, 0.50460363752397241d0 , 0.58656575126088406d0, &
-                                                      0.66015636956282953d0, 0.72937540809332357d0 , 0.79962651199484203d0, &
-                                                      0.87133816457876168d0, 0.93566908228937584d0 , 1.0000000000000000d0]
-      REAL(KIND=RP), DIMENSION(14) :: targetErrs   = [6.5702408339004884d-002, 9.2756204392096850d-002, 9.4318406193022147d-002, &
-                                                      8.9851311172061341d-002, 8.4840693387210162d-002, 9.1113841663074166d-002, &
-                                                      8.9981484563422739d-002, 6.6436074374897389d-002, 8.5125646477200778d-002, &
-                                                      9.4312464884582489d-002, 9.2294291838550244d-002, 7.9708305374154340d-002, &
-                                                      6.9615346724282365d-002, 6.0416555870896144d-002]
+      REAL(KIND=RP), DIMENSION(0:14) :: targetCuts = [0.0000000000000000_RP, 8.1265069873694071E-002_RP, 0.15045565047752610_RP, &
+                                                      0.22077110332899968_RP, 0.29160293158998757_RP, 0.36571518148058291_RP, &
+                                                      0.43544720244301666_RP, 0.50460363752397241_RP, 0.58656575126088406_RP, &
+                                                      0.66015636956282953_RP, 0.72937540809332357_RP, 0.79962651199484203_RP, &
+                                                      0.87133816457876168_RP, 0.93566908228937584_RP, 1.0000000000000000_RP]
+      REAL(KIND=RP), DIMENSION(14) :: targetErrs   = [6.5702408339004884E-002_RP, 9.2756204392096850E-002_RP, 9.4318406193022147E-002_RP, &
+                                                      8.9851311172061341E-002_RP, 8.4840693387210162E-002_RP, 9.1113841663074166E-002_RP, &
+                                                      8.9981484563422739E-002_RP, 6.6436074374897389E-002_RP, 8.5125646477200778E-002_RP, &
+                                                      9.4312464884582489E-002_RP, 9.2294291838550244E-002_RP, 7.9708305374154340E-002_RP, &
+                                                      6.9615346724282365E-002_RP, 6.0416555870896144E-002_RP]
 !
 !     --------------
 !     Set up options
@@ -254,7 +254,7 @@
       INTEGER                                :: optType    = H1_NORM
       INTEGER                                :: polyOrder  = 6
       INTEGER                                :: smoothness = 2 ! C^2 smoothness
-      REAL(KIND=RP)                          :: toler      = 0.1_RP, testTol = 2.0d-9
+      REAL(KIND=RP)                          :: toler      = 0.1_RP, testTol = 2.0E-9_RP
       REAL(KIND=RP)                          :: testBreaks(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
 !
 !     ---------------
@@ -275,11 +275,11 @@
 !     If algorithms change, these values will have to change
 !     ------------------------------------------------------
 !
-      REAL(KIND=RP) :: targetCuts(0:13) = [0.0000000000000000d0 , 9.7013000086126913d-002, 0.18597895538838266d0, &
-                                           0.27478075822849279d0, 0.33739037911424141d0  , 0.40000000000000002d0, &
-                                           0.48775051048802515d0, 0.57664143712361982d0  , 0.63832071856180495d0, &
-                                           0.69999999999999996d0, 0.78923224968415717d0  , 0.87992823095351413d0, &
-                                           0.93996411547675207d0, 1.0000000000000000d0]
+      REAL(KIND=RP) :: targetCuts(0:13) = [0.0000000000000000_RP , 9.7013000086126913E-002_RP, 0.18597895538838266_RP, &
+                                           0.27478075822849279_RP, 0.33739037911424141_RP  , 0.40000000000000002_RP, &
+                                           0.48775051048802515_RP, 0.57664143712361982_RP  , 0.63832071856180495_RP, &
+                                           0.69999999999999996_RP, 0.78923224968415717_RP  , 0.87992823095351413_RP, &
+                                           0.93996411547675207_RP, 1.0000000000000000_RP]
       INTEGER       :: targetIndices(3) = [6, 10, 14]
 !
 !     --------------
@@ -405,7 +405,7 @@
       arcL = msmCurve % arcLength(gQuad)
       CALL FTAssertEqual(expectedValue = 8.0_RP*PI, &
                          actualValue   = arcL,  &
-                         relTol        = 1.0d-4, &
+                         relTol        = 1.0E-4_RP, &
                          msg           = "Arc Length estimation")
 !
 !     -------------------------------
@@ -416,11 +416,11 @@
                                options, gQuad, aLengths)
       CALL FTAssertEqual(expectedValue = 4.0_RP*PI, &
                          actualValue   = aLengths(1),  &
-                         relTol        = 1.0d-4, &
+                         relTol        = 1.0E-4_RP, &
                          msg           = "Arc Length estimation 1")
       CALL FTAssertEqual(expectedValue = 4.0_RP*PI, &
                          actualValue   = aLengths(2),  &
-                         relTol        = 1.0d-4, &
+                         relTol        = 1.0E-4_RP, &
                          msg           = "Arc Length estimation 2")
 !
 !     --------
@@ -481,9 +481,9 @@
       REAL(KIND=RP), ALLOCATABLE :: optimizedCuts(:)
       INTEGER      , ALLOCATABLE :: breakIndices(:)
       REAL(KIND=RP)              :: testBreaks(0:2)   = [0.0_RP, 0.5_RP, 1.0_RP]
-      REAL(KIND=RP)              :: expectedCuts(0:7) = [0.0000000000000000d0 , 8.5660589005650267d-002, 0.17132074027521632d0, &
-                                                         0.25698133016711511d0, 0.34264190234426545d0  , 0.42829047404568898d0, &
-                                                         0.50000000000000000d0, 1.0000000000000000d0]
+      REAL(KIND=RP)              :: expectedCuts(0:7) = [0.0000000000000000_RP , 8.5660589005650267E-002_RP, 0.17132074027521632_RP, &
+                                                         0.25698133016711511_RP, 0.34264190234426545_RP  , 0.42829047404568898_RP, &
+                                                         0.50000000000000000_RP, 1.0000000000000000_RP]
       INTEGER                    :: expectedIndices(2) = [7, 8]
 
 !
@@ -494,7 +494,7 @@
       INTEGER       :: optType    = H1_NORM
       INTEGER       :: polyOrder  = 3
       INTEGER       :: smoothness = 0 ! C^0 smoothness
-      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 3.2d-9
+      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 3.2E-9_RP
 !
 !     -----
 !     Other

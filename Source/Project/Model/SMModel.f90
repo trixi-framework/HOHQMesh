@@ -606,10 +606,10 @@
             IF ( curveDict % containsKey(CHAIN_TOLERANCE_KEY) )     THEN
                curveChain % tolerance = curveDict % doublePrecisionValueForKey(CHAIN_TOLERANCE_KEY)
             ELSE
-               curveChain % tolerance = 1.0d-3
+               curveChain % tolerance = 1.0E-3_RP
                str = "Optimization tolerance key not found in " // &
                       TRIM(curveDict % stringValueForKey("name")) // &
-                     ". Defaulting to 1.0d-3."
+                     ". Defaulting to 1.0E-3_RP."
                CALL ThrowErrorExceptionOfType(poster = "SetChainOptimizationParameters",&
                                               msg    = str, &
                                               typ    = FT_ERROR_WARNING)
@@ -635,7 +635,7 @@
                ELSE
                   str = curveDict % stringValueForKey(CHAIN_BREAKS_KEY)
                   CALL RemoveWhitespace(str)
-                  
+
                   IF ( .NOT.connectFormatCheck(str) )     THEN
 !
 !                    --------------------------------------------------------------
@@ -651,7 +651,7 @@
 
                      CALL ScanForBreaks(str, curveChain % breaks, curveChain % COUNT() )
 
-                  END IF 
+                  END IF
                END IF
             ELSE
                CALL SetDefaultBreaks(curveChain)
@@ -660,13 +660,13 @@
 
       END SUBROUTINE SetChainOptimizationParameters
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE SetDefaultBreaks(curveChain)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SetDefaultBreaks(curveChain)
+         IMPLICIT NONE
          CLASS(SMChainedCurve), POINTER :: curveChain
          INTEGER                        :: j
-         
+
          IF ( curveChain % COUNT() == 1 )     THEN ! No breaks if there is only one curve
             curveChain % breaks = [0.0_RP, 1.0_RP]
          ELSE                                      ! Break all curves

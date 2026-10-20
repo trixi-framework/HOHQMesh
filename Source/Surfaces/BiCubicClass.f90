@@ -469,7 +469,7 @@
            CALL RANDOM_NUMBER(HARVEST = y)
            x = 1.5_RP*x - 0.75_RP
            y = 1.5_RP*y - 0.75_RP
-           tst =  interpolantIsWithinTolerance(bQ, x ,y , absTol = 1.0d-4)
+           tst =  interpolantIsWithinTolerance(bQ, x ,y , absTol = 1.0E-4_RP)
            CALL FTAssert(test = tst,msg = "BiCubic Interpolation is not within tolerance")
            IF ( .NOT.tst )     THEN
                PRINT *, x, y, tst
