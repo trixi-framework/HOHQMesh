@@ -19,6 +19,7 @@ As an example, the model in Fig. 16 has one outer boundary - the outer triangle 
 ### Internal Boundaries<a name="Interfaces"></a>
 
  It is also possible to include interface boundaries whose interiors are also meshed. This allows one to force element boundaries along curves and to assign different material properties to each region bounded by them. The property is named by the innermost boundary in which an element lies. An example of a domain with two interface boundaries is shown in Fig. 17. **Right now, interface curves must be defined in the model definition from outer to inner to properly assign material names**. Thus, the innermost circle in Fig. 17 is defined after its enclosing circle. This restriction can be removed by adding code to test whether a given curve lies within another.
+ TODO: Update this figure link
 
 ![B&M](https://user-images.githubusercontent.com/25242486/241190479-ba50d797-3bd9-41b1-bc38-03fc86f8c3da.png)
 <p align = "center"> Fig. 17. Mesh with interior interfaces bounded by circles.</p>
