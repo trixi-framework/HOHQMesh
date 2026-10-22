@@ -271,9 +271,12 @@
       CLASS(FTLinkedList), POINTER :: list      => NULL()
       TYPE (FTException) , POINTER :: exception => NULL()
 
-      INTEGER                      :: numberOfBoundaries,numBoundaryEdgeLists
-      INTEGER                      :: j
-      INTEGER                      :: idOfOuterBoundary
+      INTEGER                                          :: numberOfBoundaries,numBoundaryEdgeLists
+      INTEGER                                          :: j
+      INTEGER                                          :: idOfOuterBoundary
+      INTEGER                                          :: numberOfMaterials
+      CHARACTER(LEN=SM_CURVE_NAME_LENGTH)              :: materialName
+      CHARACTER(LEN=SM_CURVE_NAME_LENGTH), ALLOCATABLE :: materialNames(:)
 
       TYPE (FTLinkedListIterator), POINTER :: iterator
       CLASS(SMChainedCurve)      , POINTER :: chain
@@ -301,15 +304,16 @@
       grid  => project % grid
       sizer => project % sizer
 !
-!     ----------------------------------------------------------------
-!     Save the polynomial order and the curve names to the mesh.
-!     Material names are associated with the bounding interface
-!     curves. The background material has BACKGROUND_MATERIAL_ID (0)
-!     and the regions inside the interface curves are numbered 1, 2,...
-!     Chain IDs number the outer boundary first, then the inner
-!     boundaries, then the interfaces, so the material ID of an
-!     interface is its chain ID minus the number of the other chains.
-!     ----------------------------------------------------------------
+!     --------------------------------------------------------------------
+!     Save the polynomial order and the material names to the mesh.
+!     The background material has BACKGROUND_MATERIAL_ID = 0. Each
+!     interface curve encloses a material, given by its optional
+!     "material name", if not present the curve is named after the chain.
+!     Each distinct material name gets the next ID, 1, 2,..., in the order
+!     the interfaces appear in the control file, so interfaces with the
+!     with the same material name share an ID. An interface whose material
+!     is the background material gets BACKGROUND_MATERIAL_ID.
+!     --------------------------------------------------------------------
 !
       mesh % polynomialOrder =  project % runParams % polynomialOrder
       numberOfBoundaries = model % numberOfInnerCurves + model % numberOfOuterCurves &
@@ -317,8 +321,9 @@
 
       IF ( model % numberOfInterfaceCurves > 0 )     THEN
 
-            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:model % numberOfInterfaceCurves))
-            mesh % materialNameForID = project % backgroundMaterialName
+            ALLOCATE( materialNames(0:model % numberOfInterfaceCurves) )
+            materialNames(BACKGROUND_MATERIAL_ID) = project % backgroundMaterialName
+            numberOfMaterials = 0
 
             iterator => model % interfaceBoundariesIterator
             CALL iterator % setToStart()
@@ -326,11 +331,31 @@
                obj => iterator % object()
                CALL castToSMChainedCurve(obj,chain)
 
-               mesh % materialNameForID(chain % id() - model % numberOfOuterCurves &
-                                                     - model % numberOfInnerCurves) = chain % curveName()
+               IF ( LEN_TRIM(chain % materialName) > 0 )     THEN
+                  materialName = chain % materialName
+               ELSE
+                  materialName = chain % curveName()
+               END IF
+
+               chain % materialID = -1
+               DO j = 0, numberOfMaterials
+                  IF ( materialNames(j) == materialName )     THEN
+                     chain % materialID = j
+                     EXIT
+                  END IF
+               END DO
+               IF ( chain % materialID < 0 )     THEN
+                  numberOfMaterials                = numberOfMaterials + 1
+                  materialNames(numberOfMaterials) = materialName
+                  chain % materialID               = numberOfMaterials
+               END IF
 
                CALL iterator % moveToNext()
             END DO
+
+            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:numberOfMaterials))
+            mesh % materialNameForID = materialNames(0:numberOfMaterials)
+            DEALLOCATE( materialNames )
       END IF
 !
 !     -------------------------------------
@@ -1568,17 +1593,10 @@
          INTEGER                              :: k, l
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
-         INTEGER                              :: chainIDOffset
+         CLASS(SMChainedCurve)      , POINTER :: chain           => NULL()
          REAL(KIND=RP)                        :: center(3), curveBox(4)
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
-!
-!        ---------------------------------------------------------------
-!        Material ID of an interface = chain ID - chainIDOffset, see
-!        where the materialNameForID are set in GenerateQuadMeshFromGrid
-!        ---------------------------------------------------------------
-!
-         chainIDOffset = model % numberOfOuterCurves + model % numberOfInnerCurves
 !
          elements => mesh % elements
          elementIterator => mesh % elementsIterator
@@ -1586,6 +1604,13 @@
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
             curveBox   =  CurvePointsBox( curveArray % x )
+!
+!           ---------------------------------------------------------------
+!           The material ID of the interface was set from the material
+!           names in GenerateQuadMeshFromGrid
+!           ---------------------------------------------------------------
+!
+            chain => model % chainWithID( curveArray % id )
 
             CALL elementIterator % setToStart()
 !
@@ -1651,7 +1676,7 @@
 !                 ------------------------------------------------------------
 !
                   IF ( numInside > numOutside )     THEN
-                     e % materialID   = curveArray % id - chainIDOffset
+                     e % materialID   = chain % materialID
                   END IF
                END IF
 

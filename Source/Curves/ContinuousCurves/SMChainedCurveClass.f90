@@ -106,14 +106,16 @@
       TYPE, EXTENDS(SMCurve) :: SMChainedCurve
          CLASS(FTMutableObjectArray), POINTER     :: curvesArray  => NULL()
 
-         INTEGER, DIMENSION(:), ALLOCATABLE :: myCurveIDs
-         INTEGER, DIMENSION(:), ALLOCATABLE :: jointClassification
-         LOGICAL, DIMENSION(:), ALLOCATABLE :: swapDirection
-         INTEGER                            :: numberOfCurvesInChain
-         INTEGER                            :: optimization
-         INTEGER                            :: continuity
-         REAL(KIND=RP)                      :: tolerance
-         REAL(KIND=RP), ALLOCATABLE         :: breaks(:)
+         INTEGER, DIMENSION(:), ALLOCATABLE  :: myCurveIDs
+         INTEGER, DIMENSION(:), ALLOCATABLE  :: jointClassification
+         LOGICAL, DIMENSION(:), ALLOCATABLE  :: swapDirection
+         INTEGER                             :: numberOfCurvesInChain
+         INTEGER                             :: optimization
+         INTEGER                             :: continuity
+         REAL(KIND=RP)                       :: tolerance
+         REAL(KIND=RP), ALLOCATABLE          :: breaks(:)
+         CHARACTER(LEN=SM_CURVE_NAME_LENGTH) :: materialName
+         INTEGER                             :: materialID
 !
 !        ========
          CONTAINS
@@ -156,6 +158,8 @@
          CALL self % curvesArray  % initWithSize(10)
 
          self % numberOfCurvesInChain = 0
+         self % materialName          = ""
+         self % materialID            = 0
 
       END SUBROUTINE initChainedCurveWithNameAndID
 !
