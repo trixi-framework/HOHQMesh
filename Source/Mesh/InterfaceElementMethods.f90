@@ -28,35 +28,10 @@
 !      Created: May 16, 2013 11:17 AM
 !      By: David Kopriva
 !
-!Interface boundary steps
-!
-!GenerateQuadMeshFromGrid
-!  MarkInterfaceElements
-!    For each curve
-!      For each element
-!        Use winding fn to mark 4 corners as inside or outside
-!        Mark as interface element if element straddles interface curve
-!        Mark each node bCurveSide as INSIDE or OUTSIDE
-!        Set node bCurveChainID to the curve ID
-!  CollectBoundaryEdges
-!    For each edge in the mesh
-!      If both nodes on edge are associated with a curve &
-!      If that curve is an interface curve &
-!      If BOTH nodes are INSIDE the curve
-!        Mark edges as ON_INTERFACE
-!  LocateEdgeImagesOnBoundaries
-!    For each boundary curve
-!        If first edge node of first edges bCurveSide /= INSIDE isInnerBoundaryCurve = .FALSE. ELSE
-!  isInnerBoundaryCurve = .TRUE. ??? Why is this ??? (isInnerBoundaryCurve determines /pm on nHat)
-!  AssociateBoundaryEdgesToCurve
-!    For each node in edges list for this boundary curve
-!      find t value for closest point on the curve and the distToBoundary
-!
-!   CleanUpBoundaryCurves
-!     For each interface boundary edge list
-!        MoveInterfaceNodesToBoundary
-!          For each edge in boundary edge list
-!            For both nodes on edge, set x value to curve location for t
+!Templates that split the elements next to an interface curve after its
+!nodes have been moved onto it, so that the mesh stays conforming. The
+!complete interface meshing procedure, and where these templates fit
+!into it, is described in Documentation/docs/interface-meshing.md.
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -153,7 +128,7 @@
             interfaceNodes     = 0
             DO k = 1, 4
                node => e % nodes(k) % node
-               IF ( IsInterfaceNode(node) )     THEN
+               IF ( IsOnInterfaceCurve(node) )     THEN
                   interfaceNodeCount = interfaceNodeCount + 1
                   interfaceNodes(interfaceNodeCount) = k
 !
@@ -277,20 +252,10 @@
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes
          TYPE(SMNodePtr)               :: newNodePtr1, newNodePtr2
-         TYPE (SMEdge)   , POINTER     :: edge => NULL()
-         TYPE (SMNode)   , POINTER     :: swapNodePtr => NULL(), node => NULL()
+         TYPE (SMNode)  , POINTER      :: swapNodePtr => NULL()
 
-         INTEGER                       :: id, k
-         INTEGER                       :: sideP, sideM
-         REAL(KIND=RP)                 :: x(3)
+         INTEGER                       :: k
          INTEGER, EXTERNAL             :: Loop
-!
-!        ----------------------------------------------
-!        The interface edge is the side whose two nodes
-!        are both on the interface
-!        ----------------------------------------------
-!
-         id   = e % id
 !
 !        ----------------------------------------------------
 !        Weak reference the four corner nodes for convenience
@@ -300,33 +265,13 @@
             nodes(k) % node => e % nodes(k) % node
          END DO
 !
-!        -----------------------------------------------------------
-!        Find the edges on either side. These edges will be split in
-!        half. Create two new nodes at the centers of these edges.
-!        Since the new nodes will be shared, we store a pointer to
-!        them on the edge. If the pointer is already set, it means
-!        that we don't have to compute it again.
-!        -----------------------------------------------------------
+!        ------------------------------------------------------
+!        The edges on either side are split in half at their
+!        (shared) midpoint nodes. These are weak references.
+!        ------------------------------------------------------
 !
-         sideP =  Loop(side+1,4)
-         edge  => edgesForElements(sideP,id) % edge
-         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-            newNodePtr1 % node =>  edge % auxiliaryNode !Weak reference
-         ELSE
-            x     =  0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
-            CALL constructNewNode(mesh,x,edge,node)
-            newNodePtr1 % node => node !Weak reference
-         END IF
-
-         sideM =  Loop(side-1,4)
-         edge  => edgesForElements(sideM,id) % edge
-         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-            newNodePtr2 % node =>  edge % auxiliaryNode !Weak reference
-         ELSE
-            x     =  0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
-            CALL constructNewNode(mesh,x,edge,node)
-            newNodePtr2 % node => node !Weak reference
-         END IF
+         CALL GetEdgeMidpointNode( mesh, e, Loop(side+1,4), newNodePtr1 % node )
+         CALL GetEdgeMidpointNode( mesh, e, Loop(side-1,4), newNodePtr2 % node )
 !
 !        ---------------------------------------------
 !        Make the node on left #1 and the node on the
@@ -406,7 +351,6 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE SplitElementIntoThree( localNodeNumber, e, newElementsList, mesh )
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
 !
 !        ---------
@@ -423,13 +367,11 @@
 !        ---------------
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes
-         TYPE (SMNode)   , POINTER     :: nodeP => NULL(), nodeM => NULL(), nodeC => NULL()
-         TYPE (SMEdge)   , POINTER     :: edge  => NULL()
-         TYPE (SMNode)   , POINTER     :: node  => NULL()
-         CLASS(FTObject) , POINTER     :: obj   => NULL()
+         TYPE (SMNode)  , POINTER      :: nodeP => NULL(), nodeM => NULL(), nodeC => NULL()
+         TYPE (SMNode)  , POINTER      :: node  => NULL()
+         CLASS(FTObject), POINTER      :: obj   => NULL()
 
-         INTEGER                       :: id, k
-         INTEGER                       :: sideP, sideM
+         INTEGER                       :: k
          REAL(KIND=RP)                 :: x(3)
          INTEGER, EXTERNAL             :: Loop
 !
@@ -441,46 +383,13 @@
             nodes(k) % node => e % nodes(k) % node
          END DO
 !
-!        -----------------------------------------------------------
-!        Find the edges on either side. These edges will be split in
-!        half. Create two new nodes at the centers of these edges.
-!        Since the new nodes will be shared, we store a pointer to
-!        them on the edge. If the pointer is already set, it means
-!        that we don't have to compute it again.
-!        -----------------------------------------------------------
+!        ------------------------------------------------------
+!        The two edges at the split corner are split in half at
+!        their (shared) midpoint nodes
+!        ------------------------------------------------------
 !
-         id    = e % id
-         sideP =  localNodeNumber
-         edge  => edgesForElements(sideP,id) % edge
-
-         IF ( .NOT.ASSOCIATED(edge) )     THEN
-            WRITE(stderr,*)  "Edge not associated for element ",  id, " and side ", sideP!TODO post exception
-            ERROR STOP "Edge not associated. See stderr"
-         END IF
-
-         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-            nodeP =>  edge % auxiliaryNode
-         ELSE
-            x     =  0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
-            CALL constructNewNode(mesh,x,edge,node)
-            nodeP => node
-         END IF
-
-         sideM =  Loop(localNodeNumber-1,4)
-         edge  => edgesForElements(sideM,id) % edge
-
-         IF ( .NOT.ASSOCIATED(edge) )     THEN
-            WRITE(stderr,*)  "Edge not associated for element ",  id, " and side ", sideP
-            ERROR STOP "Edge not associated. See stderr"
-         END IF
-
-         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-            nodeM =>  edge % auxiliaryNode
-         ELSE
-            x     =  0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
-            CALL constructNewNode(mesh,x,edge,node)
-            nodeM => node
-         END IF
+         CALL GetEdgeMidpointNode( mesh, e, localNodeNumber          , nodeP )
+         CALL GetEdgeMidpointNode( mesh, e, Loop(localNodeNumber-1,4), nodeM )
 !
 !        -----------------------------------------------------------------
 !        Create the center node at the average of the corners. Unlike the
@@ -643,13 +552,11 @@
 !        ---------------
 !
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, nodes, midNodes
-         TYPE (SMEdge)   , POINTER     :: edge  => NULL()
-         TYPE (SMNode)   , POINTER     :: node  => NULL(), nodeC => NULL()
-         CLASS(FTObject) , POINTER     :: obj   => NULL()
-         INTEGER                       :: id, k
+         TYPE (SMNode)  , POINTER      :: node  => NULL(), nodeC => NULL()
+         CLASS(FTObject), POINTER      :: obj   => NULL()
+         INTEGER                       :: k
          REAL(KIND=RP)                 :: x(3), corners(3,4)
 
-         id = e % id
          DO k = 1,4
             nodes(k) % node => e % nodes(k) % node
             corners(:,k)    =  nodes(k) % node % x
@@ -660,14 +567,7 @@
 !        ---------------------------------------------
 !
          DO k = 1, 4
-            edge => edgesForElements(k,id) % edge
-            IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-               midNodes(k) % node => edge % auxiliaryNode
-            ELSE
-               x = 0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
-               CALL constructNewNode(mesh, x, edge, node)
-               midNodes(k) % node => node
-            END IF
+            CALL GetEdgeMidpointNode( mesh, e, k, midNodes(k) % node )
          END DO
 !
 !        --------------------------------------------
@@ -715,28 +615,6 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION IsInterfaceNode( node )
-         IMPLICIT NONE
-!
-!        ------------------------------------------------------
-!        True if the node has been moved onto an interface curve
-!        (and not onto a physical boundary curve)
-!        ------------------------------------------------------
-!
-         TYPE (SMNode), POINTER :: node
-         INTEGER                :: chainID
-
-         IsInterfaceNode = .FALSE.
-         IF ( node % distToBoundary /= 0.0_RP )     RETURN
-
-         chainID = node % bCurveChainID
-         IF ( chainID < 1 .OR. chainID > SIZE(boundaryEdgesType) )     RETURN
-         IsInterfaceNode = boundaryEdgesType(chainID) == INTERFACE_EDGES
-
-      END FUNCTION IsInterfaceNode
-!
-!////////////////////////////////////////////////////////////////////////
-!
       REAL(KIND=RP) FUNCTION InterfaceCornerAngle( e, freeNode )
          IMPLICIT NONE
 !
@@ -749,14 +627,12 @@
          TYPE (SMElement), POINTER :: e
          INTEGER                   :: freeNode
          INTEGER, EXTERNAL         :: Loop
-         REAL(KIND=RP)             :: a(2), b(2), c(2), u(2), v(2)
+         REAL(KIND=RP)             :: a(2), b(2), c(2)
 
          a = e % nodes(Loop(freeNode+1,4)) % node % x(1:2)
          b = e % nodes(Loop(freeNode+2,4)) % node % x(1:2)
          c = e % nodes(Loop(freeNode+3,4)) % node % x(1:2)
-         u = a - b
-         v = c - b
-         InterfaceCornerAngle = ACOS( MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(u,v)/(NORM2(u)*NORM2(v)))) )*180.0_RP/PI
+         InterfaceCornerAngle = AngleBetween( a - b, c - b )
 
       END FUNCTION InterfaceCornerAngle
 !
@@ -782,13 +658,10 @@
          INTEGER                      :: freeNode
 
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes, quadA1, quadA2, quadB1, quadB2
-         TYPE (SMNode)   , POINTER     :: nodeP => NULL(), nodeM => NULL(), node => NULL()
-         TYPE (SMEdge)   , POINTER     :: edge  => NULL()
-         INTEGER                       :: id, f, f1, f2, f3
-         REAL(KIND=RP)                 :: x(3)
+         TYPE (SMNode)  , POINTER      :: nodeP => NULL(), nodeM => NULL()
+         INTEGER                       :: f, f1, f2, f3
          INTEGER, EXTERNAL             :: Loop
 
-         id = e % id
          f  = freeNode
          f1 = Loop(f+1,4); f2 = Loop(f+2,4); f3 = Loop(f+3,4)
 !
@@ -797,23 +670,8 @@
 !        shared with the neighbors (see SplitElementIntoThree)
 !        -----------------------------------------------------
 !
-         edge => edgesForElements(f,id) % edge
-         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-            nodeP => edge % auxiliaryNode
-         ELSE
-            x = 0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
-            CALL constructNewNode(mesh,x,edge,node)
-            nodeP => node
-         END IF
-
-         edge => edgesForElements(Loop(f-1,4),id) % edge
-         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
-            nodeM => edge % auxiliaryNode
-         ELSE
-            x = 0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
-            CALL constructNewNode(mesh,x,edge,node)
-            nodeM => node
-         END IF
+         CALL GetEdgeMidpointNode( mesh, e, f          , nodeP )
+         CALL GetEdgeMidpointNode( mesh, e, Loop(f-1,4), nodeM )
 !
 !        --------------------------
 !        Two candidate subdivisions
@@ -862,8 +720,9 @@
          DO k = 1, 4
             u = q(Loop(k+1,4)) % node % x(1:2) - q(k) % node % x(1:2)
             v = q(Loop(k-1,4)) % node % x(1:2) - q(k) % node % x(1:2)
-            QuadMinScaledJacobian = MIN( QuadMinScaledJacobian, &
-                                        (u(1)*v(2) - u(2)*v(1))/(NORM2(u)*NORM2(v)) )
+            QuadMinScaledJacobian = MIN( QuadMinScaledJacobian,                                 &
+                                         CornerJacobian( q(Loop(k-1,4)) % node % x, q(k) % node % x, &
+                                                         q(Loop(k+1,4)) % node % x )/(NORM2(u)*NORM2(v)) )
          END DO
 
       END FUNCTION QuadMinScaledJacobian
@@ -901,14 +760,38 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE constructNewNode(mesh,x,edge,node)
+      SUBROUTINE GetEdgeMidpointNode( mesh, e, side, node )
+         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
          IMPLICIT NONE
-         TYPE (SMMesh)  , POINTER :: mesh
-         TYPE (SMEdge)  , POINTER :: edge
-         TYPE (SMNode)  , POINTER :: node
-         CLASS(FTObject), POINTER :: obj => NULL()
-         REAL(KIND=RP)            :: x(3)
+!
+!        -------------------------------------------------------------
+!        Node at the midpoint of the given side of element e. The node
+!        is shared with the neighbor element, so it is stored on the
+!        edge (auxiliaryNode) when it is created, and taken from there
+!        if it already exists. On return, node is a weak reference.
+!        -------------------------------------------------------------
+!
+         TYPE (SMMesh)   , POINTER :: mesh
+         TYPE (SMElement), POINTER :: e
+         INTEGER                   :: side
+         TYPE (SMNode)   , POINTER :: node
 
+         TYPE (SMEdge)   , POINTER :: edge => NULL()
+         CLASS(FTObject) , POINTER :: obj  => NULL()
+         REAL(KIND=RP)             :: x(3)
+
+         edge => edgesForElements(side, e % id) % edge
+         IF ( .NOT.ASSOCIATED(edge) )     THEN
+            WRITE(stderr,*)  "Edge not associated for element ", e % id, " and side ", side !TODO post exception
+            ERROR STOP "Edge not associated. See stderr"
+         END IF
+
+         IF ( ASSOCIATED(edge % auxiliaryNode) )     THEN
+            node => edge % auxiliaryNode
+            RETURN
+         END IF
+
+         x = 0.5_RP*(edge % nodes(1) % node % x + edge % nodes(2) % node % x)
          ALLOCATE(node)
          CALL node % initWithLocationAndID(x, mesh % newNodeID())
 
@@ -917,6 +800,6 @@
          CALL setAuxiliaryNode( edge, node )
          CALL releaseSMNode(node)
 
-      END SUBROUTINE constructNewNode
+      END SUBROUTINE GetEdgeMidpointNode
 
       END Module InterfaceElementMethods

@@ -436,7 +436,7 @@
          INTEGER                          :: maxElementID, maxNodeID, numEdges
          INTEGER                          :: i, j, k, m, pinchNodeID, iteration
          REAL(KIND=RP)                    :: centroid(3), hMin, h, bestScore, score
-         REAL(KIND=RP)                    :: xMin, xMax, yMin, yMax
+         REAL(KIND=RP)                    :: box(6)
          INTEGER, EXTERNAL                :: Loop
 !
 !        ---------------------------------
@@ -510,8 +510,7 @@
 !        fraction of the element inside the curve.
 !        ----------------------------------------------------
 !
-         xMin = MINVAL(curveArray % x(1,:)); xMax = MAXVAL(curveArray % x(1,:))
-         yMin = MINVAL(curveArray % x(2,:)); yMax = MAXVAL(curveArray % x(2,:))
+         box = curveArray % boundingBox
 
          DO i = 1, maxElementID
             e => elementForID(i) % element
@@ -525,8 +524,8 @@
                hMin     = MIN(h, hMin)
             END DO
 
-            IF ( centroid(1) < xMin - hMin .OR. centroid(1) > xMax + hMin .OR. &
-                 centroid(2) < yMin - hMin .OR. centroid(2) > yMax + hMin )     CYCLE
+            IF ( centroid(1) < box(BBOX_LEFT)   - hMin .OR. centroid(1) > box(BBOX_RIGHT) + hMin .OR. &
+                 centroid(2) < box(BBOX_BOTTOM) - hMin .OR. centroid(2) > box(BBOX_TOP)   + hMin )     CYCLE
 
             isInside(i) = ACWindingFunction( centroid, curveArray % x, curveArray % nSegments-1 ) /= 0
 
@@ -786,15 +785,16 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE FindCornerTowardPoint( a, b, f, curveArray, hasCorner, corner, cornerAngle, aImage, bImage )
+         USE Geometry, ONLY: AngleBetween
          IMPLICIT NONE
 !
 !     -----------------------------------------------------------------
 !     Find whether the piece of the segmented curve between the points
 !     a' and b' nearest to a and b has a corner, sharper than
-!     MAX_CORNER_ANGLE, that points toward f, i.e. whether a quad with
-!     nodes f, a', corner, b' would have a reflex angle at the corner.
-!     cornerAngle is the angle between a' and b' seen from the corner,
-!     on the side away from f, in degrees.
+!     MAX_TOWARD_CORNER_ANGLE, that points toward f, i.e. whether a quad
+!     with nodes f, a', corner, b' would have a reflex angle at the
+!     corner. cornerAngle is the angle between a' and b' seen from
+!     the corner, on the side away from f, in degrees.
 !     -----------------------------------------------------------------
 !
          REAL(KIND=RP)                       :: a(3), b(3), f(3)
@@ -806,7 +806,7 @@
 !        Local variables
 !        ---------------
 !
-         REAL(KIND=RP), PARAMETER :: MAX_CORNER_ANGLE = 160.0_RP ! degrees
+         REAL(KIND=RP), PARAMETER :: MAX_TOWARD_CORNER_ANGLE = 160.0_RP ! degrees
          INTEGER                  :: N, j, jStart, jEnd, jMax, i
          REAL(KIND=RP)            :: sA, sB, sTmp, p1(2), p2(2), chord(2), side
          REAL(KIND=RP)            :: depth, depthMax, u(2), v(2)
@@ -860,23 +860,25 @@
          v = bImage - curveArray % x(1:2,jMax)
          IF ( NORM2(u) == 0.0_RP .OR. NORM2(v) == 0.0_RP )     RETURN
          cornerAngle = AngleBetween(u, v)
-         hasCorner   = cornerAngle < MAX_CORNER_ANGLE
+         hasCorner   = cornerAngle < MAX_TOWARD_CORNER_ANGLE
          corner      = curveArray % x(1:2,jMax)
 
       END SUBROUTINE FindCornerTowardPoint
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE NearestPointOnSegmentedCurve( p, curveArray, s, pImage )
+      SUBROUTINE NearestPointOnSegmentedCurve( p, curveArray, s, pImage, distance )
          IMPLICIT NONE
 !
 !     -----------------------------------------------------------------
 !     Point on the segments of a segmented curve nearest to p, and its
 !     location s = j + fraction along segment j (from x(:,j) to x(:,j+1))
+!     and (optionally) its distance from p
 !     -----------------------------------------------------------------
 !
          REAL(KIND=RP)                       :: p(3), s, pImage(2)
          CLASS(SegmentedCurveArray), POINTER :: curveArray
+         REAL(KIND=RP), OPTIONAL             :: distance
 
          INTEGER       :: j
          REAL(KIND=RP) :: a(2), d(2), t, lengthSquared, dist, distMin
@@ -897,6 +899,7 @@
                pImage  = a + t*d
             END IF
          END DO
+         IF ( PRESENT(distance) )     distance = distMin
 
       END SUBROUTINE NearestPointOnSegmentedCurve
 !
@@ -1032,24 +1035,9 @@
 !
          REAL(KIND=RP)                       :: p(3)
          CLASS(SegmentedCurveArray), POINTER :: curveArray
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER       :: j
-         REAL(KIND=RP) :: a(2), b(2), d(2), s, lengthSquared
+         REAL(KIND=RP)                       :: s, pImage(2)
 
-         DistanceToSegmentedCurve = HUGE(1.0_RP)
-         DO j = 0, curveArray % nSegments - 1
-            a = curveArray % x(1:2,j)
-            b = curveArray % x(1:2,j+1)
-            d = b - a
-            lengthSquared = DOT_PRODUCT(d,d)
-            s = 0.0_RP
-            IF ( lengthSquared > 0.0_RP )     s = MAX(0.0_RP, MIN(1.0_RP, DOT_PRODUCT(p(1:2) - a, d)/lengthSquared))
-            DistanceToSegmentedCurve = MIN( DistanceToSegmentedCurve, NORM2(p(1:2) - a - s*d) )
-         END DO
+         CALL NearestPointOnSegmentedCurve( p, curveArray, s, pImage, DistanceToSegmentedCurve )
 
       END FUNCTION DistanceToSegmentedCurve
 !
@@ -1087,8 +1075,8 @@
          TYPE (SMNode)              , POINTER     :: node => NULL(), danglingNode => NULL()
          CLASS(FTLinkedListIterator), POINTER     :: iterator => NULL()
          CLASS(FTObject)            , POINTER     :: obj => NULL()
-         INTEGER                    , ALLOCATABLE :: nodeCount(:,:)
-         INTEGER                                  :: numEdges, i, j, k, m
+         INTEGER                    , ALLOCATABLE :: nodeCount(:,:), countForNodeID(:)
+         INTEGER                                  :: numEdges, i, k, maxNodeID
          LOGICAL                                  :: edgeRemoved, foundDanglingEdge
 
          edgeRemoved = .TRUE.
@@ -1121,16 +1109,24 @@
 !           Count the number of edges that share each node
 !           ----------------------------------------------
 !
-            nodeCount = 0
+            maxNodeID = 0
+            DO i = 1, numEdges
+               DO k = 1, 2
+                  maxNodeID = MAX(maxNodeID, edgeArray(i) % edge % nodes(k) % node % id)
+               END DO
+            END DO
+            ALLOCATE(countForNodeID(maxNodeID))
+
+            countForNodeID = 0
             DO i = 1, numEdges
                DO k = 1, 2
                   node => edgeArray(i) % edge % nodes(k) % node
-                  DO j = 1, numEdges
-                     DO m = 1, 2
-                        IF ( ASSOCIATED(edgeArray(j) % edge % nodes(m) % node, node) ) &
-                           nodeCount(k,i) = nodeCount(k,i) + 1
-                     END DO
-                  END DO
+                  countForNodeID(node % id) = countForNodeID(node % id) + 1
+               END DO
+            END DO
+            DO i = 1, numEdges
+               DO k = 1, 2
+                  nodeCount(k,i) = countForNodeID(edgeArray(i) % edge % nodes(k) % node % id)
                END DO
             END DO
 !
@@ -1169,7 +1165,7 @@
                   EXIT
                END DO
             END IF
-            DEALLOCATE(edgeArray, nodeCount)
+            DEALLOCATE(edgeArray, nodeCount, countForNodeID)
 
             IF ( edgeRemoved )     THEN
                edge % edgeType = INSIDE
@@ -2737,19 +2733,6 @@
          DEALLOCATE( nodeArray )
 
       END SUBROUTINE MoveInterfaceNodesToImages
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      REAL(KIND=RP) FUNCTION AngleBetween( v1, v2 )
-         IMPLICIT NONE
-!
-!        ------------------------------------
-!        Angle between two vectors in degrees
-!        ------------------------------------
-!
-         REAL(KIND=RP) :: v1(2), v2(2)
-         AngleBetween = ACOS( MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(v1,v2)/(NORM2(v1)*NORM2(v2)))) )*180.0_RP/PI
-      END FUNCTION AngleBetween
 !
 !////////////////////////////////////////////////////////////////////////
 !

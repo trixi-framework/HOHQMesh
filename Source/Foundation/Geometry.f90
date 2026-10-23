@@ -338,62 +338,77 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION CurvePointsBox( curvePoints ) RESULT(box)
+      FUNCTION BBoxWithMargin( bBox ) RESULT(box)
 !
-!     ------------------------------------------------------------------
-!     Bounding box [xMin, xMax, yMin, yMax] of the points of a curve,
-!     enlarged by a margin well above the tolerances and the rounding
-!     errors of ACWindingFunction and PointInQuad, for PointIsOutsideBox
-!     ------------------------------------------------------------------
+!     ---------------------------------------------------------------
+!     The bounding box of a curve enlarged by a margin well above the
+!     tolerances and the rounding errors of ACWindingFunction and
+!     PointInQuad, for ACWindingFunctionInBox
+!     ---------------------------------------------------------------
 !
       IMPLICIT NONE
-      REAL(KIND=RP) :: curvePoints(:,:)
-      REAL(KIND=RP) :: box(4)
+      REAL(KIND=RP) :: bBox(6)
+      REAL(KIND=RP) :: box(6)
       REAL(KIND=RP) :: margin
 
-      box = [MINVAL(curvePoints(1,:)), MAXVAL(curvePoints(1,:)), &
-             MINVAL(curvePoints(2,:)), MAXVAL(curvePoints(2,:))]
-      margin = 1.0E-8_RP*( MAXVAL(ABS(box)) + MAX(box(2) - box(1), box(4) - box(3)) ) + 1.0E-12_RP
-      box = box + margin*[-1.0_RP, 1.0_RP, -1.0_RP, 1.0_RP]
+      margin = 1.0E-8_RP*( MAXVAL(ABS(bBox)) + MAX(bBox(BBOX_RIGHT) - bBox(BBOX_LEFT), &
+                                                   bBox(BBOX_TOP)   - bBox(BBOX_BOTTOM)) ) + 1.0E-12_RP
+      box              = bBox
+      box(BBOX_LEFT)   = bBox(BBOX_LEFT)   - margin
+      box(BBOX_RIGHT)  = bBox(BBOX_RIGHT)  + margin
+      box(BBOX_BOTTOM) = bBox(BBOX_BOTTOM) - margin
+      box(BBOX_TOP)    = bBox(BBOX_TOP)    + margin
 
-      END FUNCTION CurvePointsBox
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      PURE LOGICAL FUNCTION PointIsOutsideBox( p, box )
-!
-!     ------------------------------------------------------------------
-!     True if p is outside box = [xMin, xMax, yMin, yMax]. For the box of
-!     a closed curve from CurvePointsBox, ACWindingFunction is then 0.
-!     ------------------------------------------------------------------
-!
-      IMPLICIT NONE
-      REAL(KIND=RP), INTENT(IN) :: p(3), box(4)
-
-      PointIsOutsideBox = p(1) < box(1) .OR. p(1) > box(2) .OR. p(2) < box(3) .OR. p(2) > box(4)
-
-      END FUNCTION PointIsOutsideBox
+      END FUNCTION BBoxWithMargin
 !
 !////////////////////////////////////////////////////////////////////////
 !
       INTEGER FUNCTION ACWindingFunctionInBox( p, curvePoints, N, box )
 !
 !     ------------------------------------------------------------------
-!     ACWindingFunction, skipped (w = 0) when p is outside box, the box
-!     of the curve from CurvePointsBox
+!     ACWindingFunction, skipped (w = 0) when p is outside box, the
+!     bounding box of the curve from BBoxWithMargin
 !     ------------------------------------------------------------------
 !
       IMPLICIT NONE
       INTEGER       :: N
-      REAL(KIND=RP) :: p(3), curvePoints(3,0:N), box(4)
+      REAL(KIND=RP) :: p(3), curvePoints(3,0:N), box(6)
 
-      IF ( PointIsOutsideBox(p, box) )     THEN
+      IF ( .NOT.Point_IsInsideBox(p, box) )     THEN
          ACWindingFunctionInBox = 0
       ELSE
          ACWindingFunctionInBox = ACWindingFunction( p, curvePoints, N )
       END IF
 
       END FUNCTION ACWindingFunctionInBox
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION AngleBetween( v1, v2 )
+         IMPLICIT NONE
+!
+!        ------------------------------------
+!        Angle between two vectors in degrees
+!        ------------------------------------
+!
+         REAL(KIND=RP) :: v1(2), v2(2)
+         AngleBetween = ACOS( MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(v1,v2)/(NORM2(v1)*NORM2(v2)))) )*180.0_RP/PI
+      END FUNCTION AngleBetween
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION CornerJacobian( xPrev, x, xNext )
+         IMPLICIT NONE
+!
+!        --------------------------------------------------------------
+!        Cross product of the two edges that meet at the corner x of a
+!        quadrilateral. Positive at a convex corner of a counterclockwise
+!        element, zero where the corner is flat, negative if folded.
+!        --------------------------------------------------------------
+!
+         REAL(KIND=RP) :: xPrev(3), x(3), xNext(3)
+         CornerJacobian = (xNext(1) - x(1))*(xPrev(2) - x(2)) - (xNext(2) - x(2))*(xPrev(1) - x(1))
+      END FUNCTION CornerJacobian
 !
 !////////////////////////////////////////////////////////////////////////
 !

@@ -571,22 +571,6 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION IsOnInterfaceCurve( node )
-         IMPLICIT NONE
-!
-!        -------------------------------------------
-!        True if the node is on an interface curve
-!        -------------------------------------------
-!
-         TYPE (SMNode), POINTER :: node
-         IsOnInterfaceCurve = .FALSE.
-         IF ( node % bCurveID == UNDEFINED .OR. .NOT.ALLOCATED(boundaryEdgesType) )     RETURN
-         IF ( node % bCurveChainID < 1 .OR. node % bCurveChainID > SIZE(boundaryEdgesType) )     RETURN
-         IsOnInterfaceCurve = boundaryEdgesType(node % bCurveChainID) == INTERFACE_EDGES
-      END FUNCTION IsOnInterfaceCurve
-!
-!////////////////////////////////////////////////////////////////////////
-!
       LOGICAL FUNCTION IsAtCurveJoint( node )
          IMPLICIT NONE
 !
@@ -900,50 +884,14 @@
            ALLOCATE(interfaceElements)
            CALL interfaceElements % init()
 !
-!          ----------------------------------------
-!          Gather all elements along the interfaces
-!          into a list of elements.
-!          ----------------------------------------
-!
-           DO j = 1, numBoundaries
-               IF( boundaryEdgesType(j) == BOUNDARY_EDGES ) CYCLE
-
-               obj  => boundaryEdgesArray % objectAtIndex(j)
-               CALL cast(obj,currentEdgeList)
-
-               ALLOCATE(edgeListIterator)
-               CALL edgeListIterator % initWithFTLinkedListClass(currentEdgeList)
-               CALL edgeListIterator % setToStart()
-
-               DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
-                  obj => EdgeListIterator % object()
-                  CALL castToSMEdge(obj,currentEdge)
-
-                  IF ( currentEdge % edgeType == ON_INTERFACE )     THEN
-
-                     e   => currentEdge % elements(1) % element
-                     obj => e
-                     CALL interfaceElements % add(obj)
-
-                     e   => currentEdge % elements(2) % element
-                     obj => e
-                     CALL interfaceElements % add(obj)
-
-                  END IF
-
-                  CALL EdgeListIterator % moveToNext()
-               END DO
-
-               CALL releaseFTLinkedListIteratorClass(edgeListIterator)
-           END DO
-!
-!          -------------------------------------------------------
-!          Elements that only touch the interface at their corners
-!          (one node, or two opposite nodes) must be split as well
-!          to keep the mesh conforming. Add all elements that have
-!          a node on the interface. Duplicates are skipped when
-!          splitting.
-!          -------------------------------------------------------
+!          ------------------------------------------------------
+!          Gather all elements that have a node on an interface.
+!          This includes the elements that only touch it at their
+!          corners (one node, or two opposite nodes), which must
+!          be split as well to keep the mesh conforming. An
+!          element is listed once for each of its interface
+!          nodes. Duplicates are skipped when splitting.
+!          ------------------------------------------------------
 !
             CALL makeNodeToElementConnections(mesh, errorCode)
 
@@ -953,29 +901,13 @@
                DO WHILE ( .NOT.nodesIterator % isAtEnd() )
                   obj => nodesIterator % object()
                   CALL castToSMNode(obj,meshNode)
-!
-!                 --------------------------------
-!                 Check if this is a boundary node
-!                 --------------------------------
-!
-                  IF ( meshNode % bCurveID > UNDEFINED .AND. meshNode % distToBoundary == 0.0_RP )     THEN
-!
-!                    ----------------------------------------------
-!                    Check if it is a boundary node on an interface
-!                    ----------------------------------------------
-!
-                     IF ( boundaryEdgesType(meshNode % bCurveChainID) == INTERFACE_EDGES )     THEN
-!
-!                       ------------------------------------------
-!                       Add the elements associated with this node
-!                       ------------------------------------------
-!
-                        DO j = 1, numElementsForNode( meshNode % id )
-                           e   => elementsForNodes(j,meshNode % id) % element
-                           obj => e
-                           CALL interfaceElements % add(obj)
-                        END DO
-                     END IF
+
+                  IF ( IsOnInterfaceCurve(meshNode) )     THEN
+                     DO j = 1, numElementsForNode( meshNode % id )
+                        e   => elementsForNodes(j,meshNode % id) % element
+                        obj => e
+                        CALL interfaceElements % add(obj)
+                     END DO
                   END IF
 
                   CALL nodesIterator % moveToNext()
@@ -1636,14 +1568,6 @@
             ElementMaxAngle = MAX(ElementMaxAngle, angle)
          END DO
       END FUNCTION ElementMaxAngle
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      REAL(KIND=RP) FUNCTION CornerJacobian( xPrev, x, xNext )
-         IMPLICIT NONE
-         REAL(KIND=RP) :: xPrev(3), x(3), xNext(3)
-         CornerJacobian = (xNext(1) - x(1))*(xPrev(2) - x(2)) - (xNext(2) - x(2))*(xPrev(1) - x(1))
-      END FUNCTION CornerJacobian
 !
 !////////////////////////////////////////////////////////////////////////
 !

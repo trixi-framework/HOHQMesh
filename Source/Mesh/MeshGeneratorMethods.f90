@@ -237,8 +237,6 @@
 !
          CALL destroyTemporaryBoundaryArrays
 
-         IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
-
       END SUBROUTINE GenerateAQuadMesh
 !
 !////////////////////////////////////////////////////////////////////////
@@ -391,7 +389,6 @@
 !     --------------------------------------------
 !
       IF( numberOfBoundaries > 0 )     THEN
-         ALLOCATE( aPointInsideTheCurve(3,numberOfBoundaries) )
          ALLOCATE( mesh % curveTypeForID(numberOfBoundaries) )
          CALL flagBoundaryTypes(mesh % curveTypeForID)
       END IF
@@ -1077,14 +1074,6 @@
                      node % bCurveChainID = outerBoundaryCurve % id
                      node % bCurveSide    = INSIDE
                   END DO
-               ELSE
-!
-!                 -----------------------------------------------
-!                 Any node in this element is inside, so mark one
-!                 -----------------------------------------------
-!
-                  node => e % nodes(1) % node
-                  aPointInsidetheCurve(:,outerBoundaryCurve % id) = node % x
                END IF
 
                CALL elementIterator % moveToNext()
@@ -1200,9 +1189,8 @@
                           node => e % nodes(k) % node
                           w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments )
                           IF ( ABS(w) >= 1 ) THEN
-                             aPointInsidetheCurve(:,curveArray % id) = node % x
-                             e % remove                              = .true.
-                             removedHere                             = .true.
+                             e % remove  = .true.
+                             removedHere = .true.
                              EXIT
                           END IF
                         END DO
@@ -1297,15 +1285,6 @@
                END DO
 
             END DO
-!
-!           ----------------------------------------------
-!           A point guaranteed to be inside an outer curve
-!           is inside an inner curve
-!           ----------------------------------------------
-!
-            IF( ASSOCIATED( outerBoundaryCurve ) ) THEN
-               aPointInsidetheCurve(:,1) = aPointInsidetheCurve(:,2)
-            END IF
          END IF
 
       END SUBROUTINE MarkExteriorElements
@@ -1384,7 +1363,7 @@
          REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
          LOGICAL                              :: isInterfaceElement
          INTEGER                              :: numInside, numOutside, location(4)
-         REAL(KIND=RP)                        :: curveBox(4), elementBox(4), margin
+         REAL(KIND=RP)                        :: curveBox(6), elementBox(4), margin
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1397,7 +1376,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  CurvePointsBox( curveArray % x )
+            curveBox   =  BBoxWithMargin( curveArray % boundingBox )
 
             CALL elementIterator % setToStart()
 !
@@ -1425,7 +1404,6 @@
                      IF ( ABS(w) > 0.6_RP ) THEN
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
-                        aPointInsidetheCurve(:,curveArray % id) = node % x
                       ELSE IF ( abs(w) <= EPSILON(w) ) THEN
                         location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
@@ -1533,16 +1511,10 @@
                   DO k = 1, 4
                      node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
-!
-!                    ------------------------------------------------------------------
-!                    To order boundary edges, we need to know a point inside this curve
-!                    ------------------------------------------------------------------
-!
                      IF(node % bCurveSide == UNDEFINED )     THEN
                         w = ACWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
 
                         IF ( ABS(w) > 0.6_RP ) THEN
-                           aPointInsidetheCurve(:,curveArray % id) = node % x
                            node % bCurveSide    = INSIDE
                         ELSE IF ( abs(w) <= EPSILON(w) ) THEN
                            node % bCurveSide    = OUTSIDE
@@ -1594,7 +1566,7 @@
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
          CLASS(SMChainedCurve)      , POINTER :: chain           => NULL()
-         REAL(KIND=RP)                        :: center(3), curveBox(4)
+         REAL(KIND=RP)                        :: center(3), curveBox(6)
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1603,7 +1575,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  CurvePointsBox( curveArray % x )
+            curveBox   =  BBoxWithMargin( curveArray % boundingBox )
 !
 !           ---------------------------------------------------------------
 !           The material ID of the interface was set from the material
@@ -1653,7 +1625,6 @@
                      ELSE
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
-                        aPointInsidetheCurve(:,curveArray % id) = node % x
                      END IF
                   END DO
 !

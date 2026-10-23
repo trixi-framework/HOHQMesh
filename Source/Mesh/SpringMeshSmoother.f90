@@ -35,6 +35,7 @@
       USE SMModelClass
       USE MeshBoundaryMethodsModule
       USE MeshSmootherClass
+      USE Geometry, ONLY: AngleBetween
       IMPLICIT NONE
 !
 !     ---------
