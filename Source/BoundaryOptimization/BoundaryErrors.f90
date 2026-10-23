@@ -168,7 +168,7 @@
                e       = (xP(1)-xC(1))**2 + (xP(2)-xC(2))**2
 
                eL2Norm = eL2Norm + e*weights(m)
-               eH1Norm = eH1Norm + eL2Norm + eD*weights(m)
+               eH1Norm = eH1Norm + (e + eD)*weights(m)
 
             END DO
 
