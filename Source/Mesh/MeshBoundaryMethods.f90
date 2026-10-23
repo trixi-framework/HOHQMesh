@@ -217,7 +217,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CollectBoundaryEdges( mesh, errorCode )
+      SUBROUTINE CollectBoundaryEdges( mesh, errorCode, useElementSides )
          USE MeshOutputMethods
          USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
 !
@@ -232,8 +232,9 @@
 !        Arguments
 !        ---------
 !
-         TYPE( SMMesh ) :: mesh
-         INTEGER        :: errorCode
+         TYPE( SMMesh )    :: mesh
+         INTEGER           :: errorCode
+         LOGICAL, OPTIONAL :: useElementSides
 !
 !        ---------------
 !        Local variables
@@ -243,9 +244,13 @@
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj      => NULL()
          CLASS(FTLinkedList)        , POINTER :: edgeList => NULL()
-         INTEGER                              :: curveID, curveSide
+         INTEGER                              :: curveID, curveSide, k
+         LOGICAL                              :: elementSides
 
          errorCode = A_OK_ERROR_CODE
+
+         elementSides = .FALSE.
+         IF ( PRESENT(useElementSides) )     elementSides = useElementSides
 !
 !        --------------------------------
 !        Gather "exterior" boundary edges
@@ -307,10 +312,37 @@
             CALL iterator % moveToNext()
          END DO
 !
-!        -------------------------------
-!        Gather interior interface edges
-!        -------------------------------
+!        ------------------------------------------------------------
+!        Gather interior interface edges. On the background grid mesh
+!        the interface edges are those that separate elements inside
+!        an interface curve from those outside. After the nodes have
+!        been moved onto the interface, the interface nodes are the
+!        ones marked INSIDE, and the edges between them are gathered.
+!        ------------------------------------------------------------
 !
+         IF ( elementSides )     THEN
+
+            IF ( .NOT.ASSOCIATED(interfaceCurves) )     RETURN
+
+            DO k = 1, SIZE(interfaceCurves)
+               curveID  = interfaceCurves(k) % curveArray % id
+               obj      => boundaryEdgesArray % objectAtIndex(curveID)
+               edgeList => linkedListFromObject(obj)
+
+               CALL CollectInterfaceEdgesFromElementSides( mesh, interfaceCurves(k) % curveArray, edgeList )
+!
+!              -----------------------------------------------------------
+!              Remove dangling and chord edges so that the edge list forms
+!              a closed loop that can be ordered.
+!              -----------------------------------------------------------
+!
+               CALL PruneInterfaceEdges( edgeList )
+               IF ( edgeList % COUNT() > 0 )     boundaryEdgesType(curveID) = INTERFACE_EDGES
+            END DO
+
+            RETURN
+         END IF
+
          CALL iterator % setToStart()
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
@@ -347,6 +379,828 @@
          END DO
 
       END SUBROUTINE CollectBoundaryEdges
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE CollectInterfaceEdgesFromElementSides( mesh, curveArray, edgeList )
+         USE Geometry
+         USE ErrorTypesModule
+         IMPLICIT NONE
+!
+!     -----------------------------------------------------------------
+!     Find the edges of the background grid mesh that will be moved
+!     onto an interface curve.
+!
+!     Each element is classified as inside or outside of the curve by
+!     its centroid. If the centroid is close to the curve, the fraction
+!     of the element that is inside decides. The interface edges are
+!     the edges that separate an inside element from an outside one,
+!     so only nodes next to the curve are moved onto it.
+!
+!     To guarantee that the edges form a single closed loop,
+!     (1) inside or outside regions that are not connected to the
+!         main region are reclassified, and
+!     (2) an element with three or more interface edges, i.e. a one
+!         element wide bump or notch, is reclassified, and
+!     (3) at a "pinch" node, where inside elements touch only at that
+!         node, the least certain element around it is reclassified.
+!
+!     On return, the nodes on the interface edges are marked INSIDE
+!     and the other nodes associated with the curve are marked OUTSIDE.
+!     -----------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMMesh)                      :: mesh
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         CLASS(FTLinkedList)       , POINTER :: edgeList
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, PARAMETER :: MAX_PINCH_ITERATIONS = 100
+
+         TYPE (SMElementPtr), ALLOCATABLE :: elementForID(:)
+         TYPE (SMEdgePtr)   , ALLOCATABLE :: meshEdges(:)
+         LOGICAL            , ALLOCATABLE :: isInside(:), isInterfaceEdge(:), flippedAtCorner(:)
+         REAL(KIND=RP)      , ALLOCATABLE :: insideFraction(:)
+         INTEGER            , ALLOCATABLE :: interfaceEdgeCount(:), elementEdgeCount(:)
+         TYPE (SMElement)   , POINTER     :: e => NULL(), eFlip => NULL()
+         TYPE (SMEdge)      , POINTER     :: edge => NULL()
+         TYPE (SMNode)      , POINTER     :: node => NULL()
+         CLASS(FTObject)    , POINTER     :: obj => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         INTEGER                          :: maxElementID, maxNodeID, numEdges
+         INTEGER                          :: i, j, k, m, pinchNodeID, iteration
+         REAL(KIND=RP)                    :: centroid(3), hMin, h, bestScore, score
+         REAL(KIND=RP)                    :: box(6)
+         INTEGER, EXTERNAL                :: Loop
+!
+!        ---------------------------------
+!        Index the elements by id, and the
+!        edges that are shared by two
+!        ---------------------------------
+!
+         maxElementID = 0
+         iterator => mesh % elementsIterator
+         CALL iterator % setToStart()
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL castToSMElement(obj,e)
+            maxElementID = MAX(maxElementID, e % id)
+            CALL iterator % moveToNext()
+         END DO
+
+         ALLOCATE( elementForID(maxElementID), isInside(maxElementID), insideFraction(maxElementID) )
+         ALLOCATE( elementEdgeCount(maxElementID), flippedAtCorner(maxElementID) )
+         flippedAtCorner = .FALSE.
+         isInside       = .FALSE.
+         insideFraction = -1.0_RP
+
+         CALL iterator % setToStart()
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL castToSMElement(obj,e)
+            IF ( .NOT.e % remove )     elementForID(e % id) % element => e
+            CALL iterator % moveToNext()
+         END DO
+
+         maxNodeID = 0
+         iterator => mesh % nodesIterator
+         CALL iterator % setToStart()
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL castToSMNode(obj,node)
+            maxNodeID = MAX(maxNodeID, node % id)
+            CALL iterator % moveToNext()
+         END DO
+         ALLOCATE( interfaceEdgeCount(maxNodeID) )
+
+         numEdges = 0
+         iterator => mesh % edgesIterator
+         CALL iterator % setToStart()
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL castToSMEdge(obj,edge)
+            IF ( ASSOCIATED(edge % elements(1) % element) .AND. &
+                 ASSOCIATED(edge % elements(2) % element) )     numEdges = numEdges + 1
+            CALL iterator % moveToNext()
+         END DO
+
+         ALLOCATE( meshEdges(numEdges), isInterfaceEdge(numEdges) )
+         i = 0
+         CALL iterator % setToStart()
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL castToSMEdge(obj,edge)
+            IF ( ASSOCIATED(edge % elements(1) % element) .AND. &
+                 ASSOCIATED(edge % elements(2) % element) )     THEN
+               i = i + 1
+               meshEdges(i) % edge => edge
+            END IF
+            CALL iterator % moveToNext()
+         END DO
+!
+!        ----------------------------------------------------
+!        Classify each element by its centroid. Elements with
+!        a centroid close to the curve are decided by the
+!        fraction of the element inside the curve.
+!        ----------------------------------------------------
+!
+         box = curveArray % boundingBox
+
+         DO i = 1, maxElementID
+            e => elementForID(i) % element
+            IF ( .NOT.ASSOCIATED(e) )     CYCLE
+
+            centroid = 0.0_RP
+            hMin     = HUGE(hMin)
+            DO k = 1, 4
+               centroid = centroid + 0.25_RP*e % nodes(k) % node % x
+               h        = NORM2(e % nodes(Loop(k+1,4)) % node % x(1:2) - e % nodes(k) % node % x(1:2))
+               hMin     = MIN(h, hMin)
+            END DO
+
+            IF ( centroid(1) < box(BBOX_LEFT)   - hMin .OR. centroid(1) > box(BBOX_RIGHT) + hMin .OR. &
+                 centroid(2) < box(BBOX_BOTTOM) - hMin .OR. centroid(2) > box(BBOX_TOP)   + hMin )     CYCLE
+
+            isInside(i) = ACWindingFunction( centroid, curveArray % x, curveArray % nSegments-1 ) /= 0
+
+            IF ( DistanceToSegmentedCurve( centroid, curveArray ) < 0.25_RP*hMin )     THEN
+               insideFraction(i) = ElementInsideFraction( e, curveArray )
+               isInside(i)       = insideFraction(i) > 0.5_RP
+            END IF
+         END DO
+!
+!        -------------------------------------------------
+!        Make the inside and outside regions each a single
+!        connected region, then remove any pinch nodes
+!        -------------------------------------------------
+!
+         DO iteration = 1, MAX_PINCH_ITERATIONS
+
+            CALL MergeDisconnectedRegions( elementForID, isInside, meshEdges )
+!
+!           -------------------------------------------
+!           Interface edges separate inside and outside
+!           -------------------------------------------
+!
+            interfaceEdgeCount = 0
+            DO j = 1, numEdges
+               edge => meshEdges(j) % edge
+               isInterfaceEdge(j) = isInside(edge % elements(1) % element % id) .NEQV. &
+                                    isInside(edge % elements(2) % element % id)
+               IF ( isInterfaceEdge(j) )     THEN
+                  DO k = 1, 2
+                     m = edge % nodes(k) % node % id
+                     interfaceEdgeCount(m) = interfaceEdgeCount(m) + 1
+                  END DO
+               END IF
+            END DO
+!
+!           --------------------------------------------------------------
+!           An element with three or more interface edges is a one element
+!           wide bump or notch. All its nodes would be moved onto a short
+!           piece of the curve, so switch its side.
+!           --------------------------------------------------------------
+!
+            elementEdgeCount = 0
+            DO j = 1, numEdges
+               IF ( .NOT.isInterfaceEdge(j) )     CYCLE
+               edge => meshEdges(j) % edge
+               DO k = 1, 2
+                  m = edge % elements(k) % element % id
+                  elementEdgeCount(m) = elementEdgeCount(m) + 1
+               END DO
+            END DO
+            IF ( ANY(elementEdgeCount > 2) )     THEN
+               WHERE ( elementEdgeCount > 2 )     isInside = .NOT.isInside
+               pinchNodeID = -1
+               CYCLE
+            END IF
+!
+!           ------------------------------------------------------------
+!           An element whose two interface edges meet at a node keeps
+!           three nodes on the curve. If the curve between the outer two
+!           bends toward the element, as at a reflex corner, the element
+!           has to wrap the corner and folds once its nodes are on the
+!           curve. Switch its side (once) so that the interface runs
+!           through its fourth node instead, which then takes the corner.
+!           ------------------------------------------------------------
+!
+            IF ( FlipCornerWrappingElements( curveArray, elementForID, meshEdges, isInterfaceEdge, &
+                                             isInside, flippedAtCorner ) )     THEN
+               pinchNodeID = -1
+               CYCLE
+            END IF
+!
+!           -----------------------------------------------------
+!           A node with more than two interface edges is a pinch.
+!           Reclassify the least certain element that touches it
+!           -----------------------------------------------------
+!
+            pinchNodeID = 0
+            DO j = 1, maxNodeID
+               IF ( interfaceEdgeCount(j) > 2 )     THEN
+                  pinchNodeID = j
+                  EXIT
+               END IF
+            END DO
+            IF ( pinchNodeID == 0 )     EXIT
+
+            eFlip     => NULL()
+            bestScore =  HUGE(bestScore)
+            DO j = 1, numEdges
+               IF ( .NOT.isInterfaceEdge(j) )     CYCLE
+               edge => meshEdges(j) % edge
+               IF ( edge % nodes(1) % node % id /= pinchNodeID .AND. &
+                    edge % nodes(2) % node % id /= pinchNodeID )     CYCLE
+
+               DO k = 1, 2
+                  e => edge % elements(k) % element
+                  IF ( insideFraction(e % id) < 0.0_RP )     &
+                     insideFraction(e % id) = ElementInsideFraction( e, curveArray )
+                  score = ABS(insideFraction(e % id) - 0.5_RP)
+                  IF ( score < bestScore )     THEN
+                     bestScore =  score
+                     eFlip     => e
+                  END IF
+               END DO
+            END DO
+            isInside(eFlip % id) = .NOT.isInside(eFlip % id)
+
+         END DO
+
+         IF ( pinchNodeID /= 0 )     THEN
+            CALL ThrowErrorExceptionOfType( "CollectInterfaceEdgesFromElementSides", &
+                                            "Unable to remove all bumps and pinch nodes on interface "&
+                                            //TRIM(curveArray % boundaryName()), &
+                                            FT_ERROR_WARNING )
+         END IF
+!
+!        ------------------------------------------------------------------
+!        Mark the nodes: INSIDE means on the interface. Then save the edges
+!        ------------------------------------------------------------------
+!
+         iterator => mesh % nodesIterator
+         CALL iterator % setToStart()
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL castToSMNode(obj,node)
+            IF ( node % bCurveChainID == curveArray % id )     node % bCurveSide = OUTSIDE
+            CALL iterator % moveToNext()
+         END DO
+
+         DO j = 1, numEdges
+            IF ( .NOT.isInterfaceEdge(j) )     CYCLE
+            edge => meshEdges(j) % edge
+            DO k = 1, 2
+               edge % nodes(k) % node % bCurveSide    = INSIDE
+               edge % nodes(k) % node % bCurveChainID = curveArray % id
+            END DO
+            edge % edgeType = ON_INTERFACE
+            obj => edge
+            CALL edgeList % add(obj)
+         END DO
+!
+!        ----------------------------
+!        Release all the local memory
+!        ----------------------------
+!
+         DEALLOCATE(elementForID, meshEdges, isInside, isInterfaceEdge)
+         DEALLOCATE(insideFraction, interfaceEdgeCount, elementEdgeCount, flippedAtCorner)
+
+      END SUBROUTINE CollectInterfaceEdgesFromElementSides
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION FlipCornerWrappingElements( curveArray, elementForID, meshEdges, &
+                                                   isInterfaceEdge, isInside, flippedAtCorner )
+         USE Geometry
+         IMPLICIT NONE
+!
+!     ------------------------------------------------------------------
+!     For CollectInterfaceEdgesFromElementSides: an element whose two
+!     interface edges meet at a node keeps three nodes on the curve. If
+!     the curve between the outer two bends toward the element, as at a
+!     reflex corner, switch the side of the element (once, recorded in
+!     flippedAtCorner). True if any element was switched.
+!     ------------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         TYPE (SMElementPtr)                 :: elementForID(:)
+         TYPE (SMEdgePtr)                    :: meshEdges(:)
+         LOGICAL                             :: isInterfaceEdge(:), isInside(:), flippedAtCorner(:)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, ALLOCATABLE   :: edgesOfElement(:,:), numFound(:)
+         TYPE (SMEdge), POINTER :: edgeA => NULL(), edgeB => NULL()
+         TYPE (SMNode), POINTER :: nodeP => NULL(), nodeA => NULL(), nodeB => NULL(), nodeF => NULL()
+         TYPE (SMElement), POINTER :: e => NULL()
+         INTEGER                :: id, kA, kB, kk, j, k, maxElementID, numEdges
+         REAL(KIND=RP), PARAMETER :: MIN_FLIP_CORNER_ANGLE = 90.0_RP ! convex side, degrees
+         LOGICAL                :: hasCorner
+         REAL(KIND=RP)          :: corner(2), cornerAngle, aImage(2), bImage(2)
+
+         FlipCornerWrappingElements = .FALSE.
+         maxElementID = SIZE(elementForID)
+         numEdges     = SIZE(meshEdges)
+         ALLOCATE( edgesOfElement(2,maxElementID), numFound(maxElementID) )
+         numFound = 0
+         DO j = 1, numEdges
+            IF ( .NOT.isInterfaceEdge(j) )     CYCLE
+            DO k = 1, 2
+               id = meshEdges(j) % edge % elements(k) % element % id
+               numFound(id) = numFound(id) + 1
+               IF( numFound(id) <= 2 )     edgesOfElement(numFound(id),id) = j
+            END DO
+         END DO
+
+         DO id = 1, maxElementID
+            IF ( numFound(id) /= 2 .OR. flippedAtCorner(id) )     CYCLE
+            edgeA => meshEdges(edgesOfElement(1,id)) % edge
+            edgeB => meshEdges(edgesOfElement(2,id)) % edge
+!
+!           ---------------------------------------------
+!           The shared node and the two nodes on either side
+!           ---------------------------------------------
+!
+            nodeP => NULL()
+            DO kA = 1, 2
+               DO kB = 1, 2
+                  IF ( edgeA % nodes(kA) % node % id == edgeB % nodes(kB) % node % id )     THEN
+                     nodeP => edgeA % nodes(kA) % node
+                     nodeA => edgeA % nodes(3-kA) % node
+                     nodeB => edgeB % nodes(3-kB) % node
+                  END IF
+               END DO
+            END DO
+            IF ( .NOT.ASSOCIATED(nodeP) )     CYCLE
+
+            e => elementForID(id) % element
+            DO kk = 1, 4
+               nodeF => e % nodes(kk) % node
+               IF ( nodeF % id /= nodeP % id .AND. nodeF % id /= nodeA % id .AND. &
+                    nodeF % id /= nodeB % id )     EXIT
+            END DO
+
+            CALL FindCornerTowardPoint( nodeA % x, nodeB % x, nodeF % x, curveArray, &
+                                        hasCorner, corner, cornerAngle, aImage, bImage )
+            IF ( .NOT.hasCorner )     CYCLE
+!
+!           ----------------------------------------------------------
+!           Switching the element adds an element to the convex side,
+!           which does not fit into a sharp corner. If the shared node
+!           is on the other side of the curve and one of its neighbors
+!           has its image next to the corner, the corner is already
+!           taken by that neighbor's node, so leave the element as is.
+!           ----------------------------------------------------------
+!
+            IF ( cornerAngle < MIN_FLIP_CORNER_ANGLE .AND. &
+                 ((ACWindingFunction( nodeP % x, curveArray % x, curveArray % nSegments-1 ) /= 0) &
+                  .NEQV. isInside(id)) )     THEN
+               IF ( NORM2(aImage - corner) < 0.5_RP*NORM2(nodeA % x(1:2) - nodeP % x(1:2)) .OR. &
+                    NORM2(bImage - corner) < 0.5_RP*NORM2(nodeB % x(1:2) - nodeP % x(1:2)) )     CYCLE
+            END IF
+
+            isInside(id)               = .NOT.isInside(id)
+            flippedAtCorner(id)        = .TRUE.
+            FlipCornerWrappingElements = .TRUE.
+         END DO
+
+         DEALLOCATE( edgesOfElement, numFound )
+
+      END FUNCTION FlipCornerWrappingElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE FindCornerTowardPoint( a, b, f, curveArray, hasCorner, corner, cornerAngle, aImage, bImage )
+         USE Geometry, ONLY: AngleBetween
+         IMPLICIT NONE
+!
+!     -----------------------------------------------------------------
+!     Find whether the piece of the segmented curve between the points
+!     a' and b' nearest to a and b has a corner, sharper than
+!     MAX_TOWARD_CORNER_ANGLE, that points toward f, i.e. whether a quad
+!     with nodes f, a', corner, b' would have a reflex angle at the
+!     corner. cornerAngle is the angle between a' and b' seen from
+!     the corner, on the side away from f, in degrees.
+!     -----------------------------------------------------------------
+!
+         REAL(KIND=RP)                       :: a(3), b(3), f(3)
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         LOGICAL                             :: hasCorner
+         REAL(KIND=RP)                       :: corner(2), cornerAngle, aImage(2), bImage(2)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP), PARAMETER :: MAX_TOWARD_CORNER_ANGLE = 160.0_RP ! degrees
+         INTEGER                  :: N, j, jStart, jEnd, jMax, i
+         REAL(KIND=RP)            :: sA, sB, sTmp, p1(2), p2(2), chord(2), side
+         REAL(KIND=RP)            :: depth, depthMax, u(2), v(2)
+
+         hasCorner   = .FALSE.
+         corner      = 0.0_RP
+         cornerAngle = 180.0_RP
+         N = curveArray % nSegments
+
+         CALL NearestPointOnSegmentedCurve( a, curveArray, sA, aImage )
+         CALL NearestPointOnSegmentedCurve( b, curveArray, sB, bImage )
+         p1 = aImage
+         p2 = bImage
+         IF ( sB < sA )     THEN
+            sTmp = sA
+            sA   = sB
+            sB   = sTmp
+            p1 = bImage
+            p2 = aImage
+         END IF
+         chord = p2 - p1
+         IF ( NORM2(chord) == 0.0_RP )     RETURN
+         side = SIGN(1.0_RP, chord(1)*(f(2) - p1(2)) - chord(2)*(f(1) - p1(1)))
+!
+!        ---------------------------------------------------------
+!        Vertices strictly between the two images, the shorter way
+!        around the closed curve
+!        ---------------------------------------------------------
+!
+         IF ( sB - sA <= 0.5_RP*N )     THEN
+            jStart = FLOOR(sA) + 1
+            jEnd   = CEILING(sB) - 1
+         ELSE
+            jStart = FLOOR(sB) + 1
+            jEnd   = CEILING(sA) - 1 + N
+         END IF
+
+         depthMax = 0.0_RP
+         jMax     = -1
+         DO i = jStart, jEnd
+            j     = MODULO(i, N)
+            depth = side*(chord(1)*(curveArray % x(2,j) - p1(2)) - chord(2)*(curveArray % x(1,j) - p1(1)))
+            IF ( depth > depthMax )     THEN
+               depthMax = depth
+               jMax     = j
+            END IF
+         END DO
+         IF ( jMax < 0 )     RETURN
+
+         u = aImage - curveArray % x(1:2,jMax)
+         v = bImage - curveArray % x(1:2,jMax)
+         IF ( NORM2(u) == 0.0_RP .OR. NORM2(v) == 0.0_RP )     RETURN
+         cornerAngle = AngleBetween(u, v)
+         hasCorner   = cornerAngle < MAX_TOWARD_CORNER_ANGLE
+         corner      = curveArray % x(1:2,jMax)
+
+      END SUBROUTINE FindCornerTowardPoint
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE NearestPointOnSegmentedCurve( p, curveArray, s, pImage, distance )
+         IMPLICIT NONE
+!
+!     -----------------------------------------------------------------
+!     Point on the segments of a segmented curve nearest to p, and its
+!     location s = j + fraction along segment j (from x(:,j) to x(:,j+1))
+!     and (optionally) its distance from p
+!     -----------------------------------------------------------------
+!
+         REAL(KIND=RP)                       :: p(3), s, pImage(2)
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         REAL(KIND=RP), OPTIONAL             :: distance
+
+         INTEGER       :: j
+         REAL(KIND=RP) :: a(2), d(2), t, lengthSquared, dist, distMin
+
+         distMin = HUGE(distMin)
+         s       = 0.0_RP
+         pImage  = curveArray % x(1:2,0)
+         DO j = 0, curveArray % nSegments - 1
+            a = curveArray % x(1:2,j)
+            d = curveArray % x(1:2,j+1) - a
+            lengthSquared = DOT_PRODUCT(d,d)
+            t = 0.0_RP
+            IF ( lengthSquared > 0.0_RP )     t = MAX(0.0_RP, MIN(1.0_RP, DOT_PRODUCT(p(1:2) - a, d)/lengthSquared))
+            dist = NORM2(p(1:2) - a - t*d)
+            IF ( dist < distMin )     THEN
+               distMin = dist
+               s       = j + t
+               pImage  = a + t*d
+            END IF
+         END DO
+         IF ( PRESENT(distance) )     distance = distMin
+
+      END SUBROUTINE NearestPointOnSegmentedCurve
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE MergeDisconnectedRegions( elementForID, isInside, meshEdges )
+         IMPLICIT NONE
+!
+!     ---------------------------------------------------------------
+!     Elements connected through shared edges and on the same side of
+!     an interface form a region. Keep the largest inside region and
+!     the largest outside region and switch the side of all others,
+!     so that a single interface loop separates the two.
+!     ---------------------------------------------------------------
+!
+         TYPE (SMElementPtr) :: elementForID(:)
+         LOGICAL             :: isInside(:)
+         TYPE (SMEdgePtr)    :: meshEdges(:)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, ALLOCATABLE :: parent(:), regionSize(:)
+         INTEGER              :: i, j, id1, id2, r1, r2, largestRoot, pass, N
+         LOGICAL              :: side
+
+         ALLOCATE( parent(SIZE(isInside)), regionSize(SIZE(isInside)) )
+
+         N = SIZE(parent)
+         DO pass = 1, 2
+            side = (pass == 1)
+
+            DO i = 1, N
+               parent(i) = i
+            END DO
+
+            DO j = 1, SIZE(meshEdges)
+               id1 = meshEdges(j) % edge % elements(1) % element % id
+               id2 = meshEdges(j) % edge % elements(2) % element % id
+               IF ( (isInside(id1) .EQV. side) .AND. (isInside(id2) .EQV. side) )     THEN
+                  r1 = FindRoot(id1, parent, N)
+                  r2 = FindRoot(id2, parent, N)
+                  IF ( r1 /= r2 )     parent(r2) = r1
+               END IF
+            END DO
+
+            regionSize = 0
+            DO i = 1, N
+               IF ( .NOT.ASSOCIATED(elementForID(i) % element) )     CYCLE
+               IF ( isInside(i) .NEQV. side )     CYCLE
+               r1 = FindRoot(i, parent, N)
+               regionSize(r1) = regionSize(r1) + 1
+            END DO
+            IF ( MAXVAL(regionSize) == 0 )     CYCLE
+            largestRoot = MAXLOC(regionSize, DIM = 1)
+
+            DO i = 1, N
+               IF ( .NOT.ASSOCIATED(elementForID(i) % element) )     CYCLE
+               IF ( isInside(i) .NEQV. side )     CYCLE
+               IF ( FindRoot(i, parent, N) /= largestRoot )     isInside(i) = .NOT.side
+            END DO
+         END DO
+!
+!        ----------------------------
+!        Release all the local memory
+!        ----------------------------
+!
+         DEALLOCATE(parent, regionSize)
+
+      END SUBROUTINE MergeDisconnectedRegions
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION FindRoot( id, parent, N )
+         INTEGER               :: id, N
+         INTEGER, DIMENSION(N) :: parent
+         FindRoot = id
+         DO WHILE ( parent(FindRoot) /= FindRoot )
+            parent(FindRoot) = parent(parent(FindRoot))
+            FindRoot         = parent(FindRoot)
+         END DO
+      END FUNCTION FindRoot
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION ElementInsideFraction( e, curveArray )
+         USE Geometry
+         IMPLICIT NONE
+!
+!     ---------------------------------------------------------
+!     Approximate the fraction of the area of an element inside
+!     a curve by sampling points of the bilinear map
+!     ---------------------------------------------------------
+!
+         TYPE (SMElement)          , POINTER :: e
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, PARAMETER :: NUM_SAMPLES = 5
+         INTEGER            :: i, j, numInside
+         REAL(KIND=RP)      :: u, v, p(3)
+
+         numInside = 0
+         DO j = 1, NUM_SAMPLES
+            v = (j - 0.5_RP)/NUM_SAMPLES
+            DO i = 1, NUM_SAMPLES
+               u = (i - 0.5_RP)/NUM_SAMPLES
+               p = (1.0_RP - u) * (1.0_RP - v) * e % nodes(1) % node % x &
+                  + u * (1.0_RP - v) * e % nodes(2) % node % x           &
+                  + u * v * e % nodes(3) % node % x                      &
+                  + (1.0_RP - u)* v * e % nodes(4) % node % x
+               IF ( ACWindingFunction( p, curveArray % x, curveArray % nSegments-1 ) /= 0 ) &
+                  numInside = numInside + 1
+            END DO
+         END DO
+         ElementInsideFraction = REAL(numInside, KIND=RP)/REAL(NUM_SAMPLES**2, KIND=RP)
+
+      END FUNCTION ElementInsideFraction
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION DistanceToSegmentedCurve( p, curveArray )
+         IMPLICIT NONE
+!
+!     -------------------------------------------------------
+!     Shortest distance from the point p to the line segments
+!     of a segmented curve
+!     -------------------------------------------------------
+!
+         REAL(KIND=RP)                       :: p(3)
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         REAL(KIND=RP)                       :: s, pImage(2)
+
+         CALL NearestPointOnSegmentedCurve( p, curveArray, s, pImage, DistanceToSegmentedCurve )
+
+      END FUNCTION DistanceToSegmentedCurve
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE PruneInterfaceEdges( edgeList )
+!
+!     -----------------------------------------------------------------
+!     A thin feature of an interface curve, like a sharp tip, can leave
+!     the interface edges in a configuration that cannot be ordered
+!     into a single closed loop:
+!
+!     (1) A node marked INSIDE that is connected to the other inside
+!         nodes by only one interface edge, i.e. a dangling spike.
+!         The node is marked OUTSIDE and its edge is removed.
+!     (2) An edge whose nodes are both INSIDE but where neither
+!         neighboring element has an OUTSIDE node, so it does not
+!         separate the materials. Such a chord gives its two nodes
+!         three or more interface edges. The edge is removed.
+!
+!     Repeat until every node is shared by exactly two edges or no
+!     further edge can be removed.
+!     -----------------------------------------------------------------
+!
+         IMPLICIT NONE
+
+         CLASS(FTLinkedList), POINTER :: edgeList
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE (SMEdgePtr)           , ALLOCATABLE :: edgeArray(:)
+         TYPE (SMEdge)              , POINTER     :: edge => NULL()
+         TYPE (SMNode)              , POINTER     :: node => NULL(), danglingNode => NULL()
+         CLASS(FTLinkedListIterator), POINTER     :: iterator => NULL()
+         CLASS(FTObject)            , POINTER     :: obj => NULL()
+         INTEGER                    , ALLOCATABLE :: nodeCount(:,:), countForNodeID(:)
+         INTEGER                                  :: numEdges, i, k, maxNodeID
+         LOGICAL                                  :: edgeRemoved, foundDanglingEdge
+
+         edgeRemoved = .TRUE.
+         DO WHILE ( edgeRemoved )
+            edgeRemoved = .FALSE.
+!
+!           -------------------------------------------
+!           Copy the current list into an array so that
+!           the nodes can be compared pairwise
+!           -------------------------------------------
+!
+            numEdges = edgeList % COUNT()
+            IF ( numEdges == 0 )     RETURN
+            ALLOCATE(edgeArray(numEdges), nodeCount(2,numEdges))
+
+            ALLOCATE(iterator)
+            CALL iterator % initWithFTLinkedListClass(edgeList)
+            CALL iterator % setToStart()
+            i = 1
+            DO WHILE ( .NOT.iterator % isAtEnd() )
+               obj => iterator % object()
+               CALL castToSMEdge(obj,edge)
+               edgeArray(i) % edge => edge
+               i = i + 1
+               CALL iterator % moveToNext()
+            END DO
+            CALL releaseFTLinkedListIteratorClass(iterator)
+!
+!           ----------------------------------------------
+!           Count the number of edges that share each node
+!           ----------------------------------------------
+!
+            maxNodeID = 0
+            DO i = 1, numEdges
+               DO k = 1, 2
+                  maxNodeID = MAX(maxNodeID, edgeArray(i) % edge % nodes(k) % node % id)
+               END DO
+            END DO
+            ALLOCATE(countForNodeID(maxNodeID))
+
+            countForNodeID = 0
+            DO i = 1, numEdges
+               DO k = 1, 2
+                  node => edgeArray(i) % edge % nodes(k) % node
+                  countForNodeID(node % id) = countForNodeID(node % id) + 1
+               END DO
+            END DO
+            DO i = 1, numEdges
+               DO k = 1, 2
+                  nodeCount(k,i) = countForNodeID(edgeArray(i) % edge % nodes(k) % node % id)
+               END DO
+            END DO
+!
+!           -------------------------------
+!           First look for a dangling edge
+!           -------------------------------
+!
+            foundDanglingEdge = .FALSE.
+            DO i = 1, numEdges
+               DO k = 1, 2
+                  IF ( nodeCount(k,i) == 1 )     THEN
+                     edge         => edgeArray(i) % edge
+                     danglingNode => edge % nodes(k) % node
+                     danglingNode % bCurveSide = OUTSIDE
+
+                     edgeRemoved  = .TRUE.
+                     foundDanglingEdge = .TRUE.
+                     EXIT
+                  END IF
+               END DO
+
+               IF (foundDanglingEdge) EXIT
+            END DO
+!
+!           -------------------------------------------
+!           then look for a chord between branch points
+!           -------------------------------------------
+!
+            IF ( .NOT.edgeRemoved )     THEN
+               DO i = 1, numEdges
+                  IF ( nodeCount(1,i) < 3 .OR. nodeCount(2,i) < 3 )     CYCLE
+                  IF ( EdgeBordersOutsideNode(edgeArray(i) % edge) )   CYCLE
+                  edge        => edgeArray(i) % edge
+
+                  edgeRemoved = .TRUE.
+                  EXIT
+               END DO
+            END IF
+            DEALLOCATE(edgeArray, nodeCount, countForNodeID)
+
+            IF ( edgeRemoved )     THEN
+               edge % edgeType = INSIDE
+               obj => edge
+               CALL edgeList % remove(obj)
+            END IF
+         END DO
+
+      END SUBROUTINE PruneInterfaceEdges
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION EdgeBordersOutsideNode( edge )
+!
+!     ------------------------------------------------------
+!     True if either element that shares the edge has a node
+!     marked OUTSIDE of the interface curve
+!     ------------------------------------------------------
+!
+         IMPLICIT NONE
+         TYPE (SMEdge), POINTER :: edge
+         INTEGER                :: j, k
+
+         EdgeBordersOutsideNode = .FALSE.
+         DO j = 1, 2
+            IF ( .NOT.ASSOCIATED(edge % elements(j) % element) )     CYCLE
+            DO k = 1, 4
+               IF ( edge % elements(j) % element % nodes(k) % node % bCurveSide == OUTSIDE )     THEN
+                  EdgeBordersOutsideNode = .TRUE.
+                  RETURN
+               END IF
+            END DO
+         END DO
+
+      END FUNCTION EdgeBordersOutsideNode
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1067,10 +1921,14 @@
          IF( errorCode == A_OK_ERROR_CODE)     THEN
             CALL MakeElementToEdgeConnections( mesh )
 
-            IF ( model % numberOfInnerCurves + model % numberOfOuterCurves > 0 )     THEN
-
+            IF ( numBoundaries > 0 )     THEN
+!
+!              ----------------------------------------------------------
+!              Nodes pinned to joints (whereOnBoundary = 0 or 1) are kept
+!              fixed, also on interface curves
+!              ----------------------------------------------------------
+!
                DO j = 1, numBoundaries
-                  IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
 
                   obj => boundaryEdgesArray % objectAtIndex(j)
                   CALL cast(obj,currentEdgeList)
@@ -1177,6 +2035,16 @@
             tOld =  currentNode % whereOnBoundary
 
             tNew = ParametrizationAtPointNear( c, pOld, tOld )
+!
+!           ----------------------------------------------------------------
+!           A node that is not pinned to a joint (whereOnBoundary = 0 or 1)
+!           and has run into the end of its curve stays where it was, rather
+!           than collapsing onto the node pinned at the joint.
+!           ----------------------------------------------------------------
+!
+            IF ( tOld > 0.0_RP .AND. tOld < 1.0_RP )     THEN
+               IF( AlmostEqual(tNew, 0.0_RP) .OR. AlmostEqual(tNew, 1.0_RP) )     tNew = tOld
+            END IF
             pNew = c % positionAt(tNew)
 
             currentNode % x                = pNew
@@ -1827,12 +2695,44 @@
                tNew = MODULO(tm + 0.5_RP*span, 1.0_RP)
                node % gWhereOnBoundary = tNew
                node % whereOnBoundary  = chain % curveTForChainT(tNew)
+               node % bCurveID         = chain % myCurveIDs(chain % curveNumberForLocation(tNew))
             END IF
 
          END DO
 
          RETURN
       END SUBROUTINE SpreadCollapsedBoundaryLocations
+
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE MoveInterfaceNodesToImages( list, model )
+         USE SMModelClass
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        The interface nodes were moved onto the interface before their
+!        curve locations were adjusted at the joints (FlagEndNodes) and
+!        spread out (SpreadCollapsedBoundaryLocations).
+!        Put the nodes at their (new) locations on the curve.
+!        ---------------------------------------------------------------
+!
+         CLASS(FTLinkedList), POINTER :: list
+         TYPE (SMModel)     , POINTER :: model
+
+         TYPE(SMNodePtr), DIMENSION(:), POINTER :: nodeArray => NULL()
+         CLASS(SMChainedCurve)        , POINTER :: chain => NULL()
+         CLASS(SMCurve)               , POINTER :: c => NULL()
+         INTEGER                                :: j
+
+         nodeArray => GatheredNodes(list)
+         DO j = 1, SIZE(nodeArray)
+            c => model % curveWithID(nodeArray(j) % node % bCurveID, chain)
+            nodeArray(j) % node % x = c % positionAt(nodeArray(j) % node % whereOnBoundary)
+         END DO
+         DEALLOCATE( nodeArray )
+
+      END SUBROUTINE MoveInterfaceNodesToImages
 !
 !////////////////////////////////////////////////////////////////////////
 !

@@ -78,7 +78,7 @@
 !        Reduce valence at high valence nodes
 !        ------------------------------------
 !
-         CALL ReduceNodeValences( mesh, numberOfValenceChanges, errorCode )
+         CALL ReduceNodeValences( mesh, numberOfValenceChanges, errorCode, nodesOnInterfaces = .FALSE. )
          IF(errorCode > A_OK_ERROR_CODE)     RETURN
 
          IF ( numberOfValenceChanges > 0 )     THEN
@@ -117,8 +117,15 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ReduceNodeValences( mesh, numberOfValenceChanges, errorCode )
+      SUBROUTINE ReduceNodeValences( mesh, numberOfValenceChanges, errorCode, nodesOnInterfaces )
          IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Reduce the valence of the high valence nodes that are on an
+!        interface curve (nodesOnInterfaces = .TRUE.) or of those that
+!        are not on any boundary or interface curve
+!        (nodesOnInterfaces = .FALSE.)
+!        ---------------------------------------------------------------
 !
 !        ---------
 !        Arguments
@@ -127,6 +134,7 @@
          TYPE (SMMesh) :: mesh
          INTEGER       :: numberOfValenceChanges
          INTEGER       :: errorCode
+         LOGICAL       :: nodesOnInterfaces
 !
 !        ---------------
 !        Local variables
@@ -134,6 +142,7 @@
 !
          INTEGER                                 :: nodeID
          INTEGER     , DIMENSION(:), ALLOCATABLE :: localNumElementsForNode
+         LOGICAL                                 :: wasChanged
 
          numberOfValenceChanges = 0
 !
@@ -156,10 +165,18 @@
          DO nodeID = 1, SIZE(localNumElementsForNode)
             SELECT CASE ( localNumElementsForNode(nodeID) )
                CASE( 7 )
-                  CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode)
-                  numberOfValenceChanges = numberOfValenceChanges + 1
+                  CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode, nodesOnInterfaces, wasChanged)
+                  IF ( wasChanged )     numberOfValenceChanges = numberOfValenceChanges + 1
                CASE( 8 )
 !                  CALL CleanUp8ValenceNode_InMesh(nodeID, mesh) TODO:
+!
+!                 On an interface curve, the fan of elements on one side of a
+!                 valence 8 node can be thinned the same way (see CleanUpBoundaryElements)
+!
+                  IF ( nodesOnInterfaces )     THEN
+                     CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode, nodesOnInterfaces, wasChanged)
+                     IF ( wasChanged )     numberOfValenceChanges = numberOfValenceChanges + 1
+                  END IF
                CASE DEFAULT
                   !Do nothing
             END SELECT
@@ -228,14 +245,19 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUp7ValenceNode_InMesh(id, mesh, errorCode)
+      SUBROUTINE CleanUp7ValenceNode_InMesh(id, mesh, errorCode, nodesOnInterfaces, wasChanged)
       USE ErrorTypesModule
 !
-!     ----------------------------------------------
+!     ----------------------------------------------------------
 !     A valence 7 node can be reduced to a valence
 !     5 node by inserting a new node into one of the
 !     elements and inserting a diamond element.
-!     ----------------------------------------------
+!
+!     Only a node that is on an interface curve
+!     (nodesOnInterfaces = .TRUE.) or only one that is not on
+!     any boundary or interface curve (nodesOnInterfaces = .FALSE.)
+!     is changed. wasChanged tells whether the node was changed.
+!     ----------------------------------------------------------
 !
          IMPLICIT NONE
 !
@@ -246,6 +268,8 @@
          INTEGER       :: id
          TYPE (SMMesh) :: mesh
          INTEGER       :: errorCode
+         LOGICAL       :: nodesOnInterfaces
+         LOGICAL       :: wasChanged
 !
 !        ---------------
 !        Local variables
@@ -257,8 +281,11 @@
          REAL(KIND=RP)               :: theta, thetaMax
          INTEGER, DIMENSION(4)       :: diagonalMap = [3,4,1,2]
          REAL(KIND=RP)               :: x1(3), x2(3), x(3)
+         LOGICAL                     :: nodeIsOnCurve, nearJoint
+         INTEGER, EXTERNAL           :: Loop
 
          TYPE (SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
+         TYPE (SMNode)     , POINTER :: neighbor => NULL()
          TYPE (SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
          TYPE (SMEdge)     , POINTER :: edge => NULL()
          CLASS(FTObject)   , POINTER :: obj => NULL()
@@ -268,6 +295,7 @@
          TYPE(SMEdgePtr)               :: sharedEdgePointers(2), newEdgePointers(2)
 
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
+         LOGICAL                                   :: isOnNeighbor
 !
 !        ------------------------
 !        Make current connections
@@ -276,15 +304,60 @@
          CALL MakeNodeToElementConnections( mesh, errorCode )
          CALL MakeNodeToEdgeConnections   ( mesh )
 !
-!        ---------------------------------------
-!        Find the element with the largest angle
-!        ---------------------------------------
+         e    => elementsForNodes(1,id) % element
+         node => e % nodes(ElementLocalNodeIDForNodeID(id, e)) % node
+         nodeIsOnCurve = node % bCurveID /= UNDEFINED
+         wasChanged    = .FALSE.
+         IF ( (nodesOnInterfaces .AND. .NOT.IsOnInterfaceCurve(node)) .OR. &
+              (.NOT.nodesOnInterfaces .AND. nodeIsOnCurve) )     THEN
+            CALL deallocateNodeToEdgeConnections()
+            CALL deallocateNodeToElementConnections()
+            RETURN
+         END IF
+!
+!        ---------------------------------------------------------------
+!        At a joint of the curve, more elements on one side are expected
+!        (e.g. on the reflex side of a corner), and the elements there
+!        are constrained by the smoother. Leave nodes at or next to a
+!        joint alone.
+!        ---------------------------------------------------------------
+!
+         IF ( nodeIsOnCurve )     THEN
+            nearJoint = IsAtCurveJoint(node)
+            DO k = 1, numElementsForNode(id)
+               e       => elementsForNodes(k,id) % element
+               localID = ElementLocalNodeIDForNodeID( id, e )
+               DO j = -1, 1, 2
+                  neighbor => e % nodes(Loop(localID+j,4)) % node
+                  IF ( IsEdgeAlongCurve(node, neighbor) )     nearJoint = nearJoint .OR. IsAtCurveJoint(neighbor)
+               END DO
+            END DO
+            IF ( nearJoint )     THEN
+               CALL deallocateNodeToEdgeConnections()
+               CALL deallocateNodeToElementConnections()
+               RETURN
+            END IF
+         END IF
+!
+!        ------------------------------------------------------------------
+!        Find the element with the largest angle. The target and its two
+!        neighbors are moved to the new node, which is not on a curve. For
+!        a node on a boundary or interface curve, the two edges of the
+!        target at the node must therefore not lie along that curve, so
+!        that the edges along the curve stay attached to the node. If no
+!        element qualifies, leave the node alone.
+!        ------------------------------------------------------------------
 !
          thetaMax = 0.0_RP
+         eTarget  => NULL()
 
          DO k = 1, numElementsForNode(id)
             e       => elementsForNodes(k,id) % element
             localID = ElementLocalNodeIDForNodeID( id, e )
+            IF ( nodeIsOnCurve )     THEN
+               IF ( IsEdgeAlongCurve(node, e % nodes(Loop(localID-1,4)) % node) .OR. &
+                    IsEdgeAlongCurve(node, e % nodes(Loop(localID+1,4)) % node) )     CYCLE
+            END IF
             theta   = AngleAtLocalNode_ForElement(localID,e)
 
             IF(theta > thetaMax)     THEN
@@ -293,6 +366,12 @@
                localIDForTarget = localID
             END IF
          END DO
+
+         IF ( .NOT.ASSOCIATED(eTarget) )     THEN
+            CALL deallocateNodeToEdgeConnections()
+            CALL deallocateNodeToElementConnections()
+            RETURN
+         END IF
 !
 !        -----------------------------------------
 !        Find the elements that flank this element
@@ -302,22 +381,23 @@
          DO k = 1, numEdgesForNodes(id)
             edge => edgesForNodes(k,id) % edge
 !
-!           --------------------------------------------
+!           ----------------------------------------------------
 !           See if this edge is along the target element
-!           --------------------------------------------
+!           A boundary edge has only one element, so elements(2)
+!           must be checked before it is used. A boundary edge
+!           cannot flank the target.
+!           ----------------------------------------------------
 !
+            IF ( .NOT.ASSOCIATED(edge % elements(2) % element) )             CYCLE
+
             IF ( edge % elements(1) % element % id == eTarget % id )          THEN
-               IF ( ASSOCIATED(edge % elements(2) % element) )              THEN
-                  cnt                       = cnt + 1
-                  eNeighbors(cnt) % element => edge % elements(2) % element
-                  sharedEdgePointers(cnt) % edge => edge
-               END IF
+               cnt                       = cnt + 1
+               eNeighbors(cnt) % element => edge % elements(2) % element
+               sharedEdgePointers(cnt) % edge => edge
             ELSE IF ( edge % elements(2) % element % id == eTarget % id )   THEN
-               IF ( ASSOCIATED(edge % elements(1) % element) )                  THEN
-                  cnt                     = cnt + 1
-                  eNeighbors(cnt) % element => edge % elements(1) % element
-                  sharedEdgePointers(cnt) % edge => edge
-              END IF
+               cnt                     = cnt + 1
+               eNeighbors(cnt) % element => edge % elements(1) % element
+               sharedEdgePointers(cnt) % edge => edge
             END IF
             IF(cnt == 2) EXIT
          END DO
@@ -352,8 +432,11 @@
 !           ------------------------------------------------------
 !
             DO j = 1, 2
-               IF ( edge % elements(1) % element % id == eNeighbors(j) % element % id .OR. &
-                  ( edge % elements(2) % element % id == eNeighbors(j) % element % id )) THEN
+               isOnNeighbor = edge % elements(1) % element % id == eNeighbors(j) % element % id
+               IF ( ASSOCIATED(edge % elements(2) % element) )     THEN ! Not a boundary edge
+                  isOnNeighbor = isOnNeighbor .OR. edge % elements(2) % element % id == eNeighbors(j) % element % id
+               END IF
+               IF ( isOnNeighbor ) THEN
                   cnt                       = cnt + 1
                   newEdgePointers(cnt) % edge => edge
                END IF
@@ -366,6 +449,23 @@
             CALL deallocateNodeToEdgeConnections()
             CALL deallocateNodeToElementConnections()
             RETURN
+         END IF
+!
+!        ---------------------------------------------------------------
+!        The new element gets these two edges. If both lie along the
+!        curve, it would have three nodes in a row on the curve and be
+!        degenerate, so leave the node alone.
+!        ---------------------------------------------------------------
+!
+         IF ( nodeIsOnCurve )     THEN
+            IF ( IsEdgeAlongCurve(newEdgePointers(1) % edge % nodes(1) % node,   &
+                                  newEdgePointers(1) % edge % nodes(2) % node) .AND. &
+                 IsEdgeAlongCurve(newEdgePointers(2) % edge % nodes(1) % node,   &
+                                  newEdgePointers(2) % edge % nodes(2) % node) )     THEN
+               CALL deallocateNodeToEdgeConnections()
+               CALL deallocateNodeToElementConnections()
+               RETURN
+            END IF
          END IF
 !
 !        -------------------------------------------
@@ -424,17 +524,79 @@
             elementNodes(4) % node => newEdgePointers(2) % edge % nodes(1) % node
          END IF
 
+!
+!        ----------------------------------------------------------
+!        Number the nodes counterclockwise like the other elements
+!        ----------------------------------------------------------
+!
+         IF ( SignedQuadArea(elementNodes) < 0.0_RP )     THEN
+            node                   => elementNodes(2) % node
+            elementNodes(2) % node => elementNodes(4) % node
+            elementNodes(4) % node => node
+         END IF
+
          newID = mesh % newElementID()
          ALLOCATE(e)
          CALL e % initWithNodesIDAndType( elementNodes, newID, QUAD )
          obj => e
          CALL mesh % elements % add(obj)
          CALL releaseSMElement(e)
+         wasChanged = .TRUE.
 !
          CALL deallocateNodeToEdgeConnections()
          CALL deallocateNodeToElementConnections()
 
       END SUBROUTINE CleanUp7ValenceNode_InMesh
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION SignedQuadArea( quadNodes )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------
+!        Signed area of the quadrilateral, positive if its nodes are
+!        numbered counterclockwise
+!        -----------------------------------------------------------
+!
+         TYPE(SMNodePtr) :: quadNodes(4)
+         INTEGER         :: k, kNext
+
+         SignedQuadArea = 0.0_RP
+         DO k = 1, 4
+            kNext = MOD(k, 4) + 1
+            SignedQuadArea = SignedQuadArea + 0.5_RP*( quadNodes(k) % node % x(1)*quadNodes(kNext) % node % x(2) &
+                                                     - quadNodes(kNext) % node % x(1)*quadNodes(k) % node % x(2) )
+         END DO
+      END FUNCTION SignedQuadArea
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION IsAtCurveJoint( node )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------
+!        True if the node is pinned at an end of a curve, i.e. at a
+!        joint of its chain
+!        ---------------------------------------------------------
+!
+         TYPE (SMNode), POINTER :: node
+         IsAtCurveJoint = node % whereOnBoundary == 0.0_RP .OR. node % whereOnBoundary == 1.0_RP
+      END FUNCTION IsAtCurveJoint
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION IsEdgeAlongCurve( a, b )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        True if the nodes a and b are both on the same boundary or
+!        interface curve chain, i.e. the edge between them follows it
+!        ---------------------------------------------------------------
+!
+         TYPE (SMNode), POINTER :: a, b
+         IsEdgeAlongCurve = a % bCurveID /= UNDEFINED .AND. b % bCurveID /= UNDEFINED .AND. &
+                            a % bCurveChainID == b % bCurveChainID
+      END FUNCTION IsEdgeAlongCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -536,6 +698,13 @@
                CALL castToSMElement(obj,e)
                IF( shapeMeasures(AREA_SIGN,k ) < 0.0_RP ) CALL MakeElement_RightHanded( e )
             END DO
+!
+!           ------------------------------------------------------------
+!           Reordering the nodes changes which side of an element each
+!           edge is on, so the edges must be rebuilt before they are used
+!           ------------------------------------------------------------
+!
+            IF ( ANY(shapeMeasures(AREA_SIGN,:) < 0.0_RP) ) CALL mesh % syncEdges()
 !
 !           -------------------------------
 !           Fix triangular/chevron elements
@@ -646,12 +815,12 @@
 !        ---------------
 !
          INTEGER                              :: numBoundaries
-         INTEGER                              :: j, k, nodeCount
+         INTEGER                              :: j, numberOfValenceChanges
          CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
          CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
          TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
          CLASS(SMElement)           , POINTER :: e => NULL()
-         TYPE (SMNode)              , POINTER :: elementNode => NULL(), meshNode => NULL()
+         TYPE (SMNode)              , POINTER :: meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
          CLASS(FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
@@ -715,47 +884,14 @@
            ALLOCATE(interfaceElements)
            CALL interfaceElements % init()
 !
-!          ----------------------------------------
-!          Gather all elements along the interfaces
-!          into a list of elements.
-!          ----------------------------------------
-!
-           DO j = 1, numBoundaries
-               IF( boundaryEdgesType(j) == BOUNDARY_EDGES ) CYCLE
-
-               obj  => boundaryEdgesArray % objectAtIndex(j)
-               CALL cast(obj,currentEdgeList)
-
-               ALLOCATE(edgeListIterator)
-               CALL edgeListIterator % initWithFTLinkedListClass(currentEdgeList)
-               CALL edgeListIterator % setToStart()
-
-               DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
-                  obj => EdgeListIterator % object()
-                  CALL castToSMEdge(obj,currentEdge)
-
-                  IF ( currentEdge % edgeType == ON_INTERFACE )     THEN
-
-                     e   => currentEdge % elements(1) % element
-                     obj => e
-                     CALL interfaceElements % add(obj)
-
-                     e   => currentEdge % elements(2) % element
-                     obj => e
-                     CALL interfaceElements % add(obj)
-
-                  END IF
-
-                  CALL EdgeListIterator % moveToNext()
-               END DO
-
-               CALL releaseFTLinkedListIteratorClass(edgeListIterator)
-           END DO
-!
-!          ----------------------------------------------------
-!          It is also possible that a single node of an element
-!          falls on the interface boundary.
-!          ----------------------------------------------------
+!          ------------------------------------------------------
+!          Gather all elements that have a node on an interface.
+!          This includes the elements that only touch it at their
+!          corners (one node, or two opposite nodes), which must
+!          be split as well to keep the mesh conforming. An
+!          element is listed once for each of its interface
+!          nodes. Duplicates are skipped when splitting.
+!          ------------------------------------------------------
 !
             CALL makeNodeToElementConnections(mesh, errorCode)
 
@@ -765,42 +901,13 @@
                DO WHILE ( .NOT.nodesIterator % isAtEnd() )
                   obj => nodesIterator % object()
                   CALL castToSMNode(obj,meshNode)
-!
-!              ------------------------------
-!              See it this is a boundary node
-!              ------------------------------
-!
-                  IF ( meshNode % bCurveID > UNDEFINED .AND. meshNode % distToBoundary == 0.0_RP )     THEN
-!
-!                 --------------------------------------------
-!                 See if it is a boundary node on an interface
-!                 --------------------------------------------
-!
-                     IF ( boundaryEdgesType(meshNode % bCurveID) == INTERFACE_EDGES )     THEN
-!
-!                    ------------------------------------------------
-!                    Find the elements associated with this node that
-!                    have only one node on the boundary
-!                    ------------------------------------------------
-!
-                        DO j = 1, numElementsForNode( meshNode % id )
-                           e         => elementsForNodes(j,meshNode % id) % element
-                           nodecount = 0
-                           DO k = 1, 4
-                              elementNode => e % nodes(k) % node
 
-                              IF ( elementNode % distToBoundary == 0.0_RP )     THEN
-                                 nodeCount = nodeCount + 1
-                              END IF
-                           END DO
-
-                           IF ( nodeCount == 1 )     THEN
-                              obj => e
-                              CALL interfaceElements % add(obj)
-                           END IF
-
-                        END DO
-                     END IF
+                  IF ( IsOnInterfaceCurve(meshNode) )     THEN
+                     DO j = 1, numElementsForNode( meshNode % id )
+                        e   => elementsForNodes(j,meshNode % id) % element
+                        obj => e
+                        CALL interfaceElements % add(obj)
+                     END DO
                   END IF
 
                   CALL nodesIterator % moveToNext()
@@ -830,6 +937,27 @@
 
          CALL mesh % renumberAllLists()
          CALL mesh % syncEdges()
+!
+!        ---------------------------------------------------------------
+!        Splitting an element with three nodes on an interface curve
+!        adds an element at its middle node. Where the interface path
+!        turned, this leaves a fan of thin elements around a valence 7
+!        node on the curve. Reduce those valences now, keeping the node
+!        on the curve (see CleanUp7ValenceNode_InMesh). This must come
+!        before destroyEdgeArrays, which deallocates boundaryEdgesType
+!        that tells which curves are interfaces.
+!        ---------------------------------------------------------------
+!
+         IF ( model % numberOfInterfaceCurves > 0 )     THEN
+            CALL ReduceNodeValences( mesh, numberOfValenceChanges, errorCode, nodesOnInterfaces = .TRUE. )
+            IF ( numberOfValenceChanges > 0 )     THEN
+               IF ( printMessage )     PRINT *, "      Valences on interfaces have been modified ", &
+                                                numberOfValenceChanges, " time(s)"
+               CALL mesh % renumberObjects(whichIterator = NODES)
+               CALL mesh % syncEdges()
+            END IF
+         END IF
+
          CALL mesh % destroyEdgeArrays()
          CALL deallocateNodeToElementConnections()
 
@@ -1247,5 +1375,344 @@
          CALL makeNodeToElementConnections(mesh, errorCode)
 
       END SUBROUTINE DeleteElementIfDiamond
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE UntangleInvertedElements( mesh, errorCode )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------------
+!        After smoothing, an element can still have a corner where the
+!        Jacobian is not positive, typically where curves come close to
+!        each other or meet at a corner. Each corner Jacobian is linear in
+!        the position of any one of its nodes, so the positions of a node
+!        for which all corners of its elements are positive form a convex
+!        polygon. Move each node of an inverted element that is not on a
+!        curve toward the point farthest inside that polygon. Repeat a few
+!        times since moving one node changes the polygons of its neighbors.
+!        -----------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMMesh) , POINTER :: mesh
+         INTEGER                 :: errorCode
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj      => NULL()
+         TYPE (SMElement)           , POINTER :: e        => NULL()
+         TYPE (SMNode)              , POINTER :: node     => NULL()
+         INTEGER                              :: sweep, k, numInverted, numInvertedAtStart
+         INTEGER                              :: numOpened
+!
+!        ----------------------------------------------------------------------
+!        Note, these two parameters are kept here rather than in ProgramGlobals
+!        because placing them there gives a spurious warning in gfortran 15
+!        that copyOfNodeClass (SMMeshObjects.f90) may call itself recursively
+!        while compiling MeshOutputMethods. Adding any two variables to
+!        ProgramGlobals does the same, so the warning seems to depend on the
+!        layout of the module symbols, not on the code.
+!        ----------------------------------------------------------------------
+!
+         INTEGER      , PARAMETER :: numUntanglePasses = 10       ! sweeps over the inverted elements
+         REAL(KIND=RP), PARAMETER :: maxAcceptedAngle  = 165.0_RP ! degrees, larger angles are opened up
+
+         iterator => mesh % elementsIterator
+         CALL MakeNodeToElementConnections( mesh, errorCode )
+         IF ( errorCode > A_OK_ERROR_CODE )     RETURN
+!
+         numInvertedAtStart = -1
+         DO sweep = 1, numUntanglePasses
+            numInverted = 0
+            CALL iterator % setToStart()
+            DO WHILE ( .NOT.iterator % isAtEnd() )
+               obj => iterator % object()
+               CALL castToSMElement(obj,e)
+               IF ( ElementIsTangled(e) )     THEN
+                  numInverted = numInverted + 1
+                  DO k = 1, 4
+                     node => e % nodes(k) % node
+                     IF ( node % distToBoundary == 0.0_RP )     CYCLE
+                     CALL MoveNodeIntoItsKernel( node, 0.5_RP )
+                  END DO
+               END IF
+               CALL iterator % moveToNext()
+            END DO
+            IF ( numInvertedAtStart < 0 )     numInvertedAtStart = numInverted
+            IF ( numInverted == 0 )     EXIT
+         END DO
+
+!
+!        ---------------------------------------------------------------
+!        An element with an angle close to 180 degrees is valid but
+!        nearly degenerate. The springs cannot always open such a
+!        corner, e.g. at a valence 3 node between straight rows of
+!        edges. Move the free nodes of such elements part of the way to
+!        where the corners around them are as far from flat as possible.
+!        ---------------------------------------------------------------
+!
+         numOpened = 0
+         CALL iterator % setToStart()
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL castToSMElement(obj,e)
+            IF ( .NOT.ElementIsTangled(e) .AND. ElementMaxAngle(e) > maxAcceptedAngle )     THEN
+               DO k = 1, 4
+                  node => e % nodes(k) % node
+                  IF ( node % distToBoundary == 0.0_RP )     CYCLE
+                  CALL MoveNodeIntoItsKernel( node, 0.5_RP )
+               END DO
+               IF ( ElementMaxAngle(e) <= maxAcceptedAngle )     numOpened = numOpened + 1
+            END IF
+            CALL iterator % moveToNext()
+         END DO
+
+         IF ( printMessage .AND. numOpened > 0 )     &
+            PRINT *, "   Untangling: ", numOpened, " elements with angles above ", &
+                     NINT(maxAcceptedAngle), " degrees opened up"
+         IF ( printMessage .AND. numInvertedAtStart > 0 )     THEN
+            numInverted = 0
+            CALL iterator % setToStart()
+            DO WHILE ( .NOT.iterator % isAtEnd() )
+               obj => iterator % object()
+               CALL castToSMElement(obj,e)
+               IF ( ElementIsTangled(e) )     numInverted = numInverted + 1
+               CALL iterator % moveToNext()
+            END DO
+            PRINT *, "   Untangling: ", numInvertedAtStart - numInverted, " of ", &
+                     numInvertedAtStart, " inverted elements fixed"
+         END IF
+
+         CALL deallocateNodeToElementConnections()
+
+      END SUBROUTINE UntangleInvertedElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION ElementIsTangled( e )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        Some corner Jacobian is not positive. An element with all four
+!        negative is turned over completely, and is tangled as well.
+!        -------------------------------------------------------------
+!
+         TYPE (SMElement), POINTER :: e
+         INTEGER                   :: k
+         REAL(KIND=RP)             :: J(4)
+         DO k = 1, 4
+            J(k) = ElementCornerJacobian(e, k)
+         END DO
+         ElementIsTangled = MINVAL(J) <= 0.0_RP
+      END FUNCTION ElementIsTangled
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION ElementMaxAngle( e )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------
+!        Largest interior angle of a counterclockwise element, in
+!        degrees (above 180 at a reflex corner)
+!        ---------------------------------------------------------
+!
+         TYPE (SMElement), POINTER :: e
+         INTEGER                   :: k
+         REAL(KIND=RP)             :: xPrev(3), x(3), xNext(3), angle
+         INTEGER, EXTERNAL         :: Loop
+
+         ElementMaxAngle = 0.0_RP
+         DO k = 1, 4
+            xPrev = e % nodes(Loop(k-1,4)) % node % x
+            x     = e % nodes(k) % node % x
+            xNext = e % nodes(Loop(k+1,4)) % node % x
+            angle = ATAN2( CornerJacobian(xPrev, x, xNext), DOT_PRODUCT(xNext(1:2) - x(1:2), xPrev(1:2) - x(1:2)) )
+            angle = MODULO(angle*180.0_RP/PI, 360.0_RP)
+            ElementMaxAngle = MAX(ElementMaxAngle, angle)
+         END DO
+      END FUNCTION ElementMaxAngle
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE MoveNodeIntoItsKernel( node, fraction )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------------
+!        Each corner Jacobian of the elements around the node that involves
+!        the node is written as gx + h, normalized so that it is the signed
+!        distance of x from a line. The point that maximizes the smallest
+!        of them is found at a vertex where three are equal. The node is
+!        moved from its current position toward that point only as far as
+!        needed for the smallest distance to cover the given fraction of
+!        the way from its current value (or zero, if that is negative) to
+!        its best value.
+!        -----------------------------------------------------------------
+!
+         TYPE (SMNode), POINTER :: node
+         REAL(KIND=RP)          :: fraction
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE (SMElement), POINTER :: e => NULL()
+         REAL(KIND=RP)             :: g(2,3*maxValence+4), h(3*maxValence+4), starRadius
+         REAL(KIND=RP)             :: x0(3), xBest(2), current, best, value, sLow, sHigh, s, target
+         REAL(KIND=RP)             :: M(3,3), rhs(3), sol(3), J0, Jx, Jy, gNorm
+         INTEGER                   :: id, i, k, n, i1, i2, i3, iter
+         INTEGER, EXTERNAL         :: Loop
+
+         id = node % id
+         x0 = node % x
+         n  = 0
+         DO i = 1, numElementsForNode(id)
+            e => elementsForNodes(i,id) % element
+            DO k = 1, 4
+               IF ( .NOT.(ASSOCIATED(e % nodes(Loop(k-1,4)) % node, node) .OR. &
+                          ASSOCIATED(e % nodes(k) % node, node)           .OR. &
+                          ASSOCIATED(e % nodes(Loop(k+1,4)) % node, node)) )     CYCLE
+               node % x(1:2) = 0.0_RP
+               J0 = ElementCornerJacobian(e, k)
+               node % x(1:2) = [1.0_RP, 0.0_RP]
+               Jx = ElementCornerJacobian(e, k) - J0
+               node % x(1:2) = [0.0_RP, 1.0_RP]
+               Jy = ElementCornerJacobian(e, k) - J0
+               gNorm = SQRT(Jx**2 + Jy**2)
+               IF ( gNorm == 0.0_RP )     CYCLE
+               n = n + 1
+               g(:,n) = [Jx, Jy]/gNorm
+               h(n)   = J0/gNorm
+            END DO
+         END DO
+         node % x = x0
+         IF ( n < 3 )     RETURN
+!
+!        -------------------------------------------------------------
+!        Keep the node within the box spanned by its star, so that it
+!        is not thrown far away when the polygon is large or open
+!        -------------------------------------------------------------
+!
+         starRadius = 0.0_RP
+         DO i = 1, numElementsForNode(id)
+            e => elementsForNodes(i,id) % element
+            DO k = 1, 4
+               starRadius = MAX(starRadius, NORM2(e % nodes(k) % node % x(1:2) - x0(1:2)))
+            END DO
+         END DO
+         g(:,n+1) = [ 1.0_RP, 0.0_RP]; h(n+1) = starRadius - x0(1)
+         g(:,n+2) = [-1.0_RP, 0.0_RP]; h(n+2) = starRadius + x0(1)
+         g(:,n+3) = [ 0.0_RP, 1.0_RP]; h(n+3) = starRadius - x0(2)
+         g(:,n+4) = [ 0.0_RP,-1.0_RP]; h(n+4) = starRadius + x0(2)
+         n = n + 4
+
+         current = DistanceInside( g, h, n, x0(1:2) )
+         best    = current
+         xBest   = x0(1:2)
+         DO i1 = 1, n-2
+            DO i2 = i1+1, n-1
+               DO i3 = i2+1, n
+                  M(1,:) = [g(1,i1), g(2,i1), -1.0_RP]; rhs(1) = -h(i1)
+                  M(2,:) = [g(1,i2), g(2,i2), -1.0_RP]; rhs(2) = -h(i2)
+                  M(3,:) = [g(1,i3), g(2,i3), -1.0_RP]; rhs(3) = -h(i3)
+                  IF ( .NOT.Solve3x3(M, rhs, sol) )     CYCLE
+                  value = DistanceInside( g, h, n, sol(1:2) )
+                  IF ( value > best )     THEN
+                     best  = value
+                     xBest = sol(1:2)
+                  END IF
+               END DO
+            END DO
+         END DO
+         IF ( best <= MAX(current, 0.0_RP) )     RETURN
+!
+!        ----------------------------------------------------------
+!        The smallest distance is concave along the segment from x0
+!        to xBest, so bisect for the first point where it reaches
+!        the target value
+!        ----------------------------------------------------------
+!
+         target = MAX(current, 0.0_RP) + fraction*(best - MAX(current, 0.0_RP))
+         sLow  = 0.0_RP
+         sHigh = 1.0_RP
+         DO iter = 1, 30
+            s = 0.5_RP*(sLow + sHigh)
+            IF ( DistanceInside( g, h, n, x0(1:2) + s*(xBest - x0(1:2)) ) >= target )     THEN
+               sHigh = s
+            ELSE
+               sLow = s
+            END IF
+         END DO
+         node % x(1:2) = x0(1:2) + sHigh*(xBest - x0(1:2))
+
+      END SUBROUTINE MoveNodeIntoItsKernel
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION ElementCornerJacobian( e, k )
+         IMPLICIT NONE
+!
+!        ----------------------------------------
+!        Corner Jacobian of element e at corner k
+!        ----------------------------------------
+!
+         TYPE (SMElement), POINTER :: e
+         INTEGER                   :: k
+         INTEGER, EXTERNAL         :: Loop
+         ElementCornerJacobian = CornerJacobian( e % nodes(Loop(k-1,4)) % node % x, &
+                                                 e % nodes(k) % node % x,           &
+                                                 e % nodes(Loop(k+1,4)) % node % x )
+      END FUNCTION ElementCornerJacobian
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION DistanceInside( g, h, n, x )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        Smallest of the n normalized constraints g(:,i)*x + h(i) at x
+!        -------------------------------------------------------------
+!
+         INTEGER       :: n
+         REAL(KIND=RP) :: g(:,:), h(:), x(2)
+         DistanceInside = MINVAL( g(1,1:n)*x(1) + g(2,1:n)*x(2) + h(1:n) )
+      END FUNCTION DistanceInside
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION Solve3x3( A, b, x )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------
+!        Solve A x = b by Cramer's rule. False if A is (nearly)
+!        singular, in which case x is not set
+!        ----------------------------------------------------------
+!
+         REAL(KIND=RP) :: A(3,3), b(3), x(3)
+         REAL(KIND=RP) :: det, Ak(3,3)
+         INTEGER       :: col
+         det = Determinant3x3(A)
+         Solve3x3 = ABS(det) > 1.0E-12_RP
+         IF ( .NOT.Solve3x3 )     RETURN
+         DO col = 1, 3
+            Ak = A
+            Ak(:,col) = b
+            x(col) = Determinant3x3(Ak)/det
+         END DO
+      END FUNCTION Solve3x3
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION Determinant3x3( A )
+         IMPLICIT NONE
+         REAL(KIND=RP) :: A(3,3)
+         Determinant3x3 = A(1,1)*(A(2,2)*A(3,3) - A(2,3)*A(3,2)) &
+                          - A(1,2)*(A(2,1)*A(3,3) - A(2,3)*A(3,1)) &
+                          + A(1,3)*(A(2,1)*A(3,2) - A(2,2)*A(3,1))
+      END FUNCTION Determinant3x3
 
       END Module MeshCleaner

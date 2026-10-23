@@ -201,8 +201,14 @@ jobs:
         run: |
           ${{ matrix.compiler }} --version
       - name: Build
+        # ifx defaults to value-unsafe floating point optimizations (-fp-model fast=1),
+        # which can flip near-ties in the interface meshing and change the benchmark results
         run: |
-          make -j 2 FC=${{ matrix.compiler }}
+          if [ "${{ matrix.compiler }}" = "ifx" ]; then
+            make -j 2 FC=ifx FFLAGS="-cpp -O -fp-model precise"
+          else
+            make -j 2 FC=${{ matrix.compiler }}
+          fi
       - name: Run regular function tests
         if: ${{ matrix.test_type == 'regular' }}
         run: |

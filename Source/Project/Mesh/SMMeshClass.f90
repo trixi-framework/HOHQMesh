@@ -112,15 +112,6 @@
       TYPE(CurveArrayPtr), DIMENSION(:), POINTER :: interiorCurves => NULL()
       TYPE(CurveArrayPtr), DIMENSION(:), POINTER :: interfaceCurves => NULL()
 !
-!     ------------------------------------------
-!     Convenience arrays for dealing with curves
-!     aPointInsideTheCurve is no longer actually
-!     used, and its purpose is lost in time. It
-!     contains a point (1:3,i) inside curve i.
-!     ------------------------------------------
-!
-      REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: aPointInsideTheCurve
-!
 !     ---------------------------------
 !     Arrays for keeping track of edges
 !     ---------------------------------
@@ -182,7 +173,6 @@
          CALL releaseFTLinkedList(self % edges)
 
          IF(ALLOCATED(self % curveTypeForID))    DEALLOCATE(self % curveTypeForID)
-         IF(ALLOCATED(aPointInsideTheCurve))     DEALLOCATE(aPointInsideTheCurve)
          IF(ALLOCATED(self % materialNameForID)) DEALLOCATE(self % materialNameForID)
 
          CALL destroyEdgeArrays(self)
@@ -617,5 +607,28 @@
          CALL self % edgesIterator % initWithFTLinkedList( self % edges )
 
       END SUBROUTINE syncEdges
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION IsOnInterfaceCurve( node )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------
+!        True if the node has been moved onto an interface curve
+!        (and not onto a physical boundary curve)
+!        -------------------------------------------------------
+!
+         TYPE (SMNode), POINTER :: node
+         INTEGER                :: chainID
+
+         IsOnInterfaceCurve = .FALSE.
+         IF ( node % distToBoundary /= 0.0_RP .OR. node % bCurveID == UNDEFINED )     RETURN
+         IF ( .NOT.ALLOCATED(boundaryEdgesType) )     RETURN
+
+         chainID = node % bCurveChainID
+         IF ( chainID < 1 .OR. chainID > SIZE(boundaryEdgesType) )     RETURN
+         IsOnInterfaceCurve = boundaryEdgesType(chainID) == INTERFACE_EDGES
+
+      END FUNCTION IsOnInterfaceCurve
 
       END Module SMMeshClass

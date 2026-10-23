@@ -1,0 +1,129 @@
+\begin{CONTROL_INPUT}
+    \begin{RUN_PARAMETERS}
+        mesh file name   = Benchmarks/MeshFiles/Tests/interface_star5_soft.mesh
+        plot file name   = Benchmarks/MeshFiles/Tests/interface_star5_soft.tec
+        stats file name  = Benchmarks/MeshFiles/Tests/interface_star5_soft.txt
+        test file name   = Benchmarks/BenchmarkData/interface_star5_soft.txt
+        mesh file format = ISM-MM
+        polynomial order = 3
+        plot file format = sem
+    \end{RUN_PARAMETERS}
+    \begin{BACKGROUND_GRID}
+        background grid size = [54.0, 54.0, 0.0]
+    \end{BACKGROUND_GRID}
+    \begin{SPRING_SMOOTHER}
+        smoothing            = ON
+        smoothing type       = LinearAndCrossBarSpring
+        number of iterations = 100
+    \end{SPRING_SMOOTHER}
+\end{CONTROL_INPUT}
+\begin{MODEL}
+\begin{OUTER_BOUNDARY}
+        \begin{SPLINE_CURVE}
+            name   = OuterSpline1
+            nKnots = 6
+            \begin{SPLINE_DATA}
+                0.000000000000000 508.000000000000000 254.000000000000000 0.0
+                0.200000000000000 495.568355138968968 332.490316571236633 0.0
+                0.400000000000000 459.490316571236690 403.297454082288141 0.0
+                0.600000000000000 403.297454082288141 459.490316571236690 0.0
+                0.800000000000000 332.490316571236633 495.568355138968968 0.0
+                1.000000000000000 254.000000000000028 508.000000000000000 0.0
+            \end{SPLINE_DATA}
+        \end{SPLINE_CURVE}
+        \begin{SPLINE_CURVE}
+            name   = OuterSpline2
+            nKnots = 6
+            \begin{SPLINE_DATA}
+                0.000000000000000 254.000000000000028 508.000000000000000 0.0
+                0.200000000000000 175.509683428763367 495.568355138969025 0.0
+                0.400000000000000 104.702545917711859 459.490316571236690 0.0
+                0.600000000000000 48.509683428763367 403.297454082288198 0.0
+                0.800000000000000 12.431644861031003 332.490316571236690 0.0
+                1.000000000000000 0.000000000000000 254.000000000000028 0.0
+            \end{SPLINE_DATA}
+        \end{SPLINE_CURVE}
+        \begin{SPLINE_CURVE}
+            name   = OuterSpline3
+            nKnots = 6
+            \begin{SPLINE_DATA}
+                0.000000000000000 0.000000000000000 254.000000000000028 0.0
+                0.200000000000000 12.431644861031003 175.509683428763310 0.0
+                0.400000000000000 48.509683428763367 104.702545917711802 0.0
+                0.600000000000000 104.702545917711859 48.509683428763310 0.0
+                0.800000000000000 175.509683428763367 12.431644861030975 0.0
+                1.000000000000000 254.000000000000028 0.000000000000000 0.0
+            \end{SPLINE_DATA}
+        \end{SPLINE_CURVE}
+        \begin{SPLINE_CURVE}
+            name   = OuterSpline4
+            nKnots = 6
+            \begin{SPLINE_DATA}
+                0.000000000000000 254.000000000000028 0.000000000000000 0.0
+                0.200000000000000 332.490316571236633 12.431644861031032 0.0
+                0.400000000000000 403.297454082288198 48.509683428763367 0.0
+                0.600000000000000 459.490316571236690 104.702545917711859 0.0
+                0.800000000000000 495.568355138968968 175.509683428763367 0.0
+                1.000000000000000 508.000000000000000 254.000000000000000 0.0
+            \end{SPLINE_DATA}
+        \end{SPLINE_CURVE}
+\end{OUTER_BOUNDARY}
+\begin{INTERFACE_BOUNDARIES}
+    \begin{CHAIN}
+        name = InnerChain1
+        material name = Star
+        \begin{END_POINTS_LINE}
+            name   = Side1
+            xStart = [389.647739039490, 288.636554295633, 0.0]
+            xEnd   = [317.844621661632, 330.966643975706, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side2
+            xStart = [317.844621661632, 330.966643975706, 0.0]
+            xEnd   = [262.976135946868, 393.711950038153, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side3
+            xStart = [262.976135946868, 393.711950038153, 0.0]
+            xEnd   = [200.529444802419, 338.503844450193, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side4
+            xStart = [200.529444802419, 338.503844450193, 0.0]
+            xEnd   = [123.899818063314, 305.710179462473, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side5
+            xStart = [123.899818063314, 305.710179462473, 0.0]
+            xEnd   = [157.108757828935, 229.259604074548, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side6
+            xStart = [157.108757828935, 229.259604074548, 0.0]
+            xEnd   = [164.617529673715, 146.246698434012, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side7
+            xStart = [164.617529673715, 146.246698434012, 0.0]
+            xEnd   = [247.588474323666, 154.205749972748, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side8
+            xStart = [247.588474323666, 154.205749972748, 0.0]
+            xEnd   = [328.858777276613, 135.694617769730, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side9
+            xStart = [328.858777276613, 135.694617769730, 0.0]
+            xEnd   = [346.928701383347, 217.064157526805, 0.0]
+        \end{END_POINTS_LINE}
+        \begin{END_POINTS_LINE}
+            name   = Side10
+            xStart = [346.928701383347, 217.064157526805, 0.0]
+            xEnd   = [389.647739039490, 288.636554295633, 0.0]
+        \end{END_POINTS_LINE}
+    \end{CHAIN}
+\end{INTERFACE_BOUNDARIES}
+\end{MODEL}
+
+\end{FILE}

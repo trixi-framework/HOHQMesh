@@ -136,7 +136,7 @@
                DO k = 0, N
                   DO j = 0, N
                      DO i = 0, N
-                        WRITE(iUnit,'(3E13.5,I2)') (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3),&
+                        WRITE(iUnit,'(3ES24.16,1X,I0)') (hex8Mesh % elements(m,l) % x(p,i,j,k), p = 1,3),&
                                                     hex8Mesh % elements(m,l) % materialID
                      END DO
                   END DO

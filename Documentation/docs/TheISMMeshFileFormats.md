@@ -197,8 +197,8 @@ The mesh has five elements with eight corner nodes. The outer boundary (called "
 	0 0 0 0									<- Interior box, no curve values follow
 	--- --- --- ---
 
-## Additions for ISM-v2 and ISM-MM<a name="ISMv-2"></a>
-The ISM-v2 and ISM-MM formats adds edge information to the ISM mesh file.
+## Additions for ISM-v2<a name="ISMv-2"></a>
+The ISM-v2 format adds edge information to the ISM mesh file.
 
 The first line of the mesh file will state that fact, that is, if the first line is ISM-V2 then it will have the edge information.
 
@@ -215,6 +215,63 @@ The edges are read immediately after the nodes. For each edge the following are 
 	start node ID, end node ID, element ID on left, element ID on right, side of left element, side of right element
 
 These are the quantities that are computed in Alg. 148 of "Implementing Spectral Methods". If the edge is a boundary edge, then the second side element will be ID = 0 and the side of that element will be 0. If the sides have indices that increase in opposite directions, then the last column in the data will be negative.
+
+## ISM-MM format and multiple materials <a name="BaseMaterialDefinition"></a>
+
+The ISM-MM mesh file format produces a multiple material mesh.
+The core format of the ISM-MM is identical to that of ISM.
+The first line of the mesh file will state that it is an ISM-MM file that will include a material name for each element.
+
+The different material regions are separated by interface boundary curves, which are defined in the `INTERFACE_BOUNDARIES` block of the model (see [Internal Boundaries](the-model.md#Interfaces)). Each element is assigned a material, and the ISM-MM file writes the material name at the end of the line with the element's corner node IDs, e.g.
+
+	465  466  914  912 Muscle
+	...
+	442  919  920  917 Bone
+	...
+	624  626  926  927 Marrow
+
+If the `sem` plot file format is chosen, the plot file also has a `material ID` variable for each element, so the material regions can be visualized in VisIt or ParaView. The material IDs are only assigned for the ISM-MM format. For the other mesh file formats all elements have the material ID 0.
+
+### The background material
+
+The region outside of all interface curves is the background material. Its name is set in a `MATERIALS` block, which is placed inside the `MODEL` block, e.g.
+
+	\begin{MATERIALS}
+	   background material name = Muscle
+	\end{MATERIALS}
+
+If the ISM-MM format is requested and a background material name is not supplied, a warning is posted and the background name 'base' is used. The background material always has the material ID 0.
+
+### Material names of the interface regions
+
+The material inside an interface curve is named by the optional `material name` keyword of the interface `CHAIN`. If it is not given, the material is named after the chain (or the curve, for a standalone curve), which is the previous behavior. For example, in the file `BoneAndMarrow.control` available in the Examples folder only two materials are needed:
+
+	\begin{INTERFACE_BOUNDARIES}
+	   \begin{CHAIN}
+	      name          = Circle1
+	      material name = Bone
+	      \begin{PARAMETRIC_EQUATION_CURVE}
+	         ...
+	      \end{PARAMETRIC_EQUATION_CURVE}
+	   \end{CHAIN}
+	   \begin{CHAIN}
+	      name          = Marrow
+	      material name = Marrow
+	      ...
+	   \end{CHAIN}
+	   ...
+	\end{INTERFACE_BOUNDARIES}
+
+The material IDs are assigned from the material names, not from the curves:
+
+- The background material has the ID 0.
+- Each distinct material name gets the next ID, 1, 2, ..., in the order in which the interface chains appear in the control file.
+- Interface chains with the same material name share one ID.
+- An interface chain whose material name is the background material name gets the background ID 0. This allows, e.g., an interface that is only used to align the mesh with a curve to keep the background material inside it.
+
+Material names, like curve names, can be at most 32 characters long and are case sensitive.
+
+Each element gets the material of the innermost interface curve that contains it. As described in [Internal Boundaries](the-model.md#Interfaces), interface curves that are embedded in other interface curves **must** be defined after the curves that contain them.
 
 ## ABAQUS mesh file format<a name="ABAQUS"></a>
 

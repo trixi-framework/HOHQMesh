@@ -59,6 +59,7 @@ and then updating the gallery page
       <figcaption>
         NACA0012 Airfoil (David A. Kopriva)
       </figcaption>
+    </figure>
   </div>
 </div>
 
@@ -78,6 +79,7 @@ and then updating the gallery page
       <figcaption>
         <a href="https://github.com/cfsengineering/GMSH-Airfoil-2D" target="_blank" rel="noopener noreferrer">NACA6412 Airfoil</a> (Andrew R. Winters)
       </figcaption>
+    </figure>
   </div>
 </div>
 
@@ -99,6 +101,7 @@ and then updating the gallery page
       <figcaption>
         Lake Superior (David A. Kopriva)
       </figcaption>
+    </figure>
   </div>
 </div>
 
@@ -118,18 +121,31 @@ and then updating the gallery page
       <figcaption>
         Reyran river valley down to the Mediterranean Sea (Andrew R. Winters)
       </figcaption>
+    </figure>
   </div>
 </div>
 
 ## Embedded
 
+<div class="gallery-two-columns">
   <div class="gallery-column">
     <figure>
       <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/embedded-boundaries-small.png?raw=true"/>
       <figcaption>
         Two embedded circles (David A. Kopriva)
       </figcaption>
+    </figure>
   </div>
+
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/multiple-boundaries-small.png?raw=true"/>
+      <figcaption>
+        Five embedded regions (Garrett Byrd and Andrew R. Winters)
+      </figcaption>
+    </figure>
+  </div>
+</div>
 
 ## Topography
 
@@ -149,6 +165,7 @@ and then updating the gallery page
       <figcaption>
          Mount St. Helens, perspective view (Andrew R. Winters)
       </figcaption>
+    </figure>
   </div>
 </div>
 
@@ -158,6 +175,7 @@ and then updating the gallery page
       <figcaption>
         East coast of the US with topography (Joe Schoonover)
       </figcaption>
+    </figure>
 </div>
 
 ## Just for Fun
@@ -176,8 +194,9 @@ and then updating the gallery page
     <figure>
       <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/jack-o-lantern-small.png?raw=true"/>
       <figcaption>
-        Jack o'Lantern  (Garrett Byrd)
+        Jack o'Lantern (Garrett Byrd)
       </figcaption>
+    </figure>
   </div>
 </div>
 
@@ -197,6 +216,7 @@ and then updating the gallery page
       <figcaption>
          A snow man (Andrew R. Winters)
       </figcaption>
+    </figure>
   </div>
 </div>
 
@@ -216,6 +236,7 @@ and then updating the gallery page
       <figcaption>
          The Julia logo (Andrew R. Winters)
       </figcaption>
+    </figure>
   </div>
 </div>
 
