@@ -120,6 +120,7 @@
          CALL stopWatch % start()
 
             CALL GenerateQuadMesh(project, errorCode)
+            CALL ReportMeshGenerationFailure(errorCode)
             symmetryCurve => project % model % symmetryCurve()
             IF ( ASSOCIATED(symmetryCurve) ) CALL MakeMeshSymmetric(project, symmetryCurve)
 
@@ -410,4 +411,39 @@
 
       END SUBROUTINE WriteMeshFile
 
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ReportMeshGenerationFailure( errorCode )
+         USE ErrorTypesModule
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        GenerateQuadMesh retries with smaller background grids before
+!        giving up. If it still returns an error, post a fatal error
+!        (attempting) to explain what went wrong instead of continuing
+!        with a mesh that is not valid.
+!        -------------------------------------------------------------
+!
+         INTEGER :: errorCode
+         CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
+
+         IF ( errorCode == A_OK_ERROR_CODE )     RETURN
+
+         SELECT CASE ( errorCode )
+            CASE ( BOUNDARY_TOUCHES_BOX_ERROR_CODE )
+               msg = "An inner or interface boundary is too close to the background grid box. "// &
+                     "It must be at least one background grid cell away from the box. "// &
+                     "Use a smaller background grid size (dx) or enlarge the box."
+            CASE ( CURVE_NOT_FOUND_ERROR_CODE )
+               msg = "A boundary edge could not be associated with a boundary curve. "// &
+                     "Try a smaller background grid size. Run again with -verbose for details."
+            CASE DEFAULT
+               WRITE(msg,'(A,I0,A)') "Mesh generation failed with error code ", errorCode, &
+                                     ". Run again with -verbose for details."
+         END SELECT
+
+         CALL ThrowErrorExceptionOfType(poster = "GenerateQuadMesh", msg = msg, typ = FT_ERROR_FATAL)
+
+      END SUBROUTINE ReportMeshGenerationFailure
    END Module HOHQMeshModule
