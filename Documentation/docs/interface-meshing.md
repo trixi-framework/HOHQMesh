@@ -52,6 +52,9 @@ The main steps of the interface meshing procedure are given below in the order i
 - The background grid (possibly together with targeted `REFINEMENT_REGIONS`) is fine enough to resolve the curve.
   For example, small features, like a thin tip or a narrow gap between two curves, must span a few elements. The sizer uses the distance across the inside and the outside of an interface to make sure of this.
   A curve segment that is smaller than the local element size cannot be resolved, which can lead to poor meshes or failure.
+- Acute corners of an interface (below about 75°, i.e. a reflex angle above about 285° on the other side)
+  are not yet handled well. The elements near the tip or such corners in the domain can be poorly shaped or folded, and folds there are not
+  always caught by the Jacobian and area checks in the statistics, so check such meshes visually.
 - Interfaces that are embedded in other interfaces are defined after the interfaces that contain
   them. Only the material assignment depends on this ("painter's algorithm").
 - In the chain parameter $t\in[0,1]$, each of the $n$ curves of a chain gets an equal interval,
@@ -298,15 +301,12 @@ After the final smoothing, `UntangleInvertedElements` (`MeshCleaner.f90`) repair
 that the smoother could not fix. It uses the **corner Jacobian** of an element: at each corner it
 is the cross product of the two edges that meet there. It is positive at a convex corner of a
 counter-clockwise element, zero where the corner is flat (180°) and negative where the element is
-folded over at that corner. The three steps are:
+folded over at that corner. The two steps are:
 
-1. **Renumber clockwise elements.** An element whose four corner Jacobians are all negative is not
-   folded. Its nodes are just numbered clockwise, e.g. in a patch of elements that was split from
-   a folded element. The node order of such an element is reversed.
-
-2. **Untangle inverted elements.** An element where some, but not all, corner Jacobians are zero
-   or negative is folded (tangled). The corner Jacobians that involve a given node are linear in
-   the position of that node. Each of them can be written as the signed distance of the node from
+1. **Untangle inverted elements.** An element where any corner Jacobian is zero or negative is
+   folded (tangled), including one that is turned over completely, with all four corner Jacobians
+   negative. The corner Jacobians that involve a given node are linear in the position of that
+   node. Each of them can be written as the signed distance of the node from
    a line, so the positions where all corners around the node are positive form a convex polygon,
    the "kernel" of the node. Each node of a tangled element that is **not** on a boundary or interface
    curve is moved toward the point where the smallest of these distances is as large as possible,
@@ -317,7 +317,7 @@ folded over at that corner. The three steps are:
    no tangled elements remain. Nodes on curves are never moved, so an element whose nodes are all
    on curves cannot be untangled.
 
-3. **Open up nearly flat elements.** An element with an angle above 165° is valid but nearly
+2. **Open up nearly flat elements.** An element with an angle above 165° is valid but nearly
    degenerate. An element with a maximum angle of 180° it is really a triangle with an extra node on one side.
    The springs cannot always open such an angle, because they only balance edge lengths. A typical case
    is a node `N` of valence 3 where two of its three edges lie on a straight line:
@@ -334,7 +334,7 @@ folded over at that corner. The three steps are:
     The springs along the line pull equally in opposite directions, and nothing pushes `N` off the
     line into `C`, so `N` is in equilibrium although `C` is flat at `N`. For each element that is
     not tangled but has an angle above 165°, its nodes that are not on a curve are moved with the
-    same kernel step as in step 2. In the example, `N` moves down into `C`, so that the angle of
+    same kernel step as in step 1. In the example, `N` moves down into `C`, so that the angle of
     `C` at `N` drops below 180° and the angles of `A` and `B` at `N` open up. This is done once.
 
 These steps apply to all elements, not only those at interfaces. These clean-up steps are needed

@@ -652,7 +652,7 @@
          TYPE (SMElement)     , POINTER :: e => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
 
-         INTEGER                        :: k, nodeArraySize
+         INTEGER                        :: k, nodeArraySize, shift
          INTEGER                        :: jointType, bCurveSide
 
          REAL(KIND=RP)                  :: t, p(3)
@@ -671,6 +671,17 @@
 !
          nodeArray     => GatheredNodes( list )
          nodeArraySize = SIZE(nodeArray)
+!
+!        -----------------------------------------------------------------
+!        The templates at a joint use nodes past the joint, up to three for
+!        a row reversal, and the corner and reversal templates move the
+!        boundary node made for the node before the joint. So that no
+!        template wraps around the end of the loop, start the loop where
+!        the first two and the last three nodes are not joints.
+!        -----------------------------------------------------------------
+!
+         shift = BoundaryLoopStartShift( nodeArray )
+         IF ( shift /= 0 )     nodeArray = CSHIFT( nodeArray, shift )
 !
 !        --------------------------
 !        Get the first node started
@@ -967,6 +978,41 @@
          DEALLOCATE( nodeArray )
 
       END SUBROUTINE GenerateBoundaryElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION BoundaryLoopStartShift( nodeArray )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------------
+!        For GenerateBoundaryElements: the cyclic shift of the boundary
+!        nodes so that the first two and the last three are not joints. It
+!        is zero if the nodes are already in such an order, or if there is
+!        no such order (joints only a few nodes apart).
+!        ------------------------------------------------------------------
+!
+         TYPE(SMNodePtr), DIMENSION(:) :: nodeArray
+         INTEGER                       :: n, shift, j, nodeType
+         LOGICAL                       :: isFree
+
+         n = SIZE(nodeArray)
+         BoundaryLoopStartShift = 0
+         DO shift = 0, n-1
+            isFree = .TRUE.
+            DO j = -2, 2
+               nodeType = nodeArray(MODULO(shift + j - 1, n) + 1) % node % nodeType
+               IF ( nodeType /= NONE .AND. nodeType /= ROW_SIDE )     THEN
+                  isFree = .FALSE.
+                  EXIT
+               END IF
+            END DO
+            IF ( isFree )     THEN
+               BoundaryLoopStartShift = shift
+               RETURN
+            END IF
+         END DO
+
+      END FUNCTION BoundaryLoopStartShift
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////

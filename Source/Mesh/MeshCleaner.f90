@@ -1408,7 +1408,7 @@
          TYPE (SMElement)           , POINTER :: e        => NULL()
          TYPE (SMNode)              , POINTER :: node     => NULL()
          INTEGER                              :: sweep, k, numInverted, numInvertedAtStart
-         INTEGER                              :: numReordered, numOpened
+         INTEGER                              :: numOpened
 !
 !        ----------------------------------------------------------------------
 !        Note, these two parameters are kept here rather than in ProgramGlobals
@@ -1421,26 +1421,8 @@
 !
          INTEGER      , PARAMETER :: numUntanglePasses = 10       ! sweeps over the inverted elements
          REAL(KIND=RP), PARAMETER :: maxAcceptedAngle  = 165.0_RP ! degrees, larger angles are opened up
-!
-!        -------------------------------------------------------------
-!        A patch of elements that was split from a folded element can
-!        end up correctly placed but numbered clockwise. Renumber them
-!        -------------------------------------------------------------
-!
-         numReordered = 0
-         iterator => mesh % elementsIterator
-         CALL iterator % setToStart()
-         DO WHILE ( .NOT.iterator % isAtEnd() )
-            obj => iterator % object()
-            CALL castToSMElement(obj,e)
-            IF ( ElementIsClockwise(e) )     THEN
-               CALL MakeElement_RightHanded( e )
-               numReordered = numReordered + 1
-            END IF
-            CALL iterator % moveToNext()
-         END DO
-         IF ( numReordered > 0 )     CALL mesh % syncEdges()
 
+         iterator => mesh % elementsIterator
          CALL MakeNodeToElementConnections( mesh, errorCode )
          IF ( errorCode > A_OK_ERROR_CODE )     RETURN
 !
@@ -1493,8 +1475,6 @@
          IF ( printMessage .AND. numOpened > 0 )     &
             PRINT *, "   Untangling: ", numOpened, " elements with angles above ", &
                      NINT(maxAcceptedAngle), " degrees opened up"
-         IF ( printMessage .AND. numReordered > 0 )     &
-            PRINT *, "   Untangling: ", numReordered, " clockwise elements renumbered"
          IF ( printMessage .AND. numInvertedAtStart > 0 )     THEN
             numInverted = 0
             CALL iterator % setToStart()
@@ -1514,25 +1494,13 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION ElementIsClockwise( e )
-         IMPLICIT NONE
-         TYPE (SMElement), POINTER :: e
-         INTEGER                   :: k
-         ElementIsClockwise = .TRUE.
-         DO k = 1, 4
-            IF ( ElementCornerJacobian(e, k) >= 0.0_RP )     ElementIsClockwise = .FALSE.
-         END DO
-      END FUNCTION ElementIsClockwise
-!
-!////////////////////////////////////////////////////////////////////////
-!
       LOGICAL FUNCTION ElementIsTangled( e )
          IMPLICIT NONE
 !
-!        ----------------------------------------------------------------
-!        Some, but not all, corner Jacobians are not positive. An element
-!        with all four negative is actually just numbered clockwise.
-!        ----------------------------------------------------------------
+!        -------------------------------------------------------------
+!        Some corner Jacobian is not positive. An element with all four
+!        negative is turned over completely, and is tangled as well.
+!        -------------------------------------------------------------
 !
          TYPE (SMElement), POINTER :: e
          INTEGER                   :: k
@@ -1540,7 +1508,7 @@
          DO k = 1, 4
             J(k) = ElementCornerJacobian(e, k)
          END DO
-         ElementIsTangled = MINVAL(J) <= 0.0_RP .AND. MAXVAL(J) > 0.0_RP
+         ElementIsTangled = MINVAL(J) <= 0.0_RP
       END FUNCTION ElementIsTangled
 !
 !////////////////////////////////////////////////////////////////////////
