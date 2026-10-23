@@ -4,9 +4,9 @@ The goal of a mesh with `INTERFACE_BOUNDARIES` is to create an all quadrilateral
 mesh that provides high-order boundary information of internal (possibly embedded) curves.
 The corresponding mesh format [ISM-MM](TheISMMeshFileFormats.md#BaseMaterialDefinition) then
 labels elements with a material name.
-Such meshes can be used for spectral element approximations applied to, e.g., wave scattering
-or heat transfer where high-order accuracy is retained because jump discontinuities in material
-properties are aligned with (curved) boundaries.
+Such meshes are suitable for spectral element approximations of problems such as wave
+scattering and heat transfer, where aligning material discontinuities with curved element
+boundaries preserves high-order accuracy.
 
 ## Overview
 
@@ -25,7 +25,7 @@ edges that are left are projected onto the curve to create a new layer of bounda
 
 Generally, this cookie cutter strategy does not work for an interface, because both sides must stay meshed and the two sides must share the nodes on the curve.
 Instead, a closed path of existing edges of the background grid
-mesh near the curve is chosen, and the nodes of that path are **moved onto** the interface curve.
+mesh near the curve is chosen, and the nodes of that path are moved **onto** the interface curve.
 The elements next to the curve are then split with templates so that they have reasonable
 shapes on both sides.
 
@@ -50,8 +50,8 @@ The main steps of the interface meshing procedure are given below in the order i
   boundary or interface curve. As for other boundaries, crossings are only roughly checked
   (see [Assumptions and Algorithms](assumptions-and-algorithms.md)).
 - The background grid (possibly together with targeted `REFINEMENT_REGIONS`) is fine enough to resolve the curve.
-  For example, small features, like a thin tip or a narrow gap between two curves, must span a few elements. The sizer uses the distance across the inside and the outside of an interface to make sure of this (see below).
-  A curve segment that is smaller than the local element size cannot be resolved, which can lead to poor meshes and/or failure.
+  For example, small features, like a thin tip or a narrow gap between two curves, must span a few elements. The sizer uses the distance across the inside and the outside of an interface to make sure of this.
+  A curve segment that is smaller than the local element size cannot be resolved, which can lead to poor meshes or failure.
 - Interfaces that are embedded in other interfaces are defined after the interfaces that contain
   them. Only the material assignment depends on this ("painter's algorithm").
 - In the chain parameter $t\in[0,1]$, each of the $n$ curves of a chain gets an equal interval,
@@ -60,17 +60,17 @@ The main steps of the interface meshing procedure are given below in the order i
   between the curves at the joint (`JointClassification`), see the following table, with the
   interior angle $\alpha$ measured on the side of the elements:
 
-  | Joint type | Interior angle |
-  |---|---|
-  | `ROW_END` | $\alpha \le 120^\circ$ |
-  | `ROW_SIDE` (smooth) | $120^\circ < \alpha < 207^\circ$ |
-  | `ROW_CORNER` | $207^\circ \le \alpha \le 300^\circ$ |
-  | `ROW_REVERSAL` | $\alpha > 300^\circ$ |
+    | Joint type | Interior angle |
+    |---|---|
+    | `ROW_END` | $\alpha \le 120^\circ$ |
+    | `ROW_SIDE` (smooth) | $120^\circ < \alpha < 207^\circ$ |
+    | `ROW_CORNER` | $207^\circ \le \alpha \le 300^\circ$ |
+    | `ROW_REVERSAL` | $\alpha > 300^\circ$ |
 
-  An interface has elements on both sides, so the angle is $\alpha$ on one side and
-  $360^\circ - \alpha$ on the other. The joint type only describes one side, so the interface
-  code decides from the actual angle between the edges where it matters (e.g. for the corner
-  constraints in the smoother).
+    An interface curve has elements on both sides, so the angle is $\alpha$ on one side
+    and $360^\circ - \alpha$ on the other.
+    The joint type only describes one side, so the interface code decides from the actual
+    angle between the edges where it matters (e.g. for the corner constraints in the smoother).
 
 ## 1. Sizing
 
@@ -165,8 +165,8 @@ region of the domain, where the distance has more than one local minimum.
 
 ## 5. Joints: pinning nodes and deciding ties
 
-After the nodes are on the interface curve, each joint of the chain gets one node pinned to it
-(`FlagEndNodes`, `MeshGeneratorMethods.f90`). This is what keeps corners of the interface sharp.
+After the nodes are on the interface curve, each joint of the chain gets one node pinned to it in `FlagEndNodes` (`MeshGeneratorMethods.f90`).
+This is what keeps corners of the interface sharp.
 
 - **Interior joints** ($t = k/n$, $k = 1,\dots,n-1$): the node whose chain parameter
   `gWhereOnBoundary` is closest to $k/n$ is pinned. The comparison is a strict over the nodes
@@ -178,7 +178,7 @@ After the nodes are on the interface curve, each joint of the chain gets one nod
 - **Row reversals**: all nodes within the minimization tolerance of the reversal point are
   pinned to it, since more than one node can be closest to it.
 
-A pinned node gets `whereOnBoundary = 0` (or 1) on its curve and the joint classification as its
+A pinned node gets `whereOnBoundary = 0` (or `1`) on its curve and the joint classification as its
 node type. There is no check that the same node is the closest node to two joints. If a curve of
 the chain is shorter than the local element size, the later joint takes the node.
 
@@ -216,7 +216,7 @@ whether there is a corner:
 
 Corners where the mesh does not have one of these layouts are left alone. The constraints to the
 side extensions only apply in the first smoothing. In the second smoothing the elements at the
-corner have been split (next section), and holding the new nodes on those lines would squeeze the
+corner have been split (described next), and holding the new nodes on those lines would squeeze the
 elements between them into slivers.
 
 ## 7. Templates for the elements at the interface
@@ -272,7 +272,7 @@ opposite to it.
 ### Corner elements
 
 The three-way split cuts the angle at the middle interface node in two. That is fine where the
-curve is smooth, but at a sharp corner of the interface it leaves two thin elements in the corner.
+curve is smooth, but at a sharp corner of the interface it yields two thin elements.
 If the middle interface node is pinned at a joint (its node type is not `ROW_SIDE`) and the element's
 angle at that node is less than 135° (`MAX_CORNER_ANGLE`), the element is split into two instead
 (`SplitCornerElementIntoTwo`). The two edges at the free node `f` are split at their midpoints
