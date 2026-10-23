@@ -889,7 +889,7 @@
 !        ----------------------------------
 !
          totalCurvePoints = 2*numCurvePoints*chain % numberOfCurvesInChain !TODO compute this quantity
-         tStart  = 0.0
+         tStart  = 0.0_RP
          tEnd    = 1.0_RP
          dt      = (tEnd - tStart)/totalCurvePoints
 !

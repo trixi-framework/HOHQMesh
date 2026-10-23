@@ -1227,7 +1227,7 @@
                               segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
                               IF( segmentLength > 0.25_RP*hMin )     THEN
                                  mSteps = NINT(segmentLength/hMin)*5
-                                 dz = 1.0_RP/DBLE(mSteps)
+                                 dz = 1.0_RP/REAL(mSteps, RP)
                                  DO m = 1, mSteps-1
                                     z = x1 + m*dz*(x2 - x1)
                                     IF ( PointInQuad( nodes, z ) )     THEN
@@ -1451,9 +1451,9 @@
                         x2 = curveArray % x(:,j+1)
                         segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
 
-                        IF( segmentLength > 0.25*hMin )     THEN
+                        IF( segmentLength > 0.25_RP*hMin )     THEN
                            mSteps = NINT(segmentLength/hMin)*5
-                           dz = 1.0_RP/DBLE(mSteps)
+                           dz = 1.0_RP/REAL(mSteps, RP)
                            DO m = 1, mSteps-1
                               z = x1 + m*dz*(x2 - x1)
                               IF ( PointInQuad( nodes, z ) )     THEN
@@ -2373,10 +2373,10 @@
 !                 The amount doesn't matter.
 !                 -------------------------------------------------------------------------
 !
-                  oldElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0
-                  oldElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0
-                  newElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0
-                  newElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0
+                  oldElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0_RP
+                  oldElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0_RP
+                  newElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0_RP
+                  newElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0_RP
                END IF
             END DO
 
@@ -2884,7 +2884,7 @@
          INTEGER       :: nNodes
          INTEGER       :: k, m
          REAL(KIND=RP) :: dt, t
-         REAL(KIND=RP) :: nodeTol = 1.0d-12 ! TODO: put into a constant.
+         REAL(KIND=RP) :: nodeTol = 1.0E-12_RP ! TODO: put into a constant.
 
          nNodes = SIZE(chainNodesArray)
          ALLOCATE(nodeTs(0:nNodes))

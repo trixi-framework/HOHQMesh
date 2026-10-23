@@ -2,22 +2,22 @@
 !
 ! Copyright (c) 2010-present David A. Kopriva and other contributors: AUTHORS.md
 !
-! Permission is hereby granted, free of charge, to any person obtaining a copy  
-! of this software and associated documentation files (the "Software"), to deal  
-! in the Software without restriction, including without limitation the rights  
-! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-! copies of the Software, and to permit persons to whom the Software is  
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all  
+! The above copyright notice and this permission notice shall be included in all
 ! copies or substantial portions of the Software.
 !
-! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ! SOFTWARE.
 !
 ! --- End License
@@ -25,8 +25,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !      MeshOperationsModule.f90
-!      Created: August 21, 2013 1:08 PM 
-!      By: David Kopriva  
+!      Created: August 21, 2013 1:08 PM
+!      By: David Kopriva
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -39,10 +39,10 @@
       USE FTLinkedListIteratorClass
       USE SMMeshClass
       USE ProgramGlobals
-      IMPLICIT NONE 
+      IMPLICIT NONE
 !
 !     ========
-      CONTAINS 
+      CONTAINS
 !     ========
 !
 !@mark -
@@ -50,8 +50,8 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CheckMeshForDuplicateNodes( mesh ) 
-      IMPLICIT NONE 
+      SUBROUTINE CheckMeshForDuplicateNodes( mesh )
+      IMPLICIT NONE
       TYPE (SMMesh)  :: mesh
 !
 !     ------------------------------------------------------------
@@ -64,14 +64,14 @@
       TYPE (SMNode)            , POINTER :: node     => NULL()
       CLASS(FTObject)          , POINTER :: obj      => NULL()
       CLASS(FTLinkedListRecord), POINTER :: llRecord => NULL()
-     
+
       REAL(KIND=RP), DIMENSION(3)    :: xTest, x, d
       INTEGER                        :: idTest, id
       LOGICAL                        :: duplicateWasFound
-!      
-      
+!
+
       IF(printMessage) PRINT *, "Testing for duplicate nodes..."
-      
+
       duplicateWasFound = .false.
       CALL mesh % nodesIterator % setToStart()
       DO WHILE( .NOT.mesh % nodesIterator % isAtEnd())
@@ -88,26 +88,26 @@
          DO WHILE( ASSOCIATED(llREcord) )
             obj => llRecord % recordObject
             CALL castToSMNode(obj,node)
-            
+
             x    = node % x; id   = node % id
             d    = ABS(x-xTest)
-            
-            IF( MAXVAL(d) < 1.0d-10 )     THEN
+
+            IF( MAXVAL(d) < 1.0E-10_RP )     THEN
                IF(printMessage) PRINT *, "Duplicate Node at ",x, " with ids", idTest, id, " and level ", node % level
                duplicateWasFound = .true.
             END IF
-            
+
             llRecord => llrecord % next
-         END DO  
-         
-         CALL mesh % nodesIterator % moveToNext() 
-      END DO 
-      
-      IF(printMessage)     THEN 
+         END DO
+
+         CALL mesh % nodesIterator % moveToNext()
+      END DO
+
+      IF(printMessage)     THEN
          IF( .NOT.duplicateWasFound ) PRINT *, "No duplicate nodes found. Mesh OK"
          PRINT *, "Test complete."
-      END IF 
-      
+      END IF
+
       END SUBROUTINE CheckMeshForDuplicateNodes
 
       END MODULE MeshOperationsModule

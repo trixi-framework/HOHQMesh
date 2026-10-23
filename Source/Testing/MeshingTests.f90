@@ -313,8 +313,8 @@
             DO j = 1, SIZE(benchmarkResults % realValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % realValues(j), &
                                   actualValue   = currentResults % realValues(j),   &
-                                  relTol        = 1.0d-4,                           &
-                                  absTol        = 1.0d-5,                           &
+                                  relTol        = 1.0E-4_RP,                           &
+                                  absTol        = 1.0E-5_RP,                           &
                                   msg           = TRIM(realNames2D(j)))
             END DO
          ELSE
@@ -327,8 +327,8 @@
             DO j = 1, SIZE(benchmarkResults % realValues)
                CALL FTAssertEqual(expectedValue = benchmarkResults % realValues(j), &
                                   actualValue   = currentResults % realValues(j),   &
-                                  relTol        = 1.0d-4,                           &
-                                  absTol        = 1.0d-5,                           &
+                                  relTol        = 1.0E-4_RP,                           &
+                                  absTol        = 1.0E-5_RP,                           &
                                   msg           = TRIM(realNames3D(j)))
             END DO
          END IF
@@ -416,12 +416,12 @@
 
    END Module MeshingTests
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      SUBROUTINE MiscTests  
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE MiscTests
          USE TestSuiteManagerClass
          USE FTAssertions
-         IMPLICIT NONE  
+         IMPLICIT NONE
          INTEGER :: iUnit, s
 !
 !        -------------------------------------------------------------------
@@ -438,7 +438,7 @@
 !        -------------------------------
 !
          CALL test_RemoveWhitespace()
-         
+
       END SUBROUTINE MiscTests
 !
 !////////////////////////////////////////////////////////////////////////
@@ -447,27 +447,27 @@
          USE TestSuiteManagerClass
          USE FTAssertions
          IMPLICIT NONE
-      
+
         CHARACTER(LEN=30) :: str
-      
+
         str = '1 - 10, 20 - 30'
         CALL RemoveWhitespace(str)
         CALL FTAssert(TRIM(str) == '1-10,20-30',"WHITESPACE TEST FAILED: basic whitespace")
-      
+
         str = '   1-10   '
         CALL RemoveWhitespace(str)
         CALL FTAssert(TRIM(str) == '1-10',"WHITESPACE TEST FAILED: leading/trailing whitespace")
-      
+
         str = '1  -  10,  20  -  30'
         CALL RemoveWhitespace(str)
         CALL FTAssert(TRIM(str) == '1-10,20-30',"WHITESPACE TEST FAILED: multiple spaces")
-      
+
         str = '1-10'
         CALL RemoveWhitespace(str)
         CALL FTAssert(TRIM(str) == '1-10',"WHITESPACE TEST FAILED: no whitespace")
-      
+
         str = '     '
         CALL RemoveWhitespace(str)
         CALL FTAssert(LEN_TRIM(str) == 0,"WHITESPACE TEST FAILED: all whitespace")
-      
+
       END SUBROUTINE test_RemoveWhitespace

@@ -900,7 +900,7 @@
 
       else
           write (6,fmt=*) "unknown function"
-          result = 0.0d0
+          result = 0.0_EP
       end if
       END SUBROUTINE funofx
 !
