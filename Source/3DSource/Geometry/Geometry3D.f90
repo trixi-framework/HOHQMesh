@@ -51,7 +51,7 @@
          LOGICAL, PRIVATE :: isIdentityScale
       END TYPE ScaleTransform
 
-      REAL(KIND=RP), PRIVATE :: vectorDifferenceTolerance = 1.0d-3
+      REAL(KIND=RP), PRIVATE :: vectorDifferenceTolerance = 1.0E-3_RP
 !
 !     ========
       CONTAINS
@@ -67,7 +67,7 @@
          IMPLICIT NONE
          TYPE(RotationTransform) :: self
 
-         self % rotMatrix      = 0.0
+         self % rotMatrix      = 0.0_RP
          self % rotMatrix(1,1) = 1.0_RP
          self % rotMatrix(2,2) = 1.0_RP
          self % rotMatrix(3,3) = 1.0_RP

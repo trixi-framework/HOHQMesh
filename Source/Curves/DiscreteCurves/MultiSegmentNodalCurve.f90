@@ -233,7 +233,7 @@
 !     ----------------------------------------------
 !
       REAL(KIND=RP) :: cuts(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
-      REAL(KIND=RP) :: t, tol = 1.0d-12, eMax, dTol = 1.0d-6
+      REAL(KIND=RP) :: t, tol = 1.0E-12_RP, eMax, dTol = 1.0E-6_RP
       INTEGER       :: k, N = 3
 !
 !     ----------------------------
@@ -348,7 +348,7 @@
       arcL = msnCurve % arcLength(gQuad)
       CALL FTAssertEqual(expectedValue = 8.0_RP*PI, &
                          actualValue   = arcL,  &
-                         relTol        = 1.0d-4, &
+                         relTol        = 1.0E-4_RP, &
                          msg           = "Arc Length estimation")
 !
 !     --------

@@ -450,7 +450,7 @@
 
                IF ( highestLevel .LE. maxLevelLimit )     THEN
 
-                  dx = self % dx/DBLE(refinementType)
+                  dx = self % dx/REAL(refinementType, RP)
                   ALLOCATE(childGrid)
                   CALL childGrid % initGridWithParameters( dx, xMin, N, self, (/i,j,0/), self % level+1)
                   self % children(i,j) % grid => childGrid

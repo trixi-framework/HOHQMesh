@@ -378,7 +378,7 @@
          CALL cast(obj = objPtr,cast = targetNode)
          IF ( ASSOCIATED(targetNode) )     THEN
             IF ( ABS(targetNode % t - self % rightNode % t) &
-                 > 2.0*EPSILON(targetNode % t))                 THEN
+                 > 2.0_RP*EPSILON(targetNode % t))                 THEN
                objPtr => self % rightNode
                CALL savingNodesTo % add(obj = objPtr)
             END IF
@@ -677,7 +677,7 @@
                   tR           = right % t
                   xPrimeR      = (xR - xM)/(tR - tM)
                   xPrimeL      = (xM - xL)/(tM - tL)
-                  xPrime       = 0.5*(xPrimeR + xPrimeL)
+                  xPrime       = 0.5_RP*(xPrimeR + xPrimeL)
                   xDoublePrime = 2.0_RP*(xPrimeR - xPrimeL)/(tR - tL)
                END IF
 
@@ -729,7 +729,7 @@
                tR           = right % t
                xPrimeR      = (xR - xM)/(tR - tM)
                xPrimeL      = (xM - xL)/(tM - tL)
-               xPrime       = 0.5*(xPrimeR + xPrimeL)
+               xPrime       = 0.5_RP*(xPrimeR + xPrimeL)
                xDoublePrime = 2.0_RP*(xPrimeR - xPrimeL)/(tR - tL)
 
                c = Curvature( xPrime, xDoublePrime )

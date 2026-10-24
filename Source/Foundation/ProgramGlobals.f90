@@ -103,14 +103,14 @@
          INTEGER       :: minNumberOfElementsInsideArea = 4
          REAL(KIND=RP) :: curvatureFactor         = 2.0_RP
          REAL(KIND=RP) :: curveSubdivisionFactor  = 15.0_RP
-         REAL(KIND=RP) :: minimizationTolerance   = 1.0d-7
+         REAL(KIND=RP) :: minimizationTolerance   = 1.0E-7_RP
          REAL(KIND=RP) :: edgeLengthFactor        = 0.15_RP
          REAL(KIND=RP) :: maxParameterChange      = 0.5_RP
          REAL(KIND=RP) :: parameterDelta          = 0.2_RP
          REAL(KIND=RP) :: subdivisionRelTol       = 0.05_RP
-         REAL(KIND=RP) :: directionPenalty        = 1.0d-4
-         REAL(KIND=RP) :: boundingBoxOverlapTol   = 1.0d-5
-         REAL(KIND=RP) :: straightLineTol         = 1.0d-5
+         REAL(KIND=RP) :: directionPenalty        = 1.0E-4_RP
+         REAL(KIND=RP) :: boundingBoxOverlapTol   = 1.0E-5_RP
+         REAL(KIND=RP) :: straightLineTol         = 1.0E-5_RP
          LOGICAL       :: boundarySlipping        = .FALSE.
          INTEGER       :: maxLevelLimit           = 8       ! allow at most maxLevelLimit levels of subdivision
          INTEGER       :: numBoundarySmoothPasses = 10

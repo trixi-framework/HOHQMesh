@@ -51,7 +51,7 @@
 
          REAL(KIND=RP)                           :: xExact(3)
          INTEGER                                 :: j
-         REAL(KIND=RP)                           :: dt = 0.2_RP, t, e, tol = 1.0d-5
+         REAL(KIND=RP)                           :: dt = 0.2_RP, t, e, tol = 1.0E-5_RP
          INTEGER                                 :: iUnit = 200
 !
 !        ---------------
@@ -106,7 +106,7 @@
                                absTol        = tol/10.0_RP,    &
                                msg           = "Line evaluation error too large")
          END DO
-         
+
          CALL FTAssert(test = line % curveIsStraight(), msg = "Line straightness")
          CALL destructLine(self = line)
          OPEN(NEWUNIT = iUnit, STATUS='SCRATCH')
@@ -258,12 +258,12 @@
          CALL GetTestLineCoefficients(a, b, c)
          aT = 1.5_RP*a; bT = 1.5_RP*b; cT = 1.5_RP*c
          CALL FTAssert(linesAreColinear(a,b,c,aT,bT,cT),msg = "Colinear lines are not colinear")
-         
+
          aT = 1.5_RP*a; bT = 1.1_RP*b; cT = 1.75_RP*c
          CALL FTAssert(.NOT. linesAreColinear(a,b,c,aT,bT,cT),msg = "Colinear lines are not colinear")
-         
+
          CALL TestPolynomialInterpolation()
-         
+
       END SUBROUTINE TestCurves
 !
 !////////////////////////////////////////////////////////////////////////
@@ -283,30 +283,30 @@
         CALL ExactAndComputedSphereCurvature(0.5_RP,0.5_RP, exact, computed)
         CALL FTAssertEqual(expectedValue = exact,    &
                            actualValue   = computed, &
-                           relTol        = 2.0d-8,   &
-                           absTol        = 2.0d-9,   &
+                           relTol        = 2.0E-8_RP,   &
+                           absTol        = 2.0E-9_RP,   &
                            msg           = "Computed Sphere Curvature error")
 
         CALL ExactAndComputedHyParCurvature(0.5_RP,0.5_RP, exact, computed)
         CALL FTAssertEqual(expectedValue = exact,    &
                            actualValue   = computed, &
-                           relTol        = 2.0d-8,   &
-                           absTol        = 1.0d-9,   &
+                           relTol        = 2.0E-8_RP,   &
+                           absTol        = 1.0E-9_RP,   &
                            msg           = "Computed Quadratic Curvature error")
 
         CALL ExactAndComputedQuadraticGradients(x     = 0.5_RP,     y        = 0.5_RP, &
                                                 exact = exactGradF, computed = gradF)
         CALL FTAssertEqual(expectedValue = 0.0_RP,                        &
                            actualValue   = MAXVAL(ABS(exactGradF-gradF)), &
-                           relTol        = 2.0d-8,                        &
-                           absTol        = 1.0d-9,                        &
+                           relTol        = 2.0E-8_RP,                        &
+                           absTol        = 1.0E-9_RP,                        &
                            msg           = "Quadratic Gradients error")
 
         CALL ExactAndComputedQuadraticHessian(x = 0.5_RP,y = 0.5_RP,exact = exactHess,computed = hessF)
         CALL FTAssertEqual(expectedValue = 0.0_RP,                       &
                            actualValue   = MAXVAL(ABS(exactHess-hessF)), &
-                           relTol        = 2.0d-8,                       &
-                           absTol        = 1.0d-9,                       &
+                           relTol        = 2.0E-8_RP,                       &
+                           absTol        = 1.0E-9_RP,                       &
                            msg           = "Quadratic Hessian error")
 
       END SUBROUTINE TestPrincipalCurvature
@@ -343,31 +343,31 @@
       END SUBROUTINE TestPrintDescription
 
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE TestPolynomialInterpolation()
          USE SMPolynomialInterpolantClass
          USE TestSuiteManagerClass
          USE FTAssertions
          USE SharedExceptionManagerModule
          IMPLICIT NONE
-         
+
          TYPE(SMPolynomialInterpolant) :: p
          INTEGER, PARAMETER            :: N = 6
          REAL(KIND=RP)                 :: nodes(0:N)
          REAL(KIND=RP)                 :: values(0:N,3), v(3), tau(2)
          INTEGER                       :: j
          REAL(KIND=RP)                 :: t, dt, e
-   
+
          dt = 1.0_RP/N
-         DO j = 0, N 
+         DO j = 0, N
             t        = j*dt
             nodes(j) = t
             values(j,1) = xFun(t)
             values(j,2) = yFun(t)
             values(j,3) = 0.0_RP
          END DO
-   
+
          CALL p % initWithNodesValuesAndID(N,nodes,values, "poly",id = 1)
 !
 !        --------
@@ -381,7 +381,7 @@
             v = p % positionAt(t)
             e = MAX(e, ABS(xFun(t) - v(1)),ABS(yFun(t) - v(2)))
          END DO
-         CALL FTAssert(test = e < 1.0d-12,msg = "Polynomial values are incorrect")
+         CALL FTAssert(test = e < 1.0E-12_RP,msg = "Polynomial values are incorrect")
 !
 !        ----------
 !        Derivative
@@ -393,8 +393,8 @@
             t = j*dt
             v = p % derivativeAt(t)
             e = MAX(e, ABS(xDFun(t) - v(1)),ABS(yDFun(t) - v(2)))
-         END DO 
-         CALL FTAssert(test = e < 1.0d-12,msg = "Polynomial derivatives are incorrect")
+         END DO
+         CALL FTAssert(test = e < 1.0E-12_RP,msg = "Polynomial derivatives are incorrect")
 !
 !        --------------
 !        Tangent vector
@@ -408,8 +408,8 @@
             tau = [xDfun(t), yDfun(t)]
             tau = tau/SQRT(tau(1)**2 + tau(2)**2)
             e = MAX(e, ABS(tau(1) - v(1)),ABS(tau(2) - v(2)))
-         END DO 
-         CALL FTAssert(test = e < 1.0d-12,msg = "Polynomial tangents are incorrect")
+         END DO
+         CALL FTAssert(test = e < 1.0E-12_RP,msg = "Polynomial tangents are incorrect")
 !
 !        ----------
 !        Class name
@@ -422,36 +422,36 @@
       CONTAINS
 !     ========
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
+!////////////////////////////////////////////////////////////////////////
+!
       REAL(KIND=RP) FUNCTION xFun(t)
          IMPLICIT NONE
          REAL(KIND=RP) :: t
          xFun = 3.0_RP*t**4 + 2.5_RP*t**3 + 4.1_RP*t**2 + t + 3.14_RP
       END FUNCTION xFun
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION yFun(t)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION yFun(t)
+         IMPLICIT NONE
          REAL(KIND=RP) :: t
          yFun = 2.0_RP*t**4 + 3.5_RP*t**3 + 2.1_RP*t**2 + t + 2.718_RP
       END FUNCTION yFun
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION xDFun(t)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION xDFun(t)
+         IMPLICIT NONE
          REAL(KIND=RP) :: t
          xDFun = 12.0_RP*t**3 + 3.0_RP*2.5_RP*t**2 + 8.2_RP*t + 1.0_RP
       END FUNCTION xDFun
 !
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      REAL(KIND=RP) FUNCTION yDFun(t)  
-         IMPLICIT NONE  
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION yDFun(t)
+         IMPLICIT NONE
          REAL(KIND=RP) :: t
          yDFun = 8.0_RP*t**3 + 3.0_RP*3.5_RP*t**2 + 4.2_RP*t + 1.0_RP
       END FUNCTION yDFun
-      
+
       END SUBROUTINE TestPolynomialInterpolation
