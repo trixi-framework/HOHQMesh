@@ -70,7 +70,7 @@
          MODULE PROCEDURE castToSMTopography
       END INTERFACE cast
 
-      REAL(KIND=RP), PARAMETER, PRIVATE  :: gc_dx = 1.0d-4, gc_dx2 = 1.0d-8
+      REAL(KIND=RP), PARAMETER, PRIVATE  :: gc_dx = 1.0E-4_RP, gc_dx2 = 1.0E-8_RP
 !
 !     ========
       CONTAINS

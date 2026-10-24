@@ -94,8 +94,8 @@
          INTEGER       :: internalConstraint ! Default = 0
          INTEGER       :: endConstraint      ! Default = FIXED_CONSTRAINT
          INTEGER       :: whichNorm          ! DEFAULT = H1_NORM
-         REAL(KIND=RP) :: toler              ! DEFAULT = 1.0d-4
-         REAL(KIND=RP) :: safetyFactor       ! DEFAULT = 0.9d0
+         REAL(KIND=RP) :: toler              ! DEFAULT = 1.0E-4_RP
+         REAL(KIND=RP) :: safetyFactor       ! DEFAULT = 0.9_RP
       END TYPE OptimizerOptions
 
       TYPE MultiH1Optimizer
@@ -145,7 +145,7 @@
 
       self % internalConstraint = 0
       self % endConstraint      = FIXED_CONSTRAINT
-      self % toler              = 1.0d-4
+      self % toler              = 1.0E-4_RP
       self % whichNorm          = H1_NORM
       self % safetyFactor       = 0.90_RP
 

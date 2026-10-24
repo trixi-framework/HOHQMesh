@@ -275,7 +275,7 @@
       REAL(KIND=RP), ALLOCATABLE :: rangeCuts(:)
       INTEGER                    :: nBreaks
       INTEGER                    :: j
-      REAL(KIND=RP)              :: limit = 1.0d-14
+      REAL(KIND=RP)              :: limit = 1.0E-14_RP
       REAL(KIND=RP), ALLOCATABLE :: tmpA(:)
 
       nBreaks = SIZE(breaks) - 1
@@ -339,7 +339,7 @@
 !
       LOGICAL                                :: steppingNotDone
       REAL(KIND=RP)                          :: cuts(0:1)
-      REAL(KIND=RP)                          :: iterToler = 1.0d-6
+      REAL(KIND=RP)                          :: iterToler = 1.0E-6_RP
       REAL(KIND=RP)                          :: fR, h, f, h2
       REAL(KIND=RP)                          :: tL, tMid, tR
       REAL(KIND=RP)                          :: e, hStar, cFactor, targetError
@@ -365,7 +365,7 @@
 !     ------------------------------------------------------------------
 !
       fR = marchingfunction(curve, polyOrder, cuts, options, gQuad)
-      IF(fr .le. 0.0) RETURN
+      IF(fr .le. 0.0_RP) RETURN
 !
 !     --------------------------
 !     Find the intervals in turn
@@ -415,7 +415,7 @@
        cuts        = [optimizedCuts(nCuts-1), optimizedCuts(nCuts)]
        targetError = options % safetyFactor*options % toler
        e           = marchingFunction(curve, polyOrder, cuts, options, gQuad) + targetError
-       cFactor     = (targetError/(e + 1.0d-14))**(1.0_RP/polyOrder)
+       cFactor     = (targetError/(e + 1.0E-14_RP))**(1.0_RP/polyOrder)
 
        IF ( cFactor > 1.25_RP )     THEN
           hStar       = h*cFactor

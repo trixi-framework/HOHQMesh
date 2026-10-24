@@ -123,7 +123,7 @@
       SUBROUTINE DestructSpringMeshSmoother( self ) 
          IMPLICIT NONE 
          TYPE(SpringMeshSmoother) :: self
-         IF(self % restLength >= 0.0)     CONTINUE 
+         IF(self % restLength >= 0.0_RP)     CONTINUE 
          !Do nothing
       END SUBROUTINE DestructSpringMeshSmoother
 !
