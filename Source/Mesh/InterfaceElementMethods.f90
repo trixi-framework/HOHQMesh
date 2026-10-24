@@ -128,7 +128,7 @@
             interfaceNodes     = 0
             DO k = 1, 4
                node => e % nodes(k) % node
-               IF ( IsOnInterfaceCurve(node) )     THEN
+               IF ( isOnInterfaceCurve(node) )     THEN
                   interfaceNodeCount = interfaceNodeCount + 1
                   interfaceNodes(interfaceNodeCount) = k
 !
@@ -208,7 +208,7 @@
 !                 --------------------------------------------------------------
 !
                   IF ( e % nodes(Loop(oppositeNodeNumber+2,4)) % node % nodeType /= ROW_SIDE .AND. &
-                       InterfaceCornerAngle( e, oppositeNodeNumber ) < MAX_CORNER_ANGLE )     THEN
+                       interfaceCornerAngle( e, oppositeNodeNumber ) < MAX_CORNER_ANGLE )     THEN
                      CALL SplitCornerElementIntoTwo( oppositeNodeNumber, e, newElementsList, mesh )
                   ELSE
                      CALL SplitElementIntoThree( oppositeNodeNumber, e, newElementsList, mesh )
@@ -615,7 +615,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION InterfaceCornerAngle( e, freeNode )
+      REAL(KIND=RP) FUNCTION interfaceCornerAngle( e, freeNode )
          IMPLICIT NONE
 !
 !        -----------------------------------------------------------
@@ -632,9 +632,9 @@
          a = e % nodes(Loop(freeNode+1,4)) % node % x(1:2)
          b = e % nodes(Loop(freeNode+2,4)) % node % x(1:2)
          c = e % nodes(Loop(freeNode+3,4)) % node % x(1:2)
-         InterfaceCornerAngle = AngleBetween( a - b, c - b )
+         interfaceCornerAngle = angleBetween( a - b, c - b )
 
-      END FUNCTION InterfaceCornerAngle
+      END FUNCTION interfaceCornerAngle
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -687,8 +687,8 @@
          quadB2(1) % node => e % nodes(f) % node; quadB2(2) % node => nodeP
          quadB2(3) % node => e % nodes(f1) % node; quadB2(4) % node => nodeM
 
-         IF ( MIN(QuadMinScaledJacobian(quadA1), QuadMinScaledJacobian(quadA2)) >= &
-              MIN(QuadMinScaledJacobian(quadB1), QuadMinScaledJacobian(quadB2)) )     THEN
+         IF ( MIN(quadMinScaledJacobian(quadA1), quadMinScaledJacobian(quadA2)) >= &
+              MIN(quadMinScaledJacobian(quadB1), quadMinScaledJacobian(quadB2)) )     THEN
             elementNodes = quadA1
             CALL CreateAndAddElement( mesh % newElementID(), e, elementNodes, newElementsList)
             elementNodes = quadA2
@@ -704,7 +704,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION QuadMinScaledJacobian( q )
+      REAL(KIND=RP) FUNCTION quadMinScaledJacobian( q )
          IMPLICIT NONE
 !
 !        -------------------------------------------------------
@@ -716,16 +716,16 @@
          INTEGER, EXTERNAL             :: Loop
          REAL(KIND=RP)                 :: u(2), v(2)
 
-         QuadMinScaledJacobian = HUGE(1.0_RP)
+         quadMinScaledJacobian = HUGE(1.0_RP)
          DO k = 1, 4
             u = q(Loop(k+1,4)) % node % x(1:2) - q(k) % node % x(1:2)
             v = q(Loop(k-1,4)) % node % x(1:2) - q(k) % node % x(1:2)
-            QuadMinScaledJacobian = MIN( QuadMinScaledJacobian,                                 &
-                                         CornerJacobian( q(Loop(k-1,4)) % node % x, q(k) % node % x, &
+            quadMinScaledJacobian = MIN( quadMinScaledJacobian,                                 &
+                                         cornerJacobian( q(Loop(k-1,4)) % node % x, q(k) % node % x, &
                                                          q(Loop(k+1,4)) % node % x )/(NORM2(u)*NORM2(v)) )
          END DO
 
-      END FUNCTION QuadMinScaledJacobian
+      END FUNCTION quadMinScaledJacobian
 !
 !////////////////////////////////////////////////////////////////////////
 !

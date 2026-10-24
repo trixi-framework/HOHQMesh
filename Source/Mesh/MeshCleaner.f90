@@ -308,7 +308,7 @@
          node => e % nodes(ElementLocalNodeIDForNodeID(id, e)) % node
          nodeIsOnCurve = node % bCurveID /= UNDEFINED
          wasChanged    = .FALSE.
-         IF ( (nodesOnInterfaces .AND. .NOT.IsOnInterfaceCurve(node)) .OR. &
+         IF ( (nodesOnInterfaces .AND. .NOT.isOnInterfaceCurve(node)) .OR. &
               (.NOT.nodesOnInterfaces .AND. nodeIsOnCurve) )     THEN
             CALL deallocateNodeToEdgeConnections()
             CALL deallocateNodeToElementConnections()
@@ -323,13 +323,13 @@
 !        ---------------------------------------------------------------
 !
          IF ( nodeIsOnCurve )     THEN
-            nearJoint = IsAtCurveJoint(node)
+            nearJoint = isAtCurveJoint(node)
             DO k = 1, numElementsForNode(id)
                e       => elementsForNodes(k,id) % element
                localID = ElementLocalNodeIDForNodeID( id, e )
                DO j = -1, 1, 2
                   neighbor => e % nodes(Loop(localID+j,4)) % node
-                  IF ( IsEdgeAlongCurve(node, neighbor) )     nearJoint = nearJoint .OR. IsAtCurveJoint(neighbor)
+                  IF ( isEdgeAlongCurve(node, neighbor) )     nearJoint = nearJoint .OR. isAtCurveJoint(neighbor)
                END DO
             END DO
             IF ( nearJoint )     THEN
@@ -355,8 +355,8 @@
             e       => elementsForNodes(k,id) % element
             localID = ElementLocalNodeIDForNodeID( id, e )
             IF ( nodeIsOnCurve )     THEN
-               IF ( IsEdgeAlongCurve(node, e % nodes(Loop(localID-1,4)) % node) .OR. &
-                    IsEdgeAlongCurve(node, e % nodes(Loop(localID+1,4)) % node) )     CYCLE
+               IF ( isEdgeAlongCurve(node, e % nodes(Loop(localID-1,4)) % node) .OR. &
+                    isEdgeAlongCurve(node, e % nodes(Loop(localID+1,4)) % node) )     CYCLE
             END IF
             theta   = AngleAtLocalNode_ForElement(localID,e)
 
@@ -458,9 +458,9 @@
 !        ---------------------------------------------------------------
 !
          IF ( nodeIsOnCurve )     THEN
-            IF ( IsEdgeAlongCurve(newEdgePointers(1) % edge % nodes(1) % node,   &
+            IF ( isEdgeAlongCurve(newEdgePointers(1) % edge % nodes(1) % node,   &
                                   newEdgePointers(1) % edge % nodes(2) % node) .AND. &
-                 IsEdgeAlongCurve(newEdgePointers(2) % edge % nodes(1) % node,   &
+                 isEdgeAlongCurve(newEdgePointers(2) % edge % nodes(1) % node,   &
                                   newEdgePointers(2) % edge % nodes(2) % node) )     THEN
                CALL deallocateNodeToEdgeConnections()
                CALL deallocateNodeToElementConnections()
@@ -529,7 +529,7 @@
 !        Number the nodes counterclockwise like the other elements
 !        ----------------------------------------------------------
 !
-         IF ( SignedQuadArea(elementNodes) < 0.0_RP )     THEN
+         IF ( signedQuadArea(elementNodes) < 0.0_RP )     THEN
             node                   => elementNodes(2) % node
             elementNodes(2) % node => elementNodes(4) % node
             elementNodes(4) % node => node
@@ -550,7 +550,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION SignedQuadArea( quadNodes )
+      REAL(KIND=RP) FUNCTION signedQuadArea( quadNodes )
          IMPLICIT NONE
 !
 !        -----------------------------------------------------------
@@ -561,17 +561,17 @@
          TYPE(SMNodePtr) :: quadNodes(4)
          INTEGER         :: k, kNext
 
-         SignedQuadArea = 0.0_RP
+         signedQuadArea = 0.0_RP
          DO k = 1, 4
             kNext = MOD(k, 4) + 1
-            SignedQuadArea = SignedQuadArea + 0.5_RP*( quadNodes(k) % node % x(1)*quadNodes(kNext) % node % x(2) &
+            signedQuadArea = signedQuadArea + 0.5_RP*( quadNodes(k) % node % x(1)*quadNodes(kNext) % node % x(2) &
                                                      - quadNodes(kNext) % node % x(1)*quadNodes(k) % node % x(2) )
          END DO
-      END FUNCTION SignedQuadArea
+      END FUNCTION signedQuadArea
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION IsAtCurveJoint( node )
+      LOGICAL FUNCTION isAtCurveJoint( node )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------
@@ -580,12 +580,12 @@
 !        ---------------------------------------------------------
 !
          TYPE (SMNode), POINTER :: node
-         IsAtCurveJoint = node % whereOnBoundary == 0.0_RP .OR. node % whereOnBoundary == 1.0_RP
-      END FUNCTION IsAtCurveJoint
+         isAtCurveJoint = node % whereOnBoundary == 0.0_RP .OR. node % whereOnBoundary == 1.0_RP
+      END FUNCTION isAtCurveJoint
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION IsEdgeAlongCurve( a, b )
+      LOGICAL FUNCTION isEdgeAlongCurve( a, b )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
@@ -594,9 +594,9 @@
 !        ---------------------------------------------------------------
 !
          TYPE (SMNode), POINTER :: a, b
-         IsEdgeAlongCurve = a % bCurveID /= UNDEFINED .AND. b % bCurveID /= UNDEFINED .AND. &
+         isEdgeAlongCurve = a % bCurveID /= UNDEFINED .AND. b % bCurveID /= UNDEFINED .AND. &
                             a % bCurveChainID == b % bCurveChainID
-      END FUNCTION IsEdgeAlongCurve
+      END FUNCTION isEdgeAlongCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -902,7 +902,7 @@
                   obj => nodesIterator % object()
                   CALL castToSMNode(obj,meshNode)
 
-                  IF ( IsOnInterfaceCurve(meshNode) )     THEN
+                  IF ( isOnInterfaceCurve(meshNode) )     THEN
                      DO j = 1, numElementsForNode( meshNode % id )
                         e   => elementsForNodes(j,meshNode % id) % element
                         obj => e
@@ -1433,7 +1433,7 @@
             DO WHILE ( .NOT.iterator % isAtEnd() )
                obj => iterator % object()
                CALL castToSMElement(obj,e)
-               IF ( ElementIsTangled(e) )     THEN
+               IF ( elementIsTangled(e) )     THEN
                   numInverted = numInverted + 1
                   DO k = 1, 4
                      node => e % nodes(k) % node
@@ -1461,13 +1461,13 @@
          DO WHILE ( .NOT.iterator % isAtEnd() )
             obj => iterator % object()
             CALL castToSMElement(obj,e)
-            IF ( .NOT.ElementIsTangled(e) .AND. ElementMaxAngle(e) > maxAcceptedAngle )     THEN
+            IF ( .NOT.elementIsTangled(e) .AND. elementMaxAngle(e) > maxAcceptedAngle )     THEN
                DO k = 1, 4
                   node => e % nodes(k) % node
                   IF ( node % distToBoundary == 0.0_RP )     CYCLE
                   CALL MoveNodeIntoItsKernel( node, 0.5_RP )
                END DO
-               IF ( ElementMaxAngle(e) <= maxAcceptedAngle )     numOpened = numOpened + 1
+               IF ( elementMaxAngle(e) <= maxAcceptedAngle )     numOpened = numOpened + 1
             END IF
             CALL iterator % moveToNext()
          END DO
@@ -1481,7 +1481,7 @@
             DO WHILE ( .NOT.iterator % isAtEnd() )
                obj => iterator % object()
                CALL castToSMElement(obj,e)
-               IF ( ElementIsTangled(e) )     numInverted = numInverted + 1
+               IF ( elementIsTangled(e) )     numInverted = numInverted + 1
                CALL iterator % moveToNext()
             END DO
             PRINT *, "   Untangling: ", numInvertedAtStart - numInverted, " of ", &
@@ -1494,7 +1494,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION ElementIsTangled( e )
+      LOGICAL FUNCTION elementIsTangled( e )
          IMPLICIT NONE
 !
 !        -------------------------------------------------------------
@@ -1504,16 +1504,16 @@
 !
          TYPE (SMElement), POINTER :: e
          INTEGER                   :: k
-         REAL(KIND=RP)             :: J(4)
+         REAL(KIND=RP)             :: cornerJacobians(4)
          DO k = 1, 4
-            J(k) = ElementCornerJacobian(e, k)
+            cornerJacobians(k) = elementCornerJacobian(e, k)
          END DO
-         ElementIsTangled = MINVAL(J) <= 0.0_RP
-      END FUNCTION ElementIsTangled
+         elementIsTangled = MINVAL(cornerJacobians) <= 0.0_RP
+      END FUNCTION elementIsTangled
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION ElementMaxAngle( e )
+      REAL(KIND=RP) FUNCTION elementMaxAngle( e )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------
@@ -1526,16 +1526,16 @@
          REAL(KIND=RP)             :: xPrev(3), x(3), xNext(3), angle
          INTEGER, EXTERNAL         :: Loop
 
-         ElementMaxAngle = 0.0_RP
+         elementMaxAngle = 0.0_RP
          DO k = 1, 4
             xPrev = e % nodes(Loop(k-1,4)) % node % x
             x     = e % nodes(k) % node % x
             xNext = e % nodes(Loop(k+1,4)) % node % x
-            angle = ATAN2( CornerJacobian(xPrev, x, xNext), DOT_PRODUCT(xNext(1:2) - x(1:2), xPrev(1:2) - x(1:2)) )
+            angle = ATAN2( cornerJacobian(xPrev, x, xNext), DOT_PRODUCT(xNext(1:2) - x(1:2), xPrev(1:2) - x(1:2)) )
             angle = MODULO(angle*180.0_RP/PI, 360.0_RP)
-            ElementMaxAngle = MAX(ElementMaxAngle, angle)
+            elementMaxAngle = MAX(elementMaxAngle, angle)
          END DO
-      END FUNCTION ElementMaxAngle
+      END FUNCTION elementMaxAngle
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1563,7 +1563,7 @@
          TYPE (SMElement), POINTER :: e => NULL()
          REAL(KIND=RP)             :: g(2,3*maxValence+4), h(3*maxValence+4), starRadius
          REAL(KIND=RP)             :: x0(3), xBest(2), current, best, value, sLow, sHigh, s, target
-         REAL(KIND=RP)             :: M(3,3), rhs(3), sol(3), J0, Jx, Jy, gNorm
+         REAL(KIND=RP)             :: lhs(3,3), rhs(3), sol(3), jacobianAtOrigin, dJacobianDx, dJacobianDy, gNorm
          INTEGER                   :: id, i, k, n, i1, i2, i3, iter
          INTEGER, EXTERNAL         :: Loop
 
@@ -1577,16 +1577,16 @@
                           ASSOCIATED(e % nodes(k) % node, node)           .OR. &
                           ASSOCIATED(e % nodes(Loop(k+1,4)) % node, node)) )     CYCLE
                node % x(1:2) = 0.0_RP
-               J0 = ElementCornerJacobian(e, k)
+               jacobianAtOrigin = elementCornerJacobian(e, k)
                node % x(1:2) = [1.0_RP, 0.0_RP]
-               Jx = ElementCornerJacobian(e, k) - J0
+               dJacobianDx = elementCornerJacobian(e, k) - jacobianAtOrigin
                node % x(1:2) = [0.0_RP, 1.0_RP]
-               Jy = ElementCornerJacobian(e, k) - J0
-               gNorm = SQRT(Jx**2 + Jy**2)
+               dJacobianDy = elementCornerJacobian(e, k) - jacobianAtOrigin
+               gNorm = SQRT(dJacobianDx**2 + dJacobianDy**2)
                IF ( gNorm == 0.0_RP )     CYCLE
                n = n + 1
-               g(:,n) = [Jx, Jy]/gNorm
-               h(n)   = J0/gNorm
+               g(:,n) = [dJacobianDx, dJacobianDy]/gNorm
+               h(n)   = jacobianAtOrigin/gNorm
             END DO
          END DO
          node % x = x0
@@ -1610,17 +1610,17 @@
          g(:,n+4) = [ 0.0_RP,-1.0_RP]; h(n+4) = starRadius + x0(2)
          n = n + 4
 
-         current = DistanceInside( g, h, n, x0(1:2) )
+         current = distanceInside( g, h, n, x0(1:2) )
          best    = current
          xBest   = x0(1:2)
          DO i1 = 1, n-2
             DO i2 = i1+1, n-1
                DO i3 = i2+1, n
-                  M(1,:) = [g(1,i1), g(2,i1), -1.0_RP]; rhs(1) = -h(i1)
-                  M(2,:) = [g(1,i2), g(2,i2), -1.0_RP]; rhs(2) = -h(i2)
-                  M(3,:) = [g(1,i3), g(2,i3), -1.0_RP]; rhs(3) = -h(i3)
-                  IF ( .NOT.Solve3x3(M, rhs, sol) )     CYCLE
-                  value = DistanceInside( g, h, n, sol(1:2) )
+                  lhs(1,:) = [g(1,i1), g(2,i1), -1.0_RP]; rhs(1) = -h(i1)
+                  lhs(2,:) = [g(1,i2), g(2,i2), -1.0_RP]; rhs(2) = -h(i2)
+                  lhs(3,:) = [g(1,i3), g(2,i3), -1.0_RP]; rhs(3) = -h(i3)
+                  IF ( .NOT.solve3x3(lhs, rhs, sol) )     CYCLE
+                  value = distanceInside( g, h, n, sol(1:2) )
                   IF ( value > best )     THEN
                      best  = value
                      xBest = sol(1:2)
@@ -1641,7 +1641,7 @@
          sHigh = 1.0_RP
          DO iter = 1, 30
             s = 0.5_RP*(sLow + sHigh)
-            IF ( DistanceInside( g, h, n, x0(1:2) + s*(xBest - x0(1:2)) ) >= target )     THEN
+            IF ( distanceInside( g, h, n, x0(1:2) + s*(xBest - x0(1:2)) ) >= target )     THEN
                sHigh = s
             ELSE
                sLow = s
@@ -1653,7 +1653,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION ElementCornerJacobian( e, k )
+      REAL(KIND=RP) FUNCTION elementCornerJacobian( e, k )
          IMPLICIT NONE
 !
 !        ----------------------------------------
@@ -1663,14 +1663,14 @@
          TYPE (SMElement), POINTER :: e
          INTEGER                   :: k
          INTEGER, EXTERNAL         :: Loop
-         ElementCornerJacobian = CornerJacobian( e % nodes(Loop(k-1,4)) % node % x, &
+         elementCornerJacobian = cornerJacobian( e % nodes(Loop(k-1,4)) % node % x, &
                                                  e % nodes(k) % node % x,           &
                                                  e % nodes(Loop(k+1,4)) % node % x )
-      END FUNCTION ElementCornerJacobian
+      END FUNCTION elementCornerJacobian
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION DistanceInside( g, h, n, x )
+      REAL(KIND=RP) FUNCTION distanceInside( g, h, n, x )
          IMPLICIT NONE
 !
 !        -------------------------------------------------------------
@@ -1679,40 +1679,40 @@
 !
          INTEGER       :: n
          REAL(KIND=RP) :: g(:,:), h(:), x(2)
-         DistanceInside = MINVAL( g(1,1:n)*x(1) + g(2,1:n)*x(2) + h(1:n) )
-      END FUNCTION DistanceInside
+         distanceInside = MINVAL( g(1,1:n)*x(1) + g(2,1:n)*x(2) + h(1:n) )
+      END FUNCTION distanceInside
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION Solve3x3( A, b, x )
+      LOGICAL FUNCTION solve3x3( a, b, x )
          IMPLICIT NONE
 !
 !        ----------------------------------------------------------
-!        Solve A x = b by Cramer's rule. False if A is (nearly)
+!        Solve a x = b by Cramer's rule. False if a is (nearly)
 !        singular, in which case x is not set
 !        ----------------------------------------------------------
 !
-         REAL(KIND=RP) :: A(3,3), b(3), x(3)
-         REAL(KIND=RP) :: det, Ak(3,3)
+         REAL(KIND=RP) :: a(3,3), b(3), x(3)
+         REAL(KIND=RP) :: det, cramerMatrix(3,3)
          INTEGER       :: col
-         det = Determinant3x3(A)
-         Solve3x3 = ABS(det) > 1.0E-12_RP
-         IF ( .NOT.Solve3x3 )     RETURN
+         det = determinant3x3(a)
+         solve3x3 = ABS(det) > 1.0E-12_RP
+         IF ( .NOT.solve3x3 )     RETURN
          DO col = 1, 3
-            Ak = A
-            Ak(:,col) = b
-            x(col) = Determinant3x3(Ak)/det
+            cramerMatrix = a
+            cramerMatrix(:,col) = b
+            x(col) = determinant3x3(cramerMatrix)/det
          END DO
-      END FUNCTION Solve3x3
+      END FUNCTION solve3x3
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION Determinant3x3( A )
+      REAL(KIND=RP) FUNCTION determinant3x3( a )
          IMPLICIT NONE
-         REAL(KIND=RP) :: A(3,3)
-         Determinant3x3 = A(1,1)*(A(2,2)*A(3,3) - A(2,3)*A(3,2)) &
-                          - A(1,2)*(A(2,1)*A(3,3) - A(2,3)*A(3,1)) &
-                          + A(1,3)*(A(2,1)*A(3,2) - A(2,2)*A(3,1))
-      END FUNCTION Determinant3x3
+         REAL(KIND=RP) :: a(3,3)
+         determinant3x3 = a(1,1)*(a(2,2)*a(3,3) - a(2,3)*a(3,2)) &
+                          - a(1,2)*(a(2,1)*a(3,3) - a(2,3)*a(3,1)) &
+                          + a(1,3)*(a(2,1)*a(3,2) - a(2,2)*a(3,1))
+      END FUNCTION determinant3x3
 
       END Module MeshCleaner

@@ -35,7 +35,7 @@
       USE SMModelClass
       USE MeshBoundaryMethodsModule
       USE MeshSmootherClass
-      USE Geometry, ONLY: AngleBetween
+      USE Geometry, ONLY: angleBetween
       IMPLICIT NONE
 !
 !     ---------
@@ -482,20 +482,20 @@
          TYPE (SMNode)   , POINTER     :: node => NULL(), nb => NULL()
          TYPE (SMEdge)   , POINTER     :: edge => NULL()
          CLASS(FTObject) , POINTER     :: obj  => NULL()
-         INTEGER                       :: N, id, k, m, chainID
+         INTEGER                       :: n, id, k, m, chainID
          INTEGER                       :: sideNodes(2), freeNodes(MAX_NEIGHBORS), numSide, numFree, numReflex
          INTEGER                       :: reflexNodes(MAX_NEIGHBORS)
          REAL(KIND=RP)                 :: xC(2), d(2,2), u(2), cornerAngle, a1, a2, dots(2,2), s
          REAL(KIND=RP)                 :: bisector(2), minDistance
 
-         N = SIZE(hasCornerConstraint)
+         n = SIZE(hasCornerConstraint)
          hasCornerConstraint = .FALSE.
          cornerDirection     = 0.0_RP
          cornerOrigin        = 0.0_RP
          cornerMinDistance   = 0.0_RP
          IF ( .NOT.ALLOCATED(boundaryEdgesType) )     RETURN
 
-         ALLOCATE( nodeForID(N), numNeighbors(N), neighbors(MAX_NEIGHBORS,N), isCorner(N) )
+         ALLOCATE( nodeForID(n), numNeighbors(n), neighbors(MAX_NEIGHBORS,n), isCorner(n) )
          numNeighbors = 0
          isCorner     = .FALSE.
 !
@@ -544,7 +544,7 @@
 !        Treat each corner node
 !        ----------------------
 !
-         DO id = 1, N
+         DO id = 1, n
             IF ( .NOT.isCorner(id) )     CYCLE
             node => nodeForID(id) % node
             xC   =  node % x(1:2)
@@ -577,7 +577,7 @@
                minDistance = minDistance + 0.25_RP*NORM2(d(:,k))
                d(:,k)      = d(:,k)/NORM2(d(:,k))
             END DO
-            cornerAngle = AngleBetween(-d(:,1), -d(:,2))
+            cornerAngle = angleBetween(-d(:,1), -d(:,2))
             IF ( cornerAngle > MAX_CONSTRAINED_CORNER_ANGLE )     CYCLE
 !
 !           ---------------------------------------------------------------
@@ -588,8 +588,8 @@
             numReflex = 0
             DO m = 1, numFree
                u  = nodeForID(freeNodes(m)) % node % x(1:2) - xC
-               a1 = AngleBetween(u, -d(:,1))
-               a2 = AngleBetween(u, -d(:,2))
+               a1 = angleBetween(u, -d(:,1))
+               a2 = angleBetween(u, -d(:,2))
                IF ( ABS(a1 + a2 - cornerAngle) > 1.0E-6_RP*cornerAngle )     THEN
                   numReflex = numReflex + 1
                   reflexNodes(numReflex) = freeNodes(m)

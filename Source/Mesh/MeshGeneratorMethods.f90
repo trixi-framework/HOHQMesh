@@ -680,7 +680,7 @@
 !        the first two and the last three nodes are not joints.
 !        -----------------------------------------------------------------
 !
-         shift = BoundaryLoopStartShift( nodeArray )
+         shift = boundaryLoopStartShift( nodeArray )
          IF ( shift /= 0 )     nodeArray = CSHIFT( nodeArray, shift )
 !
 !        --------------------------
@@ -981,7 +981,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      INTEGER FUNCTION BoundaryLoopStartShift( nodeArray )
+      INTEGER FUNCTION boundaryLoopStartShift( nodeArray )
          IMPLICIT NONE
 !
 !        ------------------------------------------------------------------
@@ -996,7 +996,7 @@
          LOGICAL                       :: isFree
 
          n = SIZE(nodeArray)
-         BoundaryLoopStartShift = 0
+         boundaryLoopStartShift = 0
          DO shift = 0, n-1
             isFree = .TRUE.
             DO j = -2, 2
@@ -1007,12 +1007,12 @@
                END IF
             END DO
             IF ( isFree )     THEN
-               BoundaryLoopStartShift = shift
+               boundaryLoopStartShift = shift
                RETURN
             END IF
          END DO
 
-      END FUNCTION BoundaryLoopStartShift
+      END FUNCTION boundaryLoopStartShift
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1422,7 +1422,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  BBoxWithMargin( curveArray % boundingBox )
+            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 
             CALL elementIterator % setToStart()
 !
@@ -1446,7 +1446,7 @@
                   location   = UNDEFINED
                   DO k = 1, 4
                      node => e % nodes(k) % node
-                     w = ACWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
                      IF ( ABS(w) > 0.6_RP ) THEN
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
@@ -1558,7 +1558,7 @@
                      node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
                      IF(node % bCurveSide == UNDEFINED )     THEN
-                        w = ACWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                        w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
 
                         IF ( ABS(w) > 0.6_RP ) THEN
                            node % bCurveSide    = INSIDE
@@ -1621,7 +1621,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  BBoxWithMargin( curveArray % boundingBox )
+            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 !
 !           ---------------------------------------------------------------
 !           The material ID of the interface was set from the material
@@ -1664,7 +1664,7 @@
                      IF ( node % distToBoundary == 0.0_RP .AND. &
                           node % bCurveChainID == curveArray % id )     CYCLE
 
-                     w = ACWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
                      IF ( abs(w) == 0 ) THEN
                         location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
@@ -1684,7 +1684,7 @@
                      DO k = 1, 4
                         center = center + 0.25_RP*e % nodes(k) % node % x
                      END DO
-                     w = ACWindingFunctionInBox( center, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = acWindingFunctionInBox( center, curveArray % x, curveArray % nSegments-1, curveBox )
                      IF ( abs(w) /= 0 )     numInside = numInside + 1
                   END IF
 !

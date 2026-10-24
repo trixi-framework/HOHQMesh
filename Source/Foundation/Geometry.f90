@@ -338,12 +338,12 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION BBoxWithMargin( bBox ) RESULT(box)
+      FUNCTION bBoxWithMargin( bBox ) RESULT(box)
 !
 !     ---------------------------------------------------------------
 !     The bounding box of a curve enlarged by a margin well above the
 !     tolerances and the rounding errors of ACWindingFunction and
-!     PointInQuad, for ACWindingFunctionInBox
+!     PointInQuad, for acWindingFunctionInBox
 !     ---------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -359,32 +359,32 @@
       box(BBOX_BOTTOM) = bBox(BBOX_BOTTOM) - margin
       box(BBOX_TOP)    = bBox(BBOX_TOP)    + margin
 
-      END FUNCTION BBoxWithMargin
+      END FUNCTION bBoxWithMargin
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      INTEGER FUNCTION ACWindingFunctionInBox( p, curvePoints, N, box )
+      INTEGER FUNCTION acWindingFunctionInBox( p, curvePoints, n, box )
 !
 !     ------------------------------------------------------------------
 !     ACWindingFunction, skipped (w = 0) when p is outside box, the
-!     bounding box of the curve from BBoxWithMargin
+!     bounding box of the curve from bBoxWithMargin
 !     ------------------------------------------------------------------
 !
       IMPLICIT NONE
-      INTEGER       :: N
-      REAL(KIND=RP) :: p(3), curvePoints(3,0:N), box(6)
+      INTEGER       :: n
+      REAL(KIND=RP) :: p(3), curvePoints(3,0:n), box(6)
 
       IF ( .NOT.Point_IsInsideBox(p, box) )     THEN
-         ACWindingFunctionInBox = 0
+         acWindingFunctionInBox = 0
       ELSE
-         ACWindingFunctionInBox = ACWindingFunction( p, curvePoints, N )
+         acWindingFunctionInBox = ACWindingFunction( p, curvePoints, n )
       END IF
 
-      END FUNCTION ACWindingFunctionInBox
+      END FUNCTION acWindingFunctionInBox
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION AngleBetween( v1, v2 )
+      REAL(KIND=RP) FUNCTION angleBetween( v1, v2 )
          IMPLICIT NONE
 !
 !        ------------------------------------
@@ -392,12 +392,12 @@
 !        ------------------------------------
 !
          REAL(KIND=RP) :: v1(2), v2(2)
-         AngleBetween = ACOS( MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(v1,v2)/(NORM2(v1)*NORM2(v2)))) )*180.0_RP/PI
-      END FUNCTION AngleBetween
+         angleBetween = ACOS( MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(v1,v2)/(NORM2(v1)*NORM2(v2)))) )*180.0_RP/PI
+      END FUNCTION angleBetween
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION CornerJacobian( xPrev, x, xNext )
+      REAL(KIND=RP) FUNCTION cornerJacobian( xPrev, x, xNext )
          IMPLICIT NONE
 !
 !        --------------------------------------------------------------
@@ -407,8 +407,8 @@
 !        --------------------------------------------------------------
 !
          REAL(KIND=RP) :: xPrev(3), x(3), xNext(3)
-         CornerJacobian = (xNext(1) - x(1))*(xPrev(2) - x(2)) - (xNext(2) - x(2))*(xPrev(1) - x(1))
-      END FUNCTION CornerJacobian
+         cornerJacobian = (xNext(1) - x(1))*(xPrev(2) - x(2)) - (xNext(2) - x(2))*(xPrev(1) - x(1))
+      END FUNCTION cornerJacobian
 !
 !////////////////////////////////////////////////////////////////////////
 !

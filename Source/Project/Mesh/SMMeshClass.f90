@@ -610,7 +610,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION IsOnInterfaceCurve( node )
+      LOGICAL FUNCTION isOnInterfaceCurve( node )
          IMPLICIT NONE
 !
 !        -------------------------------------------------------
@@ -621,14 +621,14 @@
          TYPE (SMNode), POINTER :: node
          INTEGER                :: chainID
 
-         IsOnInterfaceCurve = .FALSE.
+         isOnInterfaceCurve = .FALSE.
          IF ( node % distToBoundary /= 0.0_RP .OR. node % bCurveID == UNDEFINED )     RETURN
          IF ( .NOT.ALLOCATED(boundaryEdgesType) )     RETURN
 
          chainID = node % bCurveChainID
          IF ( chainID < 1 .OR. chainID > SIZE(boundaryEdgesType) )     RETURN
-         IsOnInterfaceCurve = boundaryEdgesType(chainID) == INTERFACE_EDGES
+         isOnInterfaceCurve = boundaryEdgesType(chainID) == INTERFACE_EDGES
 
-      END FUNCTION IsOnInterfaceCurve
+      END FUNCTION isOnInterfaceCurve
 
       END Module SMMeshClass

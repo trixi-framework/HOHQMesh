@@ -103,7 +103,7 @@ of edges between an inside and an outside element:
 
 1. Each element is classified by its centroid. If the centroid is within a quarter of the
    element size of the curve, the fraction of the element's area inside the curve decides
-   (inside if more than one half, `ElementInsideFraction`).
+   (inside if more than one half, `elementInsideFraction`).
 
 2. Only the largest connected inside region and the largest connected outside region are kept.
    All other regions are switched to the other side (`MergeDisconnectedRegions`), so that a single
@@ -143,7 +143,7 @@ of edges between an inside and an outside element:
    corner that points toward the element, as at a reflex corner, the element would wrap around that corner
    and fold once its nodes are moved onto the curve. It is
    switched (once) so that the path runs through its fourth node, which then takes the corner
-   (`FlipCornerWrappingElements`, `FindCornerTowardPoint`). The switch is skipped if a
+   (`flipCornerWrappingElements`, `FindCornerTowardPoint`). The switch is skipped if a
    neighboring node already takes the corner.
 
 5. A node with more than two interface edges is a "pinch". The least certain element touching
@@ -282,7 +282,7 @@ angle at that node is less than 135° (`MAX_CORNER_ANGLE`), the element is split
 `P` and `M` as for the three-way split, so the neighbors still conform. The resulting hexagon
 `f, P, f+1, f+2, f+3, M` is cut into two quads by one of the diagonals `P`–`(f+3)` or
 `M`–`(f+1)`. The diagonal whose worse element has the larger minimum scaled Jacobian is chosen
-(`QuadMinScaledJacobian`); a tie goes to `P`–`(f+3)`. The corner node then belongs to one element
+(`quadMinScaledJacobian`); a tie goes to `P`–`(f+3)`. The corner node then belongs to one element
 only and keeps its full angle.
 
 ## 8. Valences on the interface

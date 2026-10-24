@@ -529,8 +529,8 @@
 
             isInside(i) = ACWindingFunction( centroid, curveArray % x, curveArray % nSegments-1 ) /= 0
 
-            IF ( DistanceToSegmentedCurve( centroid, curveArray ) < 0.25_RP*hMin )     THEN
-               insideFraction(i) = ElementInsideFraction( e, curveArray )
+            IF ( distanceToSegmentedCurve( centroid, curveArray ) < 0.25_RP*hMin )     THEN
+               insideFraction(i) = elementInsideFraction( e, curveArray )
                isInside(i)       = insideFraction(i) > 0.5_RP
             END IF
          END DO
@@ -591,7 +591,7 @@
 !           through its fourth node instead, which then takes the corner.
 !           ------------------------------------------------------------
 !
-            IF ( FlipCornerWrappingElements( curveArray, elementForID, meshEdges, isInterfaceEdge, &
+            IF ( flipCornerWrappingElements( curveArray, elementForID, meshEdges, isInterfaceEdge, &
                                              isInside, flippedAtCorner ) )     THEN
                pinchNodeID = -1
                CYCLE
@@ -622,7 +622,7 @@
                DO k = 1, 2
                   e => edge % elements(k) % element
                   IF ( insideFraction(e % id) < 0.0_RP )     &
-                     insideFraction(e % id) = ElementInsideFraction( e, curveArray )
+                     insideFraction(e % id) = elementInsideFraction( e, curveArray )
                   score = ABS(insideFraction(e % id) - 0.5_RP)
                   IF ( score < bestScore )     THEN
                      bestScore =  score
@@ -677,7 +677,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION FlipCornerWrappingElements( curveArray, elementForID, meshEdges, &
+      LOGICAL FUNCTION flipCornerWrappingElements( curveArray, elementForID, meshEdges, &
                                                    isInterfaceEdge, isInside, flippedAtCorner )
          USE Geometry
          IMPLICIT NONE
@@ -712,7 +712,7 @@
          LOGICAL                :: hasCorner
          REAL(KIND=RP)          :: corner(2), cornerAngle, aImage(2), bImage(2)
 
-         FlipCornerWrappingElements = .FALSE.
+         flipCornerWrappingElements = .FALSE.
          maxElementID = SIZE(elementForID)
          numEdges     = SIZE(meshEdges)
          ALLOCATE( edgesOfElement(2,maxElementID), numFound(maxElementID) )
@@ -775,17 +775,17 @@
 
             isInside(id)               = .NOT.isInside(id)
             flippedAtCorner(id)        = .TRUE.
-            FlipCornerWrappingElements = .TRUE.
+            flipCornerWrappingElements = .TRUE.
          END DO
 
          DEALLOCATE( edgesOfElement, numFound )
 
-      END FUNCTION FlipCornerWrappingElements
+      END FUNCTION flipCornerWrappingElements
 !
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE FindCornerTowardPoint( a, b, f, curveArray, hasCorner, corner, cornerAngle, aImage, bImage )
-         USE Geometry, ONLY: AngleBetween
+         USE Geometry, ONLY: angleBetween
          IMPLICIT NONE
 !
 !     -----------------------------------------------------------------
@@ -807,14 +807,14 @@
 !        ---------------
 !
          REAL(KIND=RP), PARAMETER :: MAX_TOWARD_CORNER_ANGLE = 160.0_RP ! degrees
-         INTEGER                  :: N, j, jStart, jEnd, jMax, i
+         INTEGER                  :: n, j, jStart, jEnd, jMax, i
          REAL(KIND=RP)            :: sA, sB, sTmp, p1(2), p2(2), chord(2), side
          REAL(KIND=RP)            :: depth, depthMax, u(2), v(2)
 
          hasCorner   = .FALSE.
          corner      = 0.0_RP
          cornerAngle = 180.0_RP
-         N = curveArray % nSegments
+         n = curveArray % nSegments
 
          CALL NearestPointOnSegmentedCurve( a, curveArray, sA, aImage )
          CALL NearestPointOnSegmentedCurve( b, curveArray, sB, bImage )
@@ -836,18 +836,18 @@
 !        around the closed curve
 !        ---------------------------------------------------------
 !
-         IF ( sB - sA <= 0.5_RP*N )     THEN
+         IF ( sB - sA <= 0.5_RP*n )     THEN
             jStart = FLOOR(sA) + 1
             jEnd   = CEILING(sB) - 1
          ELSE
             jStart = FLOOR(sB) + 1
-            jEnd   = CEILING(sA) - 1 + N
+            jEnd   = CEILING(sA) - 1 + n
          END IF
 
          depthMax = 0.0_RP
          jMax     = -1
          DO i = jStart, jEnd
-            j     = MODULO(i, N)
+            j     = MODULO(i, n)
             depth = side*(chord(1)*(curveArray % x(2,j) - p1(2)) - chord(2)*(curveArray % x(1,j) - p1(1)))
             IF ( depth > depthMax )     THEN
                depthMax = depth
@@ -859,7 +859,7 @@
          u = aImage - curveArray % x(1:2,jMax)
          v = bImage - curveArray % x(1:2,jMax)
          IF ( NORM2(u) == 0.0_RP .OR. NORM2(v) == 0.0_RP )     RETURN
-         cornerAngle = AngleBetween(u, v)
+         cornerAngle = angleBetween(u, v)
          hasCorner   = cornerAngle < MAX_TOWARD_CORNER_ANGLE
          corner      = curveArray % x(1:2,jMax)
 
@@ -924,16 +924,16 @@
 !        ---------------
 !
          INTEGER, ALLOCATABLE :: parent(:), regionSize(:)
-         INTEGER              :: i, j, id1, id2, r1, r2, largestRoot, pass, N
+         INTEGER              :: i, j, id1, id2, r1, r2, largestRoot, pass, n
          LOGICAL              :: side
 
          ALLOCATE( parent(SIZE(isInside)), regionSize(SIZE(isInside)) )
 
-         N = SIZE(parent)
+         n = SIZE(parent)
          DO pass = 1, 2
             side = (pass == 1)
 
-            DO i = 1, N
+            DO i = 1, n
                parent(i) = i
             END DO
 
@@ -941,26 +941,26 @@
                id1 = meshEdges(j) % edge % elements(1) % element % id
                id2 = meshEdges(j) % edge % elements(2) % element % id
                IF ( (isInside(id1) .EQV. side) .AND. (isInside(id2) .EQV. side) )     THEN
-                  r1 = FindRoot(id1, parent, N)
-                  r2 = FindRoot(id2, parent, N)
+                  r1 = findRoot(id1, parent, n)
+                  r2 = findRoot(id2, parent, n)
                   IF ( r1 /= r2 )     parent(r2) = r1
                END IF
             END DO
 
             regionSize = 0
-            DO i = 1, N
+            DO i = 1, n
                IF ( .NOT.ASSOCIATED(elementForID(i) % element) )     CYCLE
                IF ( isInside(i) .NEQV. side )     CYCLE
-               r1 = FindRoot(i, parent, N)
+               r1 = findRoot(i, parent, n)
                regionSize(r1) = regionSize(r1) + 1
             END DO
             IF ( MAXVAL(regionSize) == 0 )     CYCLE
             largestRoot = MAXLOC(regionSize, DIM = 1)
 
-            DO i = 1, N
+            DO i = 1, n
                IF ( .NOT.ASSOCIATED(elementForID(i) % element) )     CYCLE
                IF ( isInside(i) .NEQV. side )     CYCLE
-               IF ( FindRoot(i, parent, N) /= largestRoot )     isInside(i) = .NOT.side
+               IF ( findRoot(i, parent, n) /= largestRoot )     isInside(i) = .NOT.side
             END DO
          END DO
 !
@@ -974,19 +974,19 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      INTEGER FUNCTION FindRoot( id, parent, N )
-         INTEGER               :: id, N
-         INTEGER, DIMENSION(N) :: parent
-         FindRoot = id
-         DO WHILE ( parent(FindRoot) /= FindRoot )
-            parent(FindRoot) = parent(parent(FindRoot))
-            FindRoot         = parent(FindRoot)
+      INTEGER FUNCTION findRoot( id, parent, n )
+         INTEGER               :: id, n
+         INTEGER, DIMENSION(n) :: parent
+         findRoot = id
+         DO WHILE ( parent(findRoot) /= findRoot )
+            parent(findRoot) = parent(parent(findRoot))
+            findRoot         = parent(findRoot)
          END DO
-      END FUNCTION FindRoot
+      END FUNCTION findRoot
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION ElementInsideFraction( e, curveArray )
+      REAL(KIND=RP) FUNCTION elementInsideFraction( e, curveArray )
          USE Geometry
          IMPLICIT NONE
 !
@@ -1019,13 +1019,13 @@
                   numInside = numInside + 1
             END DO
          END DO
-         ElementInsideFraction = REAL(numInside, KIND=RP)/REAL(NUM_SAMPLES**2, KIND=RP)
+         elementInsideFraction = REAL(numInside, KIND=RP)/REAL(NUM_SAMPLES**2, KIND=RP)
 
-      END FUNCTION ElementInsideFraction
+      END FUNCTION elementInsideFraction
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION DistanceToSegmentedCurve( p, curveArray )
+      REAL(KIND=RP) FUNCTION distanceToSegmentedCurve( p, curveArray )
          IMPLICIT NONE
 !
 !     -------------------------------------------------------
@@ -1037,9 +1037,9 @@
          CLASS(SegmentedCurveArray), POINTER :: curveArray
          REAL(KIND=RP)                       :: s, pImage(2)
 
-         CALL NearestPointOnSegmentedCurve( p, curveArray, s, pImage, DistanceToSegmentedCurve )
+         CALL NearestPointOnSegmentedCurve( p, curveArray, s, pImage, distanceToSegmentedCurve )
 
-      END FUNCTION DistanceToSegmentedCurve
+      END FUNCTION distanceToSegmentedCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1158,7 +1158,7 @@
             IF ( .NOT.edgeRemoved )     THEN
                DO i = 1, numEdges
                   IF ( nodeCount(1,i) < 3 .OR. nodeCount(2,i) < 3 )     CYCLE
-                  IF ( EdgeBordersOutsideNode(edgeArray(i) % edge) )   CYCLE
+                  IF ( edgeBordersOutsideNode(edgeArray(i) % edge) )   CYCLE
                   edge        => edgeArray(i) % edge
 
                   edgeRemoved = .TRUE.
@@ -1178,7 +1178,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION EdgeBordersOutsideNode( edge )
+      LOGICAL FUNCTION edgeBordersOutsideNode( edge )
 !
 !     ------------------------------------------------------
 !     True if either element that shares the edge has a node
@@ -1189,18 +1189,18 @@
          TYPE (SMEdge), POINTER :: edge
          INTEGER                :: j, k
 
-         EdgeBordersOutsideNode = .FALSE.
+         edgeBordersOutsideNode = .FALSE.
          DO j = 1, 2
             IF ( .NOT.ASSOCIATED(edge % elements(j) % element) )     CYCLE
             DO k = 1, 4
                IF ( edge % elements(j) % element % nodes(k) % node % bCurveSide == OUTSIDE )     THEN
-                  EdgeBordersOutsideNode = .TRUE.
+                  edgeBordersOutsideNode = .TRUE.
                   RETURN
                END IF
             END DO
          END DO
 
-      END FUNCTION EdgeBordersOutsideNode
+      END FUNCTION edgeBordersOutsideNode
 !
 !////////////////////////////////////////////////////////////////////////
 !
