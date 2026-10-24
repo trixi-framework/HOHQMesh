@@ -24,4 +24,4 @@ Benchmarks/ControlFiles/PacMan.control
 Benchmarks/ControlFiles/RotatedEllipseWithSubregions.control
 Benchmarks/ControlFiles/BlobAdapt.control
 Benchmarks/ControlFiles/FiveEmbeddedObjects.control
-Benchmarks/ControlFiles/interface_star5_soft.control
+Benchmarks/ControlFiles/interface_star5_83deg.control
