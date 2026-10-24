@@ -437,7 +437,7 @@
                      "Use a smaller background grid size (dx) or enlarge the box."
             CASE ( CURVE_NOT_FOUND_ERROR_CODE )
                msg = "A boundary edge could not be associated with a boundary curve. "// &
-                     "Try a smaller background grid size or refinement regions. "\\&
+                     "Try a smaller background grid size or refinement regions. "// &
                      "Run again with -verbose for details."
             CASE DEFAULT
                WRITE(msg,'(A,I0,A)') "Mesh generation failed with error code ", errorCode, &
