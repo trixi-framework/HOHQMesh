@@ -1299,7 +1299,7 @@
                               segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
                               IF( segmentLength > 0.25_RP*hMin )     THEN
                                  mSteps = NINT(segmentLength/hMin)*5
-                                 dz = 1.0_RP/REAL(mSteps, KIND=RP)
+                                 dz = 1.0_RP/REAL(mSteps, RP)
                                  DO m = 1, mSteps-1
                                     z = x1 + m*dz*(x2 - x1)
                                     IF ( PointInQuad( nodes, z ) )     THEN
@@ -1532,9 +1532,9 @@
                         x2 = curveArray % x(:,j+1)
                         segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
 
-                        IF( segmentLength > 0.25*hMin )     THEN
+                        IF( segmentLength > 0.25_RP*hMin )     THEN
                            mSteps = NINT(segmentLength/hMin)*5
-                           dz = 1.0_RP/REAL(mSteps, KIND=RP)
+                           dz = 1.0_RP/REAL(mSteps, RP)
                            DO m = 1, mSteps-1
                               z = x1 + m*dz*(x2 - x1)
                               IF ( PointInQuad( nodes, z ) )     THEN
@@ -2498,10 +2498,10 @@
 !                 The amount doesn't matter.
 !                 -------------------------------------------------------------------------
 !
-                  oldElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0
-                  oldElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0
-                  newElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0
-                  newElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0
+                  oldElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0_RP
+                  oldElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0_RP
+                  newElement % nodes(edgeMap(1,j)) % node % distToBoundary = 1.0_RP
+                  newElement % nodes(edgeMap(2,j)) % node % distToBoundary = 1.0_RP
                END IF
             END DO
 

@@ -57,7 +57,7 @@
 !     ---------------------------------------------------------------
 !     This routine is intended for debugging purposes ONLY. It checks
 !     the integrity of the mesh by looking for two nodes closer
-!     than 1.0d-10 in each coordinate. The nodes are sorted by x
+!     than 1e-10 in each coordinate. The nodes are sorted by x
 !     so that each node is only compared with the nodes that
 !     follow it within that distance in x.
 !     ---------------------------------------------------------------
@@ -102,9 +102,9 @@
          i = order(a)
          DO b = a + 1, numNodes
             j = order(b)
-            IF( xNodes(1,j) - xNodes(1,i) >= 1.0d-10 )     EXIT
+            IF( xNodes(1,j) - xNodes(1,i) >= 1.0E-10_RP )     EXIT
             d = ABS(xNodes(:,j) - xNodes(:,i))
-            IF( MAXVAL(d) < 1.0d-10 )     THEN
+            IF( MAXVAL(d) < 1.0E-10_RP )     THEN
                IF(printMessage) PRINT *, "Duplicate Node at ",xNodes(:,j), " with ids", ids(i), ids(j), &
                                          " and level ", levels(j)
                duplicateWasFound = .TRUE.

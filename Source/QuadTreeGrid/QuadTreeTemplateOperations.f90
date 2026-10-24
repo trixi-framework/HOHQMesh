@@ -255,7 +255,7 @@
 
       N     = self % N(1); M = self % N(2)
       level = self % level
-      dx    = self % dx/DBLE(refinementType)
+      dx    = self % dx/REAL(refinementType, RP)
 !
 !     ---------------------------------------------------------------
 !     Construct the nodes on each of the children of the current grid
@@ -366,7 +366,7 @@
 !
                CALL GetGridPosition( self % x0, self % dx, i-1, j-1, xMin )
                CALL GetGridPosition( self % x0, self % dx, i  , j  , xMax )
-               dx = self % dx/DBLE(refinementType)
+               dx = self % dx/REAL(refinementType, RP)
                ALLOCATE(childGrid)
                CALL childGrid % initGridWithParameters( dx, xMin, N, self, (/i,j,0/), self % level+1 )
                self % children(i,j) % grid => childGrid

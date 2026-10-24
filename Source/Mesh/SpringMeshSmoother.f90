@@ -137,7 +137,7 @@
       SUBROUTINE DestructSpringMeshSmoother( self )
          IMPLICIT NONE
          TYPE(SpringMeshSmoother) :: self
-         IF(self % restLength >= 0.0)     CONTINUE
+         IF(self % restLength >= 0.0_RP)     CONTINUE
          !Do nothing
       END SUBROUTINE DestructSpringMeshSmoother
 !
@@ -604,7 +604,7 @@
 !              ---------------------------------------------------------
 !
                bisector = d(:,1) + d(:,2)
-               IF ( NORM2(bisector) < 1.0d-6 )     CYCLE
+               IF ( NORM2(bisector) < 1.0E-6_RP )     CYCLE
                bisector = bisector/NORM2(bisector)
 !
 !              Project the node onto the bisector, but keep at least half

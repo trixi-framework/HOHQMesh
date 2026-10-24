@@ -536,7 +536,7 @@
 
          id = curve % id()
          k  = self % indexOfCurveWithID(id)
-         t  = DBLE(s + k - 1)/DBLE(self % numberOfCurvesInChain)
+         t  = REAL(s + k - 1, RP)/REAL(self % numberOfCurvesInChain, RP)
 
          IF( self % swapDirection(k) )     THEN
             t = 1.0_RP - t

@@ -53,7 +53,7 @@
          INTEGER, PARAMETER               :: STD_OUT = 6
          INTEGER, PARAMETER               :: STD_IN  = 5
          
-         COMPLEX(KIND=CP)                 :: ImgI =(0.0,1.0)! = SQRT(-1.0_RP)
+         COMPLEX(KIND=CP)                 :: ImgI =(0.0_RP,1.0_RP)! = SQRT(-1.0_RP)
          
          INTEGER, PARAMETER               :: DEFAULT_CHARACTER_LENGTH = 128
          INTEGER, PARAMETER               :: DEFAULT_FILE_PATH_LENGTH = 128

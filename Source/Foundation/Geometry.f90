@@ -450,7 +450,7 @@
             area = area + tmp
             centroid = centroid + (x(:,i) + x(:,k))*tmp
          END DO
-         area     = 0.5*area
+         area     = 0.5_RP*area
          centroid = centroid/(6*area)
 
       END SUBROUTINE ComputeCentroid
