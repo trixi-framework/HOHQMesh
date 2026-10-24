@@ -283,6 +283,32 @@
                   errorCode = CURVE_NOT_FOUND_ERROR_CODE
                   RETURN
                END IF
+!
+!              ---------------------------------------------------------------
+!              Without an outer boundary curve, the background grid box is the
+!              outer boundary. An exterior edge from a node on the box to a node
+!              on a boundary curve means that a curve is closer to the box than
+!              about one grid cell, and the region inside it has opened onto
+!              the box. The mesh cannot be fixed at this grid size.
+!              ---------------------------------------------------------------
+!
+               IF( (IsOnOuterBox(edge % nodes(1) % node)      .AND. &
+                    IsOnBoundaryCurve(edge % nodes(2) % node)) .OR.  &
+                   (IsOnBoundaryCurve(edge % nodes(1) % node) .AND. &
+                    IsOnOuterBox(edge % nodes(2) % node)) )    THEN
+                  IF( printMessage )     THEN
+                     WRITE(stderr,*)  " "
+                     WRITE(stderr,*)  "**************************************************************************"
+                     WRITE(stderr,*)  "A boundary curve is too close to the background grid box near"
+                     WRITE(stderr,*)   edge % nodes(1) % node % x(1:2), edge % nodes(2) % node % x(1:2)
+                     WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     WRITE(stderr,*)  "**************************************************************************"
+                     WRITE(stderr,*)  " "
+                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                  END IF
+                  errorCode = BOUNDARY_TOUCHES_BOX_ERROR_CODE
+                  RETURN
+               END IF
 
                IF( IsOnBoundaryCurve(edge % nodes(1) % node) .OR. &
                    IsOnBoundaryCurve(edge % nodes(2) % node) )    THEN
@@ -293,7 +319,7 @@
                      IF( printMessage )     THEN
                         WRITE(stderr,*)  " "
                         WRITE(stderr,*)  "**************************************************************************"
-                        WRITE(stderr,*)  "edge list not associated"
+                        WRITE(stderr,*)  "Edge list not associated"
                         WRITE(stderr,*)  ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
                         WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
                         WRITE(stderr,*)  "**************************************************************************"
