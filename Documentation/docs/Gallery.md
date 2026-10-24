@@ -127,24 +127,37 @@ and then updating the gallery page
 
 ## Embedded
 
-<div class="gallery-two-columns">
+Note, the embedded meshes colorize each material to highlight the curved internal interfaces.
+
+<div class="gallery-three-columns">
   <div class="gallery-column">
     <figure>
-      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/embedded-boundaries-small.png?raw=true"/>
-      <figcaption>
-        Two embedded circles (David A. Kopriva)
-      </figcaption>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/c4ff208f6f0b2c3782df2356d377dc4be2cc64a8/gallery/embedded-boundaries-small.png?raw=true"/>
+      <figcaption>Two embedded circles (David A. Kopriva)</figcaption>
     </figure>
   </div>
 
   <div class="gallery-column">
     <figure>
-      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/a8610caf1c5047741ee341462cb3e2f9d34471c6/gallery/multiple-boundaries-small.png?raw=true"/>
-      <figcaption>
-        Five embedded regions (Garrett Byrd and Andrew R. Winters)
-      </figcaption>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/c4ff208f6f0b2c3782df2356d377dc4be2cc64a8/gallery/multiple-boundaries-small.png?raw=true"/>
+      <figcaption>Five embedded regions (Garrett Byrd and Andrew R. Winters)</figcaption>
     </figure>
   </div>
+
+  <div class="gallery-column">
+    <figure>
+      <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/c4ff208f6f0b2c3782df2356d377dc4be2cc64a8/gallery/many_circles.png?raw=true"/>
+      <figcaption>120 embedded circles (Andrew R. Winters)</figcaption>
+    </figure>
+  </div>
+</div>
+
+<!-- Bottom row: one image -->
+<div class="gallery-column">
+  <figure>
+    <img src="https://github.com/trixi-framework/HOHQMesh_examples/blob/c4ff208f6f0b2c3782df2356d377dc4be2cc64a8/gallery/circuit_board.png?raw=true"/>
+    <figcaption>Circuit board (Andrew R. Winters)</figcaption>
+  </figure>
 </div>
 
 ## Topography

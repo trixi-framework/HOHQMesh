@@ -4,6 +4,12 @@
   gap: 6px;
   align-items: end; /* to align at bottom */
 }
+.gallery-three-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  align-items: end; /* to align at bottom */
+}
 .gallery-column {
   padding: 3px;
 }
