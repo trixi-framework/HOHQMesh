@@ -280,7 +280,6 @@
          x = (xp - 2.0_RP*x0 + xm)/dt2**2
 
       END FUNCTION secondDerivativeAt
-!@mark -
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -331,14 +330,38 @@
 !        Local variables
 !        ---------------
 !
-         REAL(KIND=RP) :: tLeft, tRight
-         tLeft  = MAX(0.0_RP,tOld - 0.1_RP)
-         tRight = MIN(tOld + 0.1_RP, 1.0_RP)
+         INTEGER, PARAMETER :: numberOfSamples = 40
+         INTEGER            :: k
+         REAL(KIND=RP)      :: tLeft, tRight, tSample, dtSample, tBest, d, dMin
+
+         tLeft   = MAX(0.0_RP,tOld - 0.1_RP)
+         tRight  = MIN(tOld + 0.1_RP, 1.0_RP)
          xTarget = x
-         t       = fmin(self,tLeft,tRight,minimizationTolerance)
+!
+!        -------------------------------------------------------------
+!        The distance can have more than one minimum in the window,
+!        e.g. on both sides of a thin part of the region, and fmin only
+!        finds a local one. Sample the window first and let fmin refine
+!        the minimum around the closest sample.
+!        -------------------------------------------------------------
+!
+         dtSample = (tRight - tLeft)/numberOfSamples
+         tBest    = tLeft
+         dMin     = HUGE(dMin)
+         DO k = 0, numberOfSamples
+            tSample = tLeft + k*dtSample
+            d       = ObjectiveFunction(self,tSample)
+            IF ( d < dMin )     THEN
+               dMin  = d
+               tBest = tSample
+            END IF
+         END DO
+         tLeft  = MAX(tLeft , tBest - dtSample)
+         tRight = MIN(tRight, tBest + dtSample)
+
+         t = fmin(self, tLeft, tRight, minimizationTolerance)
 
       END FUNCTION ParametrizationAtPointNear
-!@mark -
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -415,7 +438,6 @@
          END IF
 
       END FUNCTION Classification
-!@mark -
 !
 !////////////////////////////////////////////////////////////////////////
 !

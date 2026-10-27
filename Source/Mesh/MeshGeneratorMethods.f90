@@ -229,6 +229,13 @@
             IF(PrintMessage) PRINT *, "   final Smoothing done."
          END IF
 !
+!        --------------------------------------------------------------
+!        Move interior nodes out of any inverted elements that are left
+!        --------------------------------------------------------------
+!
+         CALL UntangleInvertedElements( project % mesh, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+!
 !        ----------------------------------------------------------
 !        If this is a multi-material mesh, then set each element's
 !        materialID and materialName
@@ -236,7 +243,7 @@
 !
          IF ( ASSOCIATED(interfaceCurves) .AND. &
             project % runParams % meshFileFormat == ISM_MM)     THEN
-            CALL SetMaterialProperties(mesh = project % mesh)
+            CALL SetMaterialProperties(mesh = project % mesh, model = project % model)
          END IF
 !
 !        -------------------------------------
@@ -244,8 +251,6 @@
 !        -------------------------------------
 !
          CALL destroyTemporaryBoundaryArrays
-
-         IF(ALLOCATED(aPointInsideTheCurve)) DEALLOCATE(aPointInsideTheCurve)
 
       END SUBROUTINE GenerateAQuadMesh
 !
@@ -279,9 +284,12 @@
       CLASS(FTLinkedList), POINTER :: list      => NULL()
       TYPE (FTException) , POINTER :: exception => NULL()
 
-      INTEGER                      :: numberOfBoundaries,numBoundaryEdgeLists
-      INTEGER                      :: j
-      INTEGER                      :: idOfOuterBoundary
+      INTEGER                                          :: numberOfBoundaries,numBoundaryEdgeLists
+      INTEGER                                          :: j
+      INTEGER                                          :: idOfOuterBoundary
+      INTEGER                                          :: numberOfMaterials
+      CHARACTER(LEN=SM_CURVE_NAME_LENGTH)              :: materialName
+      CHARACTER(LEN=SM_CURVE_NAME_LENGTH), ALLOCATABLE :: materialNames(:)
 
       TYPE (FTLinkedListIterator), POINTER :: iterator
       CLASS(SMChainedCurve)      , POINTER :: chain
@@ -309,11 +317,16 @@
       grid  => project % grid
       sizer => project % sizer
 !
-!     ----------------------------------------------------------
-!     Save the polynomial order and the curve names to the mesh.
-!     Material names are associated with the bounding interface
-!     curves.
-!     ----------------------------------------------------------
+!     --------------------------------------------------------------------
+!     Save the polynomial order and the material names to the mesh.
+!     The background material has BACKGROUND_MATERIAL_ID = 0. Each
+!     interface curve encloses a material, given by its optional
+!     "material name", if not present the curve is named after the chain.
+!     Each distinct material name gets the next ID, 1, 2,..., in the order
+!     the interfaces appear in the control file, so interfaces with the
+!     with the same material name share an ID. An interface whose material
+!     is the background material gets BACKGROUND_MATERIAL_ID.
+!     --------------------------------------------------------------------
 !
       mesh % polynomialOrder =  project % runParams % polynomialOrder
       numberOfBoundaries = model % numberOfInnerCurves + model % numberOfOuterCurves &
@@ -321,8 +334,9 @@
 
       IF ( model % numberOfInterfaceCurves > 0 )     THEN
 
-            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:numberOfBoundaries))
-            mesh % materialNameForID = project % backgroundMaterialName
+            ALLOCATE( materialNames(0:model % numberOfInterfaceCurves) )
+            materialNames(BACKGROUND_MATERIAL_ID) = project % backgroundMaterialName
+            numberOfMaterials = 0
 
             iterator => model % interfaceBoundariesIterator
             CALL iterator % setToStart()
@@ -330,10 +344,31 @@
                obj => iterator % object()
                CALL castToSMChainedCurve(obj,chain)
 
-               mesh % materialNameForID(chain % id()) = chain % curveName()
+               IF ( LEN_TRIM(chain % materialName) > 0 )     THEN
+                  materialName = chain % materialName
+               ELSE
+                  materialName = chain % curveName()
+               END IF
+
+               chain % materialID = -1
+               DO j = 0, numberOfMaterials
+                  IF ( materialNames(j) == materialName )     THEN
+                     chain % materialID = j
+                     EXIT
+                  END IF
+               END DO
+               IF ( chain % materialID < 0 )     THEN
+                  numberOfMaterials                = numberOfMaterials + 1
+                  materialNames(numberOfMaterials) = materialName
+                  chain % materialID               = numberOfMaterials
+               END IF
 
                CALL iterator % moveToNext()
             END DO
+
+            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:numberOfMaterials))
+            mesh % materialNameForID = materialNames(0:numberOfMaterials)
+            DEALLOCATE( materialNames )
       END IF
 !
 !     -------------------------------------
@@ -369,7 +404,6 @@
 !     --------------------------------------------
 !
       IF( numberOfBoundaries > 0 )     THEN
-         ALLOCATE( aPointInsideTheCurve(3,numberOfBoundaries) )
          ALLOCATE( mesh % curveTypeForID(numberOfBoundaries) )
          CALL flagBoundaryTypes(mesh % curveTypeForID)
       END IF
@@ -399,7 +433,7 @@
                              model%numberOfInterfaceCurves
 
       CALL AllocateBoundaryEdgesArray(numBoundaryEdgeLists)
-      CALL CollectBoundaryEdges( mesh, errorCode )
+      CALL CollectBoundaryEdges( mesh, errorCode, useElementSides = .TRUE. )
 
       IF( errorCode > A_OK_ERROR_CODE)     RETURN
 
@@ -468,6 +502,7 @@
          CALL cast(obj,list)
          CALL FlagEndNodes( list, model )
          CALL SpreadCollapsedBoundaryLocations( list, model )
+         IF( boundaryEdgesType(j) == INTERFACE_EDGES )     CALL MoveInterfaceNodesToImages( list, model )
       END DO
 !
 !     ------------------------------------------
@@ -632,7 +667,7 @@
          TYPE (SMElement)     , POINTER :: e => NULL()
          CLASS(FTObject)      , POINTER :: obj => NULL()
 
-         INTEGER                        :: k, nodeArraySize
+         INTEGER                        :: k, nodeArraySize, shift
          INTEGER                        :: jointType, bCurveSide
 
          REAL(KIND=RP)                  :: t, p(3)
@@ -651,6 +686,17 @@
 !
          nodeArray     => GatheredNodes( list )
          nodeArraySize = SIZE(nodeArray)
+!
+!        -----------------------------------------------------------------
+!        The templates at a joint use nodes past the joint, up to three for
+!        a row reversal, and the corner and reversal templates move the
+!        boundary node made for the node before the joint. So that no
+!        template wraps around the end of the loop, start the loop where
+!        the first two and the last three nodes are not joints.
+!        -----------------------------------------------------------------
+!
+         shift = boundaryLoopStartShift( nodeArray )
+         IF ( shift /= 0 )     nodeArray = CSHIFT( nodeArray, shift )
 !
 !        --------------------------
 !        Get the first node started
@@ -947,6 +993,41 @@
          DEALLOCATE( nodeArray )
 
       END SUBROUTINE GenerateBoundaryElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION boundaryLoopStartShift( nodeArray )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------------
+!        For GenerateBoundaryElements: the cyclic shift of the boundary
+!        nodes so that the first two and the last three are not joints. It
+!        is zero if the nodes are already in such an order, or if there is
+!        no such order (joints only a few nodes apart).
+!        ------------------------------------------------------------------
+!
+         TYPE(SMNodePtr), DIMENSION(:) :: nodeArray
+         INTEGER                       :: n, shift, j, nodeType
+         LOGICAL                       :: isFree
+
+         n = SIZE(nodeArray)
+         boundaryLoopStartShift = 0
+         DO shift = 0, n-1
+            isFree = .TRUE.
+            DO j = -2, 2
+               nodeType = nodeArray(MODULO(shift + j - 1, n) + 1) % node % nodeType
+               IF ( nodeType /= NONE .AND. nodeType /= ROW_SIDE )     THEN
+                  isFree = .FALSE.
+                  EXIT
+               END IF
+            END DO
+            IF ( isFree )     THEN
+               boundaryLoopStartShift = shift
+               RETURN
+            END IF
+         END DO
+
+      END FUNCTION boundaryLoopStartShift
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1054,14 +1135,6 @@
                      node % bCurveChainID = outerBoundaryCurve % id
                      node % bCurveSide    = INSIDE
                   END DO
-               ELSE
-!
-!                 -----------------------------------------------
-!                 Any node in this element is inside, so mark one
-!                 -----------------------------------------------
-!
-                  node => e % nodes(1) % node
-                  aPointInsidetheCurve(:,outerBoundaryCurve % id) = node % x
                END IF
 
                CALL elementIterator % moveToNext()
@@ -1177,9 +1250,8 @@
                           node => e % nodes(k) % node
                           w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments )
                           IF ( ABS(w) >= 1 ) THEN
-                             aPointInsidetheCurve(:,curveArray % id) = node % x
-                             e % remove                              = .true.
-                             removedHere                             = .true.
+                             e % remove  = .true.
+                             removedHere = .true.
                              EXIT
                           END IF
                         END DO
@@ -1274,15 +1346,6 @@
                END DO
 
             END DO
-!
-!           ----------------------------------------------
-!           A point guaranteed to be inside an outer curve
-!           is inside an inner curve
-!           ----------------------------------------------
-!
-            IF( ASSOCIATED( outerBoundaryCurve ) ) THEN
-               aPointInsidetheCurve(:,1) = aPointInsidetheCurve(:,2)
-            END IF
          END IF
 
       END SUBROUTINE MarkExteriorElements
@@ -1361,6 +1424,7 @@
          REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
          LOGICAL                              :: isInterfaceElement
          INTEGER                              :: numInside, numOutside, location(4)
+         REAL(KIND=RP)                        :: curveBox(6), elementBox(4), margin
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1373,6 +1437,7 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
+            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 
             CALL elementIterator % setToStart()
 !
@@ -1396,11 +1461,10 @@
                   location   = UNDEFINED
                   DO k = 1, 4
                      node => e % nodes(k) % node
-                     w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
+                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
                      IF ( ABS(w) > 0.6_RP ) THEN
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
-                        aPointInsidetheCurve(:,curveArray % id) = node % x
                       ELSE IF ( abs(w) <= EPSILON(w) ) THEN
                         location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
@@ -1439,14 +1503,31 @@
                         hMin = MIN( h, hMin )
                      END DO
 !
+!                    -----------------------------------------------------------
+!                    Bounding box of the element. A point that PointInQuad finds
+!                    inside lies in it, up to the tolerance of PointInQuad and
+!                    rounding, which the margin covers. Curve segments that do
+!                    not reach the box are skipped below.
+!                    -----------------------------------------------------------
+!
+                     elementBox = [MINVAL(nodes(1,:)), MAXVAL(nodes(1,:)), MINVAL(nodes(2,:)), MAXVAL(nodes(2,:))]
+                     margin     = 1.0E-6_RP*MAX(elementBox(2) - elementBox(1), elementBox(4) - elementBox(3)) &
+                                + 8.0_RP*EPSILON(1.0_RP)/MAX(hMin, TINY(hMin))                                &
+                                + 8.0_RP*SPACING(MAXVAL(ABS(elementBox)))
+                     elementBox = elementBox + margin*[-1.0_RP, 1.0_RP, -1.0_RP, 1.0_RP]
+!
 !                    ----------------------------------------------------------------------
 !                    See if any of the curve points are inside the element. If the elements
 !                    are small compared to the spacing on the curve, linearly interpolate
 !                    the curve segment and see if those fall inside the element. HACK:
 !                    the decision on how big is too big is arbitrary at the moment.
-!                    -----------------------------------------------------------------------
+!                    ----------------------------------------------------------------------
 !
                      DO j = 1, curveArray % nSegments-1
+                        IF ( MAX(curveArray % x(1,j), curveArray % x(1,j+1)) < elementBox(1) .OR. &
+                             MIN(curveArray % x(1,j), curveArray % x(1,j+1)) > elementBox(2) .OR. &
+                             MAX(curveArray % x(2,j), curveArray % x(2,j+1)) < elementBox(3) .OR. &
+                             MIN(curveArray % x(2,j), curveArray % x(2,j+1)) > elementBox(4) )     CYCLE
 !
 !                       ---------------------------------------------------
 !                       See if one of the boundary points is in the element
@@ -1491,16 +1572,10 @@
                   DO k = 1, 4
                      node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
-!
-!                    ------------------------------------------------------------------
-!                    To order boundary edges, we need to know a point inside this curve
-!                    ------------------------------------------------------------------
-!
                      IF(node % bCurveSide == UNDEFINED )     THEN
-                        w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
+                        w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
 
                         IF ( ABS(w) > 0.6_RP ) THEN
-                           aPointInsidetheCurve(:,curveArray % id) = node % x
                            node % bCurveSide    = INSIDE
                         ELSE IF ( abs(w) <= EPSILON(w) ) THEN
                            node % bCurveSide    = OUTSIDE
@@ -1518,7 +1593,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE SetMaterialProperties( mesh )
+      SUBROUTINE SetMaterialProperties( mesh, model )
 !
 !     ---------------------------------------------------------------------
 !     This procedure is intended to be called after any topology/element
@@ -1535,6 +1610,7 @@
 !        ---------
 !
          TYPE (SMMesh)              , POINTER :: mesh
+         TYPE (SMModel)             , POINTER :: model
 !
 !        ---------------
 !        Local variables
@@ -1550,6 +1626,8 @@
          INTEGER                              :: k, l
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
+         CLASS(SMChainedCurve)      , POINTER :: chain           => NULL()
+         REAL(KIND=RP)                        :: center(3), curveBox(6)
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1558,6 +1636,14 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
+            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
+!
+!           ---------------------------------------------------------------
+!           The material ID of the interface was set from the material
+!           names in GenerateQuadMeshFromGrid
+!           ---------------------------------------------------------------
+!
+            chain => model % chainWithID( curveArray % id )
 
             CALL elementIterator % setToStart()
 !
@@ -1577,27 +1663,52 @@
                   numInside  = 0
                   numOutside = 0
                   location   = UNDEFINED
-
+!
+!                 -----------------------------------------------------------------
+!                 Count the nodes inside and outside of 'curveArray', the interface
+!                 curve treated in this pass of the loop. Nodes that were moved
+!                 onto curveArray are not counted. The winding number test uses a
+!                 polygon through points of the curve, and a node on the curve
+!                 itself is on the outside of the polygon when the curve is convex
+!                 and on the inside where it is concave. Simply counting those nodes
+!                 would mislabel elements along the concave parts of the curve.
+!                 -----------------------------------------------------------------
+!
                   DO k = 1, 4
                      node => e % nodes(k) % node
+                     IF ( node % distToBoundary == 0.0_RP .AND. &
+                          node % bCurveChainID == curveArray % id )     CYCLE
 
-                     w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments-1 )
+                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
                      IF ( abs(w) == 0 ) THEN
                         location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
                      ELSE
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
-                        aPointInsidetheCurve(:,curveArray % id) = node % x
                      END IF
                   END DO
 !
-!                 -----------------------------------------
-!                 Set the material ID as the inner curve ID
-!                 -----------------------------------------
+!                 --------------------------------------------------------
+!                 If the remaining nodes do not decide, e.g. all nodes are
+!                 on the interface, use the center of the element
+!                 --------------------------------------------------------
 !
-                  IF ( numInside >= 2 )     THEN
-                     e % materialID   = curveArray % id
+                  IF ( numInside == numOutside )     THEN
+                     center = 0.0_RP
+                     DO k = 1, 4
+                        center = center + 0.25_RP*e % nodes(k) % node % x
+                     END DO
+                     w = acWindingFunctionInBox( center, curveArray % x, curveArray % nSegments-1, curveBox )
+                     IF ( abs(w) /= 0 )     numInside = numInside + 1
+                  END IF
+!
+!                 ------------------------------------------------------------
+!                 Set the material ID of the region inside the interface curve
+!                 ------------------------------------------------------------
+!
+                  IF ( numInside > numOutside )     THEN
+                     e % materialID   = chain % materialID
                   END IF
                END IF
 
@@ -1756,6 +1867,7 @@
          INTEGER                                   :: j, k, jNode, id, jNode0, jNode1
          REAL(KIND=RP)                             :: t, dt, t0, t1, x, dMin, d
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
+         LOGICAL                                   :: isInterface
 
          nodeArray     => GatheredNodes( list )
          nodeArraySize = SIZE(nodeArray)
@@ -1774,6 +1886,14 @@
 !
          id            = nodeArray(1) % node % bCurveChainID
          boundaryCurve => model % chainWithID(id)
+!
+!        ----------------------------------------------------------------
+!        Interface nodes are not replaced by new boundary nodes, they keep
+!        their (chain) parameter values, so the chain parameter of the
+!        node pinned to the start of the chain must be set as well
+!        ----------------------------------------------------------------
+!
+         isInterface = boundaryEdgesType(id) == INTERFACE_EDGES
 !
 !        -----------------------------------------------------------
 !        For each joint in the boundary curve, find the closest
@@ -1817,6 +1937,7 @@
            nodeArray(jNode0) % node % whereOnBoundary = 0.0_RP
            nodeArray(jNode0) % node % nodeType        = boundaryCurve % jointClassification(0)
            nodeArray(jNode0) % node % bCurveID        = boundaryCurve % myCurveIDs(1)
+           IF ( isInterface )     nodeArray(jNode0) % node % gWhereOnBoundary = 0.0_RP
          ELSE
            IF ( jNode1 < 0 )     THEN
               WRITE(msg,*) "Joint node 1 not found"
@@ -1825,6 +1946,10 @@
            END IF
            nodeArray(jNode1) % node % whereOnBoundary = 1.0_RP
            nodeArray(jNode1) % node % nodeType        = boundaryCurve % jointClassification(0)
+           IF ( isInterface )     THEN
+              nodeArray(jNode1) % node % gWhereOnBoundary = 1.0_RP
+              nodeArray(jNode1) % node % bCurveID         = boundaryCurve % myCurveIDs(boundaryCurve % numberOfCurvesInChain)
+           END IF
          END IF
 !
 !       --------------------
@@ -3170,6 +3295,7 @@
             chainNodesArray(j+shift) % node % gWhereOnBoundary = t
             chainNodesArray(j+shift) % node % x                = chain % positionAt(t)
             chainNodesArray(j+shift) % node % whereOnBoundary  = chain % curveTForChainT(t)
+            chainNodesArray(j+shift) % node % bCurveID         = chain % myCurveIDs(chain % curveNumberForLocation(t))
          END DO
 
       END SUBROUTINE SmoothSegments

@@ -18,6 +18,7 @@ For this reason, we have reduced the storage requirements in the following ways:
    - Box3D
    - Box3DRotated
    - Circles3
+   - FiveObjects
    - GingerbreadMan
    - HalfCircleArc
    - HalfCircleExtruded
@@ -34,8 +35,8 @@ For this reason, we have reduced the storage requirements in the following ways:
 
 2. Plot files are saved using only the "skeleton" option. For more detailed plots with the internal
    spectral element information, users should replace the "skeleton" plot file option with
-   the "sem" option and generate the meshes locally. Two plot files with the "sem" output option are
-   provided in the Benchmark suite, specifically the two-dimensional `BoneAndMarrow` example
+   the "sem" option and generate the meshes locally. Three plot files with the "sem" output option are
+   provided in the Benchmark suite, specifically the two-dimensional `BoneAndMarrow` and `FiveObjects` examples
    and three-dimensional `Box3D` example.
 
    Note, due to file size, no plot file of any kind is provided for `Examples/3D/MtStHelens`. A user would need to generate the files for this large mesh locally.
@@ -58,6 +59,7 @@ they exercise.
 | **Circles3**              | Two circles enclosed by a large circle             | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **East Coast US**         | Portion of US East coast from NYC to Jacksonville  | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Ellipse and 4 Circles** | Four circles enclosed by an ellipse                | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Five Objects**          | Circular domain with five embedded boundaries      | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Gingerbread Man**       | Geometry with lots of holes                        | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Half Circle**           | Upper half circle                                  | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Indian Ocean**          | Complex domain with islands and inlets             | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |

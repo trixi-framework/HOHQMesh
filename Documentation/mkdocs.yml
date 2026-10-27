@@ -37,6 +37,7 @@ nav:
   - 'For Developers':
     - How HOHQMesh Works: 'how-hohqmesh-works.md'
     - Assumptions and Algorithms: 'assumptions-and-algorithms.md'
+    - Interface Boundary Meshing: 'interface-meshing.md'
     - Boundary Curve Optimization: 'boundary-curve-optimization-details.md'
     - Building the Documentation: 'building-the-documentation.md'
     - Adding a New Test: 'adding-a-new-test.md'

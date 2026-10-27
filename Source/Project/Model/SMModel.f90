@@ -62,6 +62,7 @@
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INNER_BOUNDARIES_BLOCK_KEY     = "INNER_BOUNDARIES"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INTERFACE_BOUNDARIES_BLOCK_KEY = "INTERFACE_BOUNDARIES"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: MATERIAL_NAME_KEY              = "material name"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: H1NORM_KEY                     = "H1Norm"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: L2NORM_KEY                     = "L2Norm"
 
@@ -524,6 +525,16 @@
             ELSE
               obj => chain
               CALL self % interfaceBoundaries % add(obj)
+!
+!             --------------------------------------------------------
+!             Optional name of the material inside an interface curve.
+!             Without it, the material is named after the chain.
+!             --------------------------------------------------------
+!
+              IF ( ibDict % containsKey(key = MATERIAL_NAME_KEY) )     THEN
+                 chain % materialName = ibDict % stringValueForKey(key             = MATERIAL_NAME_KEY, &
+                                                                   requestedLength = SM_CURVE_NAME_LENGTH)
+              END IF
             END IF
 !
 !           ------------------
