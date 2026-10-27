@@ -1,0 +1,1862 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://trixi-framework.github.io/HOHQMesh/interface-meshing/">
+      
+      
+        <link rel="prev" href="../assumptions-and-algorithms/">
+      
+      
+        <link rel="next" href="../boundary-curve-optimization-details/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/TrixiInside_small_transparent.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Interface Boundary Meshing - HOHQMesh</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../css/video.css">
+    
+      <link rel="stylesheet" href="../css/gallery.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#interface-boundary-meshing" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="HOHQMesh" class="md-header__button md-logo" aria-label="HOHQMesh" data-md-component="logo">
+      
+  <img src="../images/TrixiInside_small_transparent.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HOHQMesh
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Interface Boundary Meshing
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trixi-framework/HOHQMesh" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="HOHQMesh" class="md-nav__button md-logo" aria-label="HOHQMesh" data-md-component="logo">
+      
+  <img src="../images/TrixiInside_small_transparent.png" alt="logo">
+
+    </a>
+    HOHQMesh
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trixi-framework/HOHQMesh" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../News/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ChangeLog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-control-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Control Input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../error-controlled-adaptive-meshing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Error Controlled Meshing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../three-dimensional-hexahedral-meshes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Three Dimensional Hexahedral Meshes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-control-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Control File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TheISMMeshFileFormats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The HOHQMesh Mesh File Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pre-made Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compiling-and-running-hohqmesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compiling and Running HOHQMesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../appendix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WorkflowTools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For Developers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    For Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-hohqmesh-works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How HOHQMesh Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assumptions-and-algorithms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assumptions and Algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interface Boundary Meshing
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interface Boundary Meshing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assumptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-sizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Sizing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-marking-interface-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Marking interface elements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-choosing-the-interface-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Choosing the interface path
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-moving-the-nodes-onto-the-curve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Moving the nodes onto the curve
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-joints-pinning-nodes-and-deciding-ties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Joints: pinning nodes and deciding ties
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-topology-cleanup-and-the-first-smoothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Topology cleanup and the first smoothing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-templates-for-the-elements-at-the-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Templates for the elements at the interface
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Templates for the elements at the interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#corner-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Corner elements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-valences-on-the-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Valences on the interface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-untangling-and-opening-flat-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Untangling and opening flat elements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-material-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Material assignment
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../boundary-curve-optimization-details/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Boundary Curve Optimization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../building-the-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Building the Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adding-a-new-test/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a New Test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing-a-new-version/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing a New Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../updating-spack-packages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updating Spack Packages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assumptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-sizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Sizing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-marking-interface-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Marking interface elements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-choosing-the-interface-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Choosing the interface path
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-moving-the-nodes-onto-the-curve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Moving the nodes onto the curve
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-joints-pinning-nodes-and-deciding-ties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Joints: pinning nodes and deciding ties
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-topology-cleanup-and-the-first-smoothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Topology cleanup and the first smoothing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-templates-for-the-elements-at-the-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Templates for the elements at the interface
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Templates for the elements at the interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#corner-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Corner elements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-valences-on-the-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Valences on the interface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-untangling-and-opening-flat-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Untangling and opening flat elements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-material-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Material assignment
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="interface-boundary-meshing">Interface Boundary Meshing<a class="headerlink" href="#interface-boundary-meshing" title="Permanent link">&para;</a></h1>
+<p>The goal of a mesh with <code>INTERFACE_BOUNDARIES</code> is to create an all quadrilateral, conforming
+mesh that provides high-order boundary information of internal (possibly embedded) curves.
+The corresponding mesh format <a href="../TheISMMeshFileFormats/#BaseMaterialDefinition">ISM-MM</a> then
+labels elements with a material name.
+Such meshes are suitable for spectral element approximations of problems such as wave
+scattering and heat transfer, where aligning material discontinuities with curved element
+boundaries preserves high-order accuracy.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>HOHQMesh has three types of boundary curves, each defined as a closed chain of curves:</p>
+<ul>
+<li><strong>Outer boundary</strong>: all elements outside of this curve are removed.</li>
+<li><strong>Inner boundaries</strong>: all elements inside any of these curves are removed, which creates holes.</li>
+<li><strong>Interface boundaries</strong>: no elements are removed. Instead, the mesh is made to conform to the curve,
+  so that element edges lie along it, and both sides of the curve are meshed. Interfaces are
+  used to separate materials (see the <a href="../TheISMMeshFileFormats/#BaseMaterialDefinition">ISM-MM format</a>),
+  but they can also be used only to align the mesh with a curve.</li>
+</ul>
+<p>Outer and inner boundaries are meshed with a "cookie cutter" approach. After elements of the background grid
+are created, those that are outside of the domain or too close to a boundary are removed, and the ragged boundary
+edges that are left are projected onto the curve to create a new layer of boundary elements.</p>
+<p>Generally, this cookie cutter strategy does not work for an interface, because both sides must stay meshed and the two sides must share the nodes on the curve.
+Instead, a closed path of existing edges of the background grid
+mesh near the curve is chosen, and the nodes of that path are moved <strong>onto</strong> the interface curve.
+The elements next to the curve are then split with templates so that they have reasonable
+shapes on both sides.</p>
+<p>The main steps of the interface meshing procedure are given below in the order in which they are performed.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What is done</th>
+<th>Main routines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Size the background grid for both sides of the interface</td>
+<td><code>Sizer.f90</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Find the elements near each interface curve</td>
+<td><code>MarkInterfaceElements</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Choose the closed path of edges that becomes the interface</td>
+<td><code>CollectInterfaceEdgesFromElementSides</code>, <code>PruneInterfaceEdges</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Move the nodes of the path onto the curve</td>
+<td><code>LocateEdgeImagesOnBoundaries</code>, <code>MoveInterfaceNodesToBoundary</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Pin nodes to the joints of the chain and spread the others out</td>
+<td><code>FlagEndNodes</code>, <code>SpreadCollapsedBoundaryLocations</code>, <code>MoveInterfaceNodesToImages</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Topology cleanup and the first smoothing, with corner constraints</td>
+<td><code>PerformTopologyCleanup</code>, <code>SetInterfaceCornerConstraints</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Split the elements touching the interface with templates</td>
+<td><code>SplitInterfaceElements</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Reduce high valences on the interface</td>
+<td><code>ReduceNodeValences(nodesOnInterfaces = .TRUE.)</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Final smoothing, then untangle and open up nearly flat elements</td>
+<td><code>UntangleInvertedElements</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Assign the material IDs</td>
+<td><code>SetMaterialProperties</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="assumptions">Assumptions<a class="headerlink" href="#assumptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Every interface is a closed chain, oriented counter-clockwise, and does not cross any other
+  boundary or interface curve. As for other boundaries, crossings are only roughly checked
+  (see <a href="../assumptions-and-algorithms/">Assumptions and Algorithms</a>).</li>
+<li>The background grid (possibly together with targeted <code>REFINEMENT_REGIONS</code>) is fine enough to resolve the curve.
+  For example, small features, like a thin tip or a narrow gap between two curves, must span a few elements. The sizer uses the distance across the inside and the outside of an interface to make sure of this.
+  A curve segment that is smaller than the local element size cannot be resolved, which can lead to poor meshes or failure.</li>
+<li>Acute corners of an interface (below about 75°, i.e. a reflex angle above about 285° on the other side)
+  are not yet handled well. The elements near the tip or such corners in the domain can be poorly shaped or folded, and folds there are not
+  always caught by the Jacobian and area checks in the statistics, so check such meshes visually.</li>
+<li>Interfaces that are embedded in other interfaces are defined after the interfaces that contain
+  them. Only the material assignment depends on this ("painter's algorithm").</li>
+<li>In the chain parameter <span class="arithmatex">\(t\in[0,1]\)</span>, each of the <span class="arithmatex">\(n\)</span> curves of a chain gets an equal interval,
+  so the joints are at <span class="arithmatex">\(t = k/n\)</span>. The parameter is not proportional to arc length.</li>
+<li>
+<p>At a joint, the chain is either smooth or has a corner. Corners are found from the angle
+  between the curves at the joint (<code>JointClassification</code>), see the following table, with the
+  interior angle <span class="arithmatex">\(\alpha\)</span> measured on the side of the elements:</p>
+<table>
+<thead>
+<tr>
+<th>Joint type</th>
+<th>Interior angle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ROW_END</code></td>
+<td><span class="arithmatex">\(\alpha \le 120^\circ\)</span></td>
+</tr>
+<tr>
+<td><code>ROW_SIDE</code> (smooth)</td>
+<td><span class="arithmatex">\(120^\circ &lt; \alpha &lt; 207^\circ\)</span></td>
+</tr>
+<tr>
+<td><code>ROW_CORNER</code></td>
+<td><span class="arithmatex">\(207^\circ \le \alpha \le 300^\circ\)</span></td>
+</tr>
+<tr>
+<td><code>ROW_REVERSAL</code></td>
+<td><span class="arithmatex">\(\alpha &gt; 300^\circ\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>An interface curve has elements on both sides, so the angle is <span class="arithmatex">\(\alpha\)</span> on one side
+and <span class="arithmatex">\(360^\circ - \alpha\)</span> on the other.
+The joint type only describes one side, so the interface code decides from the actual
+angle between the edges where it matters (e.g. for the corner constraints in the smoother).</p>
+</li>
+</ul>
+<h2 id="1-sizing">1. Sizing<a class="headerlink" href="#1-sizing" title="Permanent link">&para;</a></h2>
+<p>The sizer refines the background grid so that there are sufficient elements between curves that face
+each other and across thin parts of an interface curve. As an interface is meshed on both sides, the
+distance from an interface curve to itself counts interior as well as across its exterior, depending
+on the concavity of the curve (<code>Sizer.f90</code>).
+The distances are found by searches over the points of the segmented curves, which
+are copied into plain arrays and filtered with bounding boxes to keep large models (with many curve
+segments or with many points) computationally efficient.</p>
+<h2 id="2-marking-interface-elements">2. Marking interface elements<a class="headerlink" href="#2-marking-interface-elements" title="Permanent link">&para;</a></h2>
+<p><code>MarkInterfaceElements</code> (<code>MeshGeneratorMethods.f90</code>) loops over the interface curves and the
+elements of the background grid mesh. The four corners of each element are classified with the
+winding number of the segmented curve, as <code>INSIDE</code> (<span class="arithmatex">\(|w| &gt; 0.6\)</span>) or <code>OUTSIDE</code> (<span class="arithmatex">\(w = 0\)</span>). An element
+with corners on both sides straddles the curve. An element whose corners are all on one side is
+still marked if a point of the curve, or a point interpolated along a curve segment, lies inside
+the element. The nodes of a marked element get the chain ID of the curve (<code>bCurveChainID</code>).</p>
+<h2 id="3-choosing-the-interface-path">3. Choosing the interface path<a class="headerlink" href="#3-choosing-the-interface-path" title="Permanent link">&para;</a></h2>
+<p>The edges that will be moved onto the interface curve are chosen in
+<code>CollectInterfaceEdgesFromElementSides</code> (<code>MeshBoundaryMethods.f90</code>). The idea is to classify
+whole elements, not nodes, as inside or outside of the curve. The interface path is then the set
+of edges between an inside and an outside element:</p>
+<ol>
+<li>
+<p>Each element is classified by its centroid. If the centroid is within a quarter of the
+   element size of the curve, the fraction of the element's area inside the curve decides
+   (inside if more than one half, <code>elementInsideFraction</code>).</p>
+</li>
+<li>
+<p>Only the largest connected inside region and the largest connected outside region are kept.
+   All other regions are switched to the other side (<code>MergeDisconnectedRegions</code>), so that a single
+   loop separates them.</p>
+</li>
+<li>
+<p>An element with three or more interface edges is a one element wide bump or notch. For
+   example, the "bump" inside element <code>B</code> below has outside neighbors on three of its sides, where the
+   interface edges are marked by <code>‖</code> and <code>=</code>:</p>
+<div class="highlight"><pre><span></span><code>   outside   outside   outside
+  +--------+=========+--------+
+  | outside‖    B    ‖ outside|
+  +========+---------+========+
+   inside    inside    inside
+</code></pre></div>
+<p>The interface path would wrap around <code>B</code> along three of its edges, which touch all four of its
+nodes. All four nodes would then be moved onto a short, nearly straight piece of the curve,
+which flattens <code>B</code> into a sliver or folds it. Switching <code>B</code> to the other side straightens the
+path, so that only one of its edges lies on the interface:</p>
+<div class="highlight"><pre><span></span><code>  +--------+---------+--------+
+  | outside|    B    | outside|
+  +========+=========+========+
+   inside    inside    inside
+</code></pre></div>
+<p>Now only two nodes of the "bump" element <code>B</code> are moved onto the curve and it keeps a regular quadrilateral
+shape. The interface curve passes close to <code>B</code>, so the cost is only that those two nodes move a
+little farther to reach it. A notch, i.e. an outside element that reaches one element deep
+into an inside region, is treated similarly.</p>
+</li>
+<li>
+<p>An element whose two interface edges meet at a node would have three nodes on the curve:
+   the shared node and the two nodes at the other ends of the edges. If the curve between the two end nodes has a
+   corner that points toward the element, as at a reflex corner, the element would wrap around that corner
+   and fold once its nodes are moved onto the curve. It is
+   switched (once) so that the path runs through its fourth node, which then takes the corner
+   (<code>flipCornerWrappingElements</code>, <code>FindCornerTowardPoint</code>). The switch is skipped if a
+   neighboring node already takes the corner.</p>
+</li>
+<li>
+<p>A node with more than two interface edges is a "pinch". The least certain element touching
+   it, i.e. the one with an inside fraction closest to one half, is switched. One pinch is
+   removed at a time.</p>
+</li>
+</ol>
+<p>Steps 2 to 5 are repeated until no pinch elements remain, at most 100 times. If pinches remain, a
+warning is posted. Finally, <code>PruneInterfaceEdges</code> removes dangling
+edges and chords that are left at thin features, so that every node of the path has exactly two
+interface edges. The nodes of the path are marked <code>INSIDE</code>, which here means "on the interface",
+and their edges get the type <code>ON_INTERFACE</code>.</p>
+<h2 id="4-moving-the-nodes-onto-the-curve">4. Moving the nodes onto the curve<a class="headerlink" href="#4-moving-the-nodes-onto-the-curve" title="Permanent link">&para;</a></h2>
+<p>Unlike for outer and inner boundaries, no boundary elements are generated for an interface.
+The nodes of the path are associated with the nearest location on the interface curve
+(<code>LocateEdgeImagesOnBoundaries</code>, <code>AssociateBoundaryEdgesToCurve</code>) and moved there
+(<code>MoveInterfaceNodesToBoundary</code>). The nearest location on an interface curve is found by sampling the
+curve parameter in a window around the previous guess before refining with <code>fmin</code>
+(<code>ParametrizationAtPointNear</code>). This avoids finding a point on the wrong side of a thin
+region of the domain, where the distance has more than one local minimum.</p>
+<h2 id="5-joints-pinning-nodes-and-deciding-ties">5. Joints: pinning nodes and deciding ties<a class="headerlink" href="#5-joints-pinning-nodes-and-deciding-ties" title="Permanent link">&para;</a></h2>
+<p>After the nodes are on the interface curve, each joint of the chain gets one node pinned to it in <code>FlagEndNodes</code> (<code>MeshGeneratorMethods.f90</code>).
+This is what keeps corners of the interface sharp.</p>
+<ul>
+<li><strong>Interior joints</strong> (<span class="arithmatex">\(t = k/n\)</span>, <span class="arithmatex">\(k = 1,\dots,n-1\)</span>): the node whose chain parameter
+  <code>gWhereOnBoundary</code> is closest to <span class="arithmatex">\(k/n\)</span> is pinned. The comparison is a strict over the nodes
+  in the order of the boundary path, so if two nodes are equally close, the first one in the
+  path wins. The distance is measured in the chain parameter, not in arc length.</li>
+<li><strong>The start/end joint</strong> (<span class="arithmatex">\(t = 0 \equiv 1\)</span>): the node with the smallest parameter <span class="arithmatex">\(t_0\)</span> and the
+  node with the largest parameter <span class="arithmatex">\(t_1\)</span> are compared. If <span class="arithmatex">\(t_0 &lt; 1 - t_1\)</span> the first one is
+  pinned to <span class="arithmatex">\(t = 0\)</span>, otherwise (including a tie) the second one is pinned to <span class="arithmatex">\(t = 1\)</span>.</li>
+<li><strong>Row reversals</strong>: all nodes within the minimization tolerance of the reversal point are
+  pinned to it, since more than one node can be closest to it.</li>
+</ul>
+<p>A pinned node gets <code>whereOnBoundary = 0</code> (or <code>1</code>) on its curve and the joint classification as its
+node type. There is no check that the same node is the closest node to two joints. If a curve of
+the chain is shorter than the local element size, the later joint takes the node.</p>
+<p>After this, the nodes in between are spread out (<code>SpreadCollapsedBoundaryLocations</code>). A node that is not
+pinned is moved to the parametric midpoint of its neighbors provided its location is not ahead of its
+neighbor along the curve, or if the distance to a neighbor on the curve is less than <code>0.4</code> times the
+length of the original grid edge. <code>MoveInterfaceNodesToImages</code> puts the nodes at their new
+locations.</p>
+<p>Later, whenever the nodes are put back on the curve (<code>FindCurveLocationsforNodes</code>), a node that
+is not pinned and runs into the end of its curve stays where it was instead of collapsing onto the
+pinned node at the joint. Pinned nodes are kept fixed during smoothing (<code>SetNodeActiveStatus</code>).
+All other interface nodes slide along the curve where the smoother removes the normal component of
+their acceleration. This matches the strategy used for nodes on a physical boundary.</p>
+<h2 id="6-topology-cleanup-and-the-first-smoothing">6. Topology cleanup and the first smoothing<a class="headerlink" href="#6-topology-cleanup-and-the-first-smoothing" title="Permanent link">&para;</a></h2>
+<p>The interior topology cleanup (<code>PerformTopologyCleanup</code>) reduces valence 7 nodes and removes
+diamond elements away from the curves. The nodes on the boundary and interface curves are left
+alone at this stage.</p>
+<p>During the first smoothing, the elements at a sharp corner of an interface get extra help
+(<code>SetInterfaceCornerConstraints</code>, <code>SpringMeshSmoother.f90</code>). The candidates are the interface
+nodes pinned at a joint, and the angle between the two interface edges at the node decides
+whether there is a corner:</p>
+<ul>
+<li>If the reflex side of the corner is shared by three elements, the two edges from the corner
+  into that region should continue the two sides of the corner, so that all three elements have
+  angles of about 90° at the corner. The springs only balance edge lengths and would pull these
+  edges together. The nodes at the ends of those edges are therefore moved onto the extensions of
+  the sides and constrained to move along them.</li>
+<li>If the reflex side is shared by two elements, the edge between them is put on the bisector of
+  the reflex angle and constrained to it (e.g. 135° + 135° at a 90° corner).</li>
+<li>Constrained nodes are kept a minimum distance from the corner.</li>
+</ul>
+<p>Corners where the mesh does not have one of these layouts are left alone. The constraints to the
+side extensions only apply in the first smoothing. In the second smoothing the elements at the
+corner have been split (described next), and holding the new nodes on those lines would squeeze the
+elements between them into slivers.</p>
+<h2 id="7-templates-for-the-elements-at-the-interface">7. Templates for the elements at the interface<a class="headerlink" href="#7-templates-for-the-elements-at-the-interface" title="Permanent link">&para;</a></h2>
+<p>After the nodes are on the interface curve, the elements on both sides of it can be triangles (three nodes
+on the curve), wedges (one node on the curve) or regular quads (two nodes, one edge on the curve).
+In the final cleanup, <code>SplitInterfaceElements</code> (<code>InterfaceElementMethods.f90</code>) splits every
+element that has a node on an interface. The rule that keeps the mesh conforming is simple:</p>
+<blockquote>
+<p><strong>Every edge with exactly one node on the interface is split at its midpoint.</strong></p>
+</blockquote>
+<p>Whether an edge is split only depends on the edge itself, so the two elements that share it
+always agree. The midpoint node is stored on the edge (<code>auxiliaryNode</code>) so that both elements use
+the same one. The templates are chosen by the number of nodes of the element on the interface
+(<code>*</code> marks an interface node, <code>C</code> a new center node, <code>m</code> a new edge midpoint):</p>
+<p><strong>Two adjacent nodes</strong> (one edge on the interface): split into two elements, which halves the
+element normal to the interface.</p>
+<div class="highlight"><pre><span></span><code>  4 ------- 3          4 ------- 3
+  |         |          |         |
+  |         |   --&gt;    m ------- m
+  |         |          |         |
+  1*-------*2          1*-------*2
+</code></pre></div>
+<p><strong>One node</strong>, or <strong>three nodes</strong>: split into three elements. The node opposite to the split
+corner is shared by two of them. For one interface node the interface node is the split corner
+<code>f</code>. For three interface nodes the free node is the split corner, and the middle interface node is
+opposite to it.</p>
+<div class="highlight"><pre><span></span><code>  4 ------- 3          4 ------- 3
+  |         |          |       / |
+  |         |   --&gt;    m --- C   |
+  |         |          |     |   |
+  f ------- 2          f --- m - 2
+</code></pre></div>
+<p><strong>Two opposite nodes</strong>: all four edges are split, plus a center node, into four elements.</p>
+<div class="highlight"><pre><span></span><code>  4*------- 3          4*--- m --- 3
+  |         |          |     |     |
+  |         |   --&gt;    m --- C --- m
+  |         |          |     |     |
+  1 -------*2          1 --- m ---*2
+</code></pre></div>
+<p><strong>Zero or four nodes</strong>: the element is kept as is.</p>
+<h3 id="corner-elements">Corner elements<a class="headerlink" href="#corner-elements" title="Permanent link">&para;</a></h3>
+<p>The three-way split cuts the angle at the middle interface node in two. That is fine where the
+curve is smooth, but at a sharp corner of the interface it yields two thin elements.
+If the middle interface node is pinned at a joint (its node type is not <code>ROW_SIDE</code>) and the element's
+angle at that node is less than 135° (<code>MAX_CORNER_ANGLE</code>), the element is split into two instead
+(<code>SplitCornerElementIntoTwo</code>). The two edges at the free node <code>f</code> are split at their midpoints
+<code>P</code> and <code>M</code> as for the three-way split, so the neighbors still conform. The resulting hexagon
+<code>f, P, f+1, f+2, f+3, M</code> is cut into two quads by one of the diagonals <code>P</code>–<code>(f+3)</code> or
+<code>M</code>–<code>(f+1)</code>. The diagonal whose worse element has the larger minimum scaled Jacobian is chosen
+(<code>quadMinScaledJacobian</code>); a tie goes to <code>P</code>–<code>(f+3)</code>. The corner node then belongs to one element
+only and keeps its full angle.</p>
+<h2 id="8-valences-on-the-interface">8. Valences on the interface<a class="headerlink" href="#8-valences-on-the-interface" title="Permanent link">&para;</a></h2>
+<p>Splitting an element with three nodes on the curve adds an element at its middle node. Where the
+interface path turns, this leaves a fan of thin elements around a node of valence 7 on the curve.
+After splitting, <code>ReduceNodeValences</code> is called again, but now only for nodes on interface curves.
+The valence is reduced by <code>CleanUp7ValenceNode_InMesh</code>, which inserts a new off-curve node and
+a diamond element, while the node itself stays on the curve. Nodes at or next to a joint are left
+alone, since more elements on one side of a corner are expected there and these elements are
+constrained by the smoother.</p>
+<h2 id="9-untangling-and-opening-flat-elements">9. Untangling and opening flat elements<a class="headerlink" href="#9-untangling-and-opening-flat-elements" title="Permanent link">&para;</a></h2>
+<p>After the final smoothing, <code>UntangleInvertedElements</code> (<code>MeshCleaner.f90</code>) repairs the elements
+that the smoother could not fix. It uses the <strong>corner Jacobian</strong> of an element: at each corner it
+is the cross product of the two edges that meet there. It is positive at a convex corner of a
+counter-clockwise element, zero where the corner is flat (180°) and negative where the element is
+folded over at that corner. The two steps are:</p>
+<ol>
+<li>
+<p><strong>Untangle inverted elements.</strong> An element where any corner Jacobian is zero or negative is
+   folded (tangled), including one that is turned over completely, with all four corner Jacobians
+   negative. The corner Jacobians that involve a given node are linear in the position of that
+   node. Each of them can be written as the signed distance of the node from
+   a line, so the positions where all corners around the node are positive form a convex polygon,
+   the "kernel" of the node. Each node of a tangled element that is <strong>not</strong> on a boundary or interface
+   curve is moved toward the point where the smallest of these distances is as large as possible,
+   i.e. the point deepest inside the kernel (<code>MoveNodeIntoItsKernel</code>). The node moves only far
+   enough to cover half of the possible improvement of the smallest distance, and it is kept within
+   the box spanned by the surrounding elements, so that its neighbors are not disturbed too much.
+   Moving one node changes the kernels of its neighbors, so this is repeated, up to 10 times, until
+   no tangled elements remain. Nodes on curves are never moved, so an element whose nodes are all
+   on curves cannot be untangled.</p>
+</li>
+<li>
+<p><strong>Open up nearly flat elements.</strong> An element with an angle above 165° is valid but nearly
+   degenerate. An element with a maximum angle of 180° it is really a triangle with an extra node on one side.
+   The springs cannot always open such an angle, because they only balance edge lengths. A typical case
+   is a node <code>N</code> of valence 3 where two of its three edges lie on a straight line:</p>
+<div class="highlight"><pre><span></span><code>  +------+------+
+  |  A   |  B   |
+  +------N------+      N has three edges: left, right and up
+  |      C      |
+  |             |      C has an angle of 180° at N
+  +-------------+
+</code></pre></div>
+<p>The springs along the line pull equally in opposite directions, and nothing pushes <code>N</code> off the
+line into <code>C</code>, so <code>N</code> is in equilibrium although <code>C</code> is flat at <code>N</code>. For each element that is
+not tangled but has an angle above 165°, its nodes that are not on a curve are moved with the
+same kernel step as in step 1. In the example, <code>N</code> moves down into <code>C</code>, so that the angle of
+<code>C</code> at <code>N</code> drops below 180° and the angles of <code>A</code> and <code>B</code> at <code>N</code> open up. This is done once.</p>
+</li>
+</ol>
+<p>These steps apply to all elements, not only those at interfaces. These clean-up steps are needed
+mostly where curves come close to each other or meet at a corner.</p>
+<h2 id="10-material-assignment">10. Material assignment<a class="headerlink" href="#10-material-assignment" title="Permanent link">&para;</a></h2>
+<p>For the ISM-MM format, <code>SetMaterialProperties</code> assigns the material IDs after all changes to the
+mesh are done. The IDs themselves are set up before meshing, from the <code>material name</code> of each
+interface chain (or its name if there is none), see the
+<a href="../TheISMMeshFileFormats/#BaseMaterialDefinition">ISM-MM</a>. For each interface curve in the order
+of definition, an element is given the curve's material ID if more of its nodes are inside the curve
+than outside. The nodes that were moved onto this curve are not counted, since a node on the curve
+can be on either side of the polygon through the curve points. If the remaining nodes do not
+decide, the centroid of the element decides. Since later curves overwrite earlier ones, an element
+gets the material of the innermost curve that contains it, provided embedded curves are defined
+after the curves containing them.</p>
+<!--
+## Open questions and known limitations
+
+- The order of embedded interface curves matters for the material assignment. It could be
+  determined automatically by testing whether one curve lies inside another.
+- Joints are matched to nodes by the chain parameter, not by arc length. For chains whose curves
+  have very different lengths, the closest node in parameter may not be the closest one in space.
+- A curve of a chain that is shorter than the local element size cannot get its own nodes, and
+  two joints can compete for the same node.
+- Several thresholds are empirical: the winding number threshold of 0.6, the 0.4 ratio for spreading
+  nodes, the corner angle of 135° for the two-way corner split, and the 165° limit for opening flat
+  elements.
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2010 - present <a href="https://github.com/trixi-framework/HOHQMesh/blob/main/AUTHORS.md">The HOHQMesh Authors</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "navigation.sections"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../javascripts/config.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
