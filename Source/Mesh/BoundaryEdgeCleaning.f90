@@ -107,6 +107,220 @@
 
 !////////////////////////////////////////////////////////////////////////
 !
+      SUBROUTINE RemoveDetachedElements( mesh, numberRemoved )
+         IMPLICIT NONE
+!
+!     ------------------------------------------------------------------
+!     After the elements outside of the boundaries are removed, the rest
+!     must form a single region whose boundary edges can be ordered into
+!     loops. Near a sharp tip, or where a boundary curve is narrower than
+!     the grid, some elements can be left on their own, connected to the
+!     rest at most through a node. Keep only the largest region of
+!     elements connected through shared edges, and at a node where the
+!     elements around it fall into more than one such group (a pinch),
+!     keep only the largest group. Repeat until neither is left.
+!     ------------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(SMMesh) :: mesh
+         INTEGER      :: numberRemoved
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, PARAMETER :: MAX_PASSES = 1000
+         TYPE(SMElementPtr), ALLOCATABLE :: elements(:)
+         INTEGER           , ALLOCATABLE :: ids(:,:), nbr(:,:), start(:), list(:), fill(:), parent(:), regionSize(:)
+         LOGICAL           , ALLOCATABLE :: removeIt(:)
+         CLASS(FTObject)   , POINTER     :: obj => NULL()
+         TYPE(SMElement)   , POINTER     :: e => NULL()
+         INTEGER                         :: nE, maxNodeID, k, m, j, i, a, b, f, r, pass, largest, numRemovedNow, mNext
+         INTEGER, EXTERNAL               :: Loop
+
+         numberRemoved = 0
+         DO pass = 1, MAX_PASSES
+!
+!           -------------------------------
+!           Element nodes and node->element
+!           -------------------------------
+!
+            nE = mesh % elements % COUNT()
+            IF ( nE == 0 )     RETURN
+            ALLOCATE( elements(nE), ids(4,nE), nbr(4,nE), parent(nE), regionSize(nE), removeIt(nE) )
+            k = 0
+            CALL mesh % elementsIterator % setToStart()
+            DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
+               obj => mesh % elementsIterator % object()
+               CALL castToSMElement(obj,e)
+               k = k + 1
+               elements(k) % element => e
+               DO m = 1, 4
+                  ids(m,k) = e % nodes(m) % node % id
+               END DO
+               CALL mesh % elementsIterator % moveToNext()
+            END DO
+            maxNodeID = MAXVAL(ids)
+            ALLOCATE( start(maxNodeID+1), list(4*nE), fill(maxNodeID) )
+            start = 0
+            DO k = 1, nE
+               DO m = 1, 4
+                  start(ids(m,k)+1) = start(ids(m,k)+1) + 1
+               END DO
+            END DO
+            start(1) = 1
+            DO j = 1, maxNodeID
+               start(j+1) = start(j+1) + start(j)
+            END DO
+            fill = start(1:maxNodeID)
+            DO k = 1, nE
+               DO m = 1, 4
+                  list(fill(ids(m,k))) = k
+                  fill(ids(m,k))       = fill(ids(m,k)) + 1
+               END DO
+            END DO
+!
+!           ---------------------------------------------------
+!           Neighbor across side m (nodes m, m+1), 0 if none
+!           ---------------------------------------------------
+!
+            nbr = 0
+            DO k = 1, nE
+               DO m = 1, 4
+                  a = ids(m,k)
+                  b = ids(Loop(m+1,4),k)
+                  DO j = start(a), start(a+1) - 1
+                     f = list(j)
+                     IF ( f == k )     CYCLE
+                     IF ( ANY(ids(:,f) == b) )     nbr(m,k) = f
+                  END DO
+               END DO
+            END DO
+!
+!           ------------------------------------------
+!           Keep the largest edge-connected region only
+!           ------------------------------------------
+!
+            DO k = 1, nE
+               parent(k) = k
+            END DO
+            DO k = 1, nE
+               DO m = 1, 4
+                  IF ( nbr(m,k) > 0 )     CALL JoinRoots( k, nbr(m,k), parent )
+               END DO
+            END DO
+            regionSize = 0
+            DO k = 1, nE
+               r = rootOf(k, parent)
+               regionSize(r) = regionSize(r) + 1
+            END DO
+            largest = MAXLOC(regionSize, DIM = 1)
+            DO k = 1, nE
+               removeIt(k) = rootOf(k, parent) /= largest
+            END DO
+!
+!           --------------------------------------------------------------
+!           If it is one region, look for the first pinch node: group the
+!           elements at the node by the sides through the node they share
+!           --------------------------------------------------------------
+!
+            IF ( .NOT.ANY(removeIt) )     THEN
+               DO i = 1, maxNodeID
+                  IF ( start(i+1) - start(i) < 2 )     CYCLE
+                  DO j = start(i), start(i+1) - 1
+                     parent(list(j)) = list(j)
+                  END DO
+                  DO j = start(i), start(i+1) - 1
+                     k = list(j)
+                     DO m = 1, 4
+                        IF ( nbr(m,k) == 0 )     CYCLE
+                        mNext = Loop(m+1,4)
+                        IF ( ids(m,k) /= i .AND. ids(mNext,k) /= i )     CYCLE
+                        CALL JoinRoots( k, nbr(m,k), parent )
+                     END DO
+                  END DO
+                  regionSize(list(start(i):start(i+1)-1)) = 0
+                  DO j = start(i), start(i+1) - 1
+                     r = rootOf(list(j), parent)
+                     regionSize(r) = regionSize(r) + 1
+                  END DO
+                  largest = 0
+                  DO j = start(i), start(i+1) - 1
+                     r = rootOf(list(j), parent)
+                     IF ( largest == 0 )     THEN
+                        largest = r
+                     ELSE IF ( regionSize(r) > regionSize(largest) )     THEN
+                        largest = r
+                     END IF
+                  END DO
+                  DO j = start(i), start(i+1) - 1
+                     IF ( rootOf(list(j), parent) /= largest )     removeIt(list(j)) = .TRUE.
+                  END DO
+                  IF ( ANY(removeIt) )     EXIT
+               END DO
+            END IF
+!
+!           ------------------------------------------------------------
+!           The nodes of a removed element are now on the boundary. Let
+!           those that do not know it yet know which curve they are near
+!           ------------------------------------------------------------
+!
+            numRemovedNow = 0
+            DO k = 1, nE
+               IF ( .NOT.removeIt(k) )     CYCLE
+               e => elements(k) % element
+               e % remove    = .TRUE.
+               numRemovedNow = numRemovedNow + 1
+               DO m = 1, 4
+                  IF ( e % nodes(m) % node % bCurveChainID == UNDEFINED )     CYCLE
+                  DO j = 1, 4
+                     IF ( e % nodes(j) % node % bCurveChainID /= UNDEFINED )     CYCLE
+                     e % nodes(j) % node % bCurveChainID = e % nodes(m) % node % bCurveChainID
+                     e % nodes(j) % node % bCurveSide    = e % nodes(m) % node % bCurveSide
+                  END DO
+                  EXIT
+               END DO
+            END DO
+            DEALLOCATE( elements, ids, nbr, parent, regionSize, removeIt, start, list, fill )
+
+            IF ( numRemovedNow == 0 )     EXIT
+            numberRemoved = numberRemoved + numRemovedNow
+            CALL DoLazyDelete( mesh )
+         END DO
+
+      END SUBROUTINE RemoveDetachedElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION rootOf( k, parent )
+         IMPLICIT NONE
+         INTEGER :: k, parent(:)
+         rootOf = k
+         DO WHILE ( parent(rootOf) /= rootOf )
+            rootOf = parent(rootOf)
+         END DO
+      END FUNCTION rootOf
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE JoinRoots( k, m, parent )
+         IMPLICIT NONE
+         INTEGER :: k, m, parent(:)
+         INTEGER :: rk, rm
+         rk = rootOf(k, parent)
+         rm = rootOf(m, parent)
+         IF ( rk < rm )     THEN
+            parent(rm) = rk
+         ELSE IF ( rm < rk )     THEN
+            parent(rk) = rm
+         END IF
+      END SUBROUTINE JoinRoots
+!
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE CleanUpBoundaryEdges( list )
          IMPLICIT NONE
 !
