@@ -1230,6 +1230,67 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
+      LOGICAL FUNCTION boundaryEdgeLoopsAreClosed()
+         IMPLICIT NONE
+!
+!     -----------------------------------------------------------------
+!     True if the edges in each boundary edge list can be ordered into
+!     a closed loop, that is, every node of an edge in a list is shared
+!     by exactly two of the edges in that list. When a boundary curve
+!     is too close to another one, the region between them can open up
+!     and the edges along it no longer close.
+!     -----------------------------------------------------------------
+!
+         CLASS(FTLinkedList)        , POINTER :: edgeList => NULL()
+         CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
+         CLASS(FTObject)            , POINTER :: obj      => NULL()
+         TYPE (SMEdge)              , POINTER :: edge     => NULL()
+         INTEGER, ALLOCATABLE                 :: edgeCount(:)
+         INTEGER                              :: j, k, m, maxNodeID
+
+         boundaryEdgeLoopsAreClosed = .TRUE.
+         IF ( .NOT.ASSOCIATED(boundaryEdgesArray) )     RETURN
+
+         ALLOCATE(iterator)
+         DO j = 1, boundaryEdgesArray % COUNT()
+            obj => boundaryEdgesArray % objectAtIndex(j)
+            IF ( .NOT.ASSOCIATED(obj) )     CYCLE
+            CALL cast(obj,edgeList)
+            IF ( edgeList % COUNT() == 0 )     CYCLE
+            CALL iterator % initWithFTLinkedListClass(edgeList)
+
+            maxNodeID = 0
+            CALL iterator % setToStart()
+            DO WHILE ( .NOT.iterator % isAtEnd() )
+               obj => iterator % object()
+               CALL castToSMEdge(obj,edge)
+               maxNodeID = MAX(maxNodeID, edge % nodes(1) % node % id, edge % nodes(2) % node % id)
+               CALL iterator % moveToNext()
+            END DO
+
+            ALLOCATE( edgeCount(maxNodeID) )
+            edgeCount = 0
+            CALL iterator % setToStart()
+            DO WHILE ( .NOT.iterator % isAtEnd() )
+               obj => iterator % object()
+               CALL castToSMEdge(obj,edge)
+               DO k = 1, 2
+                  m = edge % nodes(k) % node % id
+                  edgeCount(m) = edgeCount(m) + 1
+               END DO
+               CALL iterator % moveToNext()
+            END DO
+            IF ( ANY(edgeCount /= 0 .AND. edgeCount /= 2) )     boundaryEdgeLoopsAreClosed = .FALSE.
+            DEALLOCATE( edgeCount )
+
+            IF ( .NOT.boundaryEdgeLoopsAreClosed )     EXIT
+         END DO
+         CALL releaseFTLinkedListIteratorClass(iterator)
+
+      END FUNCTION boundaryEdgeLoopsAreClosed
+!
+!////////////////////////////////////////////////////////////////////////
+!
       SUBROUTINE OrderBoundaryEdges( mesh )
          USE ErrorTypesModule
          USE MeshOutputMethods

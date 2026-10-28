@@ -435,6 +435,10 @@
                msg = "An inner or interface boundary is too close to the background grid box. "// &
                      "It must be at least one background grid cell away from the box. "// &
                      "Use a smaller background grid size (dx) or enlarge the box."
+            CASE ( BOUNDARY_LOOP_OPEN_ERROR_CODE )
+               msg = "The mesh boundary edges along a boundary curve do not form a closed loop. "// &
+                     "This happens where two boundary curves are closer than about one background "// &
+                     "grid cell. Use a smaller background grid size or refinement regions."
             CASE ( CURVE_NOT_FOUND_ERROR_CODE )
                msg = "A boundary edge could not be associated with a boundary curve. "// &
                      "Try a smaller background grid size or refinement regions. "// &

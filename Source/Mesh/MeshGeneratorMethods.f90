@@ -288,6 +288,8 @@
       INTEGER                                          :: j
       INTEGER                                          :: idOfOuterBoundary
       INTEGER                                          :: numberOfMaterials
+      INTEGER                                          :: numberOfDetachedElements, pass
+      INTEGER, PARAMETER                               :: MAX_BOUNDARY_CLEANUP_PASSES = 5
       CHARACTER(LEN=SM_CURVE_NAME_LENGTH)              :: materialName
       CHARACTER(LEN=SM_CURVE_NAME_LENGTH), ALLOCATABLE :: materialNames(:)
 
@@ -369,6 +371,15 @@
             ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:numberOfMaterials))
             mesh % materialNameForID = materialNames(0:numberOfMaterials)
             DEALLOCATE( materialNames )
+      ELSE
+!
+!           ----------------------------------------------------------
+!           Without interfaces all elements are the background
+!           material, which the ISM-MM format still writes out
+!           ----------------------------------------------------------
+!
+            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:0))
+            mesh % materialNameForID(BACKGROUND_MATERIAL_ID) = project % backgroundMaterialName
       END IF
 !
 !     -------------------------------------
@@ -418,60 +429,95 @@
 !
       CALL DoLazyDelete( mesh )
 !
-!     -------------------------------------------
-!     Prepare for generating boundary elements by
-!     building, collecting and ordering boundary
-!     edges
-!     -------------------------------------------
+!     ------------------------------------------------------------
+!     Elements left on their own or attached only at a node (e.g.
+!     near a sharp tip) cannot be part of a boundary edge loop
+!     ------------------------------------------------------------
 !
-      CALL mesh % buildEdgeList()
+      CALL RemoveDetachedElements( mesh, numberOfDetachedElements )
+      IF ( PrintMessage .AND. numberOfDetachedElements > 0 )     THEN
+         PRINT *, "      Elements removed that were detached from the rest of the mesh: ", numberOfDetachedElements
+      END IF
 
-      IF( model % curveCount == 0 )     RETURN
+      IF( model % curveCount == 0 )     THEN
+         CALL mesh % buildEdgeList()
+         RETURN
+      END IF
 
       numBoundaryEdgeLists = model%numberOfInnerCurves + &
                              model%numberOfOuterCurves + &
                              model%numberOfInterfaceCurves
 
-      CALL AllocateBoundaryEdgesArray(numBoundaryEdgeLists)
-      CALL CollectBoundaryEdges( mesh, errorCode, useElementSides = .TRUE. )
-
-      IF( errorCode > A_OK_ERROR_CODE)     RETURN
-
-      CALL OrderBoundaryEdges( mesh )
-
-      IF ( catch(WARNING_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
-         exception => errorObject()
-         CALL throw(exception)
-         RETURN
-      END IF
-!
-!     -------------------------------------------------------
-!     Smooth the edges along exterior and interior boundaries
-!     before generating the boundary elements.
-!     -------------------------------------------------------
-!
-      CALL smoothBoundaryEdges
-!
-!     -------------------------------------------------------------
-!     Associate the boundary edges with elements and see if any
-!     elements must be eliminated for having nodes too close to
-!     a boundary, etc.
-!     -------------------------------------------------------------
-!
       idOfOuterBoundary = UNDEFINED
       IF( ASSOCIATED( sizer % outerBoundary ) ) idOfOuterBoundary = sizer % outerBoundary % id
+!
+!     --------------------------------------------------------------
+!     Removing the elements too close to the boundaries can detach
+!     others again, so repeat until the boundary edges form loops
+!     --------------------------------------------------------------
+!
+      DO pass = 1, MAX_BOUNDARY_CLEANUP_PASSES
+!
+!        -------------------------------------------
+!        Prepare for generating boundary elements by
+!        building, collecting and ordering boundary
+!        edges
+!        -------------------------------------------
+!
+         IF ( pass == 1 )     THEN
+            CALL mesh % buildEdgeList()
+         ELSE
+            CALL mesh % syncEdges()
+         END IF
 
-      CALL LocateEdgeImagesOnBoundaries( mesh, model, idOfOuterBoundary, skipInterfaces = .FALSE. )
+         CALL AllocateBoundaryEdgesArray(numBoundaryEdgeLists)
+         CALL CollectBoundaryEdges( mesh, errorCode, useElementSides = .TRUE. )
 
-      IF ( catch(FATAL_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
-         CALL destroyTemporaryBoundaryArrays
-         exception => errorObject()
-         CALL throw(exception)
-         RETURN
-      END IF
+         IF( errorCode > A_OK_ERROR_CODE)     RETURN
+         IF ( .NOT.boundaryEdgeLoopsAreClosed() )     THEN
+            errorCode = BOUNDARY_LOOP_OPEN_ERROR_CODE
+            RETURN
+         END IF
 
-      CALL CleanUpBoundaryCurves( mesh, model, errorCode )
-      IF(errorCode > A_OK_ERROR_CODE)     RETURN
+         CALL OrderBoundaryEdges( mesh )
+
+         IF ( catch(WARNING_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
+            exception => errorObject()
+            CALL throw(exception)
+            RETURN
+         END IF
+!
+!        -------------------------------------------------------
+!        Smooth the edges along exterior and interior boundaries
+!        before generating the boundary elements.
+!        -------------------------------------------------------
+!
+         CALL smoothBoundaryEdges
+!
+!        -------------------------------------------------------------
+!        Associate the boundary edges with elements and see if any
+!        elements must be eliminated for having nodes too close to
+!        a boundary, etc.
+!        -------------------------------------------------------------
+!
+         CALL LocateEdgeImagesOnBoundaries( mesh, model, idOfOuterBoundary, skipInterfaces = .FALSE. )
+
+         IF ( catch(FATAL_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
+            CALL destroyTemporaryBoundaryArrays
+            exception => errorObject()
+            CALL throw(exception)
+            RETURN
+         END IF
+
+         CALL CleanUpBoundaryCurves( mesh, model, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+
+         CALL RemoveDetachedElements( mesh, numberOfDetachedElements )
+         IF ( numberOfDetachedElements == 0 )     EXIT
+         IF ( PrintMessage )     THEN
+            PRINT *, "      Elements removed that were detached from the rest of the mesh: ", numberOfDetachedElements
+         END IF
+      END DO
 !
 !     ------------------------------------------
 !     The edge lists are also no longer in sync.
@@ -1002,13 +1048,17 @@
 !        ------------------------------------------------------------------
 !        For GenerateBoundaryElements: the cyclic shift of the boundary
 !        nodes so that the first two and the last three are not joints. It
-!        is zero if the nodes are already in such an order, or if there is
-!        no such order (joints only a few nodes apart).
+!        is zero if the nodes are already in such an order.
+!
+!        If the joints are too close together for that (only a few nodes
+!        apart), use the first shift at which the templates tile the loop
+!        instead (see templatesTileLoop). If there is none, it is zero.
 !        ------------------------------------------------------------------
 !
          TYPE(SMNodePtr), DIMENSION(:) :: nodeArray
          INTEGER                       :: n, shift, j, nodeType
          LOGICAL                       :: isFree
+         INTEGER                       :: types(SIZE(nodeArray))
 
          n = SIZE(nodeArray)
          boundaryLoopStartShift = 0
@@ -1027,7 +1077,58 @@
             END IF
          END DO
 
+         DO j = 1, n
+            types(j) = nodeArray(j) % node % nodeType
+         END DO
+         DO shift = 0, n-1
+            IF ( templatesTileLoop( CSHIFT(types, shift) ) )     THEN
+               boundaryLoopStartShift = shift
+               RETURN
+            END IF
+         END DO
+
       END FUNCTION boundaryLoopStartShift
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION templatesTileLoop( types )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------------
+!        For GenerateBoundaryElements: true if, starting at the first
+!        node, the templates use the boundary nodes exactly once around
+!        the loop. The template at node k is chosen by the type of node
+!        k+1 and moves on by one node (row side or end), two (corner) or
+!        four (reversal). The first node must be a row side, so that the
+!        boundary node made for it can close the loop. The second node
+!        must not be a corner or reversal, whose templates would move that
+!        boundary node to the joint. The walk must reach the last node,
+!        whose row side template then closes the loop.
+!        ----------------------------------------------------------------
+!
+         INTEGER, DIMENSION(:) :: types
+         INTEGER               :: n, k, nextType
+
+         n = SIZE(types)
+         templatesTileLoop = .FALSE.
+         IF ( types(1) /= NONE .AND. types(1) /= ROW_SIDE )     RETURN
+         IF ( types(2) == ROW_CORNER .OR. types(2) == ROW_REVERSAL )     RETURN
+
+         k = 1
+         DO WHILE ( k < n )
+            nextType = types(k+1)
+            SELECT CASE ( nextType )
+               CASE( ROW_CORNER )
+                  k = k + 2
+               CASE( ROW_REVERSAL )
+                  k = k + 4
+               CASE DEFAULT
+                  k = k + 1
+            END SELECT
+         END DO
+         templatesTileLoop = k == n
+
+      END FUNCTION templatesTileLoop
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
