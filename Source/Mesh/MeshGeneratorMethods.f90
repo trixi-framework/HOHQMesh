@@ -3312,6 +3312,16 @@
             obj => modelChains(j) % object
             CALL castToSMChainedCurve(obj, modelChain)
             nCurves = modelChain % COUNT()
+!
+!           ------------------------------------------------------------
+!           A paved interface already has its nodes placed by size, with
+!           nodes on its corners. Smoothing them would move those off.
+!           ------------------------------------------------------------
+!
+            k = modelChain % id()
+            IF ( k >= 0 .AND. k <= MAX_PAVED_CHAIN_ID )     THEN
+               IF ( chainWasPaved(k) )     CYCLE
+            END IF
 
             CALL GatherNodeTsAndEnds(chainNodesArray = chainNodesArray(j) % array, &
                                      nCurves         = nCurves,                    &
@@ -4131,7 +4141,7 @@
          IF ( nInLoops == 0 )     iFr(1) = 0
 !
 !        ------------------------------------------------------------
-!        2. Nodes on the curve: a node at each feature (joint or corner)
+!        2. Nodes on the curve: a node at each feature (joint)
 !           and, between two features, as many edges as sizes fit, so
 !           the total has the parity of the band edge, placed evenly in
 !           the integral of 1/size
@@ -4849,9 +4859,9 @@
 !        ---------------------------------------------------------------
 !        Element sizes along a closed interface curve sampled at xs, taken
 !        from the curve geometry rather than from the background mesh.
-!        The features are the joints of the chain and the corners, where
-!        the curve turns more than CORNER_ANGLE within a CORNER_SCALE
-!        fraction of the size. The size is the smallest of
+!        The features are the joints of the chain. Each curve of the chain
+!        is smooth, so a tight bend inside a curve is not a corner: its
+!        turning sets the size like any other. The size is the smallest of
 !          - the sizer's control size (base size, centers and lines),
 !            limited so that minNumberOfElementsInsideArea fit across,
 !          - the size with turnMax turning per element, where the turning
@@ -4869,14 +4879,12 @@
          REAL(KIND=RP) :: xs(2,nS), turnMax, xOther(2,*), hs(nS), hBand(nS)
          LOGICAL       :: isFeature(nS)
 
-         REAL(KIND=RP), PARAMETER :: CORNER_ANGLE = 30.0_RP*PI/180.0_RP, CORNER_SCALE = 0.05_RP
          REAL(KIND=RP), PARAMETER :: GROWTH = 0.5_RP, NEAR_RATIO = 3.0_RP
-         INTEGER, PARAMETER       :: MAX_COARSE = 2000, CURVATURE_ITERATIONS = 6
-         REAL(KIND=RP) :: arc(nS+1), absTurn(nS), hBase(nS), hCurv(nS), hProx(nS), dev(nS), eps(nS), hNew(nS)
+         INTEGER, PARAMETER       :: MAX_COARSE = 2000, CURVATURE_ITERATIONS = 6, CORNER_SAMPLES = 2
+         REAL(KIND=RP) :: arc(nS+1), absTurn(nS), hBase(nS), hCurv(nS), hProx(nS), hNew(nS)
          REAL(KIND=RP) :: reach, xMin(2), xMax(2), perimeter, aSize, x3(3), u(2), v(2), d, dArc, turnSum, covered, dFwd, dBack
          INTEGER       :: i, j, k, iter, stride, nFeatures
          INTEGER       :: featureCount(0:nS)
-         LOGICAL       :: isMax
          INTEGER, EXTERNAL :: Loop
 
          arc(1) = 0.0_RP
@@ -4900,54 +4908,24 @@
             hBase(i) = MIN(controlSize(sizer, x3), aSize)
          END DO
 !
-!        --------------------------------------------------------------
-!        Features: the joints, and the corners, where the chord angle at
-!        the scale eps is a local maximum above CORNER_ANGLE
-!        --------------------------------------------------------------
+!        ---------------------------------
+!        Features: the joints of the chain
+!        ---------------------------------
 !
-         DO i = 1, nS
-            eps(i) = MAX(CORNER_SCALE*hBase(i), 3.0_RP*perimeter/nS)
-            u = xs(:,i) - pointAtArc( xs, arc, nS, arc(i) - eps(i) )
-            v = pointAtArc( xs, arc, nS, arc(i) + eps(i) ) - xs(:,i)
-            dev(i) = ABS(ATAN2(cross2(u,v), DOT_PRODUCT(u,v)))
-         END DO
-         DO k = 1, nCurves
-            dev((k-1)*nPer + 1) = HUGE(1.0_RP)
-         END DO
          isFeature = .FALSE.
-         DO i = 1, nS
-            IF ( dev(i) < CORNER_ANGLE )     CYCLE
-            isMax = .TRUE.
-            DO k = 1, nS/2
-               j = MODULO(i - 1 + k, nS) + 1
-               IF ( MODULO(arc(j) - arc(i), perimeter) > eps(i) )     EXIT
-               IF ( dev(j) > dev(i) )     isMax = .FALSE.
-            END DO
-            DO k = 1, nS/2
-               j = MODULO(i - 1 - k, nS) + 1
-               IF ( MODULO(arc(i) - arc(j), perimeter) > eps(i) )     EXIT
-               IF ( dev(j) >= dev(i) )     isMax = .FALSE.
-            END DO
-            isFeature(i) = isMax
+         DO k = 1, nCurves
+            isFeature((k-1)*nPer + 1) = .TRUE.
          END DO
 !
 !        ------------------------------------------------------------
-!        The turning near a feature belongs to the feature, not to the
-!        curvature
+!        The turning at the samples next to a joint belongs to the
+!        joint, not to the curvature
 !        ------------------------------------------------------------
 !
          DO i = 1, nS
             IF ( .NOT.isFeature(i) )     CYCLE
-            absTurn(i) = 0.0_RP
-            DO k = 1, nS/2
-               j = MODULO(i - 1 + k, nS) + 1
-               IF ( MODULO(arc(j) - arc(i), perimeter) > eps(i) )     EXIT
-               absTurn(j) = 0.0_RP
-            END DO
-            DO k = 1, nS/2
-               j = MODULO(i - 1 - k, nS) + 1
-               IF ( MODULO(arc(i) - arc(j), perimeter) > eps(i) )     EXIT
-               absTurn(j) = 0.0_RP
+            DO k = -CORNER_SAMPLES, CORNER_SAMPLES
+               absTurn(MODULO(i - 1 + k, nS) + 1) = 0.0_RP
             END DO
          END DO
 !
@@ -5084,37 +5062,6 @@
             END DO
          END DO
       END SUBROUTINE GradeSizes
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      FUNCTION pointAtArc( xs, arc, nS, s ) RESULT(x)
-         IMPLICIT NONE
-!
-!        ------------------------------------------------------------
-!        The point at arc length s (taken periodically) along the closed
-!        polyline xs, whose vertex i is at arc length arc(i)
-!        ------------------------------------------------------------
-!
-         INTEGER       :: nS
-         REAL(KIND=RP) :: xs(2,nS), arc(nS+1), s, x(2)
-         REAL(KIND=RP) :: t, sp
-         INTEGER       :: lo, hi, mid
-
-         sp = MODULO(s, arc(nS+1))
-         lo = 1
-         hi = nS + 1
-         DO WHILE ( hi - lo > 1 )
-            mid = (lo + hi)/2
-            IF ( arc(mid) <= sp )     THEN
-               lo = mid
-            ELSE
-               hi = mid
-            END IF
-         END DO
-         t = 0.0_RP
-         IF ( arc(lo+1) > arc(lo) )     t = (sp - arc(lo))/(arc(lo+1) - arc(lo))
-         x = (1.0_RP - t)*xs(:,lo) + t*xs(:,MODULO(lo,nS)+1)
-      END FUNCTION pointAtArc
 !
 !////////////////////////////////////////////////////////////////////////
 !
