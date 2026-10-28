@@ -138,7 +138,7 @@
          LOGICAL           , ALLOCATABLE :: removeIt(:)
          CLASS(FTObject)   , POINTER     :: obj => NULL()
          TYPE(SMElement)   , POINTER     :: e => NULL()
-         INTEGER                         :: nE, maxNodeID, k, m, j, i, a, b, f, r, pass, largest, numRemovedNow
+         INTEGER                         :: nE, maxNodeID, k, m, j, i, a, b, f, r, pass, largest, numRemovedNow, mNext
          INTEGER, EXTERNAL               :: Loop
 
          numberRemoved = 0
@@ -237,7 +237,8 @@
                      k = list(j)
                      DO m = 1, 4
                         IF ( nbr(m,k) == 0 )     CYCLE
-                        IF ( ids(m,k) /= i .AND. ids(Loop(m+1,4),k) /= i )     CYCLE
+                        mNext = Loop(m+1,4)
+                        IF ( ids(m,k) /= i .AND. ids(mNext,k) /= i )     CYCLE
                         CALL JoinRoots( k, nbr(m,k), parent )
                      END DO
                   END DO
@@ -261,7 +262,6 @@
                   IF ( ANY(removeIt) )     EXIT
                END DO
             END IF
-
 !
 !           ------------------------------------------------------------
 !           The nodes of a removed element are now on the boundary. Let
@@ -318,6 +318,7 @@
             parent(rk) = rm
          END IF
       END SUBROUTINE JoinRoots
+!
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE CleanUpBoundaryEdges( list )
@@ -333,7 +334,6 @@
          CALL RemoveBumpOuts( list )
 
       END SUBROUTINE CleanUpBoundaryEdges
-
 !
 !////////////////////////////////////////////////////////////////////////
 !

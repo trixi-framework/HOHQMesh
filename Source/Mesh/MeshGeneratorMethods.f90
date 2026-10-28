@@ -276,6 +276,9 @@
 !     Local variables
 !     ---------------
 !
+      CHARACTER(LEN=32)             :: envValue
+      INTEGER                       :: envStatus
+      LOGICAL                       :: paved
       TYPE (QuadTreeGrid), POINTER :: grid      => NULL()
       TYPE (SMMesh)      , POINTER :: mesh      => NULL()
       TYPE (SMModel)     , POINTER :: model     => NULL()
@@ -301,6 +304,7 @@
 !     ---------------------
 !
       IF(PrintMessage) PRINT *, "   Generate quadtree..."
+         chainWasPaved = .FALSE.
          CALL GenerateGridWithSizerAndType( project % grid, project % sizer, &
                                             project % meshParams % meshType)
          project % numberOfLevelsUsed = highestLevel
@@ -548,7 +552,19 @@
          CALL cast(obj,list)
          CALL FlagEndNodes( list, model )
          CALL SpreadCollapsedBoundaryLocations( list, model )
-         IF( boundaryEdgesType(j) == INTERFACE_EDGES )     CALL MoveInterfaceNodesToImages( list, model )
+         IF( boundaryEdgesType(j) == INTERFACE_EDGES )     THEN
+!
+!           ---------------------------------------------------------
+!           Experimental: if INTERFACE_PAVE is set, pave the band
+!           around the interface chain. Otherwise, or if paving fails,
+!           move the nearby nodes onto the curve.
+!           ---------------------------------------------------------
+!
+            CALL GET_ENVIRONMENT_VARIABLE("INTERFACE_PAVE", envValue, status = envStatus)
+            paved = .FALSE.
+            IF ( envStatus == 0 )     CALL PaveInterface( mesh, model, sizer, list, paved )
+            IF ( .NOT.paved )     CALL MoveInterfaceNodesToImages( list, model )
+         END IF
       END DO
 !
 !     ------------------------------------------
@@ -3400,5 +3416,1785 @@
          END DO
 
       END SUBROUTINE SmoothSegments
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION smallestCornerSine( corners )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        Smallest sine of the corner angles of a counterclockwise quad.
+!        It is negative if a corner is reflex, i.e. the quad is not
+!        convex. Zero if a side has zero length.
+!        ------------------------------------------------------------
+!
+         REAL(KIND=RP) :: corners(2,4)
+         REAL(KIND=RP) :: a(2), d(2), la, ld
+         INTEGER       :: c
+         INTEGER, EXTERNAL :: Loop
+         smallestCornerSine = HUGE(smallestCornerSine)
+         DO c = 1, 4
+            a  = corners(:, Loop(c+3,4)) - corners(:, c)
+            d  = corners(:, Loop(c+1,4)) - corners(:, c)
+            la = NORM2(a)
+            ld = NORM2(d)
+            IF ( la == 0.0_RP .OR. ld == 0.0_RP )     THEN
+               smallestCornerSine = 0.0_RP
+               RETURN
+            END IF
+            smallestCornerSine = MIN(smallestCornerSine, (d(1)*a(2) - d(2)*a(1))/(la*ld))
+         END DO
+      END FUNCTION smallestCornerSine
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION elementWithDirectedEdge( a, b, elems, nodeEl, nodeElCount )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        Index of the element that has the nodes a, b in this order in
+!        its counterclockwise node list, or 0 if there is none
+!        -------------------------------------------------------------
+!
+         INTEGER            :: a, b
+         TYPE(SMElementPtr) :: elems(:)
+         INTEGER            :: nodeEl(:,:), nodeElCount(:)
+         INTEGER            :: j, c, ie
+         INTEGER, EXTERNAL  :: Loop
+
+         elementWithDirectedEdge = 0
+         DO j = 1, nodeElCount(a)
+            ie = nodeEl(j,a)
+            IF ( elems(ie) % element % remove )     CYCLE
+            DO c = 1, 4
+               IF ( elems(ie) % element % nodes(c) % node % id /= a )              CYCLE
+               IF ( elems(ie) % element % nodes(Loop(c+1,4)) % node % id == b )    THEN
+                  elementWithDirectedEdge = ie
+                  RETURN
+               END IF
+            END DO
+         END DO
+      END FUNCTION elementWithDirectedEdge
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION newInteriorNode( mesh, x2 ) RESULT(node)
+         IMPLICIT NONE
+         TYPE (SMMesh), POINTER :: mesh
+         REAL(KIND=RP)          :: x2(2)
+         TYPE (SMNode), POINTER :: node
+         CLASS(FTObject), POINTER :: obj
+         ALLOCATE(node)
+         CALL node % initWithLocationAndID([x2(1), x2(2), 0.0_RP], mesh % newNodeID())
+         obj => node
+         CALL mesh % nodes % add(obj)
+         CALL releaseSMNode(node)
+      END FUNCTION newInteriorNode
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE AddQuad4( mesh, quadNodes, reverse )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------
+!        Add an element with these nodes, in reverse order if asked.
+!        The order comes from the topology, not the node locations.
+!        ----------------------------------------------------------
+!
+         TYPE (SMMesh), POINTER    :: mesh
+         TYPE(SMNodePtr)           :: quadNodes(4)
+         LOGICAL                   :: reverse
+         TYPE(SMNodePtr)           :: ordered(4)
+         TYPE (SMElement), POINTER :: e
+         CLASS(FTObject) , POINTER :: obj
+
+         IF ( reverse )     THEN
+            ordered = [quadNodes(1), quadNodes(4), quadNodes(3), quadNodes(2)]
+         ELSE
+            ordered = quadNodes
+         END IF
+         ALLOCATE(e)
+         CALL e % initWithNodesIDAndType(ordered, mesh % newElementID(), QUAD)
+         obj => e
+         CALL mesh % elements % add(obj)
+         CALL releaseSMElement(e)
+      END SUBROUTINE AddQuad4
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE AppendUnique( list, n, id )
+         IMPLICIT NONE
+!
+!        --------------------------------------------
+!        Append id unless it is already the last entry
+!        --------------------------------------------
+!
+         INTEGER :: list(:), n, id
+         IF ( n > 0 )     THEN
+            IF ( list(n) == id )     RETURN
+         END IF
+         n = n + 1
+         list(n) = id
+      END SUBROUTINE AppendUnique
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      RECURSIVE SUBROUTINE SplitFill( x, nAll, ids, nIds, h, quads, nQuads, ok, nChords )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Fill a counterclockwise polygon with an even number of nodes
+!        with quads by cutting it along the chord that best splits the
+!        corner angles at its ends. The chord gets new nodes about h apart,
+!        as many as make both halves even. New nodes are appended to x.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:), h
+         INTEGER       :: nAll, nIds, nQuads
+         INTEGER       :: ids(nIds), quads(:,:), nChords(:)
+         LOGICAL       :: ok
+
+         INTEGER       :: i, j, d, k, kBest, iBest, jBest, n1, n2, c
+         INTEGER       :: half1(nIds+2*nIds), half2(nIds+2*nIds)
+         REAL(KIND=RP) :: len, score, best, angI(2), angJ(2), interior(nIds)
+         REAL(KIND=RP), PARAMETER :: valencePenalty = 15.0_RP
+         INTEGER, EXTERNAL :: Loop
+
+         ok = .FALSE.
+         IF ( nIds < 4 .OR. MODULO(nIds,2) /= 0 )     RETURN
+         IF ( nIds == 4 )     THEN
+            nQuads = nQuads + 1
+            quads(:,nQuads) = ids
+            ok = .TRUE.
+            RETURN
+         END IF
+
+         DO i = 1, nIds
+            interior(i) = cornerAngle( x(:,ids(Loop(i-1,nIds))), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) )
+         END DO
+         best = -HUGE(best)
+         DO i = 1, nIds
+            DO d = 2, nIds - 2
+               j = Loop(i + d, nIds)
+               IF ( j < i )     CYCLE
+               len = NORM2(x(:,ids(j)) - x(:,ids(i)))
+               k   = MAX(0, NINT(len/h) - 1)
+               IF ( MODULO(d + 1 + k, 2) /= 0 )     THEN
+                  IF ( len/h - 1.0_RP > k .OR. k == 0 )     THEN
+                     k = k + 1
+                  ELSE
+                     k = k - 1
+                  END IF
+               END IF
+!
+!              ------------------------------------------
+!              Both halves must be smaller than the polygon
+!              ------------------------------------------
+!
+               DO WHILE ( d + 1 + k >= nIds .OR. nIds - d + 1 + k >= nIds )
+                  k = k - 2
+               END DO
+               IF ( k < 0 )     CYCLE
+               IF ( .NOT.chordInside( x, ids, nIds, i, j ) )     CYCLE
+!
+!              --------------------------------------------------------
+!              Angles on either side of the chord at its ends; the best
+!              chord has the largest smallest one, and near 90 degrees
+!              --------------------------------------------------------
+!
+               angI(1) = cornerAngle( x(:,ids(j)), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) )
+               angI(2) = interior(i) - angI(1)
+               angJ(1) = cornerAngle( x(:,ids(i)), x(:,ids(j)), x(:,ids(Loop(j+1,nIds))) )
+               angJ(2) = interior(j) - angJ(1)
+               score = MIN(MINVAL(angI), MINVAL(angJ)) - 0.2_RP*MAX(MAXVAL(angI), MAXVAL(angJ)) &
+                     - 10.0_RP*ABS(len/h - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
+               IF ( score > best )     THEN
+                  best  = score
+                  iBest = i
+                  jBest = j
+                  kBest = k
+               END IF
+            END DO
+         END DO
+         IF ( best == -HUGE(best) )     THEN
+            PRINT *, '            split: no chord for', nIds, ' nodes', ids
+            DO i = 1, nIds
+               PRINT *, '              ', x(:,ids(i)), interior(i)
+            END DO
+            RETURN
+         END IF
+!
+!        ----------------------------------------------
+!        Nodes on the chord and the two halves, both ccw
+!        ----------------------------------------------
+!
+         i = iBest
+         j = jBest
+         k = kBest
+         nChords(ids(i)) = nChords(ids(i)) + 1
+         nChords(ids(j)) = nChords(ids(j)) + 1
+         DO c = 1, k
+            nAll = nAll + 1
+            x(:,nAll) = x(:,ids(i)) + c*(x(:,ids(j)) - x(:,ids(i)))/(k + 1)
+         END DO
+         n1 = 0
+         DO c = i, j
+            n1 = n1 + 1
+            half1(n1) = ids(c)
+         END DO
+         DO c = k, 1, -1
+            n1 = n1 + 1
+            half1(n1) = nAll - k + c
+         END DO
+         n2 = 0
+         DO c = 0, nIds - (j - i)
+            n2 = n2 + 1
+            half2(n2) = ids(Loop(j + c, nIds))
+         END DO
+         DO c = 1, k
+            n2 = n2 + 1
+            half2(n2) = nAll - k + c
+         END DO
+         CALL SplitFill( x, nAll, half1(1:n1), n1, h, quads, nQuads, ok, nChords )
+         IF ( .NOT.ok )     RETURN
+         CALL SplitFill( x, nAll, half2(1:n2), n2, h, quads, nQuads, ok, nChords )
+
+      END SUBROUTINE SplitFill
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION cornerAngle( xPrev, x, xNext )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        The counterclockwise angle in degrees at x from the direction
+!        to xNext to the direction to xPrev, i.e. the interior angle of
+!        a counterclockwise polygon
+!        -------------------------------------------------------------
+!
+         REAL(KIND=RP) :: xPrev(2), x(2), xNext(2)
+         REAL(KIND=RP), PARAMETER :: DEG = 180.0_RP/PI
+         cornerAngle = MODULO((ATAN2(xPrev(2) - x(2), xPrev(1) - x(1)) - ATAN2(xNext(2) - x(2), xNext(1) - x(1)))*DEG, &
+                              360.0_RP)
+      END FUNCTION cornerAngle
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION chordInside( x, ids, nIds, i, j )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        True if the segment between polygon nodes i and j starts into
+!        the polygon at both ends and crosses none of its edges
+!        ------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:)
+         INTEGER       :: nIds, i, j, ids(nIds)
+         INTEGER       :: k, k1
+         REAL(KIND=RP) :: a(2), b(2), c(2), d(2)
+         INTEGER, EXTERNAL :: Loop
+
+         chordInside = .FALSE.
+         IF ( cornerAngle( x(:,ids(j)), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) ) >= &
+              cornerAngle( x(:,ids(Loop(i-1,nIds))), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) ) )     RETURN
+         IF ( cornerAngle( x(:,ids(i)), x(:,ids(j)), x(:,ids(Loop(j+1,nIds))) ) >= &
+              cornerAngle( x(:,ids(Loop(j-1,nIds))), x(:,ids(j)), x(:,ids(Loop(j+1,nIds))) ) )     RETURN
+         a = x(:,ids(i))
+         b = x(:,ids(j))
+         DO k = 1, nIds
+            k1 = Loop(k+1,nIds)
+            IF ( k == i .OR. k == j .OR. k1 == i .OR. k1 == j )     CYCLE
+            c = x(:,ids(k))
+            d = x(:,ids(k1))
+            IF ( cross2(b - a, c - a)*cross2(b - a, d - a) < 0.0_RP .AND. &
+                 cross2(d - c, a - c)*cross2(d - c, b - c) < 0.0_RP )     RETURN
+         END DO
+         chordInside = .TRUE.
+      END FUNCTION chordInside
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION cross2( u, v )
+         IMPLICIT NONE
+         REAL(KIND=RP) :: u(2), v(2)
+         cross2 = u(1)*v(2) - u(2)*v(1)
+      END FUNCTION cross2
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE PaveInterface( mesh, model, sizer, list, paved )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Experimental (INTERFACE_PAVE). Pave the band around an interface
+!        chain (PaveInterfaceWithBand). If that fails, try again with a
+!        wider band, which gives a different edge to fill against.
+!        ---------------------------------------------------------------
+!
+         TYPE (SMMesh)      , POINTER :: mesh
+         TYPE (SMModel)     , POINTER :: model
+         TYPE (MeshSizer)   , POINTER :: sizer
+         CLASS(FTLinkedList), POINTER :: list
+         LOGICAL                      :: paved
+         INTEGER, PARAMETER           :: MAX_TRIES = 3
+         INTEGER                      :: try
+         REAL(KIND=RP)                :: bandScale
+
+         bandScale = 1.0_RP
+         DO try = 1, MAX_TRIES
+            CALL PaveInterfaceWithBand( mesh, model, sizer, list, bandScale, paved )
+            IF ( paved )     RETURN
+            bandScale = 1.5_RP*bandScale
+         END DO
+      END SUBROUTINE PaveInterface
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE PaveInterfaceWithBand( mesh, model, sizer, list, bandScale, paved )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Mesh the band around an interface curve from the curve outward,
+!        as boundary-first meshers do:
+!          1. Remove the elements within bandScale*PAVE_BAND (default 1.5)
+!             local element sizes of the curve, on both sides.
+!          2. Put new nodes on the curve, spaced by a size taken from
+!             the curve geometry (InterfaceCurveSizes), with a node at
+!             each joint and corner. Both sides share them.
+!          3. Pave one row of elements on each side. A curve node gets one
+!             element (a wedge) if its angle is below wedgeAngle, three if
+!             it is above fanAngle, two otherwise.
+!          4. Fill the gap between each new front and the remaining
+!             elements by cutting it into polygons and splitting those.
+!        Nothing is changed (paved = .FALSE.) if any step fails.
+!        ---------------------------------------------------------------
+!
+         TYPE (SMMesh)      , POINTER :: mesh
+         TYPE (SMModel)     , POINTER :: model
+         TYPE (MeshSizer)   , POINTER :: sizer
+         CLASS(FTLinkedList), POINTER :: list
+         REAL(KIND=RP)                :: bandScale
+         LOGICAL                      :: paved
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, PARAMETER :: MAX_GROUP = 16, MAX_LOOPS = 32, MAX_SAMPLES = 40000
+         TYPE(SMNodePtr), DIMENSION(:), POINTER :: seq
+         TYPE(SMElementPtr), ALLOCATABLE :: elems(:)
+         TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:), sideNodes(:), curveNodes(:)
+         INTEGER           , ALLOCATABLE :: nodeElCount(:), nodeEl(:,:), nOut(:), cnt(:)
+         LOGICAL           , ALLOCATABLE :: removed(:), used(:), nodeUsed(:)
+         REAL(KIND=RP)     , ALLOCATABLE :: xOther(:,:), xs(:,:), hs(:), hBand(:), cx(:,:), cg(:), sx(:,:,:), wSeg(:)
+         LOGICAL           , ALLOCATABLE :: isFeature(:)
+         INTEGER           , ALLOCATABLE :: featureIdx(:), nSeg(:)
+         INTEGER           , ALLOCATABLE :: eFrom(:), eTo(:), loopNodes(:), quads(:,:,:), newFront(:,:)
+         INTEGER                         :: loopStart(MAX_LOOPS+1), nLoops, loopSide(MAX_LOOPS)
+         TYPE (SMNode)        , POINTER  :: node
+         TYPE (SMElement)     , POINTER  :: e
+         CLASS(FTObject)      , POINTER  :: obj
+         CLASS(SMChainedCurve), POINTER  :: chain, owner
+         CLASS(SMCurve)       , POINTER  :: c
+         TYPE(SMNodePtr)                 :: q(4)
+         INTEGER  :: n, nCurves, nPer, nS, maxID, nE, nid, i, j, k, f, g, p, iter, nF, cur, nc, kk, nCount(MAX_LOOPS)
+         INTEGER  :: nInLoops, nOutLoops, fIn, fOut, side, nfr(2), nAll(2), nQ(2), nNew(2), kBest, total
+         INTEGER  :: m, iS, iFr(2), maxN, bCurveSide, nQRow(2), pass, nComp, nStack, keep(2)
+         INTEGER           , ALLOCATABLE :: comp(:), stack(:), compSize(:)
+         LOGICAL           , ALLOCATABLE :: compInside(:)
+         REAL(KIND=RP)                   :: turnMax, xMin(2), xMax(2)
+         INTEGER                         :: nFeat, i2, nOther
+         REAL(KIND=RP) :: bandFactor, wedgeAngle, fanAngle, d, ds, area, w, target, frac, x3(3), rowScale
+         REAL(KIND=RP) :: gNode
+         LOGICAL  :: changed, ccw, debug, ok, inside
+         CHARACTER(LEN=32)              :: envValue
+         INTEGER                        :: envStatus
+         INTEGER, EXTERNAL              :: Loop
+
+         paved = .FALSE.
+         bandFactor = 1.5_RP
+         CALL GET_ENVIRONMENT_VARIABLE("PAVE_BAND", envValue, status = envStatus)
+         IF ( envStatus == 0 )     READ(envValue,*) bandFactor
+         bandFactor = bandScale*bandFactor
+         nPer = 0
+         CALL GET_ENVIRONMENT_VARIABLE("PAVE_SAMPLES", envValue, status = envStatus)
+         IF ( envStatus == 0 )     READ(envValue,*) nPer
+         wedgeAngle = 120.0_RP
+         CALL GET_ENVIRONMENT_VARIABLE("PAVE_WEDGE_ANGLE", envValue, status = envStatus)
+         IF ( envStatus == 0 )     READ(envValue,*) wedgeAngle
+         fanAngle = 240.0_RP
+         CALL GET_ENVIRONMENT_VARIABLE("PAVE_FAN_ANGLE", envValue, status = envStatus)
+         IF ( envStatus == 0 )     READ(envValue,*) fanAngle
+         turnMax = 30.0_RP
+         CALL GET_ENVIRONMENT_VARIABLE("PAVE_TURN", envValue, status = envStatus)
+         IF ( envStatus == 0 )     READ(envValue,*) turnMax
+         turnMax = turnMax*PI/180.0_RP
+         CALL GET_ENVIRONMENT_VARIABLE("PAVE_DEBUG", envValue, status = envStatus)
+         debug = envStatus == 0
+
+         seq => GatheredNodes(list)
+         n   = SIZE(seq)
+         chain      => model % chainWithID(seq(1) % node % bCurveChainID)
+         nCurves    =  chain % numberOfCurvesInChain
+         bCurveSide =  seq(1) % node % bCurveSide
+!
+!        Samples per curve: 2000, fewer on a chain of many curves so the
+!        total stays near MAX_SAMPLES
+!
+         IF ( nPer <= 0 )     nPer = MAX(200, MIN(2000, MAX_SAMPLES/nCurves))
+!
+!        ---------------------------------------------------------
+!        Node and element tables, and the local element size at each
+!        node: the average length of the element sides at the node
+!        ---------------------------------------------------------
+!
+         maxID = 0
+         CALL mesh % nodesIterator % setToStart()
+         DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
+            obj => mesh % nodesIterator % object()
+            CALL castToSMNode(obj, node)
+            maxID = MAX(maxID, node % id)
+            CALL mesh % nodesIterator % moveToNext()
+         END DO
+         ALLOCATE( nodeForID(maxID), nodeElCount(maxID), nodeEl(MAX_GROUP, maxID), nOut(maxID) )
+         CALL mesh % nodesIterator % setToStart()
+         DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
+            obj => mesh % nodesIterator % object()
+            CALL castToSMNode(obj, node)
+            nodeForID(node % id) % node => node
+            CALL mesh % nodesIterator % moveToNext()
+         END DO
+         ALLOCATE( elems(mesh % elements % COUNT()) )
+         nodeElCount = 0
+         nE          = 0
+         CALL mesh % elementsIterator % setToStart()
+         DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
+            obj => mesh % elementsIterator % object()
+            CALL castToSMElement(obj, e)
+            IF ( .NOT.e % remove )     THEN
+               nE = nE + 1
+               elems(nE) % element => e
+               DO k = 1, 4
+                  nid = e % nodes(k) % node % id
+                  IF ( nodeElCount(nid) < MAX_GROUP )     THEN
+                     nodeElCount(nid) = nodeElCount(nid) + 1
+                     nodeEl(nodeElCount(nid), nid) = nE
+                  END IF
+               END DO
+            END IF
+            CALL mesh % elementsIterator % moveToNext()
+         END DO
+!
+!        -------------------------------------------------------
+!        Samples of the curve and the element sizes along it
+!        -------------------------------------------------------
+!
+         nS = nCurves*nPer
+         ALLOCATE( xs(2,nS), hs(nS), hBand(nS), isFeature(nS) )
+         DO i = 1, nS
+            x3 = chain % positionAt( REAL(i-1,RP)/nS )
+            xs(:,i) = x3(1:2)
+         END DO
+!
+!        Nodes on the other boundaries and interfaces, whose distance limits the size
+!
+         nOther = 0
+         DO nid = 1, maxID
+            IF ( nodeElCount(nid) == 0 )     CYCLE
+            k = nodeForID(nid) % node % bCurveChainID
+            IF ( k > 0 .AND. k /= seq(1) % node % bCurveChainID )     nOther = nOther + 1
+         END DO
+         ALLOCATE( xOther(2,MAX(1,nOther)) )
+         nOther = 0
+         DO nid = 1, maxID
+            IF ( nodeElCount(nid) == 0 )     CYCLE
+            k = nodeForID(nid) % node % bCurveChainID
+            IF ( k > 0 .AND. k /= seq(1) % node % bCurveChainID )     THEN
+               nOther = nOther + 1
+               xOther(:,nOther) = nodeForID(nid) % node % x(1:2)
+            END IF
+         END DO
+         CALL InterfaceCurveSizes( sizer, xs, nS, nPer, nCurves, turnMax, xOther, nOther, hs, hBand, isFeature )
+         IF ( debug )     PRINT *, "      Pave: size min/max", MINVAL(hs), MAXVAL(hs)
+         area = 0.0_RP
+         DO i = 1, nS
+            j = Loop(i+1, nS)
+            area = area + xs(1,i)*xs(2,j) - xs(1,j)*xs(2,i)
+         END DO
+         ccw = area > 0.0_RP
+!
+!        -----------------------------------------------------
+!        1. The band: elements with a node closer to the curve
+!           than bandFactor local sizes
+!        -----------------------------------------------------
+!
+         ALLOCATE( removed(nE), cnt(nE) )
+         removed = .FALSE.
+         xMin = MINVAL(xs, DIM = 2) - bandFactor*MAXVAL(hBand)
+         xMax = MAXVAL(xs, DIM = 2) + bandFactor*MAXVAL(hBand)
+         DO nid = 1, maxID
+            IF ( nodeElCount(nid) == 0 )     CYCLE
+            IF ( ANY(nodeForID(nid) % node % x(1:2) < xMin) .OR. ANY(nodeForID(nid) % node % x(1:2) > xMax) )     CYCLE
+            CALL NearestOnPolyline( nodeForID(nid) % node % x(1:2), xs, nS, iS, d )
+            IF ( d < bandFactor*hBand(iS) )     THEN
+               DO k = 1, nodeElCount(nid)
+                  removed(nodeEl(k,nid)) = .TRUE.
+               END DO
+            END IF
+         END DO
+         DO i = 1, n
+            nid = seq(i) % node % id
+            DO k = 1, nodeElCount(nid)
+               removed(nodeEl(k,nid)) = .TRUE.
+            END DO
+         END DO
+!
+!        -------------------------------------------------------
+!        Keep the elements with a side on the edge of the mesh
+!        (e.g. on the outer boundary)
+!        -------------------------------------------------------
+!
+         DO f = 1, nE
+            e => elems(f) % element
+            DO k = 1, 4
+               p = e % nodes(k) % node % id
+               j = e % nodes(Loop(k+1,4)) % node % id
+               IF ( elementWithDirectedEdge( j, p, elems, nodeEl, nodeElCount ) == 0 )     removed(f) = .FALSE.
+            END DO
+         END DO
+!
+         ALLOCATE( eFrom(4*nE), eTo(4*nE), comp(nE), stack(nE), compSize(1000), compInside(1000) )
+         DO pass = 1, 3
+!        ------------------------------------------------------------
+!        Make the edge of the band simple: remove the elements at nodes
+!        where it touches itself, and the elements that stick into it
+!        ------------------------------------------------------------
+!
+         DO iter = 1, 100
+            nF   = 0
+            nOut = 0
+            cnt  = 0
+            DO f = 1, nE
+               IF ( .NOT.removed(f) )     CYCLE
+               e => elems(f) % element
+               DO k = 1, 4
+                  p = e % nodes(k) % node % id
+                  j = e % nodes(Loop(k+1,4)) % node % id
+                  g = elementWithDirectedEdge( j, p, elems, nodeEl, nodeElCount )
+                  IF ( g == 0 )     THEN
+                     IF ( debug )     PRINT *, "      Pave: the band reaches the edge of the mesh"
+                     DEALLOCATE(seq)
+                     RETURN
+                  END IF
+                  IF ( removed(g) )     CYCLE
+                  nF = nF + 1
+                  eFrom(nF) = p
+                  eTo(nF)   = j
+                  nOut(p)   = nOut(p) + 1
+                  cnt(g)    = cnt(g) + 1
+               END DO
+            END DO
+            changed = .FALSE.
+            DO f = 1, nE
+               IF ( .NOT.removed(f) .AND. cnt(f) >= 3 )     THEN
+                  removed(f) = .TRUE.
+                  changed    = .TRUE.
+               END IF
+            END DO
+            DO i = 1, nF
+               IF ( nOut(eFrom(i)) > 1 )     THEN
+                  DO k = 1, nodeElCount(eFrom(i))
+                     IF ( .NOT.removed(nodeEl(k,eFrom(i))) )     THEN
+                        removed(nodeEl(k,eFrom(i))) = .TRUE.
+                        changed = .TRUE.
+                     END IF
+                  END DO
+               END IF
+            END DO
+            IF ( .NOT.changed )     EXIT
+         END DO
+!
+!        -----------------------------------------------------------
+!        Loops of the band edge, with the band on the left, and on which
+!        side of the curve each is
+!        -----------------------------------------------------------
+!
+         ALLOCATE( loopNodes(nF), used(nF) )
+         used   = .FALSE.
+         nLoops = 0
+         m      = 0
+         DO i = 1, nF
+            IF ( used(i) )     CYCLE
+            IF ( nLoops == MAX_LOOPS )     THEN
+               DEALLOCATE(seq)
+               RETURN
+            END IF
+            nLoops = nLoops + 1
+            loopStart(nLoops) = m + 1
+            j = i
+            DO
+               used(j) = .TRUE.
+               m = m + 1
+               loopNodes(m) = eFrom(j)
+               cur = eTo(j)
+               IF ( cur == eFrom(i) )     EXIT
+               DO k = 1, nF
+                  IF ( eFrom(k) == cur .AND. .NOT.used(k) )     EXIT
+               END DO
+               IF ( k > nF )     THEN
+                  IF ( debug )     PRINT *, "      Pave: the band edge is not a loop"
+                  DEALLOCATE(seq)
+                  RETURN
+               END IF
+               j = k
+            END DO
+         END DO
+         loopStart(nLoops+1) = m + 1
+         nInLoops  = 0
+         nOutLoops = 0
+         fIn       = 0
+         fOut      = 0
+         DO i = 1, nLoops
+            nCount(i) = loopStart(i+1) - loopStart(i)
+            inside = pointInPolygon( nodeForID(loopNodes(loopStart(i))) % node % x(1:2), xs, nS )
+            IF ( inside )     THEN
+               loopSide(i) = 1
+               nInLoops    = nInLoops + 1
+               fIn         = fIn + nCount(i)
+               iFr(1)      = i
+            ELSE
+               loopSide(i) = 2
+               nOutLoops   = nOutLoops + 1
+               fOut        = fOut + nCount(i)
+               iFr(2)      = i
+            END IF
+         END DO
+         IF ( debug )     PRINT *, "      Pave: band edge loops inside", nInLoops, fIn, " outside", nOutLoops, fOut
+         IF ( nOutLoops == 1 .AND. nInLoops <= 1 )     EXIT
+         IF ( pass == 3 )     THEN
+            IF ( debug )     PRINT *, "      Pave: unsupported band shape"
+            DEALLOCATE(seq)
+            RETURN
+         END IF
+!
+!        -------------------------------------------------------------
+!        Islands of elements cut off by the band: keep only the largest
+!        group of connected elements on each side of the curve
+!        -------------------------------------------------------------
+!
+         comp = 0
+         nComp = 0
+         DO f = 1, nE
+            IF ( removed(f) .OR. comp(f) /= 0 )     CYCLE
+            nComp = nComp + 1
+            compSize(nComp) = 0
+            nStack = 1
+            stack(1) = f
+            comp(f)  = nComp
+            DO WHILE ( nStack > 0 )
+               g = stack(nStack)
+               nStack = nStack - 1
+               compSize(nComp) = compSize(nComp) + 1
+               e => elems(g) % element
+               DO k = 1, 4
+                  p = elementWithDirectedEdge( e % nodes(Loop(k+1,4)) % node % id, e % nodes(k) % node % id, &
+                                               elems, nodeEl, nodeElCount )
+                  IF ( p == 0 )     CYCLE
+                  IF ( removed(p) .OR. comp(p) /= 0 )     CYCLE
+                  comp(p) = nComp
+                  nStack = nStack + 1
+                  stack(nStack) = p
+               END DO
+            END DO
+            x3 = 0.0_RP
+            DO k = 1, 4
+               x3 = x3 + 0.25_RP*elems(f) % element % nodes(k) % node % x
+            END DO
+            compInside(nComp) = pointInPolygon( x3(1:2), xs, nS )
+            IF ( nComp == SIZE(compSize) )     EXIT
+         END DO
+         keep = 0
+         DO i = 1, nComp
+            side = MERGE(1, 2, compInside(i))
+            IF ( keep(side) == 0 )     THEN
+               keep(side) = i
+            ELSE IF ( compSize(i) > compSize(keep(side)) )     THEN
+               keep(side) = i
+            END IF
+         END DO
+         DO f = 1, nE
+            IF ( removed(f) )     CYCLE
+            IF ( comp(f) /= keep(1) .AND. comp(f) /= keep(2) )     removed(f) = .TRUE.
+         END DO
+         DEALLOCATE( loopNodes, used )
+         END DO
+         IF ( nInLoops == 0 )     iFr(1) = 0
+!
+!        ------------------------------------------------------------
+!        2. Nodes on the curve: a node at each feature (joint or corner)
+!           and, between two features, as many edges as sizes fit, so
+!           the total has the parity of the band edge, placed evenly in
+!           the integral of 1/size
+!        ------------------------------------------------------------
+!
+         nFeat = 0
+         DO i = 1, nS
+            IF ( isFeature(i) )     nFeat = nFeat + 1
+         END DO
+         ALLOCATE( featureIdx(nFeat+1), nSeg(nFeat), wSeg(nFeat) )
+         k = 0
+         DO i = 1, nS
+            IF ( isFeature(i) )     THEN
+               k = k + 1
+               featureIdx(k) = i
+            END IF
+         END DO
+         featureIdx(nFeat+1) = featureIdx(1) + nS
+         total = 0
+         DO k = 1, nFeat
+            wSeg(k) = 0.0_RP
+            DO i = featureIdx(k), featureIdx(k+1) - 1
+               i2 = MODULO(i-1, nS) + 1
+               j  = MODULO(i, nS) + 1
+               wSeg(k) = wSeg(k) + 2.0_RP*NORM2(xs(:,j) - xs(:,i2))/(hs(i2) + hs(j))
+            END DO
+            nSeg(k) = MAX(1, NINT(wSeg(k)))
+            total   = total + nSeg(k)
+         END DO
+         IF ( MODULO(total - fOut, 2) /= 0 )     THEN
+            kBest = MAXLOC(wSeg - nSeg, DIM = 1)
+            nSeg(kBest) = nSeg(kBest) + 1
+            total = total + 1
+         END IF
+         IF ( total < 4 )     THEN
+            DEALLOCATE(seq)
+            RETURN
+         END IF
+         nc = total
+         ALLOCATE( cx(2,nc), cg(nc) )
+         m = 0
+         DO k = 1, nFeat
+            m = m + 1
+            cg(m) = REAL(featureIdx(k)-1,RP)/nS
+            w = 0.0_RP
+            i = featureIdx(k)
+            DO kk = 1, nSeg(k) - 1
+               target = kk*wSeg(k)/nSeg(k)
+               DO
+                  i2 = MODULO(i-1, nS) + 1
+                  j  = MODULO(i, nS) + 1
+                  ds = 2.0_RP*NORM2(xs(:,j) - xs(:,i2))/(hs(i2) + hs(j))
+                  IF ( w + ds >= target .OR. i >= featureIdx(k+1) - 1 )     EXIT
+                  w = w + ds
+                  i = i + 1
+               END DO
+               frac = MIN(1.0_RP, (target - w)/MAX(ds, TINY(ds)))
+               m = m + 1
+               cg(m) = MODULO((REAL(i-1,RP) + frac)/nS, 1.0_RP)
+            END DO
+         END DO
+         DO m = 1, nc
+            x3 = chain % positionAt(cg(m))
+            cx(:,m) = x3(1:2)
+         END DO
+         IF ( debug )     PRINT *, "      Pave: curve nodes", nc, " features", nFeat
+!
+!        ------------------------------------------------------------
+!        3. A paving row on each side. Local indices: 1..nc the curve
+!           nodes, with the side on the left, then the band edge loop,
+!           then the new nodes.
+!        ------------------------------------------------------------
+!
+         maxN = 40*(nc + nF) + 100
+         ALLOCATE( sx(2,maxN,2), quads(4,maxN,2), newFront(4*nc,2), sideNodes(maxN), curveNodes(nc), nodeUsed(maxN) )
+         DO side = 1, 2
+            DO m = 1, nc
+               sx(:,m,side) = cx(:,sideCurveIndex(m, nc, side, ccw))
+            END DO
+            nfr(side) = 0
+            IF ( iFr(side) > 0 )     THEN
+               DO i = loopStart(iFr(side)), loopStart(iFr(side)+1) - 1
+                  nfr(side) = nfr(side) + 1
+                  sx(:,nc + nfr(side),side) = nodeForID(loopNodes(i)) % node % x(1:2)
+               END DO
+            END IF
+            rowScale = 1.0_RP
+            DO
+               nAll(side) = nc + nfr(side)
+               CALL PaveRow( sx(:,:,side), nc, nfr(side), wedgeAngle, fanAngle, rowScale, nAll(side), &
+                             quads(:,:,side), nQ(side), newFront(:,side), nNew(side), ok )
+               IF ( ok .OR. rowScale < 0.1_RP )     EXIT
+               rowScale = 0.5_RP*rowScale
+            END DO
+            IF ( debug )     PRINT *, "      Pave: side", side, " row ok ", ok, " scale", rowScale, " quads", nQ(side), &
+                                      " front", nNew(side), " band edge", nfr(side)
+            IF ( .NOT.ok )     THEN
+               DEALLOCATE(seq)
+               RETURN
+            END IF
+         END DO
+
+!
+!        ----------------------------------------------------------
+!        4. Fill between each new front and the edge of the remaining
+!           elements
+!        ----------------------------------------------------------
+!
+         DO side = 1, 2
+            nQRow(side) = nQ(side)
+            CALL FillBetweenLoops( sx(:,:,side), nAll(side), newFront(:,side), nNew(side), nc, nfr(side), &
+                                   quads(:,:,side), nQ(side), ok )
+            IF ( debug )     PRINT *, "      Pave: side", side, " fill ok ", ok, " quads", nQ(side) - nQRow(side)
+            IF ( ok )     CALL RemoveDoublets( sx(:,:,side), nc + nfr(side), nAll(side), quads(:,:,side), nQ(side) )
+            IF ( .NOT.ok )     THEN
+               DEALLOCATE(seq)
+               RETURN
+            END IF
+         END DO
+!
+!        ------
+!        Commit
+!        ------
+!
+         DO f = 1, nE
+            IF ( removed(f) )     elems(f) % element % remove = .TRUE.
+         END DO
+         DO m = 1, nc
+            gNode = cg(m)*nCurves
+            NULLIFY(curveNodes(m) % node)
+            IF ( ABS(gNode - NINT(gNode)) <= 1.0e-12_RP )     THEN
+               DO i = 1, n
+                  d = seq(i) % node % gWhereOnBoundary*nCurves
+                  IF ( ABS(MODULO(d - gNode + 0.5_RP*nCurves, REAL(nCurves,RP)) - 0.5_RP*nCurves) <= 1.0e-12_RP )     THEN
+                     curveNodes(m) % node => seq(i) % node
+                     x3 = chain % positionAt(cg(m))
+                     curveNodes(m) % node % x = x3
+                     EXIT
+                  END IF
+               END DO
+            END IF
+            IF ( .NOT.ASSOCIATED(curveNodes(m) % node) )     THEN
+               curveNodes(m) % node => newChainNodeAt( mesh, model, chain, cg(m), bCurveSide )
+            END IF
+         END DO
+         DO side = 1, 2
+            nodeUsed = .FALSE.
+            DO j = 1, nQ(side)
+               nodeUsed(quads(:,j,side)) = .TRUE.
+            END DO
+            DO m = 1, nAll(side)
+               NULLIFY(sideNodes(m) % node)
+               IF ( m <= nc )     THEN
+                  sideNodes(m) % node => curveNodes(sideCurveIndex(m, nc, side, ccw)) % node
+               ELSE IF ( m <= nc + nfr(side) )     THEN
+                  sideNodes(m) % node => nodeForID(loopNodes(loopStart(iFr(side)) + m - nc - 1)) % node
+               ELSE IF ( nodeUsed(m) )     THEN
+                  sideNodes(m) % node => newInteriorNode( mesh, sx(:,m,side) )
+               END IF
+            END DO
+            DO j = 1, nQ(side)
+               DO k = 1, 4
+                  q(k) % node => sideNodes(quads(k,j,side)) % node
+               END DO
+               CALL AddQuad4( mesh, q, .FALSE. )
+            END DO
+         END DO
+
+         paved = .TRUE.
+         k = seq(1) % node % bCurveChainID
+         IF ( k >= 0 .AND. k <= MAX_PAVED_CHAIN_ID )     chainWasPaved(k) = .TRUE.
+         DEALLOCATE(seq)
+
+      END SUBROUTINE PaveInterfaceWithBand
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE PaveRow( x, nf, nfr, wedgeAngle, fanAngle, rowScale, nAll, quads, nQ, newFront, nNew, ok )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        One row of quads along the closed front x(:,1:nf), which has the
+!        region to mesh on its left. x(:,nf+1:nf+nfr) is the closed edge
+!        of the remaining mesh, which the row must not cross. A front node
+!        with an angle below wedgeAngle is the corner of one wedge quad
+!        (and the row nodes of its neighbors merge), one above fanAngle
+!        gets three quads, the others two. New nodes are appended to x;
+!        newFront lists the nodes of the new front, region on its left.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:), wedgeAngle, fanAngle, rowScale
+         INTEGER       :: nf, nfr, nAll, nQ, nNew
+         INTEGER       :: quads(:,:), newFront(:)
+         LOGICAL       :: ok
+
+         INTEGER, PARAMETER       :: SIDE_NODE = 0, WEDGE = 1, FAN3 = 2, IN_WEDGE = 3
+         REAL(KIND=RP), PARAMETER :: DEG = 180.0_RP/PI
+         INTEGER       :: typ(nf), rowIdx(nf), s1(nf), s2(nf), jn(nf)
+         INTEGER       :: j, k, jp, jq, left, right, a1, a2, b1, b2
+         REAL(KIND=RP) :: theta(nf), un(2), h, sp, dmin, phi, corners(2,4)
+         INTEGER, EXTERNAL :: Loop
+         LOGICAL          :: debugRow
+         INTEGER          :: envStatus
+         CHARACTER(LEN=8) :: envValue
+
+         CALL GET_ENVIRONMENT_VARIABLE("PAVE_DEBUG", envValue, status = envStatus)
+         debugRow = envStatus == 0
+         ok  = .FALSE.
+         nQ  = 0
+         nNew = 0
+         DO j = 1, nf
+            theta(j) = cornerAngle( x(:,Loop(j-1,nf)), x(:,j), x(:,Loop(j+1,nf)) )
+         END DO
+         typ = SIDE_NODE
+         DO j = 1, nf
+            jp = Loop(j-1,nf)
+            jq = Loop(j+1,nf)
+            IF ( theta(j) < wedgeAngle .AND. typ(j) == SIDE_NODE .AND. typ(jp) == SIDE_NODE .AND. typ(jq) == SIDE_NODE )     THEN
+               IF ( typ(Loop(j-2,nf)) /= WEDGE .AND. typ(Loop(j+2,nf)) /= WEDGE )     THEN
+                  typ(j)  = WEDGE
+                  typ(jp) = IN_WEDGE
+                  typ(jq) = IN_WEDGE
+               END IF
+            END IF
+         END DO
+         DO j = 1, nf
+            IF ( typ(j) == SIDE_NODE .AND. theta(j) > fanAngle )     typ(j) = FAN3
+         END DO
+!
+!        ---------
+!        Row nodes
+!        ---------
+!
+         DO j = 1, nf
+            IF ( typ(j) == IN_WEDGE )     CYCLE
+            jp = Loop(j-1,nf)
+            jq = Loop(j+1,nf)
+            sp = 0.5_RP*(NORM2(x(:,jq) - x(:,j)) + NORM2(x(:,j) - x(:,jp)))
+            dmin = HUGE(dmin)
+            DO k = 1, nf
+               IF ( ABS(k - j) <= 1 .OR. ABS(k - j) >= nf - 1 )     CYCLE
+               dmin = MIN(dmin, NORM2(x(:,k) - x(:,j)))
+            END DO
+            DO k = nf + 1, nf + nfr
+               dmin = MIN(dmin, NORM2(x(:,k) - x(:,j)))
+            END DO
+            h  = rowScale*MIN(0.8_RP*sp, 0.45_RP*dmin)
+            IF ( typ(j) == FAN3 .AND. debugRow )     PRINT *, '        row fan', j, theta(j), ' sp', sp, ' dmin', dmin, ' h', h, x(:,j)
+            un = (x(:,jq) - x(:,j))/NORM2(x(:,jq) - x(:,j))
+            SELECT CASE ( typ(j) )
+               CASE ( WEDGE )
+                  nAll = nAll + 1
+                  x(:,nAll) = x(:,jp) + x(:,jq) - x(:,j)
+                  rowIdx(jp) = nAll
+                  rowIdx(j)  = nAll
+                  rowIdx(jq) = nAll
+               CASE ( FAN3 )
+                  phi  = theta(j)/(3.0_RP*DEG)
+                  nAll = nAll + 1
+                  s2(j) = nAll
+                  x(:,nAll) = x(:,j) + h*rotated(un, phi)
+                  phi  = 2.0_RP*theta(j)/(3.0_RP*DEG)
+                  nAll = nAll + 1
+                  s1(j) = nAll
+                  x(:,nAll) = x(:,j) + h*rotated(un, phi)
+                  phi  = theta(j)/(2.0_RP*DEG)
+                  nAll = nAll + 1
+                  jn(j) = nAll
+                  x(:,nAll) = x(:,j) + 1.4_RP*h*rotated(un, phi)
+               CASE DEFAULT
+                  phi  = theta(j)/(2.0_RP*DEG)
+                  nAll = nAll + 1
+                  rowIdx(j) = nAll
+                  x(:,nAll) = x(:,j) + h/MAX(SIN(phi), 0.5_RP)*rotated(un, phi)
+            END SELECT
+         END DO
+!
+!        -----------------------------------------
+!        Row quads: wedges, sides and reflex fans
+!        -----------------------------------------
+!
+         DO j = 1, nf
+            jq = Loop(j+1,nf)
+            IF ( typ(jq) == WEDGE )     THEN
+               nQ = nQ + 1
+               quads(:,nQ) = [j, jq, Loop(j+2,nf), rowIdx(jq)]
+               CYCLE
+            END IF
+            IF ( typ(j) == WEDGE )     CYCLE
+            left  = rowIdx(j)
+            right = rowIdx(jq)
+            IF ( typ(j)  == FAN3 )     left  = s2(j)
+            IF ( typ(jq) == FAN3 )     right = s1(jq)
+            nQ = nQ + 1
+            quads(:,nQ) = [j, jq, right, left]
+            IF ( typ(jq) == FAN3 )     THEN
+               nQ = nQ + 1
+               quads(:,nQ) = [jq, s2(jq), jn(jq), s1(jq)]
+            END IF
+         END DO
+!
+!        ---------
+!        New front
+!        ---------
+!
+         DO j = 1, nf
+            IF ( typ(j) == FAN3 )     THEN
+               CALL AppendUnique( newFront, nNew, s1(j) )
+               CALL AppendUnique( newFront, nNew, jn(j) )
+               CALL AppendUnique( newFront, nNew, s2(j) )
+            ELSE
+               CALL AppendUnique( newFront, nNew, rowIdx(j) )
+            END IF
+         END DO
+         IF ( nNew > 1 .AND. newFront(nNew) == newFront(1) )     nNew = nNew - 1
+!
+!        -------------------------------------------------------------
+!        Checks: no folded quads, and the new front crosses neither
+!        itself nor the edge of the remaining mesh
+!        -------------------------------------------------------------
+!
+         IF ( nNew < 4 )     RETURN
+         DO k = 1, nQ
+            DO j = 1, 4
+               corners(:,j) = x(:,quads(j,k))
+            END DO
+            IF ( smallestCornerSine(corners) < -0.5_RP )     RETURN
+            IF ( polygonArea(corners, 4) <= 0.0_RP )     RETURN
+         END DO
+         DO j = 1, nNew
+            a1 = newFront(j)
+            a2 = newFront(Loop(j+1,nNew))
+            DO k = j + 2, nNew
+               IF ( j == 1 .AND. k == nNew )     CYCLE
+               b1 = newFront(k)
+               b2 = newFront(Loop(k+1,nNew))
+               IF ( segmentsCross(x(:,a1), x(:,a2), x(:,b1), x(:,b2)) )     RETURN
+            END DO
+            DO k = 1, nfr
+               b1 = nf + k
+               b2 = nf + Loop(k+1,nfr)
+               IF ( segmentsCross(x(:,a1), x(:,a2), x(:,b1), x(:,b2)) )     RETURN
+            END DO
+         END DO
+         ok = .TRUE.
+
+      END SUBROUTINE PaveRow
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION rotated( u, phi ) RESULT(v)
+         IMPLICIT NONE
+         REAL(KIND=RP) :: u(2), phi, v(2)
+         v = [COS(phi)*u(1) - SIN(phi)*u(2), SIN(phi)*u(1) + COS(phi)*u(2)]
+      END FUNCTION rotated
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION polygonArea( x, n )
+         IMPLICIT NONE
+         INTEGER       :: n
+         REAL(KIND=RP) :: x(2,n)
+         INTEGER       :: j
+         INTEGER, EXTERNAL :: Loop
+         polygonArea = 0.0_RP
+         DO j = 1, n
+            polygonArea = polygonArea + 0.5_RP*cross2(x(:,j), x(:,Loop(j+1,n)))
+         END DO
+      END FUNCTION polygonArea
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION segmentsCross( a, b, c, d )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------
+!        True if the segments ab and cd properly intersect
+!        -----------------------------------------------
+!
+         REAL(KIND=RP) :: a(2), b(2), c(2), d(2)
+         segmentsCross = cross2(b - a, c - a)*cross2(b - a, d - a) < 0.0_RP .AND. &
+                         cross2(d - c, a - c)*cross2(d - c, b - c) < 0.0_RP
+      END FUNCTION segmentsCross
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE NearestOnPolyline( x, xs, nS, iNear, dist )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------
+!        Distance from x to the closed polyline xs, and the vertex of
+!        the polyline nearest to x
+!        ----------------------------------------------------------
+!
+         INTEGER       :: nS, iNear
+         REAL(KIND=RP) :: x(2), xs(2,nS), dist
+         INTEGER       :: i, j
+         REAL(KIND=RP) :: d, t, u(2), best
+         INTEGER, EXTERNAL :: Loop
+
+         best  = HUGE(best)
+         iNear = 1
+         DO i = 1, nS
+            d = NORM2(x - xs(:,i))
+            IF ( d < best )     THEN
+               best  = d
+               iNear = i
+            END IF
+         END DO
+         dist = best
+         DO j = iNear - 1, iNear
+            i = Loop(j, nS)
+            u = xs(:,Loop(i+1,nS)) - xs(:,i)
+            IF ( DOT_PRODUCT(u,u) == 0.0_RP )     CYCLE
+            t = MAX(0.0_RP, MIN(1.0_RP, DOT_PRODUCT(x - xs(:,i), u)/DOT_PRODUCT(u,u)))
+            dist = MIN(dist, NORM2(x - xs(:,i) - t*u))
+         END DO
+      END SUBROUTINE NearestOnPolyline
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION pointInPolygon( x, xs, nS )
+         IMPLICIT NONE
+!
+!        ------------------------------------------
+!        Crossing number test against a closed polyline
+!        ------------------------------------------
+!
+         INTEGER       :: nS
+         REAL(KIND=RP) :: x(2), xs(2,nS)
+         INTEGER       :: i, j
+         INTEGER, EXTERNAL :: Loop
+
+         pointInPolygon = .FALSE.
+         DO i = 1, nS
+            j = Loop(i+1, nS)
+            IF ( (xs(2,i) > x(2)) .NEQV. (xs(2,j) > x(2)) )     THEN
+               IF ( x(1) < xs(1,i) + (x(2) - xs(2,i))*(xs(1,j) - xs(1,i))/(xs(2,j) - xs(2,i)) )     THEN
+                  pointInPolygon = .NOT.pointInPolygon
+               END IF
+            END IF
+         END DO
+      END FUNCTION pointInPolygon
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION sideCurveIndex( m, nc, side, ccw )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------
+!        Index of the m-th curve node when the curve is traversed with
+!        side (1 = inside, 2 = outside) on the left
+!        -----------------------------------------------------------
+!
+         INTEGER :: m, nc, side
+         LOGICAL :: ccw
+         INTEGER, EXTERNAL :: Loop
+         IF ( (side == 1) .EQV. ccw )     THEN
+            sideCurveIndex = m
+         ELSE
+            sideCurveIndex = Loop(nc + 2 - m, nc)
+         END IF
+      END FUNCTION sideCurveIndex
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION newChainNodeAt( mesh, model, chain, g, bCurveSide ) RESULT(node)
+         IMPLICIT NONE
+!
+!        -------------------------------------------
+!        A node on the chain at the chain parameter g
+!        -------------------------------------------
+!
+         TYPE (SMMesh)        , POINTER :: mesh
+         TYPE (SMModel)       , POINTER :: model
+         CLASS(SMChainedCurve), POINTER :: chain
+         REAL(KIND=RP)                  :: g
+         INTEGER                        :: bCurveSide
+         TYPE (SMNode)        , POINTER :: node
+         CLASS(SMChainedCurve), POINTER :: owner
+         CLASS(SMCurve)       , POINTER :: c
+         CLASS(FTObject)      , POINTER :: obj
+
+         c => model % curveWithID(chain % myCurveIDs(chain % curveNumberForLocation(g)), owner)
+         ALLOCATE(node)
+         CALL initBoundaryNode( c, chain, chain % curveTForChainT(g), bCurveSide, mesh % newNodeID(), node )
+         obj => node
+         CALL mesh % nodes % add(obj)
+         CALL releaseSMNode(node)
+      END FUNCTION newChainNodeAt
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE FillBetweenLoops( x, nAll, front, nFront, b0, nB, quads, nQ, ok )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Fill the region between the closed front x(:,front(1:nFront))
+!        and the closed loop x(:,b0+1:b0+nB) (nB = 0: no loop), both with
+!        the region on their left, with quads. With a loop, two chords
+!        between the front and the loop cut the region into two polygons,
+!        which are then split into quads. The shortest chords are tried
+!        first.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:)
+         INTEGER       :: nAll, nFront, b0, nB, nQ
+         INTEGER       :: front(:), quads(:,:)
+         LOGICAL       :: ok
+
+         INTEGER, PARAMETER :: MAX_TRIES = 12
+         INTEGER       :: i, j, nBr, t1, t2, i1, j1, i2, j2, di, dj, nAll0, nQ0, nTried
+         INTEGER       :: brI(nFront*nB), brJ(nFront*nB), order(nFront*nB)
+         REAL(KIND=RP) :: h, brLen(nFront*nB)
+         INTEGER       :: nChords(SIZE(x,2))
+         INTEGER, EXTERNAL :: Loop
+
+         ok      = .FALSE.
+         nChords = 0
+         h  = 0.0_RP
+         DO i = 1, nFront
+            h = h + NORM2(x(:,front(Loop(i+1,nFront))) - x(:,front(i)))
+         END DO
+         h = h/nFront
+         IF ( nB == 0 )     THEN
+            CALL SplitFill( x, nAll, front(1:nFront), nFront, h, quads, nQ, ok, nChords )
+            RETURN
+         END IF
+!
+!        ---------------------------------------
+!        All possible chords, shortest first
+!        ---------------------------------------
+!
+         nBr = 0
+         DO i = 1, nFront
+            DO j = 1, nB
+               IF ( .NOT.bridgeOK( x, front, nFront, b0, nB, i, j ) )     CYCLE
+               nBr = nBr + 1
+               brI(nBr)   = i
+               brJ(nBr)   = j
+               brLen(nBr) = NORM2(x(:,b0+j) - x(:,front(i)))
+            END DO
+         END DO
+         DO i = 1, nBr
+            order(i) = i
+         END DO
+         DO i = 2, nBr
+            t1 = order(i)
+            j  = i - 1
+            DO WHILE ( j >= 1 )
+               IF ( brLen(order(j)) <= brLen(t1) )     EXIT
+               order(j+1) = order(j)
+               j = j - 1
+            END DO
+            order(j+1) = t1
+         END DO
+
+         nAll0  = nAll
+         nQ0    = nQ
+         nTried = 0
+         DO t1 = 1, MIN(nBr, MAX_TRIES)
+            i1 = brI(order(t1))
+            j1 = brJ(order(t1))
+            DO t2 = 1, nBr
+               i2 = brI(order(t2))
+               j2 = brJ(order(t2))
+               di = MODULO(i2 - i1, nFront)
+               dj = MODULO(j2 - j1, nB)
+               IF ( di < nFront/4 .OR. di > (3*nFront)/4 )     CYCLE
+               IF ( dj < nB/4 .OR. dj > (3*nB)/4 )     CYCLE
+               IF ( segmentsCross(x(:,front(i2)), x(:,b0+j2), x(:,front(i1)), x(:,b0+j1)) )     CYCLE
+               nAll    = nAll0
+               nQ      = nQ0
+               nChords = 0
+               CALL FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, h, quads, nQ, ok, nChords )
+               IF ( ok )     RETURN
+               nTried = nTried + 1
+               IF ( nTried >= MAX_TRIES )     EXIT
+            END DO
+         END DO
+         nAll = nAll0
+         nQ   = nQ0
+
+      END SUBROUTINE FillBetweenLoops
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION bridgeOK( x, front, nFront, b0, nB, i, j )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------
+!        True if the segment from front node i to loop node j leaves
+!        both into the region and crosses no edge of either loop
+!        ---------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:)
+         INTEGER       :: nFront, b0, nB, i, j, front(:)
+         INTEGER       :: k
+         REAL(KIND=RP) :: a(2), b(2)
+         INTEGER, EXTERNAL :: Loop
+
+         bridgeOK = .FALSE.
+         a = x(:,front(i))
+         b = x(:,b0+j)
+         IF ( cornerAngle( b, a, x(:,front(Loop(i+1,nFront))) ) >= &
+              cornerAngle( x(:,front(Loop(i-1,nFront))), a, x(:,front(Loop(i+1,nFront))) ) )     RETURN
+         IF ( cornerAngle( a, b, x(:,b0+Loop(j+1,nB)) ) >= &
+              cornerAngle( x(:,b0+Loop(j-1,nB)), b, x(:,b0+Loop(j+1,nB)) ) )     RETURN
+         DO k = 1, nFront
+            IF ( k == i .OR. Loop(k+1,nFront) == i )     CYCLE
+            IF ( segmentsCross(a, b, x(:,front(k)), x(:,front(Loop(k+1,nFront)))) )     RETURN
+         END DO
+         DO k = 1, nB
+            IF ( k == j .OR. Loop(k+1,nB) == j )     CYCLE
+            IF ( segmentsCross(a, b, x(:,b0+k), x(:,b0+Loop(k+1,nB))) )     RETURN
+         END DO
+         bridgeOK = .TRUE.
+      END FUNCTION bridgeOK
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, h, quads, nQ, ok, nChords )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Cut the region between the front and the loop along the chords
+!        front(i1)-loop(j1) and front(i2)-loop(j2), with nodes about h
+!        apart and the parity that makes both polygons even, and split
+!        both polygons into quads.
+!        Polygon 1: front i1 -> i2, chord 2, loop j2 -> j1, chord 1.
+!        Polygon 2: front i2 -> i1, chord 1 back, loop j1 -> j2, chord 2
+!        back.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:), h
+         INTEGER       :: nAll, nFront, b0, nB, i1, j1, i2, j2, nQ
+         INTEGER       :: front(:), quads(:,:), nChords(:)
+         LOGICAL       :: ok
+
+         INTEGER       :: k1, k2, c, n1, n2, kChord1, kChord2
+         INTEGER       :: poly1(2*(nFront + nB) + 200), poly2(2*(nFront + nB) + 200)
+         REAL(KIND=RP) :: len1, len2
+         INTEGER, EXTERNAL :: Loop
+
+         len1 = NORM2(x(:,b0+j1) - x(:,front(i1)))
+         len2 = NORM2(x(:,b0+j2) - x(:,front(i2)))
+         k1 = MAX(0, NINT(len1/h) - 1)
+         k2 = MAX(0, NINT(len2/h) - 1)
+         n1 = MODULO(i2 - i1, nFront) + 1 + MODULO(j1 - j2, nB) + 1 + k1 + k2
+         IF ( MODULO(n1, 2) /= 0 )     THEN
+            IF ( len2/h - 1.0_RP > k2 .OR. k2 == 0 )     THEN
+               k2 = k2 + 1
+            ELSE
+               k2 = k2 - 1
+            END IF
+         END IF
+         kChord1 = nAll
+         DO c = 1, k1
+            nAll = nAll + 1
+            x(:,nAll) = x(:,b0+j1) + c*(x(:,front(i1)) - x(:,b0+j1))/(k1 + 1)
+         END DO
+         kChord2 = nAll
+         DO c = 1, k2
+            nAll = nAll + 1
+            x(:,nAll) = x(:,front(i2)) + c*(x(:,b0+j2) - x(:,front(i2)))/(k2 + 1)
+         END DO
+
+         n1 = 0
+         DO c = 0, MODULO(i2 - i1, nFront)
+            n1 = n1 + 1
+            poly1(n1) = front(Loop(i1 + c, nFront))
+         END DO
+         DO c = 1, k2
+            n1 = n1 + 1
+            poly1(n1) = kChord2 + c
+         END DO
+         DO c = 0, MODULO(j1 - j2, nB)
+            n1 = n1 + 1
+            poly1(n1) = b0 + Loop(j2 + c, nB)
+         END DO
+         DO c = 1, k1
+            n1 = n1 + 1
+            poly1(n1) = kChord1 + c
+         END DO
+
+         n2 = 0
+         DO c = 0, MODULO(i1 - i2, nFront)
+            n2 = n2 + 1
+            poly2(n2) = front(Loop(i2 + c, nFront))
+         END DO
+         DO c = k1, 1, -1
+            n2 = n2 + 1
+            poly2(n2) = kChord1 + c
+         END DO
+         DO c = 0, MODULO(j2 - j1, nB)
+            n2 = n2 + 1
+            poly2(n2) = b0 + Loop(j1 + c, nB)
+         END DO
+         DO c = k2, 1, -1
+            n2 = n2 + 1
+            poly2(n2) = kChord2 + c
+         END DO
+
+         CALL SplitFill( x, nAll, poly1(1:n1), n1, h, quads, nQ, ok, nChords )
+         IF ( .NOT.ok )     RETURN
+         CALL SplitFill( x, nAll, poly2(1:n2), n2, h, quads, nQ, ok, nChords )
+
+      END SUBROUTINE FillWithTwoChords
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE InterfaceCurveSizes( sizer, xs, nS, nPer, nCurves, turnMax, xOther, nOther, hs, hBand, isFeature )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Element sizes along a closed interface curve sampled at xs, taken
+!        from the curve geometry rather than from the background mesh.
+!        The features are the joints of the chain and the corners, where
+!        the curve turns more than CORNER_ANGLE within a CORNER_SCALE
+!        fraction of the size. The size is the smallest of
+!          - the sizer's control size (base size, centers and lines),
+!            limited so that minNumberOfElementsInsideArea fit across,
+!          - the size with turnMax turning per element, where the turning
+!            is measured between features so a corner does not shrink it,
+!          - the distance, over closeCurveFactor, to a part of the curve
+!            that is near in space but far along the curve, with no
+!            feature between, or to a node on another curve, xOther.
+!        hBand is that size, graded. hs is also at most the length of the
+!        piece between two features, so that each piece gets an edge,
+!        then graded.
+!        ---------------------------------------------------------------
+!
+         TYPE(MeshSizer), POINTER :: sizer
+         INTEGER       :: nS, nPer, nCurves, nOther
+         REAL(KIND=RP) :: xs(2,nS), turnMax, xOther(2,*), hs(nS), hBand(nS)
+         LOGICAL       :: isFeature(nS)
+
+         REAL(KIND=RP), PARAMETER :: CORNER_ANGLE = 30.0_RP*PI/180.0_RP, CORNER_SCALE = 0.05_RP
+         REAL(KIND=RP), PARAMETER :: GROWTH = 0.5_RP, NEAR_RATIO = 3.0_RP
+         INTEGER, PARAMETER       :: MAX_COARSE = 2000, CURVATURE_ITERATIONS = 6
+         REAL(KIND=RP) :: arc(nS+1), absTurn(nS), hBase(nS), hCurv(nS), hProx(nS), dev(nS), eps(nS), hNew(nS)
+         REAL(KIND=RP) :: reach, xMin(2), xMax(2), perimeter, aSize, x3(3), u(2), v(2), d, dArc, turnSum, covered, dFwd, dBack
+         INTEGER       :: i, j, k, iter, stride, nFeatures
+         INTEGER       :: featureCount(0:nS)
+         LOGICAL       :: isMax
+         INTEGER, EXTERNAL :: Loop
+
+         arc(1) = 0.0_RP
+         DO i = 1, nS
+            arc(i+1) = arc(i) + NORM2(xs(:,MODULO(i,nS)+1) - xs(:,i))
+         END DO
+         perimeter = arc(nS+1)
+         DO i = 1, nS
+            u = xs(:,i) - xs(:,Loop(i-1,nS))
+            v = xs(:,Loop(i+1,nS)) - xs(:,i)
+            absTurn(i) = ABS(ATAN2(cross2(u,v), DOT_PRODUCT(u,v)))
+         END DO
+!
+!        ----------------------------------
+!        Control size and the area limit
+!        ----------------------------------
+!
+         aSize = MINVAL(MAXVAL(xs, DIM = 2) - MINVAL(xs, DIM = 2))/minNumberOfElementsInsideArea
+         DO i = 1, nS
+            x3 = [xs(1,i), xs(2,i), 0.0_RP]
+            hBase(i) = MIN(controlSize(sizer, x3), aSize)
+         END DO
+!
+!        --------------------------------------------------------------
+!        Features: the joints, and the corners, where the chord angle at
+!        the scale eps is a local maximum above CORNER_ANGLE
+!        --------------------------------------------------------------
+!
+         DO i = 1, nS
+            eps(i) = MAX(CORNER_SCALE*hBase(i), 3.0_RP*perimeter/nS)
+            u = xs(:,i) - pointAtArc( xs, arc, nS, arc(i) - eps(i) )
+            v = pointAtArc( xs, arc, nS, arc(i) + eps(i) ) - xs(:,i)
+            dev(i) = ABS(ATAN2(cross2(u,v), DOT_PRODUCT(u,v)))
+         END DO
+         DO k = 1, nCurves
+            dev((k-1)*nPer + 1) = HUGE(1.0_RP)
+         END DO
+         isFeature = .FALSE.
+         DO i = 1, nS
+            IF ( dev(i) < CORNER_ANGLE )     CYCLE
+            isMax = .TRUE.
+            DO k = 1, nS/2
+               j = MODULO(i - 1 + k, nS) + 1
+               IF ( MODULO(arc(j) - arc(i), perimeter) > eps(i) )     EXIT
+               IF ( dev(j) > dev(i) )     isMax = .FALSE.
+            END DO
+            DO k = 1, nS/2
+               j = MODULO(i - 1 - k, nS) + 1
+               IF ( MODULO(arc(i) - arc(j), perimeter) > eps(i) )     EXIT
+               IF ( dev(j) >= dev(i) )     isMax = .FALSE.
+            END DO
+            isFeature(i) = isMax
+         END DO
+!
+!        ------------------------------------------------------------
+!        The turning near a feature belongs to the feature, not to the
+!        curvature
+!        ------------------------------------------------------------
+!
+         DO i = 1, nS
+            IF ( .NOT.isFeature(i) )     CYCLE
+            absTurn(i) = 0.0_RP
+            DO k = 1, nS/2
+               j = MODULO(i - 1 + k, nS) + 1
+               IF ( MODULO(arc(j) - arc(i), perimeter) > eps(i) )     EXIT
+               absTurn(j) = 0.0_RP
+            END DO
+            DO k = 1, nS/2
+               j = MODULO(i - 1 - k, nS) + 1
+               IF ( MODULO(arc(i) - arc(j), perimeter) > eps(i) )     EXIT
+               absTurn(j) = 0.0_RP
+            END DO
+         END DO
+!
+!        ---------------------------------------------------------------
+!        Curvature: the turning over a window one size long, not crossing
+!        a feature, sets the size to turnMax per element
+!        ---------------------------------------------------------------
+!
+         hCurv = hBase
+         DO iter = 1, CURVATURE_ITERATIONS
+            DO i = 1, nS
+               turnSum = 0.0_RP
+               IF ( .NOT.isFeature(i) )     turnSum = absTurn(i)
+               dFwd = 0.0_RP
+               DO k = 1, nS/2
+                  j = MODULO(i - 1 + k, nS) + 1
+                  d = MODULO(arc(j) - arc(i), perimeter)
+                  IF ( d > 0.5_RP*hCurv(i) .OR. isFeature(j) )     EXIT
+                  turnSum = turnSum + absTurn(j)
+                  dFwd    = d
+               END DO
+               dBack = 0.0_RP
+               DO k = 1, nS/2
+                  j = MODULO(i - 1 - k, nS) + 1
+                  d = MODULO(arc(i) - arc(j), perimeter)
+                  IF ( d > 0.5_RP*hCurv(i) .OR. isFeature(j) )     EXIT
+                  turnSum = turnSum + absTurn(j)
+                  dBack   = d
+               END DO
+               covered = dFwd + dBack
+               IF ( turnSum > 0.0_RP .AND. covered > 0.0_RP )     THEN
+                  hNew(i) = MIN(hBase(i), turnMax*covered/turnSum)
+               ELSE
+                  hNew(i) = hBase(i)
+               END IF
+            END DO
+            hCurv = hNew
+         END DO
+!
+!        -------------------------------------------------------------
+!        Proximity, on a coarser set of samples: parts of the curve near
+!        in space but far along it, not separated by a feature
+!        -------------------------------------------------------------
+!
+         featureCount(0) = 0
+         DO i = 1, nS
+            featureCount(i) = featureCount(i-1)
+            IF ( isFeature(i) )     featureCount(i) = featureCount(i) + 1
+         END DO
+         nFeatures = featureCount(nS)
+         stride = MAX(1, nS/MAX_COARSE)
+         hProx  = HUGE(1.0_RP)
+         DO i = 1, nS, stride
+            DO j = i + stride, nS, stride
+               d    = NORM2(xs(:,j) - xs(:,i))
+               dArc = arc(j) - arc(i)
+               IF ( dArc <= 0.5_RP*perimeter )     THEN
+                  k = featureCount(j-1) - featureCount(i)
+               ELSE
+                  dArc = perimeter - dArc
+                  k = nFeatures - featureCount(j) + featureCount(i-1)
+               END IF
+               IF ( dArc > NEAR_RATIO*d .AND. k == 0 )     THEN
+                  hProx(i) = MIN(hProx(i), d/closeCurveFactor)
+                  hProx(j) = MIN(hProx(j), d/closeCurveFactor)
+               END IF
+            END DO
+         END DO
+         reach = closeCurveFactor*MAXVAL(hBase)
+         xMin  = MINVAL(xs, DIM = 2) - reach
+         xMax  = MAXVAL(xs, DIM = 2) + reach
+         DO j = 1, nOther
+            IF ( ANY(xOther(:,j) < xMin) .OR. ANY(xOther(:,j) > xMax) )     CYCLE
+            DO i = 1, nS, stride
+               hProx(i) = MIN(hProx(i), NORM2(xOther(:,j) - xs(:,i))/closeCurveFactor)
+            END DO
+         END DO
+         DO i = 1, nS
+            hProx(i) = hProx(((i-1)/stride)*stride + 1)
+         END DO
+
+         hBand = MIN(hBase, hCurv, hProx)
+         hs    = hBand
+         CALL GradeSizes( hBand, xs, nS, GROWTH )
+!
+!        ---------------------------------------------------
+!        At most the length of the piece between two features
+!        ---------------------------------------------------
+!
+         DO i = 1, nS
+            IF ( .NOT.isFeature(i) )     CYCLE
+            j = i
+            DO k = 1, nS
+               j = MODULO(j, nS) + 1
+               IF ( isFeature(j) )     EXIT
+            END DO
+            d = MODULO(arc(j) - arc(i), perimeter)
+            IF ( d == 0.0_RP )     d = perimeter
+            k = i
+            DO
+               hs(k) = MIN(hs(k), d)
+               k = MODULO(k, nS) + 1
+               IF ( k == j )     EXIT
+            END DO
+         END DO
+         CALL GradeSizes( hs, xs, nS, GROWTH )
+
+      END SUBROUTINE InterfaceCurveSizes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE GradeSizes( h, xs, nS, growth )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        Limit the sizes h along the closed polyline xs so that they
+!        grow by at most growth times the distance along it
+!        ------------------------------------------------------------
+!
+         INTEGER       :: nS
+         REAL(KIND=RP) :: h(nS), xs(2,nS), growth
+         INTEGER       :: i, j, k, iter
+
+         DO iter = 1, 2
+            DO i = 1, 2*nS
+               j = MODULO(i-1, nS) + 1
+               k = MODULO(i-2, nS) + 1
+               h(j) = MIN(h(j), h(k) + growth*NORM2(xs(:,j) - xs(:,k)))
+            END DO
+            DO i = 2*nS, 1, -1
+               j = MODULO(i-1, nS) + 1
+               k = MODULO(i, nS) + 1
+               h(j) = MIN(h(j), h(k) + growth*NORM2(xs(:,j) - xs(:,k)))
+            END DO
+         END DO
+      END SUBROUTINE GradeSizes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION pointAtArc( xs, arc, nS, s ) RESULT(x)
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        The point at arc length s (taken periodically) along the closed
+!        polyline xs, whose vertex i is at arc length arc(i)
+!        ------------------------------------------------------------
+!
+         INTEGER       :: nS
+         REAL(KIND=RP) :: xs(2,nS), arc(nS+1), s, x(2)
+         REAL(KIND=RP) :: t, sp
+         INTEGER       :: lo, hi, mid
+
+         sp = MODULO(s, arc(nS+1))
+         lo = 1
+         hi = nS + 1
+         DO WHILE ( hi - lo > 1 )
+            mid = (lo + hi)/2
+            IF ( arc(mid) <= sp )     THEN
+               lo = mid
+            ELSE
+               hi = mid
+            END IF
+         END DO
+         t = 0.0_RP
+         IF ( arc(lo+1) > arc(lo) )     t = (sp - arc(lo))/(arc(lo+1) - arc(lo))
+         x = (1.0_RP - t)*xs(:,lo) + t*xs(:,MODULO(lo,nS)+1)
+      END FUNCTION pointAtArc
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE RemoveDoublets( x, nFixed, nAll, quads, nQ )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        A new node (index above nFixed) in only two quads, such as a node
+!        on a fill chord that neither side used again, has an angle near
+!        180 degrees in both, which smoothing cannot fix. Merge the two
+!        quads, (v,a,p,b) and (v,b,q,a), into (a,p,b,q) when that is a
+!        valid quad, which leaves v unused.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:)
+         INTEGER       :: nFixed, nAll, nQ
+         INTEGER       :: quads(:,:)
+
+         INTEGER       :: v, j, k, c, nAt, at(2), pos(2), merged(4)
+         LOGICAL       :: changed
+         REAL(KIND=RP) :: corners(2,4)
+         INTEGER, EXTERNAL :: Loop
+
+         changed = .TRUE.
+         DO WHILE ( changed )
+            changed = .FALSE.
+            DO v = nFixed + 1, nAll
+               nAt = 0
+               DO j = 1, nQ
+                  DO k = 1, 4
+                     IF ( quads(k,j) == v )     THEN
+                        nAt = nAt + 1
+                        IF ( nAt <= 2 )     THEN
+                           at(nAt)  = j
+                           pos(nAt) = k
+                        END IF
+                     END IF
+                  END DO
+               END DO
+               IF ( nAt /= 2 )     CYCLE
+               merged(1) = quads(Loop(pos(1)+1,4), at(1))
+               merged(2) = quads(Loop(pos(1)+2,4), at(1))
+               merged(3) = quads(Loop(pos(1)+3,4), at(1))
+               merged(4) = quads(Loop(pos(2)+2,4), at(2))
+               IF ( quads(Loop(pos(2)+1,4), at(2)) /= merged(3) .OR. &
+                    quads(Loop(pos(2)+3,4), at(2)) /= merged(1) )     CYCLE
+               DO c = 1, 4
+                  corners(:,c) = x(:,merged(c))
+               END DO
+               IF ( polygonArea(corners, 4) <= 0.0_RP )     CYCLE
+               IF ( minQuadSine(corners) <= 0.0_RP )     CYCLE
+               quads(:,at(1)) = merged
+               quads(:,at(2)) = quads(:,nQ)
+               nQ      = nQ - 1
+               changed = .TRUE.
+            END DO
+         END DO
+      END SUBROUTINE RemoveDoublets
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION minQuadSine( corners )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------
+!        The smallest sine of the corner angles of a quad, negative
+!        where a corner is reflex
+!        ---------------------------------------------------------
+!
+         REAL(KIND=RP) :: corners(2,4)
+         REAL(KIND=RP) :: u(2), v(2)
+         INTEGER       :: k
+         INTEGER, EXTERNAL :: Loop
+
+         minQuadSine = 1.0_RP
+         DO k = 1, 4
+            u = corners(:,Loop(k+1,4)) - corners(:,k)
+            v = corners(:,Loop(k-1,4)) - corners(:,k)
+            minQuadSine = MIN(minQuadSine, cross2(u,v)/(NORM2(u)*NORM2(v)))
+         END DO
+      END FUNCTION minQuadSine
 
    END MODULE MeshGenerationMethods

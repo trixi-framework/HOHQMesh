@@ -131,6 +131,14 @@
          REAL(KIND=RP) :: normalTangentMin          = 0.01_RP  ! Dot of normal and tangent should be zero. Use this instead.
 
          INTEGER       :: refinementType          = 2
+!
+!        ---------------------------------------------------------
+!        Experimental (INTERFACE_PAVE): the interface chains whose
+!        band was paved. Their elements are not split later.
+!        ---------------------------------------------------------
+!
+         INTEGER, PARAMETER :: MAX_PAVED_CHAIN_ID = 9999
+         LOGICAL            :: chainWasPaved(0:MAX_PAVED_CHAIN_ID) = .FALSE.
          INTEGER       :: boundarySmoothingPasses = 1
 !
 !        -----------
