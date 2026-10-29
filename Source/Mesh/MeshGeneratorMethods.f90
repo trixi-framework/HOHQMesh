@@ -41,6 +41,26 @@
       USE MeshSizerClass
       USE BoundaryErrorModule
       IMPLICIT NONE
+!
+!     ---------------------------------------------------------------
+!     Experimental interface paving: what paving one interface chain
+!     would change in the mesh (PaveInterfaceWithBand), so that several
+!     band widths can be tried and the best one applied (CommitPavePlan)
+!     without meshing it again. bandEdge(:,side) are the nodes on the
+!     edge of the remaining mesh, local nodes nc+1..nc+nfr(side) of sx.
+!     ---------------------------------------------------------------
+!
+      TYPE PavePlan
+         LOGICAL                         :: ok    = .FALSE.
+         REAL(KIND=RP)                   :: score = 0.0_RP
+         CLASS(SMChainedCurve), POINTER  :: chain => NULL()
+         INTEGER                         :: chainID, nCurves, bCurveSide, nc, nfr(2), nAll(2), nQ(2)
+         LOGICAL                         :: ccw
+         TYPE(SMElementPtr), ALLOCATABLE :: removedElements(:)
+         TYPE(SMNodePtr)   , ALLOCATABLE :: seq(:), bandEdge(:,:)
+         REAL(KIND=RP)     , ALLOCATABLE :: cg(:), sx(:,:,:)
+         INTEGER           , ALLOCATABLE :: quads(:,:,:)
+      END TYPE PavePlan
 
 !
 !     ========
@@ -3737,8 +3757,10 @@
 !
 !        ---------------------------------------------------------------
 !        Experimental (INTERFACE_PAVE). Pave the band around an interface
-!        chain (PaveInterfaceWithBand). If that fails, try again with a
-!        wider band, which gives a different edge to fill against.
+!        chain (PaveInterfaceWithBand). The width of the band suited to a
+!        chain depends on its size and its neighbors, so plan the paving
+!        for the default width and two wider ones, score each by its worst
+!        quads, and apply the best plan.
 !        ---------------------------------------------------------------
 !
          TYPE (SMMesh)      , POINTER :: mesh
@@ -3746,21 +3768,58 @@
          TYPE (MeshSizer)   , POINTER :: sizer
          CLASS(FTLinkedList), POINTER :: list
          LOGICAL                      :: paved
-         INTEGER, PARAMETER           :: MAX_TRIES = 3
+         INTEGER, PARAMETER           :: NUMBER_OF_WIDTHS = 3
+         REAL(KIND=RP), PARAMETER     :: BAND_SCALES(NUMBER_OF_WIDTHS) = [1.0_RP, 4.0_RP/3.0_RP, 1.5_RP]
+         TYPE(PavePlan)               :: plan, bestPlan
          INTEGER                      :: try
-         REAL(KIND=RP)                :: bandScale
 
-         bandScale = 1.0_RP
-         DO try = 1, MAX_TRIES
-            CALL PaveInterfaceWithBand( mesh, model, sizer, list, bandScale, paved )
-            IF ( paved )     RETURN
-            bandScale = 1.5_RP*bandScale
+         DO try = 1, NUMBER_OF_WIDTHS
+            CALL PaveInterfaceWithBand( mesh, model, sizer, list, BAND_SCALES(try), plan )
+            IF ( .NOT.plan % ok )     CYCLE
+            IF ( .NOT.bestPlan % ok )     THEN
+               CALL MovePavePlan( plan, bestPlan )
+            ELSE IF ( plan % score > bestPlan % score )     THEN
+               CALL MovePavePlan( plan, bestPlan )
+            END IF
          END DO
+         paved = bestPlan % ok
+         IF ( paved )     CALL CommitPavePlan( mesh, model, bestPlan )
       END SUBROUTINE PaveInterface
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE PaveInterfaceWithBand( mesh, model, sizer, list, bandScale, paved )
+      SUBROUTINE MovePavePlan( from, to )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------
+!        to = from, moving the arrays rather than copying
+!        ------------------------------------------------
+!
+         TYPE(PavePlan) :: from, to
+
+         to % ok         =  from % ok
+         to % score      =  from % score
+         to % chain      => from % chain
+         to % chainID    =  from % chainID
+         to % nCurves    =  from % nCurves
+         to % bCurveSide =  from % bCurveSide
+         to % nc         =  from % nc
+         to % nfr        =  from % nfr
+         to % nAll       =  from % nAll
+         to % nQ         =  from % nQ
+         to % ccw        =  from % ccw
+         CALL MOVE_ALLOC( from % removedElements, to % removedElements )
+         CALL MOVE_ALLOC( from % seq            , to % seq )
+         CALL MOVE_ALLOC( from % bandEdge       , to % bandEdge )
+         CALL MOVE_ALLOC( from % cg             , to % cg )
+         CALL MOVE_ALLOC( from % sx             , to % sx )
+         CALL MOVE_ALLOC( from % quads          , to % quads )
+         from % ok = .FALSE.
+      END SUBROUTINE MovePavePlan
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE PaveInterfaceWithBand( mesh, model, sizer, list, bandScale, plan )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
@@ -3776,7 +3835,9 @@
 !             it is above fanAngle, two otherwise.
 !          4. Fill the gap between each new front and the remaining
 !             elements by cutting it into polygons and splitting those.
-!        Nothing is changed (paved = .FALSE.) if any step fails.
+!        The mesh is not changed: plan holds the result, with plan % ok
+!        = .FALSE. if any step fails, and the quality of the worst new
+!        quads as plan % score. CommitPavePlan applies it.
 !        ---------------------------------------------------------------
 !
          TYPE (SMMesh)      , POINTER :: mesh
@@ -3784,7 +3845,7 @@
          TYPE (MeshSizer)   , POINTER :: sizer
          CLASS(FTLinkedList), POINTER :: list
          REAL(KIND=RP)                :: bandScale
-         LOGICAL                      :: paved
+         TYPE(PavePlan), INTENT(OUT)  :: plan
 !
 !        ---------------
 !        Local variables
@@ -3793,9 +3854,9 @@
          INTEGER, PARAMETER :: MAX_GROUP = 16, MAX_LOOPS = 32, MAX_SAMPLES = 40000
          TYPE(SMNodePtr), DIMENSION(:), POINTER :: seq
          TYPE(SMElementPtr), ALLOCATABLE :: elems(:)
-         TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:), sideNodes(:), curveNodes(:)
+         TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:)
          INTEGER           , ALLOCATABLE :: nodeElCount(:), nodeEl(:,:), nOut(:), cnt(:)
-         LOGICAL           , ALLOCATABLE :: removed(:), used(:), nodeUsed(:)
+         LOGICAL           , ALLOCATABLE :: removed(:), used(:)
          REAL(KIND=RP)     , ALLOCATABLE :: xOther(:,:), xs(:,:), hs(:), hBand(:), cx(:,:), cg(:), sx(:,:,:), wSeg(:)
          LOGICAL           , ALLOCATABLE :: isFeature(:)
          INTEGER           , ALLOCATABLE :: featureIdx(:), nSeg(:)
@@ -3806,7 +3867,6 @@
          CLASS(FTObject)      , POINTER  :: obj
          CLASS(SMChainedCurve), POINTER  :: chain, owner
          CLASS(SMCurve)       , POINTER  :: c
-         TYPE(SMNodePtr)                 :: q(4)
          INTEGER  :: n, nCurves, nPer, nS, maxID, nE, nid, i, j, k, f, g, p, iter, nF, cur, nc, kk, nCount(MAX_LOOPS)
          INTEGER  :: nInLoops, nOutLoops, fIn, fOut, side, nfr(2), nAll(2), nQ(2), nNew(2), kBest, total
          INTEGER  :: m, iS, iFr(2), maxN, bCurveSide, nQRow(2), pass, nComp, nStack, keep(2)
@@ -3815,13 +3875,12 @@
          REAL(KIND=RP)                   :: turnMax, xMin(2), xMax(2)
          INTEGER                         :: nFeat, i2, nOther
          REAL(KIND=RP) :: bandFactor, wedgeAngle, fanAngle, d, ds, area, w, target, frac, x3(3), rowScale
-         REAL(KIND=RP) :: gNode
          LOGICAL  :: changed, ccw, debug, ok, inside
          CHARACTER(LEN=32)              :: envValue
          INTEGER                        :: envStatus
          INTEGER, EXTERNAL              :: Loop
 
-         paved = .FALSE.
+         plan % ok  = .FALSE.
          bandFactor = 1.5_RP
          CALL GET_ENVIRONMENT_VARIABLE("PAVE_BAND", envValue, status = envStatus)
          IF ( envStatus == 0 )     READ(envValue,*) bandFactor
@@ -4216,7 +4275,7 @@
 !        ------------------------------------------------------------
 !
          maxN = 40*(nc + nF) + 100
-         ALLOCATE( sx(2,maxN,2), quads(4,maxN,2), newFront(4*nc,2), sideNodes(maxN), curveNodes(nc), nodeUsed(maxN) )
+         ALLOCATE( sx(2,maxN,2), quads(4,maxN,2), newFront(4*nc,2) )
          DO side = 1, 2
             DO m = 1, nc
                sx(:,m,side) = cx(:,sideCurveIndex(m, nc, side, ccw))
@@ -4262,60 +4321,128 @@
             END IF
          END DO
 !
-!        ------
-!        Commit
-!        ------
+!        ------------------------------------------------------------
+!        A band wider than the default must not reach another curve:
+!        between curves close together the paved regions would meet in
+!        the gap and squeeze the elements there
+!        ------------------------------------------------------------
 !
-         DO f = 1, nE
-            IF ( removed(f) )     elems(f) % element % remove = .TRUE.
+         IF ( bandScale > 1.0_RP )     THEN
+            DO f = 1, nE
+               IF ( .NOT.removed(f) )     CYCLE
+               DO k = 1, 4
+                  node => elems(f) % element % nodes(k) % node
+                  IF ( node % bCurveChainID > 0 .AND. node % bCurveChainID /= seq(1) % node % bCurveChainID )     THEN
+                     IF ( node % distToBoundary == 0.0_RP )     THEN
+                        IF ( debug )     PRINT *, "      Pave: band", bandFactor, " reaches another curve"
+                        DEALLOCATE(seq)
+                        RETURN
+                     END IF
+                  END IF
+               END DO
+            END DO
+         END IF
+!
+!        ----
+!        Plan
+!        ----
+!
+         plan % score = MIN(worstQuadQuality( sx(:,:,1), nc, nc + nfr(1), nAll(1), quads(:,:,1), nQ(1) ), &
+                            worstQuadQuality( sx(:,:,2), nc, nc + nfr(2), nAll(2), quads(:,:,2), nQ(2) ))
+         IF ( debug )     PRINT *, "      Pave: band", bandFactor, " score", plan % score
+         plan % chain      => chain
+         plan % chainID    =  seq(1) % node % bCurveChainID
+         plan % nCurves    =  nCurves
+         plan % bCurveSide =  bCurveSide
+         plan % nc         =  nc
+         plan % nfr        =  nfr
+         plan % nAll       =  nAll
+         plan % nQ         =  nQ
+         plan % ccw        =  ccw
+         plan % removedElements = PACK(elems(1:nE), removed(1:nE))
+         plan % seq = seq
+         ALLOCATE( plan % bandEdge(MAX(1, MAXVAL(nfr)), 2) )
+         DO side = 1, 2
+            DO m = 1, nfr(side)
+               plan % bandEdge(m,side) % node => nodeForID(loopNodes(loopStart(iFr(side)) + m - 1)) % node
+            END DO
+         END DO
+         plan % cg    = cg(1:nc)
+         plan % sx    = sx(:,1:MAXVAL(nAll),:)
+         plan % quads = quads(:,1:MAX(1, MAXVAL(nQ)),:)
+         plan % ok    = .TRUE.
+         DEALLOCATE(seq)
+
+      END SUBROUTINE PaveInterfaceWithBand
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE CommitPavePlan( mesh, model, plan )
+         IMPLICIT NONE
+!
+!        --------------------------------------------------------------
+!        Apply a plan of PaveInterfaceWithBand: remove the elements of
+!        the band, make the curve and interior nodes, and add the quads
+!        --------------------------------------------------------------
+!
+         TYPE (SMMesh) , POINTER :: mesh
+         TYPE (SMModel), POINTER :: model
+         TYPE(PavePlan)          :: plan
+         TYPE(SMNodePtr)         :: curveNodes(plan % nc), sideNodes(MAXVAL(plan % nAll)), q(4)
+         LOGICAL                 :: nodeUsed(MAXVAL(plan % nAll))
+         REAL(KIND=RP)           :: gNode, d, x3(3)
+         INTEGER                 :: i, j, k, m, side, nc
+
+         nc = plan % nc
+         DO i = 1, SIZE(plan % removedElements)
+            plan % removedElements(i) % element % remove = .TRUE.
          END DO
          DO m = 1, nc
-            gNode = cg(m)*nCurves
+            gNode = plan % cg(m)*plan % nCurves
             NULLIFY(curveNodes(m) % node)
             IF ( ABS(gNode - NINT(gNode)) <= 1.0e-12_RP )     THEN
-               DO i = 1, n
-                  d = seq(i) % node % gWhereOnBoundary*nCurves
-                  IF ( ABS(MODULO(d - gNode + 0.5_RP*nCurves, REAL(nCurves,RP)) - 0.5_RP*nCurves) <= 1.0e-12_RP )     THEN
-                     curveNodes(m) % node => seq(i) % node
-                     x3 = chain % positionAt(cg(m))
+               DO i = 1, SIZE(plan % seq)
+                  d = plan % seq(i) % node % gWhereOnBoundary*plan % nCurves
+                  IF ( ABS(MODULO(d - gNode + 0.5_RP*plan % nCurves, REAL(plan % nCurves,RP)) &
+                       - 0.5_RP*plan % nCurves) <= 1.0e-12_RP )     THEN
+                     curveNodes(m) % node => plan % seq(i) % node
+                     x3 = plan % chain % positionAt(plan % cg(m))
                      curveNodes(m) % node % x = x3
                      EXIT
                   END IF
                END DO
             END IF
             IF ( .NOT.ASSOCIATED(curveNodes(m) % node) )     THEN
-               curveNodes(m) % node => newChainNodeAt( mesh, model, chain, cg(m), bCurveSide )
+               curveNodes(m) % node => newChainNodeAt( mesh, model, plan % chain, plan % cg(m), plan % bCurveSide )
             END IF
          END DO
          DO side = 1, 2
             nodeUsed = .FALSE.
-            DO j = 1, nQ(side)
-               nodeUsed(quads(:,j,side)) = .TRUE.
+            DO j = 1, plan % nQ(side)
+               nodeUsed(plan % quads(:,j,side)) = .TRUE.
             END DO
-            DO m = 1, nAll(side)
+            DO m = 1, plan % nAll(side)
                NULLIFY(sideNodes(m) % node)
                IF ( m <= nc )     THEN
-                  sideNodes(m) % node => curveNodes(sideCurveIndex(m, nc, side, ccw)) % node
-               ELSE IF ( m <= nc + nfr(side) )     THEN
-                  sideNodes(m) % node => nodeForID(loopNodes(loopStart(iFr(side)) + m - nc - 1)) % node
+                  sideNodes(m) % node => curveNodes(sideCurveIndex(m, nc, side, plan % ccw)) % node
+               ELSE IF ( m <= nc + plan % nfr(side) )     THEN
+                  sideNodes(m) % node => plan % bandEdge(m - nc, side) % node
                ELSE IF ( nodeUsed(m) )     THEN
-                  sideNodes(m) % node => newInteriorNode( mesh, sx(:,m,side) )
+                  sideNodes(m) % node => newInteriorNode( mesh, plan % sx(:,m,side) )
                END IF
             END DO
-            DO j = 1, nQ(side)
+            DO j = 1, plan % nQ(side)
                DO k = 1, 4
-                  q(k) % node => sideNodes(quads(k,j,side)) % node
+                  q(k) % node => sideNodes(plan % quads(k,j,side)) % node
                END DO
                CALL AddQuad4( mesh, q, .FALSE. )
             END DO
          END DO
 
-         paved = .TRUE.
-         k = seq(1) % node % bCurveChainID
+         k = plan % chainID
          IF ( k >= 0 .AND. k <= MAX_PAVED_CHAIN_ID )     chainWasPaved(k) = .TRUE.
-         DEALLOCATE(seq)
 
-      END SUBROUTINE PaveInterfaceWithBand
+      END SUBROUTINE CommitPavePlan
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -5120,6 +5247,74 @@
             END DO
          END DO
       END SUBROUTINE RemoveDoublets
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION worstQuadQuality( x, nCurve, nFixed, nAll, quads, nQ )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        The mean quality of the worst tenth of the quads, after a few
+!        Laplace smoothing passes of a copy of the nodes above nFixed, as
+!        the smoother would move them. Nodes 1..nCurve are on the curve,
+!        nCurve+1..nFixed on the edge of the remaining mesh. The quality
+!        of a quad is the smallest sine of its angles times its shortest
+!        over its longest side, so both a flat and a stretched quad score
+!        low. The angles at the edge of the remaining mesh are left out:
+!        the smoother moves those nodes later, and an edge that runs
+!        straight through a node gives a 180 degree angle there.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:)
+         INTEGER       :: nCurve, nFixed, nAll, nQ, quads(:,:)
+         INTEGER, PARAMETER :: SMOOTHING_PASSES = 20
+         REAL(KIND=RP) :: y(2,nAll), sumX(2,nAll), side(4), quality(nQ), u(2), v(2), sine, q
+         INTEGER       :: nNeighbors(nAll), iter, j, k, a, b, nWorst
+         INTEGER, EXTERNAL :: Loop
+
+         y = x(:,1:nAll)
+         DO iter = 1, SMOOTHING_PASSES
+            sumX       = 0.0_RP
+            nNeighbors = 0
+            DO j = 1, nQ
+               DO k = 1, 4
+                  a = quads(k,j)
+                  b = quads(Loop(k+1,4),j)
+                  sumX(:,a) = sumX(:,a) + y(:,b)
+                  sumX(:,b) = sumX(:,b) + y(:,a)
+                  nNeighbors(a) = nNeighbors(a) + 1
+                  nNeighbors(b) = nNeighbors(b) + 1
+               END DO
+            END DO
+            DO a = nFixed + 1, nAll
+               IF ( nNeighbors(a) > 0 )     y(:,a) = sumX(:,a)/nNeighbors(a)
+            END DO
+         END DO
+
+         DO j = 1, nQ
+            sine = 1.0_RP
+            DO k = 1, 4
+               side(k) = NORM2(y(:,quads(Loop(k+1,4),j)) - y(:,quads(k,j)))
+               a = quads(k,j)
+               IF ( a > nCurve .AND. a <= nFixed )     CYCLE
+               u = y(:,quads(Loop(k+1,4),j)) - y(:,a)
+               v = y(:,quads(Loop(k-1,4),j)) - y(:,a)
+               sine = MIN(sine, cross2(u,v)/MAX(NORM2(u)*NORM2(v), TINY(1.0_RP)))
+            END DO
+            quality(j) = sine*MINVAL(side)/MAX(MAXVAL(side), TINY(1.0_RP))
+         END DO
+!
+!        Mean of the nWorst lowest: a partial selection sort
+!
+         nWorst = MAX(1, nQ/10)
+         DO j = 1, nWorst
+            k = j - 1 + MINLOC(quality(j:nQ), DIM = 1)
+            q          = quality(j)
+            quality(j) = quality(k)
+            quality(k) = q
+         END DO
+         worstQuadQuality = SUM(quality(1:nWorst))/nWorst
+      END FUNCTION worstQuadQuality
 !
 !////////////////////////////////////////////////////////////////////////
 !
