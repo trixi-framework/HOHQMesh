@@ -136,6 +136,7 @@
          TYPE(SMElementPtr), ALLOCATABLE :: elements(:)
          INTEGER           , ALLOCATABLE :: ids(:,:), nbr(:,:), start(:), list(:), fill(:), parent(:), regionSize(:)
          LOGICAL           , ALLOCATABLE :: removeIt(:)
+         LOGICAL                         :: isPinch
          CLASS(FTObject)   , POINTER     :: obj => NULL()
          TYPE(SMElement)   , POINTER     :: e => NULL()
          INTEGER                         :: nE, maxNodeID, k, m, j, i, a, b, f, r, pass, largest, numRemovedNow, mNext
@@ -256,10 +257,14 @@
                         largest = r
                      END IF
                   END DO
+                  isPinch = .FALSE.
                   DO j = start(i), start(i+1) - 1
-                     IF ( rootOf(list(j), parent) /= largest )     removeIt(list(j)) = .TRUE.
+                     IF ( rootOf(list(j), parent) /= largest )     THEN
+                        removeIt(list(j)) = .TRUE.
+                        isPinch           = .TRUE.
+                     END IF
                   END DO
-                  IF ( ANY(removeIt) )     EXIT
+                  IF ( isPinch )     EXIT
                END DO
             END IF
 !

@@ -297,7 +297,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       RECURSIVE SUBROUTINE subdivideSMSegment(self, atT, h, alongCurve, controls, savingNodesTo)
-         USE SizerControls
+         USE SizerControls, ONLY: SizerControlPointers, controlsSize
          IMPLICIT NONE
 !
 !        ---------
@@ -307,7 +307,7 @@
          CLASS(SMSegment)   , POINTER :: self
          CLASS(SMCurve)               :: alongCurve
          CLASS(FTLinkedList)          :: savingNodesTo
-         CLASS(FTLinkedList), POINTER :: controls
+         TYPE(SizerControlPointers)   :: controls
          REAL(KIND=RP)                :: h, atT, hLoc, cSize
 !
 !        ---------------
@@ -330,8 +330,8 @@
          CALL nodeMid % initSMSegmentedCurveNode(x = xMid,t = atT)
 
          hLoc = h
-         IF(ASSOCIATED(controls))     THEN
-            cSize = controlsSize(controlsList = controls,x = xMid)
+         IF(ALLOCATED(controls % centers))     THEN
+            cSize = controlsSize(controls = controls,x = xMid)
             hLoc = MIN(hLoc, cSize)
          END IF
 
@@ -443,6 +443,7 @@
          USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE, UNDEFINED
          USE SMSplineCurveClass
          USE IntervalSearchModule, ONLY: searchArrayForValue
+         USE SizerControls, ONLY: SizerControlPointers, GatherSizerControls
 !
 !     ------------------------------------------------
 !     Construct the curve given a Curve class instance
@@ -481,6 +482,7 @@
          CLASS(SMSplineCurve), POINTER             :: spline
          LOGICAL                                   :: useSplinePoints
          LOGICAL                                   :: useSegmentOptimization
+         TYPE(SizerControlPointers)                :: controlPointers
 !
 !        -------------
 !        Preliminaries
@@ -538,11 +540,12 @@
 !        Subdivide if necessary
 !        ----------------------
 !
-         CALL subdivideSMSegment(self          = rootSegment, &
-                                 atT           = 0.5_RP,      &
-                                 alongCurve    = theCurve,    &
-                                 h             = self % h,    &
-                                 controls      = controls,    &
+         IF ( ASSOCIATED(controls) )     CALL GatherSizerControls( controls, controlPointers )
+         CALL subdivideSMSegment(self          = rootSegment,     &
+                                 atT           = 0.5_RP,          &
+                                 alongCurve    = theCurve,        &
+                                 h             = self % h,        &
+                                 controls      = controlPointers, &
                                  savingNodesTo = nodes)
 !
 !        ------------------------------------

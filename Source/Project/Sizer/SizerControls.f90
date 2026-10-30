@@ -69,6 +69,24 @@
 !
          PROCEDURE :: initwithProperties => initSizerLineControl
       END TYPE SizerLineControl
+
+      TYPE SizerCenterControlPtr
+         CLASS(SizerCenterControl), POINTER :: control => NULL()
+      END TYPE SizerCenterControlPtr
+
+      TYPE SizerLineControlPtr
+         CLASS(SizerLineControl), POINTER :: control => NULL()
+      END TYPE SizerLineControlPtr
+!
+!     ---------------------------------------------------------------
+!     The controls of a list, gathered once (GatherSizerControls) so
+!     that controlsSize does not walk the list for every point
+!     ---------------------------------------------------------------
+!
+      TYPE SizerControlPointers
+         TYPE(SizerCenterControlPtr), ALLOCATABLE :: centers(:)
+         TYPE(SizerLineControlPtr)  , ALLOCATABLE :: lines(:)
+      END TYPE SizerControlPointers
 !
 !     ========
       CONTAINS
@@ -258,12 +276,12 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION controlsSize( controlsList, x ) 
+      SUBROUTINE GatherSizerControls( controlsList, controls )
 !
 !     -------------------------------------------------------
-!     Go through a list of controls and find the minimum size
+!     Pointers to the centers and lines of a list of controls
 !     -------------------------------------------------------
-!      
+!
          IMPLICIT NONE
 !
 !        ---------
@@ -271,7 +289,7 @@
 !        ---------
 !
          CLASS(FTLinkedList), POINTER :: controlsList
-         REAL(KIND=RP)                :: x(3)
+         TYPE(SizerControlPointers)   :: controls
 !
 !        ---------------
 !        Local variables
@@ -279,50 +297,85 @@
 !
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj      => NULL()
-         CLASS(SizerCenterControl)  , POINTER :: center   => NULL()
-         CLASS(SizerLineControl)    , POINTER :: line     => NULL()
-         REAL(KIND=RP)                        :: hFunInv
-         
-         controlsSize = HUGE(controlsSize)
+         INTEGER                              :: numCenters, numLines
+
+         ALLOCATE(iterator)
+         CALL iterator % initwithFTLinkedListClass(controlsList)
 !
-!        --------------------------------
-!        Sizes given by centers and lines
-!        --------------------------------
+!        -----------------------
+!        Count, then fill arrays
+!        -----------------------
 !
-         IF ( ASSOCIATED(controlsList) )     THEN
-         
-            ALLOCATE(iterator)
-            CALL iterator % initwithFTLinkedListClass(controlsList)
-            CALL iterator % setToStart()
-            
-            hFunInv = TINY(hFunInv)
-            
-            DO WHILE (.NOT.iterator % isAtEnd())
-               obj => iterator % object()
-               SELECT TYPE(obj)
-                  TYPE IS (SizerCenterControl)
-                     center  => obj
-                     hFunInv = MAX(hFunInv , hInvForCenter( center, x ) )
-                  TYPE IS (sizerLineControl)
-                     line => obj
-                     hFunInv = MAX(hFunInv , hInvForLineControl( line, x ) )
-                  CLASS DEFAULT
-                  
-               END SELECT 
-               
-               CALL iterator % moveToNext()
-            END DO
-            obj => iterator
-            CALL release(obj)
+         numCenters = 0
+         numLines   = 0
+         CALL iterator % setToStart()
+         DO WHILE (.NOT.iterator % isAtEnd())
+            obj => iterator % object()
+            SELECT TYPE(obj)
+               TYPE IS (SizerCenterControl)
+                  numCenters = numCenters + 1
+               TYPE IS (SizerLineControl)
+                  numLines = numLines + 1
+               CLASS DEFAULT
+            END SELECT
+            CALL iterator % moveToNext()
+         END DO
+         ALLOCATE( controls % centers(numCenters), controls % lines(numLines) )
+
+         numCenters = 0
+         numLines   = 0
+         CALL iterator % setToStart()
+         DO WHILE (.NOT.iterator % isAtEnd())
+            obj => iterator % object()
+            SELECT TYPE(obj)
+               TYPE IS (SizerCenterControl)
+                  numCenters = numCenters + 1
+                  controls % centers(numCenters) % control => obj
+               TYPE IS (SizerLineControl)
+                  numLines = numLines + 1
+                  controls % lines(numLines) % control => obj
+               CLASS DEFAULT
+            END SELECT
+            CALL iterator % moveToNext()
+         END DO
+         obj => iterator
+         CALL release(obj)
+
+      END SUBROUTINE GatherSizerControls
 !
-!           -------------------------
-!           Compute the size function
-!           -------------------------
+!////////////////////////////////////////////////////////////////////////
 !
-            controlsSize = 1.0_RP/hFunInv
-           
-         END IF 
-         
+      REAL(KIND=RP) FUNCTION controlsSize( controls, x )
+!
+!     ------------------------------------------------------------
+!     The minimum size given by the gathered centers and lines
+!     ------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(SizerControlPointers) :: controls
+         REAL(KIND=RP)              :: x(3)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         REAL(KIND=RP) :: hFunInv
+         INTEGER       :: k
+
+         hFunInv = TINY(hFunInv)
+         DO k = 1, SIZE(controls % centers)
+            hFunInv = MAX(hFunInv, hInvForCenter(controls % centers(k) % control, x))
+         END DO
+         DO k = 1, SIZE(controls % lines)
+            hFunInv = MAX(hFunInv, hInvForLineControl(controls % lines(k) % control, x))
+         END DO
+         controlsSize = 1.0_RP/hFunInv
+
       END FUNCTION controlsSize
 !
 !//////////////////////////////////////////////////////////////////////// 

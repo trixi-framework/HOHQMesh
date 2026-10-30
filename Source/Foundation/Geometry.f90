@@ -42,6 +42,20 @@
       INTEGER, PARAMETER :: UP = 1, DOWN = -1, CO_LINEAR = 0
       INTEGER, PARAMETER :: CLOCKWISE = 1, COUNTERCLOCKWISE = -1, NO_DIRECTION  = 0
 !
+!     ----------------------------------------------------------------
+!     Points sorted into the cells of a uniform grid over their
+!     bounding box, about one cell per point, so that the points near a
+!     location can be found quickly. The points of cell c are
+!     cellPoints(cellStart(c):cellStart(c+1)-1), with cells numbered
+!     ix + (iy-1)*nCellsX.
+!     ----------------------------------------------------------------
+!
+      TYPE PointCellGrid
+         INTEGER                            :: nCellsX, nCellsY
+         REAL(KIND=RP)                      :: origin(2), cellSize
+         INTEGER, DIMENSION(:), ALLOCATABLE :: cellStart, cellPoints
+      END TYPE PointCellGrid
+!
 !     ========
       CONTAINS
 !     ========
@@ -284,53 +298,16 @@
 !     ---------------
 !
       INTEGER       :: i, ip
-      REAL(KIND=RP) :: r, x, y, xp, yp
-!
-!     ------------------------------------------------------------
-!     The points relative to p are computed on the fly rather than
-!     stored, since this is called very often with long curves
-!     ------------------------------------------------------------
+      LOGICAL       :: onCurve
 !
       w = 0
       DO i = 0, N
          ip = i + 1
          IF ( ip > N )     ip = 0
-         x  = curvePoints(1, i)  - p(1); xp = curvePoints(1, ip) - p(1)
-         y  = curvePoints(2, i)  - p(2); yp = curvePoints(2, ip) - p(2)
-
-         IF( AlmostEqual(y,0.0_RP) .AND. AlmostEqual(yp,0.0_RP) )     THEN
-            IF( x <= 0.0_RP .AND. xp >= 0.0_RP )     THEN ! point is on this segment
-               w = 0
-               RETURN
-            ELSE
-               CYCLE
-            END IF
-         END IF
-
-         IF ( y*yp < 0.0_RP )     THEN
-            r = x + y*(xp-x)/(y-yp)
-            IF ( r > 0 )     THEN
-               IF ( y < 0.0_RP )     THEN
-                  w = w + 2
-               ELSE
-                  w = w - 2
-               END IF
-            ELSE IF ( AlmostEqual(r,0.0_RP) )     THEN
-               w = 0
-               RETURN
-            END IF
-         ELSE IF ( (y == 0.0_RP) .AND. (x > 0.0_RP) )     THEN
-            IF ( yp > 0 )     THEN
-               w = w + 1
-            ELSE
-               w = w - 1
-            END IF
-         ELSE IF ( (yp == 0.0_RP) .AND. (xp > 0.0_RP) )     THEN
-            IF ( y < 0 )     THEN
-               w = w + 1
-            ELSE
-               w = w - 1
-            END IF
+         w = w + segmentWindingIncrement( p, curvePoints(:,i), curvePoints(:,ip), onCurve )
+         IF ( onCurve )     THEN
+            w = 0
+            RETURN
          END IF
       END DO
 
@@ -338,49 +315,61 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION bBoxWithMargin( bBox ) RESULT(box)
+      INTEGER FUNCTION segmentWindingIncrement( p, a, b, onCurve )
 !
-!     ---------------------------------------------------------------
-!     The bounding box of a curve enlarged by a margin well above the
-!     tolerances and the rounding errors of ACWindingFunction and
-!     PointInQuad, for acWindingFunctionInBox
-!     ---------------------------------------------------------------
-!
-      IMPLICIT NONE
-      REAL(KIND=RP) :: bBox(6)
-      REAL(KIND=RP) :: box(6)
-      REAL(KIND=RP) :: margin
-
-      margin = 1.0E-8_RP*( MAXVAL(ABS(bBox)) + MAX(bBox(BBOX_RIGHT) - bBox(BBOX_LEFT), &
-                                                   bBox(BBOX_TOP)   - bBox(BBOX_BOTTOM)) ) + 1.0E-12_RP
-      box              = bBox
-      box(BBOX_LEFT)   = bBox(BBOX_LEFT)   - margin
-      box(BBOX_RIGHT)  = bBox(BBOX_RIGHT)  + margin
-      box(BBOX_BOTTOM) = bBox(BBOX_BOTTOM) - margin
-      box(BBOX_TOP)    = bBox(BBOX_TOP)    + margin
-
-      END FUNCTION bBoxWithMargin
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      INTEGER FUNCTION acWindingFunctionInBox( p, curvePoints, n, box )
-!
-!     ------------------------------------------------------------------
-!     ACWindingFunction, skipped (w = 0) when p is outside box, the
-!     bounding box of the curve from bBoxWithMargin
-!     ------------------------------------------------------------------
+!     ---------------------------------------------------------------------
+!     The contribution of the segment from a to b to ACWindingFunction at
+!     p. onCurve = .TRUE. if p is on the segment, so that w = 0. Only a
+!     segment that reaches within AlmostEqual of the height of p can
+!     contribute.
+!     ---------------------------------------------------------------------
 !
       IMPLICIT NONE
-      INTEGER       :: n
-      REAL(KIND=RP) :: p(3), curvePoints(3,0:n), box(6)
+      REAL(KIND=RP) :: p(3), a(3), b(3)
+      LOGICAL       :: onCurve
+      REAL(KIND=RP) :: r, x, y, xp, yp
+!
+!     ------------------------------------------------------------
+!     The points relative to p are computed on the fly rather than
+!     stored, since this is called very often with long curves
+!     ------------------------------------------------------------
+!
+      segmentWindingIncrement = 0
+      onCurve                 = .FALSE.
+      x  = a(1) - p(1); xp = b(1) - p(1)
+      y  = a(2) - p(2); yp = b(2) - p(2)
 
-      IF ( .NOT.Point_IsInsideBox(p, box) )     THEN
-         acWindingFunctionInBox = 0
-      ELSE
-         acWindingFunctionInBox = ACWindingFunction( p, curvePoints, n )
+      IF( AlmostEqual(y,0.0_RP) .AND. AlmostEqual(yp,0.0_RP) )     THEN
+         IF( x <= 0.0_RP .AND. xp >= 0.0_RP )     onCurve = .TRUE. ! point is on this segment
+         RETURN
       END IF
 
-      END FUNCTION acWindingFunctionInBox
+      IF ( y*yp < 0.0_RP )     THEN
+         r = x + y*(xp-x)/(y-yp)
+         IF ( r > 0 )     THEN
+            IF ( y < 0.0_RP )     THEN
+               segmentWindingIncrement = 2
+            ELSE
+               segmentWindingIncrement = -2
+            END IF
+         ELSE IF ( AlmostEqual(r,0.0_RP) )     THEN
+            onCurve = .TRUE.
+         END IF
+      ELSE IF ( (y == 0.0_RP) .AND. (x > 0.0_RP) )     THEN
+         IF ( yp > 0 )     THEN
+            segmentWindingIncrement = 1
+         ELSE
+            segmentWindingIncrement = -1
+         END IF
+      ELSE IF ( (yp == 0.0_RP) .AND. (xp > 0.0_RP) )     THEN
+         IF ( y < 0 )     THEN
+            segmentWindingIncrement = 1
+         ELSE
+            segmentWindingIncrement = -1
+         END IF
+      END IF
+
+      END FUNCTION segmentWindingIncrement
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -420,6 +409,80 @@
       AlmostEqual = ABS(x - y) < 100*EPSILON(1.0_RP)
 
       END FUNCTION AlmostEqual
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE BuildPointCellGrid( grid, x )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------
+!        Sort the points x(1:2,k), k = 1, ..., SIZE(x,2)
+!        into the cells of the grid
+!        ------------------------------------------------
+!
+         TYPE(PointCellGrid) :: grid
+         REAL(KIND=RP)       :: x(:,:)
+         INTEGER             :: n, k, c
+         REAL(KIND=RP)       :: xMax(2)
+         INTEGER, ALLOCATABLE :: fill(:)
+
+         n             = SIZE(x,2)
+         grid % origin = MINVAL(x(1:2,:), DIM = 2)
+         xMax          = MAXVAL(x(1:2,:), DIM = 2)
+         grid % cellSize = MAXVAL(xMax - grid % origin)/MAX(1, NINT(SQRT(REAL(n, KIND=RP))))
+         IF ( grid % cellSize <= 0.0_RP )     grid % cellSize = 1.0_RP
+         grid % nCellsX = INT((xMax(1) - grid % origin(1))/grid % cellSize) + 1
+         grid % nCellsY = INT((xMax(2) - grid % origin(2))/grid % cellSize) + 1
+
+         IF ( ALLOCATED(grid % cellStart) )     DEALLOCATE( grid % cellStart, grid % cellPoints )
+         ALLOCATE( grid % cellStart(grid % nCellsX*grid % nCellsY + 1), grid % cellPoints(n) )
+         ALLOCATE( fill(grid % nCellsX*grid % nCellsY) )
+         fill = 0
+         DO k = 1, n
+            c = pointGridCell( grid, x(:,k) )
+            fill(c) = fill(c) + 1
+         END DO
+         grid % cellStart(1) = 1
+         DO c = 1, SIZE(fill)
+            grid % cellStart(c+1) = grid % cellStart(c) + fill(c)
+         END DO
+         fill = grid % cellStart(1:SIZE(fill))
+         DO k = 1, n
+            c = pointGridCell( grid, x(:,k) )
+            grid % cellPoints(fill(c)) = k
+            fill(c) = fill(c) + 1
+         END DO
+
+      END SUBROUTINE BuildPointCellGrid
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION gridCellIndex( grid, v, direction )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------
+!        Index of the column (direction 1) or row (direction 2)
+!        of the grid at coordinate v, clamped to the grid
+!        ------------------------------------------------------
+!
+         TYPE(PointCellGrid) :: grid
+         REAL(KIND=RP)       :: v
+         INTEGER             :: direction
+         INTEGER             :: nCells
+
+         nCells = MERGE(grid % nCellsX, grid % nCellsY, direction == 1)
+         gridCellIndex = MIN(nCells, MAX(1, INT((v - grid % origin(direction))/grid % cellSize) + 1))
+
+      END FUNCTION gridCellIndex
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION pointGridCell( grid, p )
+         IMPLICIT NONE
+         TYPE(PointCellGrid) :: grid
+         REAL(KIND=RP)       :: p(:)
+         pointGridCell = gridCellIndex(grid, p(1), 1) + (gridCellIndex(grid, p(2), 2) - 1)*grid % nCellsX
+      END FUNCTION pointGridCell
 !
 !////////////////////////////////////////////////////////////////////////
 !

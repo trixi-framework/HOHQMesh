@@ -61,6 +61,10 @@
          REAL(KIND=RP)     , ALLOCATABLE :: cg(:), sx(:,:,:)
          INTEGER           , ALLOCATABLE :: quads(:,:,:)
       END TYPE PavePlan
+!
+!     Whether a pair of nodes can be joined by a chord (see isBridge)
+!
+      INTEGER, PARAMETER, PRIVATE :: BRIDGE_UNCHECKED = 0, BRIDGE_VALID = 1, BRIDGE_INVALID = -1
 
 !
 !     ========
@@ -296,8 +300,6 @@
 !     Local variables
 !     ---------------
 !
-      CHARACTER(LEN=32)             :: envValue
-      INTEGER                       :: envStatus
       LOGICAL                       :: paved
       TYPE (QuadTreeGrid), POINTER :: grid      => NULL()
       TYPE (SMMesh)      , POINTER :: mesh      => NULL()
@@ -575,14 +577,13 @@
          IF( boundaryEdgesType(j) == INTERFACE_EDGES )     THEN
 !
 !           ---------------------------------------------------------
-!           Experimental: if INTERFACE_PAVE is set, pave the band
-!           around the interface chain. Otherwise, or if paving fails,
-!           move the nearby nodes onto the curve.
+!           Experimental: with interfacePaving, pave the band around
+!           the interface chain. Otherwise, or if paving fails, move
+!           the nearby nodes onto the curve.
 !           ---------------------------------------------------------
 !
-            CALL GET_ENVIRONMENT_VARIABLE("INTERFACE_PAVE", envValue, status = envStatus)
             paved = .FALSE.
-            IF ( envStatus == 0 )     CALL PaveInterface( mesh, model, sizer, list, paved )
+            IF ( interfacePaving )     CALL PaveInterface( mesh, model, sizer, list, paved )
             IF ( .NOT.paved )     CALL MoveInterfaceNodesToImages( list, model )
          END IF
       END DO
@@ -1252,8 +1253,7 @@
 
                DO k = 1, 4
 
-                  w = ACWindingFunction( e % nodes(k) % node % x, outerBoundaryCurve % x, &
-                                         outerBoundaryCurve % nSegments )
+                  w = outerBoundaryCurve % windingNumber( e % nodes(k) % node % x, throughLastPoint = .TRUE. )
                   IF ( abs(w) == 0 ) THEN
                      e % remove    = .true.
                      removedHere   = .true.
@@ -1385,7 +1385,7 @@
                         DO k = 1, 4
 
                           node => e % nodes(k) % node
-                          w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments )
+                          w = curveArray % windingNumber( node % x, throughLastPoint = .TRUE. )
                           IF ( ABS(w) >= 1 ) THEN
                              e % remove  = .true.
                              removedHere = .true.
@@ -1554,14 +1554,13 @@
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
 
-         INTEGER                              :: k, l, j, m, mSteps
+         INTEGER                              :: k, l, j, i, c, ix, iy, ix0, ix1, iy0, iy1
          REAL(KIND=RP)                        :: w
          REAL(KIND=RP)                        :: nodes(3,4)
-         REAL(KIND=RP)                        :: x1(3), x2(3) !, xRight, yTop, xLeft, yBottom
-         REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
+         REAL(KIND=RP)                        :: h, hMin
          LOGICAL                              :: isInterfaceElement
          INTEGER                              :: numInside, numOutside, location(4)
-         REAL(KIND=RP)                        :: curveBox(6), elementBox(4), margin
+         REAL(KIND=RP)                        :: elementBox(4), margin
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1574,7 +1573,6 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 
             CALL elementIterator % setToStart()
 !
@@ -1598,7 +1596,7 @@
                   location   = UNDEFINED
                   DO k = 1, 4
                      node => e % nodes(k) % node
-                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( node % x )
                      IF ( ABS(w) > 0.6_RP ) THEN
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
@@ -1653,51 +1651,37 @@
                                 + 8.0_RP*SPACING(MAXVAL(ABS(elementBox)))
                      elementBox = elementBox + margin*[-1.0_RP, 1.0_RP, -1.0_RP, 1.0_RP]
 !
-!                    ----------------------------------------------------------------------
-!                    See if any of the curve points are inside the element. If the elements
-!                    are small compared to the spacing on the curve, linearly interpolate
-!                    the curve segment and see if those fall inside the element. HACK:
-!                    the decision on how big is too big is arbitrary at the moment.
-!                    ----------------------------------------------------------------------
+!                    ----------------------------------------------------------------
+!                    See if the curve passes through the element. Only the segments
+!                    in the cells of the curve's segment grid that the box overlaps
+!                    can reach it. Without a grid, look at all of the segments.
+!                    ----------------------------------------------------------------
 !
-                     DO j = 1, curveArray % nSegments-1
-                        IF ( MAX(curveArray % x(1,j), curveArray % x(1,j+1)) < elementBox(1) .OR. &
-                             MIN(curveArray % x(1,j), curveArray % x(1,j+1)) > elementBox(2) .OR. &
-                             MAX(curveArray % x(2,j), curveArray % x(2,j+1)) < elementBox(3) .OR. &
-                             MIN(curveArray % x(2,j), curveArray % x(2,j+1)) > elementBox(4) )     CYCLE
-!
-!                       ---------------------------------------------------
-!                       See if one of the boundary points is in the element
-!                       ---------------------------------------------------
-!
-                        IF ( PointInQuad( nodes, curveArray % x(:,j) ) )     THEN
-                           isInterfaceElement = .true.
-                           EXIT
-                        END IF
-!
-!                       ------------------------------------------------------------------
-!                       If not, interpolate (currently see how much smaller the element is
-!                       and divide by 5 )
-!                       ------------------------------------------------------------------
-!
-                        x1 = curveArray % x(:,j)
-                        x2 = curveArray % x(:,j+1)
-                        segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
-
-                        IF( segmentLength > 0.25_RP*hMin )     THEN
-                           mSteps = NINT(segmentLength/hMin)*5
-                           dz = 1.0_RP/REAL(mSteps, RP)
-                           DO m = 1, mSteps-1
-                              z = x1 + m*dz*(x2 - x1)
-                              IF ( PointInQuad( nodes, z ) )     THEN
-                                 isInterfaceElement = .true.
-                                EXIT
-                              END IF
+                     IF ( curveArray % nCellsX == 0 )     THEN
+                        DO j = 1, curveArray % nSegments-1
+                           IF ( segmentPassesThroughElement(curveArray, j, nodes, elementBox, hMin) )     THEN
+                              isInterfaceElement = .TRUE.
+                              EXIT
+                           END IF
+                        END DO
+                     ELSE
+                        CALL curveArray % cellRangeForBox( elementBox, ix0, ix1, iy0, iy1 )
+                        DO iy = iy0, iy1
+                           DO ix = ix0, ix1
+                              c = ix + (iy - 1)*curveArray % nCellsX
+                              DO i = curveArray % cellStart(c), curveArray % cellStart(c+1) - 1
+                                 j = curveArray % cellSegments(i)
+                                 IF ( j < 1 )     CYCLE
+                                 IF ( segmentPassesThroughElement(curveArray, j, nodes, elementBox, hMin) )     THEN
+                                    isInterfaceElement = .TRUE.
+                                    EXIT
+                                 END IF
+                              END DO
+                              IF ( isInterfaceElement )     EXIT
                            END DO
-                           IF( isInterfaceElement )     EXIT
-                        END IF
-
-                     END DO !Loop over segments
+                           IF ( isInterfaceElement )     EXIT
+                        END DO
+                     END IF
                   END IF
                END IF !(.NOT.e%remove)
 !
@@ -1710,7 +1694,7 @@
                      node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
                      IF(node % bCurveSide == UNDEFINED )     THEN
-                        w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                        w = curveArray % windingNumber( node % x )
 
                         IF ( ABS(w) > 0.6_RP ) THEN
                            node % bCurveSide    = INSIDE
@@ -1727,6 +1711,64 @@
          END DO !l = 1, SIZE(interfaceCurves)
 
       END SUBROUTINE MarkInterfaceElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION segmentPassesThroughElement( curveArray, j, nodes, elementBox, hMin )
+      USE Geometry
+      IMPLICIT NONE
+!
+!     ----------------------------------------------------------------------
+!     True if segment j of the curve, from x(:,j) to x(:,j+1), reaches into
+!     the element with corners nodes: if its first point is inside, or, if
+!     the segment is long compared to the element, a point along it is.
+!     Segments that do not reach the box of the element are skipped. HACK:
+!     the decision on how long is too long is arbitrary at the moment.
+!     ----------------------------------------------------------------------
+!
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         INTEGER                             :: j
+         REAL(KIND=RP)                       :: nodes(3,4), elementBox(4), hMin
+         INTEGER                             :: m, mSteps
+         REAL(KIND=RP)                       :: x1(3), x2(3), dz, z(3), segmentLength
+
+         segmentPassesThroughElement = .FALSE.
+         IF ( MAX(curveArray % x(1,j), curveArray % x(1,j+1)) < elementBox(1) .OR. &
+              MIN(curveArray % x(1,j), curveArray % x(1,j+1)) > elementBox(2) .OR. &
+              MAX(curveArray % x(2,j), curveArray % x(2,j+1)) < elementBox(3) .OR. &
+              MIN(curveArray % x(2,j), curveArray % x(2,j+1)) > elementBox(4) )     RETURN
+!
+!        ---------------------------------------------------
+!        See if one of the boundary points is in the element
+!        ---------------------------------------------------
+!
+         IF ( PointInQuad( nodes, curveArray % x(:,j) ) )     THEN
+            segmentPassesThroughElement = .TRUE.
+            RETURN
+         END IF
+!
+!        ------------------------------------------------------------------
+!        If not, interpolate (currently see how much smaller the element is
+!        and divide by 5 )
+!        ------------------------------------------------------------------
+!
+         x1 = curveArray % x(:,j)
+         x2 = curveArray % x(:,j+1)
+         segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
+
+         IF( segmentLength > 0.25_RP*hMin )     THEN
+            mSteps = NINT(segmentLength/hMin)*5
+            dz = 1.0_RP/REAL(mSteps, RP)
+            DO m = 1, mSteps-1
+               z = x1 + m*dz*(x2 - x1)
+               IF ( PointInQuad( nodes, z ) )     THEN
+                  segmentPassesThroughElement = .TRUE.
+                  RETURN
+               END IF
+            END DO
+         END IF
+
+      END FUNCTION segmentPassesThroughElement
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1764,7 +1806,7 @@
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
          CLASS(SMChainedCurve)      , POINTER :: chain           => NULL()
-         REAL(KIND=RP)                        :: center(3), curveBox(6)
+         REAL(KIND=RP)                        :: center(3)
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1773,7 +1815,6 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 !
 !           ---------------------------------------------------------------
 !           The material ID of the interface was set from the material
@@ -1816,7 +1857,7 @@
                      IF ( node % distToBoundary == 0.0_RP .AND. &
                           node % bCurveChainID == curveArray % id )     CYCLE
 
-                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( node % x )
                      IF ( abs(w) == 0 ) THEN
                         location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
@@ -1836,7 +1877,7 @@
                      DO k = 1, 4
                         center = center + 0.25_RP*e % nodes(k) % node % x
                      END DO
-                     w = acWindingFunctionInBox( center, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( center )
                      IF ( abs(w) /= 0 )     numInside = numInside + 1
                   END IF
 !
@@ -3625,11 +3666,12 @@
                   k = k - 2
                END DO
                IF ( k < 0 )     CYCLE
-               IF ( .NOT.chordInside( x, ids, nIds, i, j ) )     CYCLE
 !
 !              --------------------------------------------------------
 !              Angles on either side of the chord at its ends; the best
-!              chord has the largest smallest one, and near 90 degrees
+!              chord has the largest smallest one, and near 90 degrees.
+!              Whether the chord lies inside the polygon is only checked
+!              for a chord that would be the best so far.
 !              --------------------------------------------------------
 !
                angI(1) = cornerAngle( x(:,ids(j)), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) )
@@ -3638,12 +3680,12 @@
                angJ(2) = interior(j) - angJ(1)
                score = MIN(MINVAL(angI), MINVAL(angJ)) - 0.2_RP*MAX(MAXVAL(angI), MAXVAL(angJ)) &
                      - 10.0_RP*ABS(len/h - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
-               IF ( score > best )     THEN
-                  best  = score
-                  iBest = i
-                  jBest = j
-                  kBest = k
-               END IF
+               IF ( .NOT.(score > best) )     CYCLE
+               IF ( .NOT.chordInside( x, ids, nIds, i, j ) )     CYCLE
+               best  = score
+               iBest = i
+               jBest = j
+               kBest = k
             END DO
          END DO
          IF ( best == -HUGE(best) )     THEN
@@ -3715,7 +3757,9 @@
 !
 !        ------------------------------------------------------------
 !        True if the segment between polygon nodes i and j starts into
-!        the polygon at both ends and crosses none of its edges
+!        the polygon at both ends, crosses none of its edges and passes
+!        through none of its other nodes. A chord through a node would
+!        pinch one half at that node, and no quads can fill it.
 !        ------------------------------------------------------------
 !
          REAL(KIND=RP) :: x(:,:)
@@ -3738,6 +3782,7 @@
             d = x(:,ids(k1))
             IF ( cross2(b - a, c - a)*cross2(b - a, d - a) < 0.0_RP .AND. &
                  cross2(d - c, a - c)*cross2(d - c, b - c) < 0.0_RP )     RETURN
+            IF ( vertexOnSegment(c, a, b) )     RETURN
          END DO
          chordInside = .TRUE.
       END FUNCTION chordInside
@@ -3756,11 +3801,12 @@
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
-!        Experimental (INTERFACE_PAVE). Pave the band around an interface
+!        Experimental (interfacePaving). Pave the band around an interface
 !        chain (PaveInterfaceWithBand). The width of the band suited to a
 !        chain depends on its size and its neighbors, so plan the paving
 !        for the default width and two wider ones, score each by its worst
-!        quads, and apply the best plan.
+!        quads, and apply the best plan. The samples of the curve and the
+!        sizes along it do not depend on the width, so they are found once.
 !        ---------------------------------------------------------------
 !
          TYPE (SMMesh)      , POINTER :: mesh
@@ -3772,9 +3818,12 @@
          REAL(KIND=RP), PARAMETER     :: BAND_SCALES(NUMBER_OF_WIDTHS) = [1.0_RP, 4.0_RP/3.0_RP, 1.5_RP]
          TYPE(PavePlan)               :: plan, bestPlan
          INTEGER                      :: try
+         REAL(KIND=RP), ALLOCATABLE   :: xs(:,:), hs(:), hBand(:)
+         LOGICAL      , ALLOCATABLE   :: isFeature(:)
 
+         CALL SampleInterfaceChain( mesh, model, sizer, list, xs, hs, hBand, isFeature )
          DO try = 1, NUMBER_OF_WIDTHS
-            CALL PaveInterfaceWithBand( mesh, model, sizer, list, BAND_SCALES(try), plan )
+            CALL PaveInterfaceWithBand( mesh, model, list, xs, hs, hBand, isFeature, BAND_SCALES(try), plan )
             IF ( .NOT.plan % ok )     CYCLE
             IF ( .NOT.bestPlan % ok )     THEN
                CALL MovePavePlan( plan, bestPlan )
@@ -3785,6 +3834,115 @@
          paved = bestPlan % ok
          IF ( paved )     CALL CommitPavePlan( mesh, model, bestPlan )
       END SUBROUTINE PaveInterface
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SampleInterfaceChain( mesh, model, sizer, list, xs, hs, hBand, isFeature )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Samples xs of the interface chain whose nodes are in list, and
+!        the element sizes along it (InterfaceCurveSizes): hs for the
+!        nodes on the curve, hBand for the width of the band, and
+!        isFeature at the joints of the chain.
+!        ---------------------------------------------------------------
+!
+         TYPE (SMMesh)      , POINTER :: mesh
+         TYPE (SMModel)     , POINTER :: model
+         TYPE (MeshSizer)   , POINTER :: sizer
+         CLASS(FTLinkedList), POINTER :: list
+         REAL(KIND=RP), ALLOCATABLE   :: xs(:,:), hs(:), hBand(:)
+         LOGICAL      , ALLOCATABLE   :: isFeature(:)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, PARAMETER :: MAX_SAMPLES = 40000
+         TYPE(SMNodePtr), DIMENSION(:), POINTER :: seq
+         TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:)
+         LOGICAL           , ALLOCATABLE :: inMesh(:)
+         REAL(KIND=RP)     , ALLOCATABLE :: xOther(:,:)
+         TYPE (SMNode)        , POINTER  :: node
+         TYPE (SMElement)     , POINTER  :: e
+         CLASS(FTObject)      , POINTER  :: obj
+         CLASS(SMChainedCurve), POINTER  :: chain
+         INTEGER            :: nCurves, nPer, nS, maxID, nid, i, k, nOther, chainID
+         REAL(KIND=RP)      :: turnMax, x3(3)
+
+         nPer    = paveSamplesPerCurve
+         turnMax = paveMaxTurn*PI/180.0_RP
+
+         seq => GatheredNodes(list)
+         chainID = seq(1) % node % bCurveChainID
+         DEALLOCATE(seq)
+         chain   => model % chainWithID(chainID)
+         nCurves =  chain % numberOfCurvesInChain
+!
+!        Samples per curve: 2000, fewer on a chain of many curves so the
+!        total stays near MAX_SAMPLES
+!
+         IF ( nPer <= 0 )     nPer = MAX(200, MIN(2000, MAX_SAMPLES/nCurves))
+         nS = nCurves*nPer
+         ALLOCATE( xs(2,nS), hs(nS), hBand(nS), isFeature(nS) )
+         DO i = 1, nS
+            x3 = chain % positionAt( REAL(i-1,RP)/nS )
+            xs(:,i) = x3(1:2)
+         END DO
+!
+!        -------------------------------------------------------------
+!        Nodes of the remaining elements on the other boundaries and
+!        interfaces, whose distance limits the size
+!        -------------------------------------------------------------
+!
+         maxID = 0
+         CALL mesh % nodesIterator % setToStart()
+         DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
+            obj => mesh % nodesIterator % object()
+            CALL castToSMNode(obj, node)
+            maxID = MAX(maxID, node % id)
+            CALL mesh % nodesIterator % moveToNext()
+         END DO
+         ALLOCATE( nodeForID(maxID), inMesh(maxID) )
+         CALL mesh % nodesIterator % setToStart()
+         DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
+            obj => mesh % nodesIterator % object()
+            CALL castToSMNode(obj, node)
+            nodeForID(node % id) % node => node
+            CALL mesh % nodesIterator % moveToNext()
+         END DO
+         inMesh = .FALSE.
+         CALL mesh % elementsIterator % setToStart()
+         DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
+            obj => mesh % elementsIterator % object()
+            CALL castToSMElement(obj, e)
+            IF ( .NOT.e % remove )     THEN
+               DO k = 1, 4
+                  inMesh(e % nodes(k) % node % id) = .TRUE.
+               END DO
+            END IF
+            CALL mesh % elementsIterator % moveToNext()
+         END DO
+
+         nOther = 0
+         DO nid = 1, maxID
+            IF ( .NOT.inMesh(nid) )     CYCLE
+            k = nodeForID(nid) % node % bCurveChainID
+            IF ( k > 0 .AND. k /= chainID )     nOther = nOther + 1
+         END DO
+         ALLOCATE( xOther(2,MAX(1,nOther)) )
+         nOther = 0
+         DO nid = 1, maxID
+            IF ( .NOT.inMesh(nid) )     CYCLE
+            k = nodeForID(nid) % node % bCurveChainID
+            IF ( k > 0 .AND. k /= chainID )     THEN
+               nOther = nOther + 1
+               xOther(:,nOther) = nodeForID(nid) % node % x(1:2)
+            END IF
+         END DO
+         CALL InterfaceCurveSizes( sizer, xs, nS, nPer, nCurves, turnMax, xOther, nOther, hs, hBand, isFeature )
+
+      END SUBROUTINE SampleInterfaceChain
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -3819,17 +3977,17 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE PaveInterfaceWithBand( mesh, model, sizer, list, bandScale, plan )
+      SUBROUTINE PaveInterfaceWithBand( mesh, model, list, xs, hs, hBand, isFeature, bandScale, plan )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
 !        Mesh the band around an interface curve from the curve outward,
 !        as boundary-first meshers do:
-!          1. Remove the elements within bandScale*PAVE_BAND (default 1.5)
-!             local element sizes of the curve, on both sides.
-!          2. Put new nodes on the curve, spaced by a size taken from
-!             the curve geometry (InterfaceCurveSizes), with a node at
-!             each joint and corner. Both sides share them.
+!          1. Remove the elements within bandScale*paveBandWidth local
+!             element sizes of the curve, on both sides.
+!          2. Put new nodes on the curve, spaced by the size hs taken
+!             from the curve geometry (SampleInterfaceChain), with a node
+!             at each joint and corner. Both sides share them.
 !          3. Pave one row of elements on each side. A curve node gets one
 !             element (a wedge) if its angle is below wedgeAngle, three if
 !             it is above fanAngle, two otherwise.
@@ -3842,8 +4000,9 @@
 !
          TYPE (SMMesh)      , POINTER :: mesh
          TYPE (SMModel)     , POINTER :: model
-         TYPE (MeshSizer)   , POINTER :: sizer
          CLASS(FTLinkedList), POINTER :: list
+         REAL(KIND=RP)                :: xs(:,:), hs(:), hBand(:)
+         LOGICAL                      :: isFeature(:)
          REAL(KIND=RP)                :: bandScale
          TYPE(PavePlan), INTENT(OUT)  :: plan
 !
@@ -3851,14 +4010,13 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER, PARAMETER :: MAX_GROUP = 16, MAX_LOOPS = 32, MAX_SAMPLES = 40000
+         INTEGER, PARAMETER :: MAX_GROUP = 16, MAX_LOOPS = 32
          TYPE(SMNodePtr), DIMENSION(:), POINTER :: seq
          TYPE(SMElementPtr), ALLOCATABLE :: elems(:)
          TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:)
          INTEGER           , ALLOCATABLE :: nodeElCount(:), nodeEl(:,:), nOut(:), cnt(:)
          LOGICAL           , ALLOCATABLE :: removed(:), used(:)
-         REAL(KIND=RP)     , ALLOCATABLE :: xOther(:,:), xs(:,:), hs(:), hBand(:), cx(:,:), cg(:), sx(:,:,:), wSeg(:)
-         LOGICAL           , ALLOCATABLE :: isFeature(:)
+         REAL(KIND=RP)     , ALLOCATABLE :: cx(:,:), cg(:), sx(:,:,:), wSeg(:)
          INTEGER           , ALLOCATABLE :: featureIdx(:), nSeg(:)
          INTEGER           , ALLOCATABLE :: eFrom(:), eTo(:), loopNodes(:), quads(:,:,:), newFront(:,:)
          INTEGER                         :: loopStart(MAX_LOOPS+1), nLoops, loopSide(MAX_LOOPS)
@@ -3867,50 +4025,29 @@
          CLASS(FTObject)      , POINTER  :: obj
          CLASS(SMChainedCurve), POINTER  :: chain, owner
          CLASS(SMCurve)       , POINTER  :: c
-         INTEGER  :: n, nCurves, nPer, nS, maxID, nE, nid, i, j, k, f, g, p, iter, nF, cur, nc, kk, nCount(MAX_LOOPS)
+         INTEGER  :: n, nCurves, nS, maxID, nE, nid, i, j, k, f, g, p, iter, nF, cur, nc, kk, nCount(MAX_LOOPS)
          INTEGER  :: nInLoops, nOutLoops, fIn, fOut, side, nfr(2), nAll(2), nQ(2), nNew(2), kBest, total
          INTEGER  :: m, iS, iFr(2), maxN, bCurveSide, nQRow(2), pass, nComp, nStack, keep(2)
          INTEGER           , ALLOCATABLE :: comp(:), stack(:), compSize(:)
          LOGICAL           , ALLOCATABLE :: compInside(:)
-         REAL(KIND=RP)                   :: turnMax, xMin(2), xMax(2)
-         INTEGER                         :: nFeat, i2, nOther
-         REAL(KIND=RP) :: bandFactor, wedgeAngle, fanAngle, d, ds, area, w, target, frac, x3(3), rowScale
-         LOGICAL  :: changed, ccw, debug, ok, inside
-         CHARACTER(LEN=32)              :: envValue
-         INTEGER                        :: envStatus
+         REAL(KIND=RP)                   :: xMin(2), xMax(2)
+         TYPE(PointCellGrid)             :: polylineGrid
+         INTEGER                         :: nFeat, i2
+         REAL(KIND=RP) :: bandFactor, bandReach, wedgeAngle, fanAngle, d, ds, area, w, target, frac, x3(3), rowScale
+         LOGICAL  :: changed, ccw, ok, inside
          INTEGER, EXTERNAL              :: Loop
 
          plan % ok  = .FALSE.
-         bandFactor = 1.5_RP
-         CALL GET_ENVIRONMENT_VARIABLE("PAVE_BAND", envValue, status = envStatus)
-         IF ( envStatus == 0 )     READ(envValue,*) bandFactor
-         bandFactor = bandScale*bandFactor
-         nPer = 0
-         CALL GET_ENVIRONMENT_VARIABLE("PAVE_SAMPLES", envValue, status = envStatus)
-         IF ( envStatus == 0 )     READ(envValue,*) nPer
-         wedgeAngle = 120.0_RP
-         CALL GET_ENVIRONMENT_VARIABLE("PAVE_WEDGE_ANGLE", envValue, status = envStatus)
-         IF ( envStatus == 0 )     READ(envValue,*) wedgeAngle
-         fanAngle = 240.0_RP
-         CALL GET_ENVIRONMENT_VARIABLE("PAVE_FAN_ANGLE", envValue, status = envStatus)
-         IF ( envStatus == 0 )     READ(envValue,*) fanAngle
-         turnMax = 30.0_RP
-         CALL GET_ENVIRONMENT_VARIABLE("PAVE_TURN", envValue, status = envStatus)
-         IF ( envStatus == 0 )     READ(envValue,*) turnMax
-         turnMax = turnMax*PI/180.0_RP
-         CALL GET_ENVIRONMENT_VARIABLE("PAVE_DEBUG", envValue, status = envStatus)
-         debug = envStatus == 0
+         bandFactor = bandScale*paveBandWidth
+         wedgeAngle = paveWedgeAngle
+         fanAngle   = paveFanAngle
 
          seq => GatheredNodes(list)
          n   = SIZE(seq)
          chain      => model % chainWithID(seq(1) % node % bCurveChainID)
          nCurves    =  chain % numberOfCurvesInChain
          bCurveSide =  seq(1) % node % bCurveSide
-!
-!        Samples per curve: 2000, fewer on a chain of many curves so the
-!        total stays near MAX_SAMPLES
-!
-         IF ( nPer <= 0 )     nPer = MAX(200, MIN(2000, MAX_SAMPLES/nCurves))
+         nS         =  SIZE(hs)
 !
 !        ---------------------------------------------------------
 !        Node and element tables, and the local element size at each
@@ -3953,38 +4090,8 @@
             END IF
             CALL mesh % elementsIterator % moveToNext()
          END DO
-!
-!        -------------------------------------------------------
-!        Samples of the curve and the element sizes along it
-!        -------------------------------------------------------
-!
-         nS = nCurves*nPer
-         ALLOCATE( xs(2,nS), hs(nS), hBand(nS), isFeature(nS) )
-         DO i = 1, nS
-            x3 = chain % positionAt( REAL(i-1,RP)/nS )
-            xs(:,i) = x3(1:2)
-         END DO
-!
-!        Nodes on the other boundaries and interfaces, whose distance limits the size
-!
-         nOther = 0
-         DO nid = 1, maxID
-            IF ( nodeElCount(nid) == 0 )     CYCLE
-            k = nodeForID(nid) % node % bCurveChainID
-            IF ( k > 0 .AND. k /= seq(1) % node % bCurveChainID )     nOther = nOther + 1
-         END DO
-         ALLOCATE( xOther(2,MAX(1,nOther)) )
-         nOther = 0
-         DO nid = 1, maxID
-            IF ( nodeElCount(nid) == 0 )     CYCLE
-            k = nodeForID(nid) % node % bCurveChainID
-            IF ( k > 0 .AND. k /= seq(1) % node % bCurveChainID )     THEN
-               nOther = nOther + 1
-               xOther(:,nOther) = nodeForID(nid) % node % x(1:2)
-            END IF
-         END DO
-         CALL InterfaceCurveSizes( sizer, xs, nS, nPer, nCurves, turnMax, xOther, nOther, hs, hBand, isFeature )
-         IF ( debug )     PRINT *, "      Pave: size min/max", MINVAL(hs), MAXVAL(hs)
+
+         IF ( paveDebug )     PRINT *, "      Pave: size min/max", MINVAL(hs), MAXVAL(hs)
          area = 0.0_RP
          DO i = 1, nS
             j = Loop(i+1, nS)
@@ -3999,12 +4106,14 @@
 !
          ALLOCATE( removed(nE), cnt(nE) )
          removed = .FALSE.
-         xMin = MINVAL(xs, DIM = 2) - bandFactor*MAXVAL(hBand)
-         xMax = MAXVAL(xs, DIM = 2) + bandFactor*MAXVAL(hBand)
+         bandReach = bandFactor*MAXVAL(hBand)
+         xMin = MINVAL(xs, DIM = 2) - bandReach
+         xMax = MAXVAL(xs, DIM = 2) + bandReach
+         CALL BuildPointCellGrid( polylineGrid, xs(:,1:nS) )
          DO nid = 1, maxID
             IF ( nodeElCount(nid) == 0 )     CYCLE
             IF ( ANY(nodeForID(nid) % node % x(1:2) < xMin) .OR. ANY(nodeForID(nid) % node % x(1:2) > xMax) )     CYCLE
-            CALL NearestOnPolyline( nodeForID(nid) % node % x(1:2), xs, nS, iS, d )
+            CALL NearestOnPolyline( nodeForID(nid) % node % x(1:2), xs, nS, polylineGrid, iS, d, searchRadius = bandReach )
             IF ( d < bandFactor*hBand(iS) )     THEN
                DO k = 1, nodeElCount(nid)
                   removed(nodeEl(k,nid)) = .TRUE.
@@ -4051,7 +4160,7 @@
                   j = e % nodes(Loop(k+1,4)) % node % id
                   g = elementWithDirectedEdge( j, p, elems, nodeEl, nodeElCount )
                   IF ( g == 0 )     THEN
-                     IF ( debug )     PRINT *, "      Pave: the band reaches the edge of the mesh"
+                     IF ( paveDebug )     PRINT *, "      Pave: the band reaches the edge of the mesh"
                      DEALLOCATE(seq)
                      RETURN
                   END IF
@@ -4111,7 +4220,7 @@
                   IF ( eFrom(k) == cur .AND. .NOT.used(k) )     EXIT
                END DO
                IF ( k > nF )     THEN
-                  IF ( debug )     PRINT *, "      Pave: the band edge is not a loop"
+                  IF ( paveDebug )     PRINT *, "      Pave: the band edge is not a loop"
                   DEALLOCATE(seq)
                   RETURN
                END IF
@@ -4138,10 +4247,10 @@
                iFr(2)      = i
             END IF
          END DO
-         IF ( debug )     PRINT *, "      Pave: band edge loops inside", nInLoops, fIn, " outside", nOutLoops, fOut
+         IF ( paveDebug )     PRINT *, "      Pave: band edge loops inside", nInLoops, fIn, " outside", nOutLoops, fOut
          IF ( nOutLoops == 1 .AND. nInLoops <= 1 )     EXIT
          IF ( pass == 3 )     THEN
-            IF ( debug )     PRINT *, "      Pave: unsupported band shape"
+            IF ( paveDebug )     PRINT *, "      Pave: unsupported band shape"
             DEALLOCATE(seq)
             RETURN
          END IF
@@ -4266,7 +4375,7 @@
             x3 = chain % positionAt(cg(m))
             cx(:,m) = x3(1:2)
          END DO
-         IF ( debug )     PRINT *, "      Pave: curve nodes", nc, " features", nFeat
+         IF ( paveDebug )     PRINT *, "      Pave: curve nodes", nc, " features", nFeat
 !
 !        ------------------------------------------------------------
 !        3. A paving row on each side. Local indices: 1..nc the curve
@@ -4295,7 +4404,7 @@
                IF ( ok .OR. rowScale < 0.1_RP )     EXIT
                rowScale = 0.5_RP*rowScale
             END DO
-            IF ( debug )     PRINT *, "      Pave: side", side, " row ok ", ok, " scale", rowScale, " quads", nQ(side), &
+            IF ( paveDebug )     PRINT *, "      Pave: side", side, " row ok ", ok, " scale", rowScale, " quads", nQ(side), &
                                       " front", nNew(side), " band edge", nfr(side)
             IF ( .NOT.ok )     THEN
                DEALLOCATE(seq)
@@ -4313,7 +4422,7 @@
             nQRow(side) = nQ(side)
             CALL FillBetweenLoops( sx(:,:,side), nAll(side), newFront(:,side), nNew(side), nc, nfr(side), &
                                    quads(:,:,side), nQ(side), ok )
-            IF ( debug )     PRINT *, "      Pave: side", side, " fill ok ", ok, " quads", nQ(side) - nQRow(side)
+            IF ( paveDebug )     PRINT *, "      Pave: side", side, " fill ok ", ok, " quads", nQ(side) - nQRow(side)
             IF ( ok )     CALL RemoveDoublets( sx(:,:,side), nc + nfr(side), nAll(side), quads(:,:,side), nQ(side) )
             IF ( .NOT.ok )     THEN
                DEALLOCATE(seq)
@@ -4334,7 +4443,7 @@
                   node => elems(f) % element % nodes(k) % node
                   IF ( node % bCurveChainID > 0 .AND. node % bCurveChainID /= seq(1) % node % bCurveChainID )     THEN
                      IF ( node % distToBoundary == 0.0_RP )     THEN
-                        IF ( debug )     PRINT *, "      Pave: band", bandFactor, " reaches another curve"
+                        IF ( paveDebug )     PRINT *, "      Pave: band", bandFactor, " reaches another curve"
                         DEALLOCATE(seq)
                         RETURN
                      END IF
@@ -4349,7 +4458,7 @@
 !
          plan % score = MIN(worstQuadQuality( sx(:,:,1), nc, nc + nfr(1), nAll(1), quads(:,:,1), nQ(1) ), &
                             worstQuadQuality( sx(:,:,2), nc, nc + nfr(2), nAll(2), quads(:,:,2), nQ(2) ))
-         IF ( debug )     PRINT *, "      Pave: band", bandFactor, " score", plan % score
+         IF ( paveDebug )     PRINT *, "      Pave: band", bandFactor, " score", plan % score
          plan % chain      => chain
          plan % chainID    =  seq(1) % node % bCurveChainID
          plan % nCurves    =  nCurves
@@ -4470,12 +4579,6 @@
          INTEGER       :: j, k, jp, jq, left, right, a1, a2, b1, b2
          REAL(KIND=RP) :: theta(nf), un(2), h, sp, dmin, phi, corners(2,4)
          INTEGER, EXTERNAL :: Loop
-         LOGICAL          :: debugRow
-         INTEGER          :: envStatus
-         CHARACTER(LEN=8) :: envValue
-
-         CALL GET_ENVIRONMENT_VARIABLE("PAVE_DEBUG", envValue, status = envStatus)
-         debugRow = envStatus == 0
          ok  = .FALSE.
          nQ  = 0
          nNew = 0
@@ -4516,7 +4619,7 @@
                dmin = MIN(dmin, NORM2(x(:,k) - x(:,j)))
             END DO
             h  = rowScale*MIN(0.8_RP*sp, 0.45_RP*dmin)
-            IF ( typ(j) == FAN3 .AND. debugRow )     PRINT *, '        row fan', j, theta(j), ' sp', sp, ' dmin', dmin, ' h', h, x(:,j)
+            IF ( typ(j) == FAN3 .AND. paveDebug )     PRINT *, '        row fan', j, theta(j), ' sp', sp, ' dmin', dmin, ' h', h, x(:,j)
             un = (x(:,jq) - x(:,j))/NORM2(x(:,jq) - x(:,j))
             SELECT CASE ( typ(j) )
                CASE ( WEDGE )
@@ -4655,28 +4758,75 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE NearestOnPolyline( x, xs, nS, iNear, dist )
+      LOGICAL FUNCTION vertexOnSegment( c, a, b )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        True if c lies on the segment ab, away from its ends, within
+!        a small tolerance relative to the length of the segment
+!        ------------------------------------------------------------
+!
+         REAL(KIND=RP) :: a(2), b(2), c(2)
+         REAL(KIND=RP) :: lengthSquared, t
+         REAL(KIND=RP), PARAMETER :: TOL = 1.0E-6_RP
+
+         vertexOnSegment = .FALSE.
+         lengthSquared   = DOT_PRODUCT(b - a, b - a)
+         IF ( lengthSquared <= 0.0_RP )                         RETURN
+         IF ( ABS(cross2(b - a, c - a)) > TOL*lengthSquared )   RETURN
+         t = DOT_PRODUCT(c - a, b - a)/lengthSquared
+         vertexOnSegment = t > TOL .AND. t < 1.0_RP - TOL
+      END FUNCTION vertexOnSegment
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE NearestOnPolyline( x, xs, nS, grid, iNear, dist, searchRadius )
          IMPLICIT NONE
 !
 !        ----------------------------------------------------------
 !        Distance from x to the closed polyline xs, and the vertex of
-!        the polyline nearest to x
+!        the polyline nearest to x, the first of equally near ones.
+!        The cells of grid, the vertices sorted by BuildPointCellGrid,
+!        are searched in rings around x: a vertex not yet seen is in
+!        a ring further out, more than (ring - 1) cells away. One more
+!        ring is searched to allow for rounding at the cell edges.
+!        With a searchRadius, the search stops once every vertex not
+!        yet seen is further away than that. The result is then the
+!        nearest vertex if it is within searchRadius; otherwise dist is
+!        only known to be larger.
 !        ----------------------------------------------------------
 !
-         INTEGER       :: nS, iNear
-         REAL(KIND=RP) :: x(2), xs(2,nS), dist
-         INTEGER       :: i, j
-         REAL(KIND=RP) :: d, t, u(2), best
-         INTEGER, EXTERNAL :: Loop
+         INTEGER                 :: nS, iNear
+         REAL(KIND=RP)           :: x(2), xs(2,nS), dist
+         TYPE(PointCellGrid)     :: grid
+         REAL(KIND=RP), OPTIONAL :: searchRadius
+         INTEGER             :: i, j, k, cell, ring, ix, iy, ix0, iy0
+         REAL(KIND=RP)       :: d, t, u(2), best
+         INTEGER, EXTERNAL   :: Loop
 
          best  = HUGE(best)
          iNear = 1
-         DO i = 1, nS
-            d = NORM2(x - xs(:,i))
-            IF ( d < best )     THEN
-               best  = d
-               iNear = i
+         ix0   = gridCellIndex( grid, x(1), 1 )
+         iy0   = gridCellIndex( grid, x(2), 2 )
+         DO ring = 0, MAX(grid % nCellsX, grid % nCellsY)
+            IF ( best < (ring - 2)*grid % cellSize )     EXIT
+            IF ( PRESENT(searchRadius) )     THEN
+               IF ( searchRadius < (ring - 2)*grid % cellSize )     EXIT
             END IF
+            DO iy = MAX(1, iy0 - ring), MIN(grid % nCellsY, iy0 + ring)
+               DO ix = MAX(1, ix0 - ring), MIN(grid % nCellsX, ix0 + ring)
+                  IF ( MAX(ABS(ix - ix0), ABS(iy - iy0)) /= ring )     CYCLE
+                  cell = ix + (iy - 1)*grid % nCellsX
+                  DO k = grid % cellStart(cell), grid % cellStart(cell+1) - 1
+                     i = grid % cellPoints(k)
+                     d = NORM2(x - xs(:,i))
+                     IF ( d < best .OR. (d <= best .AND. i < iNear) )     THEN
+                        best  = d
+                        iNear = i
+                     END IF
+                  END DO
+               END DO
+            END DO
          END DO
          dist = best
          DO j = iNear - 1, iNear
@@ -4771,7 +4921,8 @@
 !        the region on their left, with quads. With a loop, two chords
 !        between the front and the loop cut the region into two polygons,
 !        which are then split into quads. The shortest chords are tried
-!        first.
+!        first. Whether a pair of nodes can be joined by a chord
+!        (bridgeOK) is only checked when the pair is reached, and kept.
 !        ---------------------------------------------------------------
 !
          REAL(KIND=RP) :: x(:,:)
@@ -4780,8 +4931,8 @@
          LOGICAL       :: ok
 
          INTEGER, PARAMETER :: MAX_TRIES = 12
-         INTEGER       :: i, j, nBr, t1, t2, i1, j1, i2, j2, di, dj, nAll0, nQ0, nTried
-         INTEGER       :: brI(nFront*nB), brJ(nFront*nB), order(nFront*nB)
+         INTEGER       :: i, j, nBr, t1, t2, i1, j1, i2, j2, di, dj, nAll0, nQ0, nTried, nFirst
+         INTEGER       :: brI(nFront*nB), brJ(nFront*nB), order(nFront*nB), bridgeState(nFront*nB)
          REAL(KIND=RP) :: h, brLen(nFront*nB)
          INTEGER       :: nChords(SIZE(x,2))
          INTEGER, EXTERNAL :: Loop
@@ -4798,40 +4949,35 @@
             RETURN
          END IF
 !
-!        ---------------------------------------
-!        All possible chords, shortest first
-!        ---------------------------------------
+!        ----------------------------------------------------------
+!        All pairs of a front and a loop node, shortest first. Pairs
+!        of the same length keep their order (front node, then loop
+!        node), so the chords are tried in the same order as when the
+!        valid ones are found first and then sorted.
+!        ----------------------------------------------------------
 !
          nBr = 0
          DO i = 1, nFront
             DO j = 1, nB
-               IF ( .NOT.bridgeOK( x, front, nFront, b0, nB, i, j ) )     CYCLE
                nBr = nBr + 1
                brI(nBr)   = i
                brJ(nBr)   = j
                brLen(nBr) = NORM2(x(:,b0+j) - x(:,front(i)))
             END DO
          END DO
-         DO i = 1, nBr
-            order(i) = i
-         END DO
-         DO i = 2, nBr
-            t1 = order(i)
-            j  = i - 1
-            DO WHILE ( j >= 1 )
-               IF ( brLen(order(j)) <= brLen(t1) )     EXIT
-               order(j+1) = order(j)
-               j = j - 1
-            END DO
-            order(j+1) = t1
-         END DO
+         CALL StableSortByKey( brLen(1:nBr), order(1:nBr) )
+         bridgeState = BRIDGE_UNCHECKED
 
          nAll0  = nAll
          nQ0    = nQ
          nTried = 0
-         DO t1 = 1, MIN(nBr, MAX_TRIES)
+         nFirst = 0
+         DO t1 = 1, nBr
             i1 = brI(order(t1))
             j1 = brJ(order(t1))
+            IF ( .NOT.isBridge( bridgeState(order(t1)), x, front, nFront, b0, nB, i1, j1 ) )     CYCLE
+            nFirst = nFirst + 1
+            IF ( nFirst > MAX_TRIES )     EXIT
             DO t2 = 1, nBr
                i2 = brI(order(t2))
                j2 = brJ(order(t2))
@@ -4839,6 +4985,7 @@
                dj = MODULO(j2 - j1, nB)
                IF ( di < nFront/4 .OR. di > (3*nFront)/4 )     CYCLE
                IF ( dj < nB/4 .OR. dj > (3*nB)/4 )     CYCLE
+               IF ( .NOT.isBridge( bridgeState(order(t2)), x, front, nFront, b0, nB, i2, j2 ) )     CYCLE
                IF ( segmentsCross(x(:,front(i2)), x(:,b0+j2), x(:,front(i1)), x(:,b0+j1)) )     CYCLE
                nAll    = nAll0
                nQ      = nQ0
@@ -4856,12 +5003,86 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
+      LOGICAL FUNCTION isBridge( state, x, front, nFront, b0, nB, i, j )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        bridgeOK for front node i and loop node j, checked only the
+!        first time: state is BRIDGE_UNCHECKED until then, and keeps
+!        the answer (BRIDGE_VALID or BRIDGE_INVALID)
+!        ------------------------------------------------------------
+!
+         INTEGER       :: state, nFront, b0, nB, i, j, front(:)
+         REAL(KIND=RP) :: x(:,:)
+
+         IF ( state == BRIDGE_UNCHECKED )     THEN
+            IF ( bridgeOK( x, front, nFront, b0, nB, i, j ) )     THEN
+               state = BRIDGE_VALID
+            ELSE
+               state = BRIDGE_INVALID
+            END IF
+         END IF
+         isBridge = state == BRIDGE_VALID
+
+      END FUNCTION isBridge
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE StableSortByKey( key, order )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        order = the permutation of 1..SIZE(key) that sorts key upward.
+!        Equal keys keep their order. A bottom-up merge sort.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: key(:)
+         INTEGER       :: order(:)
+         INTEGER       :: n, width, lo, mid, hi, a, b, k
+         INTEGER       :: merged(SIZE(key))
+
+         n = SIZE(key)
+         DO k = 1, n
+            order(k) = k
+         END DO
+         width = 1
+         DO WHILE ( width < n )
+            DO lo = 1, n, 2*width
+               mid = MIN(lo + width - 1, n)
+               hi  = MIN(lo + 2*width - 1, n)
+               a   = lo
+               b   = mid + 1
+               DO k = lo, hi
+                  IF ( b > hi )     THEN
+                     merged(k) = order(a)
+                     a         = a + 1
+                  ELSE IF ( a > mid )     THEN
+                     merged(k) = order(b)
+                     b         = b + 1
+                  ELSE IF ( key(order(a)) <= key(order(b)) )     THEN
+                     merged(k) = order(a)
+                     a         = a + 1
+                  ELSE
+                     merged(k) = order(b)
+                     b         = b + 1
+                  END IF
+               END DO
+            END DO
+            order(1:n) = merged(1:n)
+            width      = 2*width
+         END DO
+
+      END SUBROUTINE StableSortByKey
+!
+!////////////////////////////////////////////////////////////////////////
+!
       LOGICAL FUNCTION bridgeOK( x, front, nFront, b0, nB, i, j )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------
 !        True if the segment from front node i to loop node j leaves
-!        both into the region and crosses no edge of either loop
+!        both into the region, and crosses no edge of either loop and
+!        passes through no other node of them
 !        ---------------------------------------------------------
 !
          REAL(KIND=RP) :: x(:,:)
@@ -4878,10 +5099,16 @@
          IF ( cornerAngle( a, b, x(:,b0+Loop(j+1,nB)) ) >= &
               cornerAngle( x(:,b0+Loop(j-1,nB)), b, x(:,b0+Loop(j+1,nB)) ) )     RETURN
          DO k = 1, nFront
+            IF ( k /= i )     THEN
+               IF ( vertexOnSegment(x(:,front(k)), a, b) )     RETURN
+            END IF
             IF ( k == i .OR. Loop(k+1,nFront) == i )     CYCLE
             IF ( segmentsCross(a, b, x(:,front(k)), x(:,front(Loop(k+1,nFront)))) )     RETURN
          END DO
          DO k = 1, nB
+            IF ( k /= j )     THEN
+               IF ( vertexOnSegment(x(:,b0+k), a, b) )     RETURN
+            END IF
             IF ( k == j .OR. Loop(k+1,nB) == j )     CYCLE
             IF ( segmentsCross(a, b, x(:,b0+k), x(:,b0+Loop(k+1,nB))) )     RETURN
          END DO
@@ -5010,8 +5237,9 @@
          INTEGER, PARAMETER       :: MAX_COARSE = 2000, CURVATURE_ITERATIONS = 6, CORNER_SAMPLES = 2
          REAL(KIND=RP) :: arc(nS+1), absTurn(nS), hBase(nS), hCurv(nS), hProx(nS), hNew(nS)
          REAL(KIND=RP) :: reach, xMin(2), xMax(2), perimeter, aSize, x3(3), u(2), v(2), d, dArc, turnSum, covered, dFwd, dBack
-         INTEGER       :: i, j, k, iter, stride, nFeatures
-         INTEGER       :: featureCount(0:nS)
+         INTEGER       :: i, j, k, iter, stride, nFeatures, kFwd, kBack
+         INTEGER       :: featureCount(0:nS), stepsForward(nS), stepsBack(nS)
+         REAL(KIND=RP) :: turnBefore(0:nS)
          INTEGER, EXTERNAL :: Loop
 
          arc(1) = 0.0_RP
@@ -5058,30 +5286,33 @@
 !
 !        ---------------------------------------------------------------
 !        Curvature: the turning over a window one size long, not crossing
-!        a feature, sets the size to turnMax per element
+!        a feature, sets the size to turnMax per element. The window ends
+!        are found by bisection and the turning in it from its sums.
 !        ---------------------------------------------------------------
 !
+         turnBefore(0) = 0.0_RP
+         DO i = 1, nS
+            turnBefore(i) = turnBefore(i-1) + absTurn(i)
+         END DO
+         CALL StepsToFeatures( isFeature, nS, stepsForward, stepsBack )
+
          hCurv = hBase
          DO iter = 1, CURVATURE_ITERATIONS
             DO i = 1, nS
                turnSum = 0.0_RP
                IF ( .NOT.isFeature(i) )     turnSum = absTurn(i)
-               dFwd = 0.0_RP
-               DO k = 1, nS/2
-                  j = MODULO(i - 1 + k, nS) + 1
-                  d = MODULO(arc(j) - arc(i), perimeter)
-                  IF ( d > 0.5_RP*hCurv(i) .OR. isFeature(j) )     EXIT
-                  turnSum = turnSum + absTurn(j)
-                  dFwd    = d
-               END DO
+               kFwd  = windowSteps( arc, nS, perimeter, i,  1, 0.5_RP*hCurv(i), MIN(nS/2, stepsForward(i) - 1) )
+               kBack = windowSteps( arc, nS, perimeter, i, -1, 0.5_RP*hCurv(i), MIN(nS/2, stepsBack(i) - 1) )
+               dFwd  = 0.0_RP
+               IF ( kFwd > 0 )     THEN
+                  dFwd    = MODULO(arc(MODULO(i - 1 + kFwd, nS) + 1) - arc(i), perimeter)
+                  turnSum = turnSum + cyclicSum( turnBefore, nS, MODULO(i, nS) + 1, kFwd )
+               END IF
                dBack = 0.0_RP
-               DO k = 1, nS/2
-                  j = MODULO(i - 1 - k, nS) + 1
-                  d = MODULO(arc(i) - arc(j), perimeter)
-                  IF ( d > 0.5_RP*hCurv(i) .OR. isFeature(j) )     EXIT
-                  turnSum = turnSum + absTurn(j)
-                  dBack   = d
-               END DO
+               IF ( kBack > 0 )     THEN
+                  dBack   = MODULO(arc(i) - arc(MODULO(i - 1 - kBack, nS) + 1), perimeter)
+                  turnSum = turnSum + cyclicSum( turnBefore, nS, MODULO(i - 1 - kBack, nS) + 1, kBack )
+               END IF
                covered = dFwd + dBack
                IF ( turnSum > 0.0_RP .AND. covered > 0.0_RP )     THEN
                   hNew(i) = MIN(hBase(i), turnMax*covered/turnSum)
@@ -5161,6 +5392,112 @@
          CALL GradeSizes( hs, xs, nS, GROWTH )
 
       END SUBROUTINE InterfaceCurveSizes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE StepsToFeatures( isFeature, nS, stepsForward, stepsBack )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        The number of steps from each sample of a closed curve to the
+!        next feature forward and back, nS if there is no other one
+!        ------------------------------------------------------------
+!
+         INTEGER :: nS, stepsForward(nS), stepsBack(nS)
+         LOGICAL :: isFeature(nS)
+         INTEGER :: i, k, pass
+
+         stepsForward = nS
+         stepsBack    = nS
+         k = nS
+         DO pass = 1, 2
+            DO i = nS, 1, -1
+               k = MIN(k + 1, nS)
+               stepsForward(i) = MIN(stepsForward(i), k)
+               IF ( isFeature(i) )     k = 0
+            END DO
+         END DO
+         k = nS
+         DO pass = 1, 2
+            DO i = 1, nS
+               k = MIN(k + 1, nS)
+               stepsBack(i) = MIN(stepsBack(i), k)
+               IF ( isFeature(i) )     k = 0
+            END DO
+         END DO
+      END SUBROUTINE StepsToFeatures
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION windowSteps( arc, nS, perimeter, i, direction, reach, kMax )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        The largest k <= kMax such that the sample k steps from i in
+!        the direction (1 forward, -1 back) is at most reach away from
+!        it along the curve. The distance grows with k, so bisect.
+!        ------------------------------------------------------------
+!
+         INTEGER       :: nS, i, direction, kMax
+         REAL(KIND=RP) :: arc(nS+1), perimeter, reach
+         INTEGER       :: lo, hi, mid
+
+         lo = 0
+         hi = kMax
+         DO WHILE ( lo < hi )
+            mid = (lo + hi + 1)/2
+            IF ( arcSteps(arc, nS, perimeter, i, direction, mid) > reach )     THEN
+               hi = mid - 1
+            ELSE
+               lo = mid
+            END IF
+         END DO
+         windowSteps = lo
+      END FUNCTION windowSteps
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION arcSteps( arc, nS, perimeter, i, direction, k )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------
+!        Distance along a closed curve from sample i to the sample k
+!        steps from it in the direction (1 forward, -1 back)
+!        ----------------------------------------------------------
+!
+         INTEGER       :: nS, i, direction, k
+         REAL(KIND=RP) :: arc(nS+1), perimeter
+         INTEGER       :: j
+
+         j = MODULO(i - 1 + direction*k, nS) + 1
+         IF ( direction > 0 )     THEN
+            arcSteps = MODULO(arc(j) - arc(i), perimeter)
+         ELSE
+            arcSteps = MODULO(arc(i) - arc(j), perimeter)
+         END IF
+      END FUNCTION arcSteps
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION cyclicSum( sumBefore, nS, first, length )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        Sum of length consecutive values of a closed sequence from
+!        first on, from the running sums sumBefore(m) of values 1..m
+!        ------------------------------------------------------------
+!
+         INTEGER       :: nS, first, length
+         REAL(KIND=RP) :: sumBefore(0:nS)
+         INTEGER       :: last
+
+         last = first + length - 1
+         IF ( last <= nS )     THEN
+            cyclicSum = sumBefore(last) - sumBefore(first - 1)
+         ELSE
+            cyclicSum = sumBefore(nS) - sumBefore(first - 1) + sumBefore(last - nS)
+         END IF
+      END FUNCTION cyclicSum
 !
 !////////////////////////////////////////////////////////////////////////
 !

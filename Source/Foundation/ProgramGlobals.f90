@@ -132,14 +132,31 @@
 
          INTEGER       :: refinementType          = 2
 !
-!        ---------------------------------------------------------
-!        Experimental (INTERFACE_PAVE): the interface chains whose
-!        band was paved. Their elements are not split later.
-!        ---------------------------------------------------------
+!        ----------------------------------------------------------------
+!        EXPERIMENTAL Interface paving. With interfacePaving, the band
+!        around each interface chain is removed and meshed again from the
+!        curve outward; otherwise the nodes near the curve are moved onto
+!        it. The band reaches paveBandWidth local element sizes from the
+!        curve on each side. A node on the curve gets one element (a
+!        wedge) if its angle is below paveWedgeAngle, three if it is above
+!        paveFanAngle, and two otherwise. The element size along the curve
+!        allows at most paveMaxTurn of turning per element. Angles are in
+!        degrees. paveSamplesPerCurve = 0 chooses the number of samples of
+!        each curve from the number of curves in the chain. paveDebug
+!        prints what the paving does. chainWasPaved marks the chains whose
+!        band was paved; their elements are not split later.
+!        ----------------------------------------------------------------
 !
+         LOGICAL            :: interfacePaving     = .TRUE.
+         REAL(KIND=RP)      :: paveBandWidth       = 1.5_RP
+         REAL(KIND=RP)      :: paveWedgeAngle      = 120.0_RP
+         REAL(KIND=RP)      :: paveFanAngle        = 240.0_RP
+         REAL(KIND=RP)      :: paveMaxTurn         = 30.0_RP
+         INTEGER            :: paveSamplesPerCurve = 0
+         LOGICAL            :: paveDebug           = .FALSE.
          INTEGER, PARAMETER :: MAX_PAVED_CHAIN_ID = 9999
          LOGICAL            :: chainWasPaved(0:MAX_PAVED_CHAIN_ID) = .FALSE.
-         INTEGER       :: boundarySmoothingPasses = 1
+         INTEGER            :: boundarySmoothingPasses = 1
 !
 !        -----------
 !        Error Codes
