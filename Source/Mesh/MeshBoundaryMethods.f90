@@ -553,9 +553,9 @@
             IF ( centroid(1) < box(BBOX_LEFT)   - hMin .OR. centroid(1) > box(BBOX_RIGHT) + hMin .OR. &
                  centroid(2) < box(BBOX_BOTTOM) - hMin .OR. centroid(2) > box(BBOX_TOP)   + hMin )     CYCLE
 
-            isInside(i) = ACWindingFunction( centroid, curveArray % x, curveArray % nSegments-1 ) /= 0
+            isInside(i) = curveArray % windingNumber( centroid ) /= 0
 
-            IF ( distanceToSegmentedCurve( centroid, curveArray ) < 0.25_RP*hMin )     THEN
+            IF ( isNearSegmentedCurve( centroid, curveArray, 0.25_RP*hMin ) )     THEN
                insideFraction(i) = elementInsideFraction( e, curveArray )
                isInside(i)       = insideFraction(i) > 0.5_RP
             END IF
@@ -793,7 +793,7 @@
 !           ----------------------------------------------------------
 !
             IF ( cornerAngle < MIN_FLIP_CORNER_ANGLE .AND. &
-                 ((ACWindingFunction( nodeP % x, curveArray % x, curveArray % nSegments-1 ) /= 0) &
+                 ((curveArray % windingNumber( nodeP % x ) /= 0) &
                   .NEQV. isInside(id)) )     THEN
                IF ( NORM2(aImage - corner) < 0.5_RP*NORM2(nodeA % x(1:2) - nodeP % x(1:2)) .OR. &
                     NORM2(bImage - corner) < 0.5_RP*NORM2(nodeB % x(1:2) - nodeP % x(1:2)) )     CYCLE
@@ -905,26 +905,9 @@
          REAL(KIND=RP)                       :: p(3), s, pImage(2)
          CLASS(SegmentedCurveArray), POINTER :: curveArray
          REAL(KIND=RP), OPTIONAL             :: distance
+         REAL(KIND=RP)                       :: distMin
 
-         INTEGER       :: j
-         REAL(KIND=RP) :: a(2), d(2), t, lengthSquared, dist, distMin
-
-         distMin = HUGE(distMin)
-         s       = 0.0_RP
-         pImage  = curveArray % x(1:2,0)
-         DO j = 0, curveArray % nSegments - 1
-            a = curveArray % x(1:2,j)
-            d = curveArray % x(1:2,j+1) - a
-            lengthSquared = DOT_PRODUCT(d,d)
-            t = 0.0_RP
-            IF ( lengthSquared > 0.0_RP )     t = MAX(0.0_RP, MIN(1.0_RP, DOT_PRODUCT(p(1:2) - a, d)/lengthSquared))
-            dist = NORM2(p(1:2) - a - t*d)
-            IF ( dist < distMin )     THEN
-               distMin = dist
-               s       = j + t
-               pImage  = a + t*d
-            END IF
-         END DO
+         CALL curveArray % nearestPoint( p, s, pImage, distMin )
          IF ( PRESENT(distance) )     distance = distMin
 
       END SUBROUTINE NearestPointOnSegmentedCurve
@@ -1041,7 +1024,7 @@
                   + u * (1.0_RP - v) * e % nodes(2) % node % x           &
                   + u * v * e % nodes(3) % node % x                      &
                   + (1.0_RP - u)* v * e % nodes(4) % node % x
-               IF ( ACWindingFunction( p, curveArray % x, curveArray % nSegments-1 ) /= 0 ) &
+               IF ( curveArray % windingNumber( p ) /= 0 ) &
                   numInside = numInside + 1
             END DO
          END DO
@@ -1051,21 +1034,22 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION distanceToSegmentedCurve( p, curveArray )
+      LOGICAL FUNCTION isNearSegmentedCurve( p, curveArray, radius )
          IMPLICIT NONE
 !
-!     -------------------------------------------------------
-!     Shortest distance from the point p to the line segments
+!     ------------------------------------------------------------
+!     True if the point p is closer than radius to the line segments
 !     of a segmented curve
-!     -------------------------------------------------------
+!     ------------------------------------------------------------
 !
-         REAL(KIND=RP)                       :: p(3)
+         REAL(KIND=RP)                       :: p(3), radius
          CLASS(SegmentedCurveArray), POINTER :: curveArray
-         REAL(KIND=RP)                       :: s, pImage(2)
+         REAL(KIND=RP)                       :: s, pImage(2), distance
 
-         CALL NearestPointOnSegmentedCurve( p, curveArray, s, pImage, distanceToSegmentedCurve )
+         CALL curveArray % nearestPoint( p, s, pImage, distance, searchRadius = radius )
+         isNearSegmentedCurve = distance < radius
 
-      END FUNCTION distanceToSegmentedCurve
+      END FUNCTION isNearSegmentedCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1797,7 +1781,8 @@
          REAL(KIND=RP)  , DIMENSION(3)            :: z, p
          REAL(KIND=RP)                            :: tStart, tEnd, t
          REAL(KIND=RP)                            :: d, dMin, dt
-         INTEGER                                  :: j, k, M
+         INTEGER                                  :: j, k, M, kMin, i, cell, ring, ix, iy, ix0, iy0
+         TYPE(PointCellGrid)                      :: grid
          INTEGER                                  :: totalCurvePoints
          nodePtrs => GatheredNodes( list )
 !
@@ -1848,21 +1833,40 @@
          END DO
 !
 !        -------------------------------------------------------------
-!        For each node along the edge boundary, find the closest point
+!        For each node along the edge boundary, find the closest point,
+!        the first one of equally close points. The cells of a grid of
+!        the points around the node are searched in rings: a point not
+!        yet seen is in a ring further out, more than (ring - 1) cells
+!        away. One more ring is searched to allow for rounding at the
+!        cell edges.
 !        -------------------------------------------------------------
 !
+         CALL BuildPointCellGrid( grid, xCurve(:,0:totalCurvePoints-1) )
          DO j = 1, SIZE(nodePtrs)
             node => nodePtrs(j)%node
             p    = node % x
             dMin = HUGE(dMin)
-            DO k = 0, totalCurvePoints - 1
-               d = SQRT(distanceSquaredBetweenPoints(xCurve(:,k), p, [0.0_RP,0.0_RP,0.0_RP]))
-               IF( d < dMin )     THEN
-                  t                     = k*dt
-                  node%gWhereOnBoundary = t
-                  dMin                  = d
-               END IF
+            kMin = -1
+            ix0  = gridCellIndex( grid, p(1), 1 )
+            iy0  = gridCellIndex( grid, p(2), 2 )
+            DO ring = 0, MAX(grid % nCellsX, grid % nCellsY)
+               IF ( dMin < (ring - 2)*grid % cellSize )     EXIT
+               DO iy = MAX(1, iy0 - ring), MIN(grid % nCellsY, iy0 + ring)
+                  DO ix = MAX(1, ix0 - ring), MIN(grid % nCellsX, ix0 + ring)
+                     IF ( MAX(ABS(ix - ix0), ABS(iy - iy0)) /= ring )     CYCLE
+                     cell = ix + (iy - 1)*grid % nCellsX
+                     DO i = grid % cellStart(cell), grid % cellStart(cell+1) - 1
+                        k = grid % cellPoints(i) - 1
+                        d = SQRT(distanceSquaredBetweenPoints(xCurve(:,k), p, [0.0_RP,0.0_RP,0.0_RP]))
+                        IF( d < dMin .OR. (d <= dMin .AND. k < kMin) )     THEN
+                           dMin = d
+                           kMin = k
+                        END IF
+                     END DO
+                  END DO
+               END DO
             END DO
+            node%gWhereOnBoundary = kMin*dt
          END DO
 !
 !        -------------------------------

@@ -58,6 +58,23 @@
          INTEGER      , DIMENSION(:)  , ALLOCATABLE :: segmentIndex, pointIndex
       END TYPE ChainPoints
 !
+!     ------------------------------------------------------------------
+!     A binary tree over runs of consecutive points of a ChainPoints, to
+!     find the points in a box, or the nearest point that faces a given
+!     one (the normals are used only for the latter). Node k holds points
+!     first(k):last(k), their bounding box = [xMin, xMax, yMin, yMax],
+!     the mean direction of their normals, nMean, and the largest angle
+!     of a normal from it, spread (PI if the normals do not lie in a
+!     cone). left(k) = 0 for a leaf.
+!     ------------------------------------------------------------------
+!
+      TYPE ChainPointTree
+         INTEGER                                    :: nNodes
+         INTEGER      , DIMENSION(:)  , ALLOCATABLE :: first, last, left, right
+         REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: box, nMean
+         REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: spread
+      END TYPE ChainPointTree
+!
 !     ----------------------------------------------------------------
 !     The refinement centers and lines in arrays for controlSize. A
 !     center only needs to be evaluated closer than the distance where
@@ -90,16 +107,18 @@
          CLASS(SMTopography)         , POINTER     :: topography              => NULL()
 !
 !        ------------------------------------------------------------
-!        Positions of the points of all the boundary curves, used to
-!        find the curve sizes in a box. Built on first use and
-!        cleared when the boundary curves change.
+!        Positions of the points of all the boundary curves, and a tree
+!        over each, used to find the curve sizes in a box. Built on
+!        first use and cleared when the boundary curves change.
 !        ------------------------------------------------------------
 !
-         TYPE(ChainPoints), DIMENSION(:), ALLOCATABLE :: boxSearchPoints
+         TYPE(ChainPoints)   , DIMENSION(:), ALLOCATABLE :: boxSearchPoints
+         TYPE(ChainPointTree), DIMENSION(:), ALLOCATABLE :: boxSearchTrees
 !
 !        ---------------------------------------------------------------
-!        Refinement controls for controlSize, built on first use for the
-!        base size controlsBaseSize and cleared when controls are added
+!        Refinement controls for controlSize and sizeFunctionMinimumOnBox,
+!        built on first use for the base size controlsBaseSize (see
+!        EnsureControlEntries) and cleared when controls are added
 !        ---------------------------------------------------------------
 !
          TYPE(SizerCenterEntry), DIMENSION(:), ALLOCATABLE :: centerEntries
@@ -238,7 +257,7 @@
          self % noOfInnerBoundaries     = 0
          self % noOfInterfaceBoundaries = 0
 
-         IF ( ALLOCATED(self % boxSearchPoints) )     DEALLOCATE(self % boxSearchPoints)
+         IF ( ALLOCATED(self % boxSearchPoints) )     DEALLOCATE(self % boxSearchPoints, self % boxSearchTrees)
 
       END SUBROUTINE clearBoundaryCurves
 !
@@ -300,7 +319,7 @@
          INTEGER                               :: curveType ! = INNER, OUTER, INTERIOR_INTERFACE
          CLASS(FTObject), POINTER              :: obj => NULL()
 
-         IF ( ALLOCATED(self % boxSearchPoints) )     DEALLOCATE(self % boxSearchPoints)
+         IF ( ALLOCATED(self % boxSearchPoints) )     DEALLOCATE(self % boxSearchPoints, self % boxSearchTrees)
 
          SELECT CASE ( curveType )
 
@@ -372,6 +391,8 @@
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
          INTEGER                          :: i,j, nX(3) = [10,10,0]
          REAL(KIND=RP), PARAMETER         :: SIZE_FACTOR = 0.9_RP
+         INTEGER, DIMENSION(:), ALLOCATABLE :: nearCenters
+         INTEGER                          :: nNear
 
          TYPE (FTLinkedListIterator) , POINTER :: iterator            => NULL()
          CLASS(FTObject)             , POINTER :: obj                 => NULL()
@@ -384,12 +405,14 @@
          hMin = HUGE(hMin)
 
          IF ( ASSOCIATED(sizer % controlsList) )     THEN
+            CALL EnsureControlEntries( sizer )
+            CALL CentersNearBox( sizer, xMin, xMax, nearCenters, nNear )
             dX = (xMax - xMin)/nX
             DO j = 0, nX(2)
                x(2) = xMin(2) + j*dx(2)
                DO i = 0, nX(1)
                   x(1) = xMin(1) + i*dx(1)
-                  hMin = MIN( hMin, controlSize(sizer,x) )
+                  hMin = MIN( hMin, controlSizeWithCenters(sizer, x, nearCenters, nNear) )
               END DO
             END DO
          END IF
@@ -417,7 +440,7 @@
          cSize = TINY(cSize)
          IF ( .NOT.ALLOCATED(sizer % boxSearchPoints) )     CALL BuildBoxSearchPoints(sizer)
          DO i = 1, SIZE(sizer % boxSearchPoints)
-            cSize = MAX( cSize, invCurveSizeForBox(sizer % boxSearchPoints(i), xMin, xMax ) )
+            cSize = MAX( cSize, invCurveSizeForBox(sizer % boxSearchPoints(i), sizer % boxSearchTrees(i), xMin, xMax ) )
          END DO
          cSize = 1.0_RP/cSize
 !
@@ -487,9 +510,46 @@
 !        Local variables
 !        ---------------
 !
+         INTEGER, DIMENSION(:), ALLOCATABLE :: allCenters
+         INTEGER                            :: k
+
+         IF ( ASSOCIATED(self % controlsList) )     THEN
+            CALL EnsureControlEntries( self )
+            allCenters = [(k, k = 1, SIZE(self % centerEntries))]
+            controlSize = controlSizeWithCenters( self, x, allCenters, SIZE(allCenters) )
+         ELSE
+            controlSize = 1.0_RP/(1.0_RP/self % baseSize) ! As with no centers, bit for bit
+         END IF
+
+      END FUNCTION controlSize
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION controlSizeWithCenters( self, x, centers, nCenters )
+!
+!     ----------------------------------------------------------------
+!     The size at x given by the refinement controls, looking only at
+!     the center entries centers(1:nCenters), which must include every
+!     center whose cutoff reaches x. The entries must be built.
+!     ----------------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(MeshSizer) :: self
+         REAL(KIND=RP)    :: x(3)
+         INTEGER          :: centers(:), nCenters
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          TYPE(SizerCenterControl), POINTER :: center => NULL()
          REAL(KIND=RP)                     :: hFunInv, dSquared
-         INTEGER                           :: k
+         INTEGER                           :: k, n
 
          hFunInv = 1.0_RP/self % baseSize
 !
@@ -497,31 +557,80 @@
 !        Sizes given by centers and lines
 !        --------------------------------
 !
-         IF ( ASSOCIATED(self % controlsList) )     THEN
+         DO n = 1, nCenters
+            k        =  centers(n)
+            center   => self % centerEntries(k) % center
+            dSquared =  (x(1) - center % center(1))**2 + (x(2) - center % center(2))**2
+            IF ( dSquared >= self % centerEntries(k) % cutoffSquared )     CYCLE
+            hFunInv = MAX(hFunInv , hInvForCenter( center, x ) )
+         END DO
 
-            IF ( .NOT.ALLOCATED(self % centerEntries) .OR. self % controlsBaseSize /= self % baseSize ) &
-               CALL BuildControlEntries(self)
-
-            DO k = 1, SIZE(self % centerEntries)
-               center   => self % centerEntries(k) % center
-               dSquared =  (x(1) - center % center(1))**2 + (x(2) - center % center(2))**2
-               IF ( dSquared >= self % centerEntries(k) % cutoffSquared )     CYCLE
-               hFunInv = MAX(hFunInv , hInvForCenter( center, x ) )
-            END DO
-
-            DO k = 1, SIZE(self % lineEntries)
-               hFunInv = MAX(hFunInv , hInvForLineControl( self % lineEntries(k) % line, x ) )
-            END DO
-
-         END IF
+         DO k = 1, SIZE(self % lineEntries)
+            hFunInv = MAX(hFunInv , hInvForLineControl( self % lineEntries(k) % line, x ) )
+         END DO
 !
 !        -------------------------
 !        Compute the size function
 !        -------------------------
 !
-         controlSize = 1.0_RP/hFunInv
+         controlSizeWithCenters = 1.0_RP/hFunInv
 
-      END FUNCTION controlSize
+      END FUNCTION controlSizeWithCenters
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE CentersNearBox( self, xMin, xMax, nearCenters, nNear )
+!
+!     ---------------------------------------------------------------
+!     The center entries, nearCenters(1:nNear), whose cutoff reaches
+!     the box. A center is left out only if its distance to the box,
+!     enlarged by a margin well above the rounding of the points that
+!     are evaluated in it, is beyond its cutoff by more than rounding.
+!     ---------------------------------------------------------------
+!
+         IMPLICIT NONE
+         CLASS(MeshSizer)                   :: self
+         REAL(KIND=RP)                      :: xMin(3), xMax(3)
+         INTEGER, DIMENSION(:), ALLOCATABLE :: nearCenters
+         INTEGER                            :: nNear
+
+         INTEGER       :: k
+         REAL(KIND=RP) :: margin, dx, dy, c(2)
+
+         IF ( .NOT.ALLOCATED(nearCenters) )     ALLOCATE(nearCenters(SIZE(self % centerEntries)))
+         margin = 1.0E-6_RP*MAX(xMax(1) - xMin(1), xMax(2) - xMin(2)) + 8.0_RP*SPACING(MAXVAL(ABS([xMin, xMax])))
+         nNear  = 0
+         DO k = 1, SIZE(self % centerEntries)
+            IF ( self % centerEntries(k) % cutoffSquared < 0.0_RP )     CYCLE
+            c  = self % centerEntries(k) % center % center(1:2)
+            dx = MAX(xMin(1) - margin - c(1), c(1) - xMax(1) - margin, 0.0_RP)
+            dy = MAX(xMin(2) - margin - c(2), c(2) - xMax(2) - margin, 0.0_RP)
+            IF ( (dx**2 + dy**2)*(1.0_RP - 1.0E-9_RP) >= self % centerEntries(k) % cutoffSquared )     CYCLE
+            nNear              = nNear + 1
+            nearCenters(nNear) = k
+         END DO
+
+      END SUBROUTINE CentersNearBox
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE EnsureControlEntries( self )
+!
+!     ------------------------------------------------------------
+!     Build the control entries if there are none yet, or if they
+!     were built for another base size
+!     ------------------------------------------------------------
+!
+         IMPLICIT NONE
+         CLASS(MeshSizer) :: self
+
+         IF ( .NOT.ALLOCATED(self % centerEntries) )     THEN
+            CALL BuildControlEntries( self )
+         ELSE IF ( self % controlsBaseSize /= self % baseSize )     THEN
+            CALL BuildControlEntries( self )
+         END IF
+
+      END SUBROUTINE EnsureControlEntries
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -605,7 +714,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION invCurveSizeForBox(points, xMin, xMax )
+      REAL(KIND=RP) FUNCTION invCurveSizeForBox(points, tree, xMin, xMax )
       USE Geometry
       IMPLICIT NONE
 !
@@ -614,14 +723,17 @@
 !     Points clearly outside the box are skipped with a bounding
 !     box test whose margin is larger than the tolerance used by
 !     PointInQuad, which then decides for the remaining points.
+!     Runs of points whose bounding box in the tree of the points
+!     is clearly outside are skipped as a whole.
 !     ----------------------------------------------------------
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         REAL(KIND=RP)     :: xMin(3), xMax(3)
-         TYPE(ChainPoints) :: points
+         REAL(KIND=RP)        :: xMin(3), xMax(3)
+         TYPE(ChainPoints)    :: points
+         TYPE(ChainPointTree) :: tree
 !
 !        ---------------
 !        Local variables
@@ -629,7 +741,8 @@
 !
          REAL(KIND=RP)                    :: nodes(3,4), x(3)
          CLASS(FRSegmentedCurve), POINTER :: c => NULL()
-         INTEGER                          :: n
+         INTEGER, PARAMETER               :: MAX_DEPTH = 128 ! The tree is about log2(count/16) deep
+         INTEGER                          :: n, node, nStack, stack(MAX_DEPTH)
          REAL(KIND=RP)                    :: s, w, h, marginX, marginY
          REAL(KIND=RP)                    :: xLeft, xRight, yBottom, yTop
 
@@ -652,15 +765,31 @@
          nodes(:,3) = xMax
          nodes(:,4) = (/xMin(1),xMax(2), 0.0_RP/)
 
-         DO n = 1, points % count
-            IF ( points % x(1,n) < xLeft   .OR. points % x(1,n) > xRight .OR. &
-                 points % x(2,n) < yBottom .OR. points % x(2,n) > yTop )     CYCLE
-            x = points % x(:,n)
-            IF ( PointInQuad(nodes,x) )     THEN
-               c => points % chain % segmentedCurveAtIndex(points % segmentIndex(n))
-               s =  c % invScaleAtIndex(points % pointIndex(n))
-               invCurveSizeForBox =  MAX(s, invCurveSizeForBox)
+         IF ( points % count == 0 )     RETURN
+         nStack   = 1
+         stack(1) = 1
+         DO WHILE ( nStack > 0 )
+            node   = stack(nStack)
+            nStack = nStack - 1
+            IF ( tree % box(2,node) < xLeft   .OR. tree % box(1,node) > xRight .OR. &
+                 tree % box(4,node) < yBottom .OR. tree % box(3,node) > yTop )     CYCLE
+            IF ( tree % left(node) /= 0 )     THEN
+               stack(nStack+1) = tree % left(node)
+               stack(nStack+2) = tree % right(node)
+               nStack = nStack + 2
+               CYCLE
             END IF
+
+            DO n = tree % first(node), tree % last(node)
+               IF ( points % x(1,n) < xLeft   .OR. points % x(1,n) > xRight .OR. &
+                    points % x(2,n) < yBottom .OR. points % x(2,n) > yTop )     CYCLE
+               x = points % x(:,n)
+               IF ( PointInQuad(nodes,x) )     THEN
+                  c => points % chain % segmentedCurveAtIndex(points % segmentIndex(n))
+                  s =  c % invScaleAtIndex(points % pointIndex(n))
+                  invCurveSizeForBox =  MAX(s, invCurveSizeForBox)
+               END IF
+            END DO
          END DO
 
       END FUNCTION invCurveSizeForBox
@@ -694,6 +823,12 @@
             CALL GatherChainPointsInList(sizer % innerBoundariesList, sizer % boxSearchPoints, k)
          IF ( ASSOCIATED(sizer % interfaceBoundariesList) ) &
             CALL GatherChainPointsInList(sizer % interfaceBoundariesList, sizer % boxSearchPoints, k)
+
+         ALLOCATE( sizer % boxSearchTrees(numberOfChains) )
+         DO k = 1, numberOfChains
+            IF ( sizer % boxSearchPoints(k) % count > 0 )     &
+               CALL BuildChainPointTree( sizer % boxSearchTrees(k), sizer % boxSearchPoints(k) )
+         END DO
 
       END SUBROUTINE BuildBoxSearchPoints
 !
@@ -876,41 +1011,16 @@
       SUBROUTINE OuterToInnerBoundaryDistances(outer, inner)
 !
 !      -------------------------------------------------------------------
-!      Find the distance from the outer curve to an inner curve
+!      Find the distance from the outer curve to an inner curve. Curves
+!      that are close and face each other should have their mesh sizes
+!      adjusted to have enough between them.
 !      -------------------------------------------------------------------
 !
       IMPLICIT NONE
-!
-!     ---------
-!     Arguments
-!     ---------
-!
       TYPE(ChainPoints) :: outer, inner
-!
-!     ---------------
-!     Local variables
-!     ---------------
-!
-      INTEGER       :: i, m
-      REAL(KIND=RP) :: d, dot
 
-      DO i = 1, outer % count
-         DO m = 1, inner % count
-            d = closeCurveFactor/SQRT( (outer % x(1,i) - inner % x(1,m))**2 &
-                                     + (outer % x(2,i) - inner % x(2,m))**2 ) ! Inverse length - 3 cells
-!
-!           -----------------------------------------------------------
-!           Curves that are close and face each other should have their
-!           mesh sizes adjusted to have enough between them
-!           -----------------------------------------------------------
-!
-            dot = DOT_PRODUCT(inner % nHat(:,m), outer % nHat(:,i))
-            IF( dot > closeCurveNormalAlignment )     THEN
-               outer % invScale(i) = MAX(d, outer % invScale(i))
-               inner % invScale(m) = MAX(d, inner % invScale(m))
-            END IF
-         END DO
-      END DO
+      CALL FacingPointDistances( outer, inner, normalsAligned = .TRUE. )
+      CALL FacingPointDistances( inner, outer, normalsAligned = .TRUE. )
 
       END SUBROUTINE OuterToInnerBoundaryDistances
 !
@@ -1002,39 +1112,239 @@
       SUBROUTINE InnerToInnerBoundaryDistances(first, second)
 !
 !      -------------------------------------------------------------------
-!      Find the distance between two inner curves
+!      Find the distance between two inner curves, whose facing normals
+!      are opposite
 !      -------------------------------------------------------------------
 !
       IMPLICIT NONE
-!
-!     ---------
-!     Arguments
-!     ---------
-!
       TYPE(ChainPoints) :: first, second
-!
-!     ---------------
-!     Local variables
-!     ---------------
-!
-      INTEGER       :: i, j
-      REAL(KIND=RP) :: d, dot
 
-      DO j = 1, first % count
-         DO i = 1, second % count
-            d = closeCurveFactor/SQRT( (first % x(1,j) - second % x(1,i))**2 &
-                                     + (first % x(2,j) - second % x(2,i))**2 ) ! Inverse length - 3 cells
-!
-            dot = DOT_PRODUCT(second % nHat(:,i), first % nHat(:,j))
-
-            IF( dot < -closeCurveNormalAlignment )     THEN
-               first  % invScale(j) = MAX(d, first  % invScale(j))
-               second % invScale(i) = MAX(d, second % invScale(i))
-            END IF
-         END DO
-      END DO
+      CALL FacingPointDistances( first, second, normalsAligned = .FALSE. )
+      CALL FacingPointDistances( second, first, normalsAligned = .FALSE. )
 
       END SUBROUTINE InnerToInnerBoundaryDistances
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE FacingPointDistances( points, other, normalsAligned )
+!
+!      ---------------------------------------------------------------
+!      Raise the inverse scale of each point of a curve to at least
+!      closeCurveFactor/|x - y| for every point y of another curve that
+!      faces it: their normals are aligned (normalsAligned) or opposite,
+!      beyond closeCurveNormalAlignment. So each point needs only the
+!      nearest such point within closeCurveFactor/(its inverse scale),
+!      which nearestFacingPoint finds in a ChainPointTree of the other
+!      curve.
+!      ---------------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(ChainPoints) :: points, other
+      LOGICAL           :: normalsAligned
+
+      TYPE(ChainPointTree) :: tree
+      INTEGER              :: k
+      REAL(KIND=RP)        :: sMin, invScale0, reachSquared
+
+      IF ( points % count == 0 .OR. other % count == 0 )     RETURN
+      CALL BuildChainPointTree( tree, other )
+
+      DO k = 1, points % count
+         invScale0 = points % invScale(k)
+         IF ( invScale0 > 0.0_RP )     THEN
+            reachSquared = ((1.0_RP + 1.0E-9_RP)*closeCurveFactor/invScale0)**2
+         ELSE
+            reachSquared = HUGE(1.0_RP)
+         END IF
+         sMin = nearestFacingPoint( tree, other, points % x(:,k), points % nHat(:,k), normalsAligned, reachSquared )
+         IF ( sMin < HUGE(sMin) )     THEN
+            points % invScale(k) = MAX(closeCurveFactor/SQRT(sMin), invScale0) ! Inverse length - 3 cells
+         END IF
+      END DO
+
+      END SUBROUTINE FacingPointDistances
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE BuildChainPointTree( tree, points )
+!
+!      -------------------------------------------------------
+!      Build the tree, splitting the runs of points in halves
+!      down to LEAF_SIZE points
+!      -------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(ChainPointTree) :: tree
+      TYPE(ChainPoints)    :: points
+      INTEGER, PARAMETER   :: LEAF_SIZE = 16
+      INTEGER              :: maxNodes, root
+
+!
+!     Halving gives leaves of more than LEAF_SIZE/2 points, so fewer than
+!     2*count/LEAF_SIZE leaves and twice as many nodes
+!
+      maxNodes = 4*(points % count/LEAF_SIZE + 1) + 1
+      ALLOCATE( tree % first(maxNodes), tree % last(maxNodes), tree % left(maxNodes), tree % right(maxNodes) )
+      ALLOCATE( tree % box(4,maxNodes), tree % nMean(2,maxNodes), tree % spread(maxNodes) )
+      tree % nNodes = 0
+      CALL AddChainPointTreeNode( tree, points, 1, points % count, LEAF_SIZE, root )
+
+      END SUBROUTINE BuildChainPointTree
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      RECURSIVE SUBROUTINE AddChainPointTreeNode( tree, points, first, last, leafSize, node )
+!
+!      ------------------------------------------------------------
+!      Add the node for points first:last, and its children, to the
+!      tree. The spread is computed with ACOS, which is not accurate
+!      near zero, so a small angle is added to it.
+!      ------------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(ChainPointTree)     :: tree
+      TYPE(ChainPoints)        :: points
+      INTEGER                  :: first, last, leafSize, node
+      INTEGER                  :: m, mid
+      REAL(KIND=RP)            :: nSum(2), length, angle
+      REAL(KIND=RP), PARAMETER :: SPREAD_MARGIN = 1.0E-6_RP
+
+      tree % nNodes = tree % nNodes + 1
+      node          = tree % nNodes
+      tree % first(node) = first
+      tree % last(node)  = last
+      tree % box(:,node) = [MINVAL(points % x(1,first:last)), MAXVAL(points % x(1,first:last)), &
+                            MINVAL(points % x(2,first:last)), MAXVAL(points % x(2,first:last))]
+
+      nSum   = SUM(points % nHat(1:2,first:last), DIM = 2)
+      length = NORM2(nSum)
+      tree % spread(node) = PI
+      tree % nMean(:,node) = 0.0_RP
+      IF ( length > 0.1_RP*(last - first + 1) .AND. ALL(ABS(points % nHat(3,first:last)) < 1.0E-12_RP) .AND. &
+           ALL(ABS(NORM2(points % nHat(1:2,first:last), DIM = 1) - 1.0_RP) < 1.0E-9_RP) )     THEN
+         tree % nMean(:,node) = nSum/length
+         angle = 0.0_RP
+         DO m = first, last
+            angle = MAX(angle, ACOS(MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(points % nHat(1:2,m), tree % nMean(:,node))))))
+         END DO
+         tree % spread(node) = MIN(PI, angle + SPREAD_MARGIN)
+      END IF
+
+      tree % left(node)  = 0
+      tree % right(node) = 0
+      IF ( last - first + 1 > leafSize )     THEN
+         mid = (first + last)/2
+         CALL AddChainPointTreeNode( tree, points, first, mid, leafSize, tree % left(node) )
+         CALL AddChainPointTreeNode( tree, points, mid + 1, last, leafSize, tree % right(node) )
+      END IF
+
+      END SUBROUTINE AddChainPointTreeNode
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION nearestFacingPoint( tree, other, x, nHat, normalsAligned, reachSquared, &
+                                                 selfIndex, isOuterBoundary, isInterface )
+!
+!      ---------------------------------------------------------------
+!      The smallest squared distance from x to a point of other that
+!      faces it (see FacingPointDistances) and is at most reachSquared
+!      away; HUGE if there is none. With selfIndex, x is that point of
+!      other itself, and a point faces it as in isFacingPoint, in either
+!      order (see CurveToCurveBoundaryDistances). Nodes that are further away than
+!      that, or whose normals cannot face nHat (when the normals are
+!      unit vectors in the plane), are skipped; the margins on those
+!      tests are well above rounding, so no point that counts is
+!      missed. The nearer child is searched first.
+!      ---------------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(ChainPointTree) :: tree
+      TYPE(ChainPoints)    :: other
+      REAL(KIND=RP)        :: x(3), nHat(3), reachSquared
+      LOGICAL              :: normalsAligned
+      INTEGER, OPTIONAL    :: selfIndex
+      LOGICAL, OPTIONAL    :: isOuterBoundary, isInterface
+
+      INTEGER, PARAMETER       :: MAX_DEPTH = 128 ! Two per level of the tree, which is about log2(count/16) deep
+      REAL(KIND=RP), PARAMETER :: DOT_MARGIN = 1.0E-6_RP
+      INTEGER       :: stack(MAX_DEPTH), nStack, node, m, a, b
+      REAL(KIND=RP) :: s, dot, limit, angle, da, db
+      LOGICAL       :: faces, useCone
+
+      useCone = ABS(nHat(3)) < 1.0E-12_RP .AND. ABS(NORM2(nHat(1:2)) - 1.0_RP) < 1.0E-9_RP
+      nearestFacingPoint = HUGE(1.0_RP)
+      nStack   = 1
+      stack(1) = 1
+      DO WHILE ( nStack > 0 )
+         node   = stack(nStack)
+         nStack = nStack - 1
+         limit  = MIN(nearestFacingPoint, reachSquared)
+         IF ( boxDistanceSquared(tree % box(:,node), x) > limit )     CYCLE
+         IF ( tree % spread(node) < PI .AND. useCone )     THEN
+            angle = ACOS(MAX(-1.0_RP, MIN(1.0_RP, DOT_PRODUCT(nHat(1:2), tree % nMean(:,node)))))
+            IF ( normalsAligned )     THEN
+               IF ( COS(MAX(0.0_RP, angle - tree % spread(node))) < closeCurveNormalAlignment - DOT_MARGIN )     CYCLE
+            ELSE
+               IF ( COS(MIN(PI, angle + tree % spread(node))) > -closeCurveNormalAlignment + DOT_MARGIN )     CYCLE
+            END IF
+         END IF
+
+         IF ( tree % left(node) == 0 )     THEN
+            DO m = tree % first(node), tree % last(node)
+               IF ( PRESENT(selfIndex) )     THEN
+                  IF ( m == selfIndex )     CYCLE
+                  faces = isFacingPoint(other, m, selfIndex, isOuterBoundary, isInterface) .OR. &
+                          isFacingPoint(other, selfIndex, m, isOuterBoundary, isInterface)
+               ELSE
+                  dot = DOT_PRODUCT(other % nHat(:,m), nHat)
+                  IF ( normalsAligned )     THEN
+                     faces = dot > closeCurveNormalAlignment
+                  ELSE
+                     faces = dot < -closeCurveNormalAlignment
+                  END IF
+               END IF
+               IF ( faces )     THEN
+                  s = (x(1) - other % x(1,m))**2 + (x(2) - other % x(2,m))**2
+                  IF ( s <= reachSquared )     nearestFacingPoint = MIN(s, nearestFacingPoint)
+               END IF
+            END DO
+         ELSE
+            a  = tree % left(node)
+            b  = tree % right(node)
+            da = boxDistanceSquared(tree % box(:,a), x)
+            db = boxDistanceSquared(tree % box(:,b), x)
+            IF ( da <= db )     THEN
+               stack(nStack+1) = b
+               stack(nStack+2) = a
+            ELSE
+               stack(nStack+1) = a
+               stack(nStack+2) = b
+            END IF
+            nStack = nStack + 2
+         END IF
+      END DO
+
+      END FUNCTION nearestFacingPoint
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION boxDistanceSquared( box, x )
+!
+!      -------------------------------------------------------------
+!      Squared distance from x to the box [xMin, xMax, yMin, yMax].
+!      The box corners are coordinates of points in it, so this is at
+!      most the squared distance to any of them, also when rounded.
+!      -------------------------------------------------------------
+!
+      IMPLICIT NONE
+      REAL(KIND=RP) :: box(4), x(3)
+      REAL(KIND=RP) :: dx, dy
+
+      dx = MAX(box(1) - x(1), x(1) - box(2), 0.0_RP)
+      dy = MAX(box(3) - x(2), x(2) - box(4), 0.0_RP)
+      boxDistanceSquared = dx**2 + dy**2
+
+      END FUNCTION boxDistanceSquared
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1107,6 +1417,13 @@
 !      Find the distance from a curve to itself. An interface curve is
 !      meshed on both sides, so the distance across its inside counts
 !      as well as the distance across the outside.
+!
+!      A pair of points i, j that face each other (isFacingPoint, in
+!      either order) sets the inverse scale of both to at least
+!      closeCurveFactor/|x_i - x_j|. So each point needs only the
+!      nearest point that faces it within closeCurveFactor/(its inverse
+!      scale), which nearestFacingPoint finds in a ChainPointTree of the
+!      curve.
 !      ---------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -1123,42 +1440,59 @@
 !     Local variables
 !     ---------------
 !
-      INTEGER       :: i, j
-      REAL(KIND=RP) :: d, normalsDot, targetDot
-      REAL(KIND=RP) :: vecToTarget(3)
-      LOGICAL       :: isProperTarget
-!
-!     ------------------------------------------------
-!     For each point along the curve and every other
-!     point along itself
-!     ------------------------------------------------
-!
-      DO j = 1, points % count
-         DO i = 1, points % count
-            IF(i == j)     CYCLE
-            vecToTarget = points % x(:,i) - points % x(:,j)
+      TYPE(ChainPointTree)       :: tree
+      INTEGER                    :: k
+      REAL(KIND=RP), ALLOCATABLE :: invScale0(:)
+      REAL(KIND=RP)              :: sMin, reachSquared
 
-            normalsDot = DOT_PRODUCT(points % nHat(:,i), points % nHat(:,j))
-            targetDot  = DOT_PRODUCT(vecToTarget, points % nHat(:,j))
+      IF ( points % count < 2 )     RETURN
+      CALL BuildChainPointTree( tree, points )
 
-            IF ( isInterface )     THEN
-               isProperTarget = normalsDot < -closeCurveNormalAlignment .AND. ABS(targetDot) > normalTangentMin
-            ELSE IF ( isOuterBoundary )     THEN
-               isProperTarget = normalsDot < -closeCurveNormalAlignment .AND. targetDot < -normalTangentMin
-            ELSE
-               isProperTarget = normalsDot < -closeCurveNormalAlignment .AND. targetDot > normalTangentMin
-            END IF
-
-            IF( isProperTarget )     THEN
-               d = closeCurveFactor/SQRT( (points % x(1,j) - points % x(1,i))**2 &
-                                        + (points % x(2,j) - points % x(2,i))**2 ) ! Inverse length - 3 cells
-               points % invScale(j) = MAX(d, points % invScale(j))
-               points % invScale(i) = MAX(d, points % invScale(i))
-            END IF
-         END DO
+      invScale0 = points % invScale
+      DO k = 1, points % count
+         IF ( invScale0(k) > 0.0_RP )     THEN
+            reachSquared = ((1.0_RP + 1.0E-9_RP)*closeCurveFactor/invScale0(k))**2
+         ELSE
+            reachSquared = HUGE(1.0_RP)
+         END IF
+         sMin = nearestFacingPoint( tree, points, points % x(:,k), points % nHat(:,k), .FALSE., reachSquared, &
+                                    selfIndex = k, isOuterBoundary = isOuterBoundary, isInterface = isInterface )
+         IF ( sMin < HUGE(sMin) )     THEN
+            points % invScale(k) = MAX(closeCurveFactor/SQRT(sMin), invScale0(k)) ! Inverse length - 3 cells
+         END IF
       END DO
 
       END SUBROUTINE CurveToCurveBoundaryDistances
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION isFacingPoint( points, i, j, isOuterBoundary, isInterface )
+!
+!     ---------------------------------------------------------------
+!     Whether point i of a curve is across from point j of the same
+!     curve: their normals are nearly opposite, and i lies off the
+!     tangent of j, on the side that is meshed
+!     ---------------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(ChainPoints) :: points
+      INTEGER           :: i, j
+      LOGICAL           :: isOuterBoundary, isInterface
+      REAL(KIND=RP)     :: normalsDot, targetDot, vecToTarget(3)
+
+      vecToTarget = points % x(:,i) - points % x(:,j)
+      normalsDot  = DOT_PRODUCT(points % nHat(:,i), points % nHat(:,j))
+      targetDot   = DOT_PRODUCT(vecToTarget, points % nHat(:,j))
+
+      IF ( isInterface )     THEN
+         isFacingPoint = normalsDot < -closeCurveNormalAlignment .AND. ABS(targetDot) > normalTangentMin
+      ELSE IF ( isOuterBoundary )     THEN
+         isFacingPoint = normalsDot < -closeCurveNormalAlignment .AND. targetDot < -normalTangentMin
+      ELSE
+         isFacingPoint = normalsDot < -closeCurveNormalAlignment .AND. targetDot > normalTangentMin
+      END IF
+
+      END FUNCTION isFacingPoint
 !
 !////////////////////////////////////////////////////////////////////////
 !

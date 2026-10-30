@@ -1216,8 +1216,7 @@
 
                DO k = 1, 4
 
-                  w = ACWindingFunction( e % nodes(k) % node % x, outerBoundaryCurve % x, &
-                                         outerBoundaryCurve % nSegments )
+                  w = outerBoundaryCurve % windingNumber( e % nodes(k) % node % x, throughLastPoint = .TRUE. )
                   IF ( abs(w) == 0 ) THEN
                      e % remove    = .true.
                      removedHere   = .true.
@@ -1349,7 +1348,7 @@
                         DO k = 1, 4
 
                           node => e % nodes(k) % node
-                          w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments )
+                          w = curveArray % windingNumber( node % x, throughLastPoint = .TRUE. )
                           IF ( ABS(w) >= 1 ) THEN
                              e % remove  = .true.
                              removedHere = .true.
@@ -1518,14 +1517,13 @@
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
 
-         INTEGER                              :: k, l, j, m, mSteps
+         INTEGER                              :: k, l, j, i, c, ix, iy, ix0, ix1, iy0, iy1
          REAL(KIND=RP)                        :: w
          REAL(KIND=RP)                        :: nodes(3,4)
-         REAL(KIND=RP)                        :: x1(3), x2(3) !, xRight, yTop, xLeft, yBottom
-         REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
+         REAL(KIND=RP)                        :: h, hMin
          LOGICAL                              :: isInterfaceElement
          INTEGER                              :: numInside, numOutside, location(4)
-         REAL(KIND=RP)                        :: curveBox(6), elementBox(4), margin
+         REAL(KIND=RP)                        :: elementBox(4), margin
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1538,7 +1536,6 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 
             CALL elementIterator % setToStart()
 !
@@ -1562,7 +1559,7 @@
                   location   = UNDEFINED
                   DO k = 1, 4
                      node => e % nodes(k) % node
-                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( node % x )
                      IF ( ABS(w) > 0.6_RP ) THEN
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
@@ -1617,51 +1614,37 @@
                                 + 8.0_RP*SPACING(MAXVAL(ABS(elementBox)))
                      elementBox = elementBox + margin*[-1.0_RP, 1.0_RP, -1.0_RP, 1.0_RP]
 !
-!                    ----------------------------------------------------------------------
-!                    See if any of the curve points are inside the element. If the elements
-!                    are small compared to the spacing on the curve, linearly interpolate
-!                    the curve segment and see if those fall inside the element. HACK:
-!                    the decision on how big is too big is arbitrary at the moment.
-!                    ----------------------------------------------------------------------
+!                    ----------------------------------------------------------------
+!                    See if the curve passes through the element. Only the segments
+!                    in the cells of the curve's segment grid that the box overlaps
+!                    can reach it. Without a grid, look at all of the segments.
+!                    ----------------------------------------------------------------
 !
-                     DO j = 1, curveArray % nSegments-1
-                        IF ( MAX(curveArray % x(1,j), curveArray % x(1,j+1)) < elementBox(1) .OR. &
-                             MIN(curveArray % x(1,j), curveArray % x(1,j+1)) > elementBox(2) .OR. &
-                             MAX(curveArray % x(2,j), curveArray % x(2,j+1)) < elementBox(3) .OR. &
-                             MIN(curveArray % x(2,j), curveArray % x(2,j+1)) > elementBox(4) )     CYCLE
-!
-!                       ---------------------------------------------------
-!                       See if one of the boundary points is in the element
-!                       ---------------------------------------------------
-!
-                        IF ( PointInQuad( nodes, curveArray % x(:,j) ) )     THEN
-                           isInterfaceElement = .true.
-                           EXIT
-                        END IF
-!
-!                       ------------------------------------------------------------------
-!                       If not, interpolate (currently see how much smaller the element is
-!                       and divide by 5 )
-!                       ------------------------------------------------------------------
-!
-                        x1 = curveArray % x(:,j)
-                        x2 = curveArray % x(:,j+1)
-                        segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
-
-                        IF( segmentLength > 0.25_RP*hMin )     THEN
-                           mSteps = NINT(segmentLength/hMin)*5
-                           dz = 1.0_RP/REAL(mSteps, RP)
-                           DO m = 1, mSteps-1
-                              z = x1 + m*dz*(x2 - x1)
-                              IF ( PointInQuad( nodes, z ) )     THEN
-                                 isInterfaceElement = .true.
-                                EXIT
-                              END IF
+                     IF ( curveArray % nCellsX == 0 )     THEN
+                        DO j = 1, curveArray % nSegments-1
+                           IF ( segmentPassesThroughElement(curveArray, j, nodes, elementBox, hMin) )     THEN
+                              isInterfaceElement = .TRUE.
+                              EXIT
+                           END IF
+                        END DO
+                     ELSE
+                        CALL curveArray % cellRangeForBox( elementBox, ix0, ix1, iy0, iy1 )
+                        DO iy = iy0, iy1
+                           DO ix = ix0, ix1
+                              c = ix + (iy - 1)*curveArray % nCellsX
+                              DO i = curveArray % cellStart(c), curveArray % cellStart(c+1) - 1
+                                 j = curveArray % cellSegments(i)
+                                 IF ( j < 1 )     CYCLE
+                                 IF ( segmentPassesThroughElement(curveArray, j, nodes, elementBox, hMin) )     THEN
+                                    isInterfaceElement = .TRUE.
+                                    EXIT
+                                 END IF
+                              END DO
+                              IF ( isInterfaceElement )     EXIT
                            END DO
-                           IF( isInterfaceElement )     EXIT
-                        END IF
-
-                     END DO !Loop over segments
+                           IF ( isInterfaceElement )     EXIT
+                        END DO
+                     END IF
                   END IF
                END IF !(.NOT.e%remove)
 !
@@ -1674,7 +1657,7 @@
                      node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
                      IF(node % bCurveSide == UNDEFINED )     THEN
-                        w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                        w = curveArray % windingNumber( node % x )
 
                         IF ( ABS(w) > 0.6_RP ) THEN
                            node % bCurveSide    = INSIDE
@@ -1691,6 +1674,64 @@
          END DO !l = 1, SIZE(interfaceCurves)
 
       END SUBROUTINE MarkInterfaceElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION segmentPassesThroughElement( curveArray, j, nodes, elementBox, hMin )
+      USE Geometry
+      IMPLICIT NONE
+!
+!     ----------------------------------------------------------------------
+!     True if segment j of the curve, from x(:,j) to x(:,j+1), reaches into
+!     the element with corners nodes: if its first point is inside, or, if
+!     the segment is long compared to the element, a point along it is.
+!     Segments that do not reach the box of the element are skipped. HACK:
+!     the decision on how long is too long is arbitrary at the moment.
+!     ----------------------------------------------------------------------
+!
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         INTEGER                             :: j
+         REAL(KIND=RP)                       :: nodes(3,4), elementBox(4), hMin
+         INTEGER                             :: m, mSteps
+         REAL(KIND=RP)                       :: x1(3), x2(3), dz, z(3), segmentLength
+
+         segmentPassesThroughElement = .FALSE.
+         IF ( MAX(curveArray % x(1,j), curveArray % x(1,j+1)) < elementBox(1) .OR. &
+              MIN(curveArray % x(1,j), curveArray % x(1,j+1)) > elementBox(2) .OR. &
+              MAX(curveArray % x(2,j), curveArray % x(2,j+1)) < elementBox(3) .OR. &
+              MIN(curveArray % x(2,j), curveArray % x(2,j+1)) > elementBox(4) )     RETURN
+!
+!        ---------------------------------------------------
+!        See if one of the boundary points is in the element
+!        ---------------------------------------------------
+!
+         IF ( PointInQuad( nodes, curveArray % x(:,j) ) )     THEN
+            segmentPassesThroughElement = .TRUE.
+            RETURN
+         END IF
+!
+!        ------------------------------------------------------------------
+!        If not, interpolate (currently see how much smaller the element is
+!        and divide by 5 )
+!        ------------------------------------------------------------------
+!
+         x1 = curveArray % x(:,j)
+         x2 = curveArray % x(:,j+1)
+         segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
+
+         IF( segmentLength > 0.25_RP*hMin )     THEN
+            mSteps = NINT(segmentLength/hMin)*5
+            dz = 1.0_RP/REAL(mSteps, RP)
+            DO m = 1, mSteps-1
+               z = x1 + m*dz*(x2 - x1)
+               IF ( PointInQuad( nodes, z ) )     THEN
+                  segmentPassesThroughElement = .TRUE.
+                  RETURN
+               END IF
+            END DO
+         END IF
+
+      END FUNCTION segmentPassesThroughElement
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1728,7 +1769,7 @@
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
          CLASS(SMChainedCurve)      , POINTER :: chain           => NULL()
-         REAL(KIND=RP)                        :: center(3), curveBox(6)
+         REAL(KIND=RP)                        :: center(3)
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1737,7 +1778,6 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 !
 !           ---------------------------------------------------------------
 !           The material ID of the interface was set from the material
@@ -1780,7 +1820,7 @@
                      IF ( node % distToBoundary == 0.0_RP .AND. &
                           node % bCurveChainID == curveArray % id )     CYCLE
 
-                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( node % x )
                      IF ( abs(w) == 0 ) THEN
                         location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
@@ -1800,7 +1840,7 @@
                      DO k = 1, 4
                         center = center + 0.25_RP*e % nodes(k) % node % x
                      END DO
-                     w = acWindingFunctionInBox( center, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( center )
                      IF ( abs(w) /= 0 )     numInside = numInside + 1
                   END IF
 !

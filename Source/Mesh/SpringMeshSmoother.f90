@@ -97,6 +97,10 @@
       REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE, PRIVATE :: cornerDirection, cornerOrigin
       REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE, PRIVATE :: cornerMinDistance
       LOGICAL      , DIMENSION(:)  , ALLOCATABLE, PRIVATE :: hasCornerConstraint
+!
+!     How the acceleration of a node is constrained, see ConstrainBoundaryNodes
+!
+      INTEGER, PARAMETER, PRIVATE :: FREE_NODE = 0, INACTIVE_NODE = 1, NODE_ON_CURVE = 2, NODE_ON_CORNER_LINE = 3
       REAL(KIND=RP), PARAMETER                  , PRIVATE :: MAX_CONSTRAINED_CORNER_ANGLE = 150.0_RP
 !
 !     Default parameters
@@ -164,6 +168,12 @@
          TYPE(SMNode)       , POINTER :: node => NULL()
          CLASS(FTObject)    , POINTER :: obj => NULL()
          CLASS(FTLinkedList), POINTER :: boundaryNodesList => NULL()
+
+         TYPE(SMNodePtr), DIMENSION(:)  , ALLOCATABLE :: nodePointers
+         REAL(KIND=RP)  , DIMENSION(:,:), ALLOCATABLE :: x, tangent
+         INTEGER        , DIMENSION(:,:), ALLOCATABLE :: edgeNodes, elementNodes
+         INTEGER        , DIMENSION(:)  , ALLOCATABLE :: constraintType
+         LOGICAL        , DIMENSION(:)  , ALLOCATABLE :: getsEdgeForce, getsCrossForce
 !
 !        -------------------------
 !        Allocate temporary memory
@@ -203,26 +213,35 @@
 !        Do spring-mass smoothing
 !        ------------------------
 !
+!
+!        The mesh does not change while it is smoothed, only the node
+!        locations do. So the nodes, the connectivity, and the constraints
+!        are gathered into arrays, the steps work on the locations x, and
+!        the nodes get their new locations at the end. Nodes, edges and
+!        elements are visited in the order of their lists.
+!
+         CALL GatherSmoothingArrays( mesh, model, nodePointers, x, edgeNodes, elementNodes, &
+                                     getsEdgeForce, getsCrossForce, constraintType, tangent )
+
          DO k = 1, self % numSmoothingSteps
             nodeAcceleration = 0.0_RP
-            CALL AccumulateAcceleration( self, mesh )
-            CALL ConstrainBoundaryNodes( self, model, mesh  %  nodesIterator )
+            CALL AccumulateAcceleration( self, x, edgeNodes, elementNodes, getsEdgeForce, getsCrossForce )
+            CALL ConstrainBoundaryNodes( constraintType, tangent )
 
             maxV = 0.0_RP
-            CALL mesh % nodesIterator % setToStart()
-            DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
-               obj                => mesh % nodesIterator % object()
-               CALL castToSMNode(obj,node)
-               nodeID                 = node % id
-               node % x               = node % x + self % deltaT*nodeVelocity(:,nodeID)
+            DO nodeID = 1, N
+               x(:,nodeID)            = x(:,nodeID) + self % deltaT*nodeVelocity(:,nodeID)
                nodeVelocity(:,nodeID) = nodeVelocity(:,nodeID) + &
                                         self % deltaT*( nodeAcceleration(:,nodeID) - &
                                         self % dampingCoefficient*nodeVelocity(:,nodeID) )
-               IF ( hasCornerConstraint(nodeID) )     CALL KeepNodeAwayFromCorner( node, nodeVelocity(:,nodeID) )
-               CALL mesh % nodesIterator % moveToNext()
+               IF ( hasCornerConstraint(nodeID) )     CALL KeepNodeAwayFromCorner( nodeID, x(:,nodeID), nodeVelocity(:,nodeID) )
                maxV = MAX(maxV, ABS(nodeVelocity(1,nodeID)), ABS(nodeVelocity(2,nodeID)) )
             END DO
 
+         END DO
+
+         DO nodeID = 1, N
+            nodePointers(nodeID) % node % x = x(:,nodeID)
          END DO
 !
 !        ---------------------------
@@ -274,163 +293,238 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE AccumulateAcceleration( self, mesh )
+      SUBROUTINE GatherSmoothingArrays( mesh, model, nodePointers, x, edgeNodes, elementNodes, &
+                                        getsEdgeForce, getsCrossForce, constraintType, tangent )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------------
+!        Gather what the smoothing steps use, indexed by node id: the nodes
+!        and their locations, x, which nodes get the forces of the edge and
+!        the cross springs, and how the acceleration of each node is
+!        constrained (see ConstrainBoundaryNodes), with the tangent of the
+!        curve for a node on a curve. Also the node ids of the edges and
+!        the elements, in the order of their lists. The node ids must be
+!        numbered 1..N in the order of the node list.
+!        ------------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMMesh)                                 :: mesh
+         TYPE (SMModel) , POINTER                      :: model
+         TYPE(SMNodePtr), DIMENSION(:)  , ALLOCATABLE  :: nodePointers
+         REAL(KIND=RP)  , DIMENSION(:,:), ALLOCATABLE  :: x, tangent
+         INTEGER        , DIMENSION(:,:), ALLOCATABLE  :: edgeNodes, elementNodes
+         INTEGER        , DIMENSION(:)  , ALLOCATABLE  :: constraintType
+         LOGICAL        , DIMENSION(:)  , ALLOCATABLE  :: getsEdgeForce, getsCrossForce
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE (SMNode)        , POINTER :: node  => NULL()
+         TYPE (SMEdge)        , POINTER :: edge  => NULL()
+         TYPE (SMElement)     , POINTER :: e     => NULL()
+         CLASS(SMChainedCurve), POINTER :: chain => NULL()
+         CLASS(SMCurve)       , POINTER :: c     => NULL()
+         CLASS(FTObject)      , POINTER :: obj   => NULL()
+         INTEGER                        :: N, id, j, k
+
+         N = mesh % nodes % COUNT()
+         ALLOCATE( nodePointers(N), x(3,N), tangent(3,N), constraintType(N), getsEdgeForce(N), getsCrossForce(N) )
+         tangent = 0.0_RP
+
+         CALL mesh % nodesIterator % setToStart()
+         DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
+            obj => mesh % nodesIterator % object()
+            CALL castToSMNode(obj,node)
+            id                  =  node % id
+            nodePointers(id) % node => node
+            x(:,id)             =  node % x
+            getsEdgeForce(id)   =  node % bCurveID >= NONE
+            getsCrossForce(id)  =  .NOT.HasFixedPosition( node )
+
+            IF (node % activeStatus == INACTIVE)     THEN
+               constraintType(id) = INACTIVE_NODE
+            ELSE IF ( node % distToBoundary == 0.0_RP .AND. node % bCurveID > NONE )     THEN
+               constraintType(id) = NODE_ON_CURVE
+               c                  => model % curveWithID( node % bCurveID, chain )
+               tangent(:,id)      =  c % tangentAt( node % whereOnBoundary )
+            ELSE IF ( hasCornerConstraint(id) )     THEN
+               constraintType(id) = NODE_ON_CORNER_LINE
+            ELSE
+               constraintType(id) = FREE_NODE
+            END IF
+            CALL mesh % nodesIterator % moveToNext()
+         END DO
+
+         ALLOCATE( edgeNodes(2, mesh % edges % COUNT()) )
+         j = 0
+         CALL mesh % edgesIterator % setToStart()
+         DO WHILE ( .NOT.mesh % edgesIterator % isAtEnd() )
+            obj => mesh % edgesIterator % object()
+            CALL castToSMEdge(obj,edge)
+            j = j + 1
+            edgeNodes(:,j) = [edge % nodes(1) % node % id, edge % nodes(2) % node % id]
+            CALL mesh % edgesIterator % moveToNext()
+         END DO
+
+         ALLOCATE( elementNodes(4, mesh % elements % COUNT()) )
+         j = 0
+         CALL mesh % elementsIterator % setToStart()
+         DO WHILE ( .NOT.mesh % elementsIterator % isAtEnd() )
+            obj => mesh % elementsIterator % object()
+            CALL castToSMElement(obj,e)
+            j = j + 1
+            DO k = 1, 4
+               elementNodes(k,j) = e % nodes(k) % node % id
+            END DO
+            CALL mesh % elementsIterator % moveToNext()
+         END DO
+
+      END SUBROUTINE GatherSmoothingArrays
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE AccumulateAcceleration( self, x, edgeNodes, elementNodes, getsEdgeForce, getsCrossForce )
          IMPLICIT NONE
          TYPE (SpringMeshSmoother) :: self
-         TYPE (SMMesh)       :: mesh
+         REAL(KIND=RP)             :: x(:,:)
+         INTEGER                   :: edgeNodes(:,:), elementNodes(:,:)
+         LOGICAL                   :: getsEdgeForce(:), getsCrossForce(:)
 
          IF ( self % springType == LINEAR_SPRING )     THEN
-            CALL LinearAcceleration( self, mesh )
+            CALL LinearAcceleration( self, x, edgeNodes, getsEdgeForce )
          ELSE IF ( self % springType == CROSS_SPRING )   THEN
-            CALL CrossAcceleration( self, mesh )
+            CALL CrossAcceleration( self, x, elementNodes, getsCrossForce )
          ELSE IF ( self % springType == BOTH )     THEN
-            CALL LinearAcceleration( self, mesh )
-            CALL CrossAcceleration( self, mesh )
+            CALL LinearAcceleration( self, x, edgeNodes, getsEdgeForce )
+            CALL CrossAcceleration( self, x, elementNodes, getsCrossForce )
          END IF
 
       END SUBROUTINE AccumulateAcceleration
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE LinearAcceleration( self, mesh )
+      SUBROUTINE LinearAcceleration( self, x, edgeNodes, getsEdgeForce )
          IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        Add the forces of the springs along the edges. The nodes of
+!        the edges are edgeNodes(1:2,:); getsEdgeForce tells whether a
+!        node is moved by them.
+!        ------------------------------------------------------------
 !
 !        ---------
 !        Arguments
 !        ---------
 !
          TYPE (SpringMeshSmoother) :: self
-         TYPE (SMMesh)       :: mesh
+         REAL(KIND=RP)             :: x(:,:)
+         INTEGER                   :: edgeNodes(:,:)
+         LOGICAL                   :: getsEdgeForce(:)
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         INTEGER                              :: id1, id2
-         REAL(KIND=RP)                        :: force(3), x1(3), x2(3)
-         TYPE(SMEdge)               , POINTER :: edge => NULL()
-         TYPE(FTLinkedListIterator) , POINTER :: iterator => NULL()
-         CLASS(FTObject)            , POINTER :: obj => NULL()
+         INTEGER                              :: j, id1, id2
+         REAL(KIND=RP)                        :: force(3)
 
-         iterator => mesh % edgesIterator
-         CALL iterator % setToStart()
+         DO j = 1, SIZE(edgeNodes,2)
+            id1 = edgeNodes(1,j)
+            id2 = edgeNodes(2,j)
+            CALL LinearSpringForce( self % springConstant, self % restLength, x(:,id1), x(:,id2), force )
 
-         DO WHILE ( .NOT.iterator % isAtEnd() )
-            obj => iterator % object()
-            CALL castTosmEdge(obj,edge)
-
-            x1  = edge % nodes(1) % node % x
-            x2  = edge % nodes(2) % node % x
-            id1 = edge % nodes(1) % node % id
-            id2 = edge % nodes(2) % node % id
-            CALL LinearSpringForce( self % springConstant, self % restLength, x1, x2, force )
-
-            IF( edge % nodes(1)  %  node  %  bCurveID >= NONE )     THEN
+            IF( getsEdgeForce(id1) )     THEN
                nodeAcceleration(:,id1) = nodeAcceleration(:,id1) + force/self % mass
             END IF
-            IF( edge % nodes(2) % node % bCurveID >= NONE )     THEN
+            IF( getsEdgeForce(id2) )     THEN
                nodeAcceleration(:,id2) = nodeAcceleration(:,id2) - force/self % mass
             END IF
-
-            CALL iterator % moveToNext()
          END DO
 
       END SUBROUTINE LinearAcceleration
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CrossAcceleration( self, mesh )
+      SUBROUTINE CrossAcceleration( self, x, elementNodes, getsCrossForce )
          IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        Add the forces of the springs across the diagonals of the
+!        elements, whose nodes are elementNodes(1:4,:), on the nodes
+!        that are not fixed (getsCrossForce)
+!        ------------------------------------------------------------
 !
 !        ---------
 !        Arguments
 !        ---------
 !
          TYPE (SpringMeshSmoother) :: self
-         TYPE (SMMesh)       :: mesh
+         REAL(KIND=RP)             :: x(:,:)
+         INTEGER                   :: elementNodes(:,:)
+         LOGICAL                   :: getsCrossForce(:)
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
-         INTEGER                             :: k, cK, nID
-         REAL(KIND=RP)                       :: force(3), x1(3), x2(3)
-         TYPE(SMNode)              , POINTER :: node1 => NULL(), node2 => NULL()
-         TYPE(SMElement)           , POINTER :: e => NULL()
-         TYPE(FTLinkedListIterator), POINTER :: iterator => NULL()
-         CLASS(FTObject)           , POINTER :: obj => NULL()
+         INTEGER       :: j, k, cK, nID
+         REAL(KIND=RP) :: force(3)
 
-         iterator => mesh % elementsIterator
-         CALL iterator % setToStart()
-         DO WHILE ( .NOT.iterator % isAtEnd() )
-            obj => iterator % object()
-            CALL castToSMElement(obj,e)
+         DO j = 1, SIZE(elementNodes,2)
             DO k = 1, 4
-               node1 => e % nodes(k) % node
-               IF( HasFixedPosition( node1 ) )     CYCLE ! Is on boundary.
-               nID = node1 % id
+               nID = elementNodes(k,j)
+               IF( .NOT.getsCrossForce(nID) )     CYCLE ! Is on boundary.
                cK  = k + 2
                IF( cK > 4 ) cK = cK - 4
 
-               node2 => e % nodes(cK) % node
-               x1 = node1 % x
-               x2 = node2 % x
-               CALL LinearSpringForce( self % springConstant, self % restLength, x1, x2, force )
+               CALL LinearSpringForce( self % springConstant, self % restLength, x(:,nID), x(:,elementNodes(cK,j)), force )
                nodeAcceleration(:,nID) = nodeAcceleration(:,nID) + 0.5_RP*force/self % mass
             END DO
-
-            CALL iterator % moveToNext()
          END DO
 
       END SUBROUTINE CrossAcceleration
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ConstrainBoundaryNodes( self, model, nodeIterator )
+      SUBROUTINE ConstrainBoundaryNodes( constraintType, tangent )
          IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        Inactive nodes do not move. A node on a curve moves along the
+!        tangent of the curve at it, and a node held on a line from a
+!        corner moves along that line.
+!        -------------------------------------------------------------
 !
 !        ---------
 !        Arguments
 !        ---------
 !
-         CLASS (SpringMeshSmoother)            :: self
-         TYPE  (FTLinkedListIterator), POINTER :: nodeIterator
-         TYPE  (SMModel)             , POINTER :: model
+         INTEGER       :: constraintType(:)
+         REAL(KIND=RP) :: tangent(:,:)
 !
 !        ---------------
 !        Local variables
 !        ---------------
 !
-         TYPE (SMNode)        , POINTER :: node => NULL()
-         CLASS(SMChainedCurve), POINTER :: chain => NULL()
-         CLASS(SMCurve)       , POINTER :: c => NULL()
-         CLASS(FTObject)      , POINTER :: obj => NULL()
-         INTEGER                        :: id
-         REAL(KIND=RP)                  :: tangent(3)
+         INTEGER :: id
 
-         CALL nodeIterator % setToStart()
-         DO WHILE ( .NOT.nodeIterator % isAtEnd() )
-            obj => nodeIterator % object()
-            CALL castToSMNode(obj,node)
-
-            IF (node  %  activeStatus == INACTIVE)     THEN
-               nodeAcceleration(:,node  %  id) = 0.0_RP
-
-            ELSE IF ( node % distToBoundary == 0.0_RP .AND. node  %  bCurveID > NONE )     THEN
-              c                      => model % curveWithID( node  %  bCurveID, chain )
-              tangent                =  c % tangentAt( node  %  whereOnBoundary )
-              id                     =  node  %  id
-              nodeAcceleration(:,id) = (nodeAcceleration(1,id)*tangent(1) + &
-                                        nodeAcceleration(2,id)*tangent(2))*tangent
-            ELSE IF ( hasCornerConstraint(node % id) )     THEN
-              id                     =  node  %  id
-              nodeAcceleration(:,id) = (nodeAcceleration(1,id)*cornerDirection(1,id) + &
-                                        nodeAcceleration(2,id)*cornerDirection(2,id))*cornerDirection(:,id)
-            END IF
-            CALL nodeIterator % moveToNext()
+         DO id = 1, SIZE(constraintType)
+            SELECT CASE ( constraintType(id) )
+               CASE ( INACTIVE_NODE )
+                  nodeAcceleration(:,id) = 0.0_RP
+               CASE ( NODE_ON_CURVE )
+                  nodeAcceleration(:,id) = (nodeAcceleration(1,id)*tangent(1,id) + &
+                                            nodeAcceleration(2,id)*tangent(2,id))*tangent(:,id)
+               CASE ( NODE_ON_CORNER_LINE )
+                  nodeAcceleration(:,id) = (nodeAcceleration(1,id)*cornerDirection(1,id) + &
+                                            nodeAcceleration(2,id)*cornerDirection(2,id))*cornerDirection(:,id)
+               CASE DEFAULT
+            END SELECT
          END DO
-
-         IF(self % restLength >= 0.0_RP)     CONTINUE
 
       END SUBROUTINE ConstrainBoundaryNodes
 !
@@ -671,26 +765,24 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE KeepNodeAwayFromCorner( node, velocity )
+      SUBROUTINE KeepNodeAwayFromCorner( id, x, velocity )
          IMPLICIT NONE
 !
 !        ----------------------------------------------------------------
 !        The springs can pull a node that is constrained to a line from
 !        a corner (see SetInterfaceCornerConstraints) right up to the
 !        corner, which collapses the elements between it and the corner.
-!        Stop it at its minimum distance from the corner.
+!        Stop node id, at x, at its minimum distance from the corner.
 !        ----------------------------------------------------------------
 !
-         TYPE (SMNode), POINTER :: node
-         REAL(KIND=RP)          :: velocity(3)
-         REAL(KIND=RP)          :: s
-         INTEGER                :: id
+         INTEGER       :: id
+         REAL(KIND=RP) :: x(3), velocity(3)
+         REAL(KIND=RP) :: s
 
-         id = node % id
-         s  = DOT_PRODUCT(node % x(1:2) - cornerOrigin(1:2,id), cornerDirection(1:2,id))
+         s  = DOT_PRODUCT(x(1:2) - cornerOrigin(1:2,id), cornerDirection(1:2,id))
          IF ( s >= cornerMinDistance(id) )     RETURN
 
-         node % x(1:2) = cornerOrigin(1:2,id) + cornerMinDistance(id)*cornerDirection(1:2,id)
+         x(1:2) = cornerOrigin(1:2,id) + cornerMinDistance(id)*cornerDirection(1:2,id)
          IF ( DOT_PRODUCT(velocity(1:2), cornerDirection(1:2,id)) < 0.0_RP )     velocity = 0.0_RP
 
       END SUBROUTINE KeepNodeAwayFromCorner
