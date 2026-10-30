@@ -415,8 +415,6 @@
       SUBROUTINE ResetProjectBoundaryObjects(self)
          IMPLICIT NONE
          CLASS(MeshProject)         , POINTER :: self
-         CLASS(FTMutableObjectArray), POINTER :: boundaryPolynomials !An alias
-         CLASS(FTObject)            , POINTER :: obj
 
          IF(ALLOCATED(self % L2BoundaryError)) DEALLOCATE(self % L2BoundaryError)
          IF(ALLOCATED(self % H1BoundaryError)) DEALLOCATE(self % H1BoundaryError)
@@ -781,14 +779,13 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER                                :: curveID, j
+         INTEGER                                :: curveID
          REAL(KIND=RP)                          :: h
          CLASS(FTLinkedListIterator)  , POINTER :: iterator => NULL()
          CLASS(FTObject)              , POINTER :: obj => NULL()
          CLASS(ChainedSegmentedCurve) , POINTER :: segmentedOuterBoundary => NULL()
          CLASS(ChainedSegmentedCurve) , POINTER :: segmentedInnerBoundary => NULL()
          CLASS(SMChainedCurve)        , POINTER :: chain => NULL()
-         CLASS(SMCurve)               , POINTER :: optimizedCurve, crv
          REAL(KIND=RP), ALLOCATABLE             :: segmentsSizes(:)
          REAL(KIND=RP), ALLOCATABLE             :: cuts(:)
          LOGICAL, EXTERNAL :: ReturnOnFatalError
@@ -835,7 +832,6 @@
          IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
             iterator => self % model % innerBoundariesIterator
             CALL iterator % setToStart()
-            j = 0
             DO WHILE (.NOT.iterator % isAtEnd())
                curveID =  curveID + 1
                obj     => iterator % object()
@@ -871,7 +867,6 @@
          IF( ASSOCIATED( self % model % interfaceBoundaries ) )     THEN
             iterator => self % model % interfaceBoundariesIterator
             CALL iterator % setToStart
-            j = 0
              DO WHILE (.NOT.iterator % isAtEnd())
                 curveID =  curveID + 1
                 obj     => iterator % object()
@@ -1107,7 +1102,6 @@
          CLASS(MeshSizer)            , POINTER :: sizer
          CLASS(FRSegmentedCurve)     , POINTER :: frsCurve
          CLASS(SMChainedCurve)       , POINTER :: outerBoundary
-         CLASS(SMCurve)              , POINTER :: cCurve
          CLASS(FTLinkedListIterator) , POINTER :: curveIterator, segmentedIterator
          CLASS(FTObject)             , POINTER :: obj
          CLASS(SMChainedCurve)       , POINTER :: innerCurveChain

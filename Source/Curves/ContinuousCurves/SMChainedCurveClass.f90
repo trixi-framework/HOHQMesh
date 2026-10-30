@@ -168,7 +168,6 @@
       SUBROUTINE destructChainedCurve(self)
          IMPLICIT NONE
          TYPE(SMChainedCurve)    :: self
-         CLASS(FTObject), POINTER :: obj
 
          IF ( ASSOCIATED(self % curvesArray) )     THEN
             CALL releaseFTMutableObjectArrayClass(self % curvesArray)

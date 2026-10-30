@@ -406,12 +406,7 @@
          REAL(KIND=RP) :: L(3,4)         ! Sequential edge vectors
          REAL(KIND=RP) :: LNorm(4)       ! lengths of the edge vectors
          REAL(KIND=RP) :: LMin, LMax     ! largest and smallest edge lengths
-         REAL(KIND=RP) :: D1(3), D2(3)   ! Diagonals
-         REAL(KIND=RP) :: DMax, DMin     ! Largest and smallest diagonal lengths
-         REAL(KIND=RP) :: X1(3), X2(3)   ! Principle Axes
          REAL(KIND=RP) :: N(4)           ! Corner normal directions (not normalized).  See note1
-         REAL(KIND=RP) :: nHat(4)        ! Corner normals. See note1
-         REAL(KIND=RP) :: Nc, nHatC      ! center normals. See note1
          REAL(KIND=RP) :: alpha(4)       ! vertex areas
          REAL(KIND=RP) :: alphaMin
          REAL(KIND=RP) :: area           ! signed area of the quad
@@ -437,7 +432,6 @@
 !
 !        ----------------------------
 !        Compute lengths of the sides
-!        and the diagonals
 !        ----------------------------
 !
          DO k = 1,4
@@ -447,28 +441,14 @@
          LMax = MAXVAL(LNorm)
          LMin = MINVAL(LNorm)
 
-         D1   = P(:,3) - P(:,1)
-         D2   = P(:,4) - P(:,2)
-         DMax = MAX( Norm2(D1), Norm2(D2) )
-         DMin = MIN( Norm2(D1), Norm2(D2) )
-!
-!        --------------
-!        Principle Axes
-!        --------------
-!
-         X1 = (P(:,2) - P(:,1)) + (P(:,3) - P(:,4))
-         X2 = (P(:,3) - P(:,2)) + (P(:,4) - P(:,1))
 !
 !        -------
 !        Normals
 !        -------
 !
          DO k = 1,4
-            N(k)    = L(:,loop(k-1)).cross.L(:,k)
-            NHat(k) = 1.0_RP !  See note1
+            N(k) = L(:,loop(k-1)).cross.L(:,k)
          END DO
-         Nc    = X1.cross.X2
-         nHatC = 1.0_RP      !  See note1
 !
 !        -----
 !        Areas

@@ -491,13 +491,12 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER                          :: curveNumber, j
+         INTEGER                          :: curveNumber
          CLASS(FRSegmentedCurve), POINTER :: c => NULL()
 
 
          curveNumber =  self % chainNumberForIndex(indx)
          c           => self % segmentedCurveAtIndex(curveNumber)
-         j           =  self % localIndexForChainIndexInCurveNumber(indx,curveNumber)
 
          id = c % id
 

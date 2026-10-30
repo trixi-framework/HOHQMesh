@@ -168,7 +168,6 @@
          INTEGER                    :: iUnit, j, k
          INTEGER                    :: f, jj, ii
          INTEGER, EXTERNAL          :: UnusedUnit
-         INTEGER                    :: eID
          REAL(KIND=RP), ALLOCATABLE :: faceX(:,:,:)
 !
 !        -----------
@@ -236,8 +235,6 @@
 !
          DO j = 1, mesh % numberofLayers             ! level
             DO k = 1, mesh % numberOfQuadElements    ! element on original quad mesh
-
-               eID = mesh % elements(k,j) % globalID
 
                IF ( version == ISM_MM )     THEN
                   WRITE( iUnit, *) mesh % elements(k,j) % nodeIDs, &
