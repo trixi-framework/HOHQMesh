@@ -3627,8 +3627,9 @@
 
          INTEGER       :: i, j, d, k, kBest, iBest, jBest, n1, n2, c
          INTEGER       :: half1(nIds+2*nIds), half2(nIds+2*nIds)
-         REAL(KIND=RP) :: len, score, best, angI(2), angJ(2), interior(nIds)
+         REAL(KIND=RP) :: len, score, best, bound, angI(2), angJ(2), interior(nIds), dirNext(nIds)
          REAL(KIND=RP), PARAMETER :: valencePenalty = 15.0_RP
+         REAL(KIND=RP), PARAMETER :: BOUND_SLACK    = 1.0d-6
          INTEGER, EXTERNAL :: Loop
 
          ok = .FALSE.
@@ -3642,12 +3643,12 @@
 
          DO i = 1, nIds
             interior(i) = cornerAngle( x(:,ids(Loop(i-1,nIds))), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) )
+            dirNext(i)  = ATAN2(x(2,ids(Loop(i+1,nIds))) - x(2,ids(i)), x(1,ids(Loop(i+1,nIds))) - x(1,ids(i)))
          END DO
          best = -HUGE(best)
          DO i = 1, nIds
-            DO d = 2, nIds - 2
-               j = Loop(i + d, nIds)
-               IF ( j < i )     CYCLE
+            DO d = 2, MIN(nIds - 2, nIds - i)
+               j   = i + d
                len = NORM2(x(:,ids(j)) - x(:,ids(i)))
                k   = MAX(0, NINT(len/h) - 1)
                IF ( MODULO(d + 1 + k, 2) /= 0 )     THEN
@@ -3670,13 +3671,20 @@
 !              --------------------------------------------------------
 !              Angles on either side of the chord at its ends; the best
 !              chord has the largest smallest one, and near 90 degrees.
-!              Whether the chord lies inside the polygon is only checked
-!              for a chord that would be the best so far.
+!              The chord splits the corner angles at its ends, so the
+!              smallest angle is at most half of either corner and the
+!              largest at least half of either: a chord whose bound is
+!              no better than the best so far is skipped. Whether the
+!              chord lies inside the polygon is only checked for a chord
+!              that would be the best so far.
 !              --------------------------------------------------------
 !
-               angI(1) = cornerAngle( x(:,ids(j)), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) )
+               bound = 0.5_RP*MIN(interior(i), interior(j)) - 0.1_RP*MAX(interior(i), interior(j)) &
+                     - 10.0_RP*ABS(len/h - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
+               IF ( bound + BOUND_SLACK <= best )     CYCLE
+               angI(1) = angleFromDirection( x(:,ids(j)), x(:,ids(i)), dirNext(i) )
                angI(2) = interior(i) - angI(1)
-               angJ(1) = cornerAngle( x(:,ids(i)), x(:,ids(j)), x(:,ids(Loop(j+1,nIds))) )
+               angJ(1) = angleFromDirection( x(:,ids(i)), x(:,ids(j)), dirNext(j) )
                angJ(2) = interior(j) - angJ(1)
                score = MIN(MINVAL(angI), MINVAL(angJ)) - 0.2_RP*MAX(MAXVAL(angI), MAXVAL(angJ)) &
                      - 10.0_RP*ABS(len/h - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
@@ -3749,6 +3757,21 @@
          cornerAngle = MODULO((ATAN2(xPrev(2) - x(2), xPrev(1) - x(1)) - ATAN2(xNext(2) - x(2), xNext(1) - x(1)))*DEG, &
                               360.0_RP)
       END FUNCTION cornerAngle
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION angleFromDirection( xPrev, x, dirNext )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        cornerAngle with the direction (ATAN2) from x to the next node
+!        already known
+!        -------------------------------------------------------------
+!
+         REAL(KIND=RP) :: xPrev(2), x(2), dirNext
+         REAL(KIND=RP), PARAMETER :: DEG = 180.0_RP/PI
+         angleFromDirection = MODULO((ATAN2(xPrev(2) - x(2), xPrev(1) - x(1)) - dirNext)*DEG, 360.0_RP)
+      END FUNCTION angleFromDirection
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -4929,8 +4952,10 @@
 
          INTEGER, PARAMETER :: MAX_TRIES = 12
          INTEGER       :: i, j, nBr, t1, t2, i1, j1, i2, j2, di, dj, nAll0, nQ0, nTried, nFirst
+         INTEGER       :: nShort, nSorted
          INTEGER       :: brI(nFront*nB), brJ(nFront*nB), order(nFront*nB), bridgeState(nFront*nB)
-         REAL(KIND=RP) :: h, brLen(nFront*nB)
+         INTEGER, ALLOCATABLE :: shortPairs(:)
+         REAL(KIND=RP) :: h, shortLen, brLen(nFront*nB)
          INTEGER       :: nChords(SIZE(x,2))
          INTEGER, EXTERNAL :: Loop
 
@@ -4962,7 +4987,30 @@
                brLen(nBr) = NORM2(x(:,b0+j) - x(:,front(i)))
             END DO
          END DO
-         CALL StableSortByKey( brLen(1:nBr), order(1:nBr) )
+!
+!        -------------------------------------------------------------
+!        The search nearly always ends among the short pairs. Sort first
+!        the pairs no longer than the largest distance from a front node
+!        to its nearest loop node, and all of them only if the search
+!        gets past those. The short pairs come first in the full order,
+!        so the chords are tried in the same order either way.
+!        -------------------------------------------------------------
+!
+         shortLen = 0.0_RP
+         DO i = 1, nFront
+            shortLen = MAX(shortLen, MINVAL(brLen((i-1)*nB+1:i*nB)))
+         END DO
+         ALLOCATE(shortPairs(nBr))
+         nShort = 0
+         DO t1 = 1, nBr
+            IF ( brLen(t1) <= shortLen )     THEN
+               nShort = nShort + 1
+               shortPairs(nShort) = t1
+            END IF
+         END DO
+         CALL StableSortByKey( brLen(shortPairs(1:nShort)), order(1:nShort) )
+         order(1:nShort) = shortPairs(order(1:nShort))
+         nSorted = nShort
          bridgeState = BRIDGE_UNCHECKED
 
          nAll0  = nAll
@@ -4970,12 +5018,20 @@
          nTried = 0
          nFirst = 0
          DO t1 = 1, nBr
+            IF ( t1 > nSorted )     THEN
+               CALL StableSortByKey( brLen(1:nBr), order(1:nBr) )
+               nSorted = nBr
+            END IF
             i1 = brI(order(t1))
             j1 = brJ(order(t1))
             IF ( .NOT.isBridge( bridgeState(order(t1)), x, front, nFront, b0, nB, i1, j1 ) )     CYCLE
             nFirst = nFirst + 1
             IF ( nFirst > MAX_TRIES )     EXIT
             DO t2 = 1, nBr
+               IF ( t2 > nSorted )     THEN
+                  CALL StableSortByKey( brLen(1:nBr), order(1:nBr) )
+                  nSorted = nBr
+               END IF
                i2 = brI(order(t2))
                j2 = brJ(order(t2))
                di = MODULO(i2 - i1, nFront)
