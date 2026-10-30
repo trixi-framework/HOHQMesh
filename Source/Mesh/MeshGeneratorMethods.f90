@@ -4159,17 +4159,14 @@
                   p = e % nodes(k) % node % id
                   j = e % nodes(Loop(k+1,4)) % node % id
                   g = elementWithDirectedEdge( j, p, elems, nodeEl, nodeElCount )
-                  IF ( g == 0 )     THEN
-                     IF ( paveDebug )     PRINT *, "      Pave: the band reaches the edge of the mesh"
-                     DEALLOCATE(seq)
-                     RETURN
+                  IF ( g /= 0 )     THEN
+                     IF ( removed(g) )     CYCLE
+                     cnt(g) = cnt(g) + 1
                   END IF
-                  IF ( removed(g) )     CYCLE
                   nF = nF + 1
                   eFrom(nF) = p
                   eTo(nF)   = j
                   nOut(p)   = nOut(p) + 1
-                  cnt(g)    = cnt(g) + 1
                END DO
             END DO
             changed = .FALSE.
