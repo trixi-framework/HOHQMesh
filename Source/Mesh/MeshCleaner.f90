@@ -1108,8 +1108,13 @@
             IF ( numberOfDiamondsRemoved > 0 )     THEN
                IF ( printMessage )     PRINT *, "      Number of diamond elements removed near interfaces = ", &
                                                 numberOfDiamondsRemoved
-               CALL mesh % renumberObjects(whichIterator = NODES)
+!
+!              The edges of the removed diamonds kept their old nodes in
+!              the mesh. Rebuild the edges, then delete the nodes that no
+!              element uses (DoLazyDelete also renumbers).
+!
                CALL mesh % syncEdges()
+               CALL DoLazyDelete( mesh )
             END IF
          END IF
 
