@@ -43,7 +43,7 @@
       IMPLICIT NONE
 !
 !     ---------------------------------------------------------------
-!     Experimental interface paving: what paving one interface chain
+!     Interface paving: what paving one interface chain
 !     would change in the mesh (PaveInterfaceWithBand), so that several
 !     band widths can be tried and the best one applied (CommitPavePlan)
 !     without meshing it again. bandEdge(:,side) are the nodes on the
@@ -577,9 +577,9 @@
          IF( boundaryEdgesType(j) == INTERFACE_EDGES )     THEN
 !
 !           ---------------------------------------------------------
-!           Experimental: with interfacePaving, pave the band around
-!           the interface chain. Otherwise, or if paving fails, move
-!           the nearby nodes onto the curve.
+!           With interfacePaving, pave the band around the interface
+!           chain. Otherwise, or if paving fails, move the nearby nodes
+!           onto the curve.
 !           ---------------------------------------------------------
 !
             paved = .FALSE.
@@ -1804,7 +1804,7 @@
 
          INTEGER                              :: k, l
          INTEGER                              :: w
-         INTEGER                              :: numInside, numOutside, location(4)
+         INTEGER                              :: numInside, numOutside
          CLASS(SMChainedCurve)      , POINTER :: chain           => NULL()
          REAL(KIND=RP)                        :: center(3)
 
@@ -1840,7 +1840,6 @@
                IF(.NOT.e % remove)     THEN
                   numInside  = 0
                   numOutside = 0
-                  location   = UNDEFINED
 !
 !                 -----------------------------------------------------------------
 !                 Count the nodes inside and outside of 'curveArray', the interface
@@ -1859,11 +1858,9 @@
 
                      w = curveArray % windingNumber( node % x )
                      IF ( abs(w) == 0 ) THEN
-                        location(k)                   = OUTSIDE
-                        numOutside                    = numOutside + 1
+                        numOutside = numOutside + 1
                      ELSE
-                        location(k)                   = INSIDE
-                        numInside                     = numInside + 1
+                        numInside  = numInside + 1
                      END IF
                   END DO
 !
@@ -3696,13 +3693,7 @@
                kBest = k
             END DO
          END DO
-         IF ( best == -HUGE(best) )     THEN
-            PRINT *, '            split: no chord for', nIds, ' nodes', ids
-            DO i = 1, nIds
-               PRINT *, '              ', x(:,ids(i)), interior(i)
-            END DO
-            RETURN
-         END IF
+         IF ( best == -HUGE(best) )     RETURN
 !
 !        ----------------------------------------------
 !        Nodes on the chord and the two halves, both ccw
@@ -3824,8 +3815,8 @@
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
-!        Experimental (interfacePaving). Pave the band around an interface
-!        chain (PaveInterfaceWithBand). The width of the band suited to a
+!        Pave the band around an interface chain (PaveInterfaceWithBand),
+!        when interfacePaving is set. The width of the band suited to a
 !        chain depends on its size and its neighbors, so plan the paving
 !        for the default width and two wider ones, score each by its worst
 !        quads, and apply the best plan. The samples of the curve and the
@@ -4042,15 +4033,14 @@
          REAL(KIND=RP)     , ALLOCATABLE :: cx(:,:), cg(:), sx(:,:,:), wSeg(:)
          INTEGER           , ALLOCATABLE :: featureIdx(:), nSeg(:)
          INTEGER           , ALLOCATABLE :: eFrom(:), eTo(:), loopNodes(:), quads(:,:,:), newFront(:,:)
-         INTEGER                         :: loopStart(MAX_LOOPS+1), nLoops, loopSide(MAX_LOOPS)
+         INTEGER                         :: loopStart(MAX_LOOPS+1), nLoops
          TYPE (SMNode)        , POINTER  :: node
          TYPE (SMElement)     , POINTER  :: e
          CLASS(FTObject)      , POINTER  :: obj
-         CLASS(SMChainedCurve), POINTER  :: chain, owner
-         CLASS(SMCurve)       , POINTER  :: c
-         INTEGER  :: n, nCurves, nS, maxID, nE, nid, i, j, k, f, g, p, iter, nF, cur, nc, kk, nCount(MAX_LOOPS)
-         INTEGER  :: nInLoops, nOutLoops, fIn, fOut, side, nfr(2), nAll(2), nQ(2), nNew(2), kBest, total
-         INTEGER  :: m, iS, iFr(2), maxN, bCurveSide, nQRow(2), pass, nComp, nStack, keep(2)
+         CLASS(SMChainedCurve), POINTER  :: chain
+         INTEGER  :: n, nCurves, nS, maxID, nE, nid, i, j, k, f, g, p, iter, nF, cur, nc, kk
+         INTEGER  :: nInLoops, nOutLoops, fOut, side, nfr(2), nAll(2), nQ(2), nNew(2), kBest, total
+         INTEGER  :: m, iS, iFr(2), maxN, bCurveSide, pass, nComp, nStack, keep(2)
          INTEGER           , ALLOCATABLE :: comp(:), stack(:), compSize(:)
          LOGICAL           , ALLOCATABLE :: compInside(:)
          REAL(KIND=RP)                   :: xMin(2), xMax(2)
@@ -4114,7 +4104,6 @@
             CALL mesh % elementsIterator % moveToNext()
          END DO
 
-         IF ( paveDebug )     PRINT *, "      Pave: size min/max", MINVAL(hs), MAXVAL(hs)
          area = 0.0_RP
          DO i = 1, nS
             j = Loop(i+1, nS)
@@ -4240,7 +4229,6 @@
                   IF ( eFrom(k) == cur .AND. .NOT.used(k) )     EXIT
                END DO
                IF ( k > nF )     THEN
-                  IF ( paveDebug )     PRINT *, "      Pave: the band edge is not a loop"
                   DEALLOCATE(seq)
                   RETURN
                END IF
@@ -4250,27 +4238,20 @@
          loopStart(nLoops+1) = m + 1
          nInLoops  = 0
          nOutLoops = 0
-         fIn       = 0
          fOut      = 0
          DO i = 1, nLoops
-            nCount(i) = loopStart(i+1) - loopStart(i)
             inside = pointInPolygon( nodeForID(loopNodes(loopStart(i))) % node % x(1:2), xs, nS )
             IF ( inside )     THEN
-               loopSide(i) = 1
                nInLoops    = nInLoops + 1
-               fIn         = fIn + nCount(i)
                iFr(1)      = i
             ELSE
-               loopSide(i) = 2
                nOutLoops   = nOutLoops + 1
-               fOut        = fOut + nCount(i)
+               fOut        = fOut + loopStart(i+1) - loopStart(i)
                iFr(2)      = i
             END IF
          END DO
-         IF ( paveDebug )     PRINT *, "      Pave: band edge loops inside", nInLoops, fIn, " outside", nOutLoops, fOut
          IF ( nOutLoops == 1 .AND. nInLoops <= 1 )     EXIT
          IF ( pass == 3 )     THEN
-            IF ( paveDebug )     PRINT *, "      Pave: unsupported band shape"
             DEALLOCATE(seq)
             RETURN
          END IF
@@ -4395,7 +4376,6 @@
             x3 = chain % positionAt(cg(m))
             cx(:,m) = x3(1:2)
          END DO
-         IF ( paveDebug )     PRINT *, "      Pave: curve nodes", nc, " features", nFeat
 !
 !        ------------------------------------------------------------
 !        3. A paving row on each side. Local indices: 1..nc the curve
@@ -4424,8 +4404,6 @@
                IF ( ok .OR. rowScale < 0.1_RP )     EXIT
                rowScale = 0.5_RP*rowScale
             END DO
-            IF ( paveDebug )     PRINT *, "      Pave: side", side, " row ok ", ok, " scale", rowScale, " quads", nQ(side), &
-                                      " front", nNew(side), " band edge", nfr(side)
             IF ( .NOT.ok )     THEN
                DEALLOCATE(seq)
                RETURN
@@ -4439,10 +4417,8 @@
 !        ----------------------------------------------------------
 !
          DO side = 1, 2
-            nQRow(side) = nQ(side)
             CALL FillBetweenLoops( sx(:,:,side), nAll(side), newFront(:,side), nNew(side), nc, nfr(side), &
                                    quads(:,:,side), nQ(side), ok )
-            IF ( paveDebug )     PRINT *, "      Pave: side", side, " fill ok ", ok, " quads", nQ(side) - nQRow(side)
             IF ( ok )     CALL RemoveDoublets( sx(:,:,side), nc + nfr(side), nAll(side), quads(:,:,side), nQ(side) )
             IF ( .NOT.ok )     THEN
                DEALLOCATE(seq)
@@ -4463,7 +4439,6 @@
                   node => elems(f) % element % nodes(k) % node
                   IF ( node % bCurveChainID > 0 .AND. node % bCurveChainID /= seq(1) % node % bCurveChainID )     THEN
                      IF ( node % distToBoundary == 0.0_RP )     THEN
-                        IF ( paveDebug )     PRINT *, "      Pave: band", bandFactor, " reaches another curve"
                         DEALLOCATE(seq)
                         RETURN
                      END IF
@@ -4478,7 +4453,6 @@
 !
          plan % score = MIN(worstQuadQuality( sx(:,:,1), nc, nc + nfr(1), nAll(1), quads(:,:,1), nQ(1) ), &
                             worstQuadQuality( sx(:,:,2), nc, nc + nfr(2), nAll(2), quads(:,:,2), nQ(2) ))
-         IF ( paveDebug )     PRINT *, "      Pave: band", bandFactor, " score", plan % score
          plan % chain      => chain
          plan % chainID    =  seq(1) % node % bCurveChainID
          plan % nCurves    =  nCurves
@@ -4639,7 +4613,6 @@
                dmin = MIN(dmin, NORM2(x(:,k) - x(:,j)))
             END DO
             h  = rowScale*MIN(0.8_RP*sp, 0.45_RP*dmin)
-            IF ( typ(j) == FAN3 .AND. paveDebug )     PRINT *, '        row fan', j, theta(j), ' sp', sp, ' dmin', dmin, ' h', h, x(:,j)
             un = (x(:,jq) - x(:,j))/NORM2(x(:,jq) - x(:,j))
             SELECT CASE ( typ(j) )
                CASE ( WEDGE )

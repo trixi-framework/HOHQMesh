@@ -133,18 +133,19 @@
          INTEGER       :: refinementType          = 2
 !
 !        ----------------------------------------------------------------
-!        EXPERIMENTAL Interface paving. With interfacePaving, the band
-!        around each interface chain is removed and meshed again from the
-!        curve outward; otherwise the nodes near the curve are moved onto
-!        it. The band reaches paveBandWidth local element sizes from the
-!        curve on each side. A node on the curve gets one element (a
+!        Interface paving. With interfacePaving, the band around each
+!        interface chain is removed and meshed again from the curve
+!        outward; otherwise the nodes near the curve are moved onto it.
+!        The band reaches paveBandWidth local element sizes from the
+!        curve on each side, or up to 1.5 times that if a wider band
+!        gives better elements (PaveInterface). A node on the curve gets one element (a
 !        wedge) if its angle is below paveWedgeAngle, three if it is above
 !        paveFanAngle, and two otherwise. The element size along the curve
 !        allows at most paveMaxTurn of turning per element. Angles are in
 !        degrees. paveSamplesPerCurve = 0 chooses the number of samples of
-!        each curve from the number of curves in the chain. paveDebug
-!        prints what the paving does. chainWasPaved marks the chains whose
-!        band was paved; their elements are not split later.
+!        each curve from the number of curves in the chain. chainWasPaved
+!        marks the chains whose band was paved; their elements are not
+!        split later.
 !        ----------------------------------------------------------------
 !
          LOGICAL            :: interfacePaving     = .TRUE.
@@ -153,7 +154,6 @@
          REAL(KIND=RP)      :: paveFanAngle        = 240.0_RP
          REAL(KIND=RP)      :: paveMaxTurn         = 30.0_RP
          INTEGER            :: paveSamplesPerCurve = 0
-         LOGICAL            :: paveDebug           = .FALSE.
          INTEGER, PARAMETER :: MAX_PAVED_CHAIN_ID = 9999
          LOGICAL            :: chainWasPaved(0:MAX_PAVED_CHAIN_ID) = .FALSE.
          INTEGER            :: boundarySmoothingPasses = 1
