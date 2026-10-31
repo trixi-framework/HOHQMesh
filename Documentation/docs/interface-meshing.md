@@ -4,7 +4,7 @@ The goal of a mesh with `INTERFACE_BOUNDARIES` is to create an all quadrilateral
 mesh that provides high-order boundary information of internal (possibly embedded) curves.
 The corresponding mesh format [ISM-MM](TheISMMeshFileFormats.md#BaseMaterialDefinition) then
 labels elements with a material name.
-Such meshes are suitable for spectral element approximations of problems such as wave
+Such meshes are suitable for spectral element approximations of problems like wave
 scattering and heat transfer, where aligning material discontinuities with curved element
 boundaries preserves high-order accuracy.
 
@@ -23,26 +23,23 @@ Outer and inner boundaries are meshed with a "cookie cutter" approach. After ele
 are created, those that are outside of the domain or too close to a boundary are removed, and the ragged boundary
 edges that are left are projected onto the curve to create a new layer of boundary elements.
 
-Generally, this cookie cutter strategy does not work for an interface, because both sides must stay meshed and the two sides must share the nodes on the curve.
-Instead, a closed path of existing edges of the background grid
-mesh near the curve is chosen, and the nodes of that path are moved **onto** the interface curve.
-The elements next to the curve are then split with templates so that they have reasonable
-shapes on both sides.
+Generally, this cookie cutter strategy does not work for an interface boundary, because both
+sides must shares the boundary nodes in order for the mesh to stay conforming.
+HOHQMesh has two strategies for an interface:
 
-The main steps of the interface meshing procedure are given below in the order in which they are performed.
+1. **[Paving](#interface-paving)** (default): a band of elements with the size of the `BACKGROUND_GRID` around the curve are removed. This band is then meshed again from the curve outward. The nodes on the curve are placed by the geometry of the curve, and both sides share them.
+2. **[Moving grid nodes onto the curve](#fallback-moving-grid-nodes-onto-the-curve)** (fallback): a closed
+   path of existing edges of the background grid near the curve is chosen, and the nodes along that path are
+   moved **onto** the interface curve. The elements next to the curve are then split with templates so that
+   they have reasonable shapes on both sides.
 
-| Step | What is done | Main routines |
-|------|--------------|---------------|
-| 1 | Size the background grid for both sides of the interface | `Sizer.f90` |
-| 2 | Find the elements near each interface curve | `MarkInterfaceElements` |
-| 3 | Choose the closed path of edges that becomes the interface | `CollectInterfaceEdgesFromElementSides`, `PruneInterfaceEdges` |
-| 4 | Move the nodes of the path onto the curve | `LocateEdgeImagesOnBoundaries`, `MoveInterfaceNodesToBoundary` |
-| 5 | Pin nodes to the joints of the chain and spread the others out | `FlagEndNodes`, `SpreadCollapsedBoundaryLocations`, `MoveInterfaceNodesToImages` |
-| 6 | Topology cleanup and the first smoothing, with corner constraints | `PerformTopologyCleanup`, `SetInterfaceCornerConstraints` |
-| 7 | Split the elements touching the interface with templates | `SplitInterfaceElements` |
-| 8 | Reduce high valences on the interface | `ReduceNodeValences(nodesOnInterfaces = .TRUE.)` |
-| 9 | Final smoothing, then untangle and open up nearly flat elements | `UntangleInvertedElements` |
-| 10 | Assign the material IDs | `SetMaterialProperties` |
+Each interface chain is paved if possible. If paving fails for a chain, or if paving is switched off
+(`interfacePaving` in `ProgramGlobals.f90`), that chain is meshed with the fallback strategy. So a mesh can contain paved and fallback interfaces.
+Both strategies start from the same steps: the sizing, the
+marking of the elements near the curve, the choice of the interface path and the pinning of nodes to the
+joints of the chain (steps 1 to 5 of the [fallback](#fallback-moving-grid-nodes-onto-the-curve)).
+Paving takes over at the end of step 5, in place of the final move of the nodes to their placement on the curve (`MoveInterfaceNodesToImages`) together with templates.
+The elements around the path are then replaced, and only the nodes pinned to the joints are kept.
 
 ## Assumptions
 
@@ -52,8 +49,10 @@ The main steps of the interface meshing procedure are given below in the order i
 - The background grid (possibly together with targeted `REFINEMENT_REGIONS`) is fine enough to resolve the curve.
   For example, small features, like a thin tip or a narrow gap between two curves, must span a few elements. The sizer uses the distance across the inside and the outside of an interface to make sure of this.
   A curve segment that is smaller than the local element size cannot be resolved, which can lead to poor meshes or failure.
-- Acute corners of an interface (below about 75°, i.e. a reflex angle above about 285° on the other side)
-  are not yet handled well. The elements near the tip or such corners in the domain can be poorly shaped or folded, and folds there are not
+  For the template (fallback) methodology this is especially important along the outer and inner boundaries, which are not paved.
+  Paving sizes the elements along an interface from the curve itself and its local behavior (see below).
+- With the fallback strategy, acute corners of an interface (below about 75°, i.e. a reflex angle above about 285° on the other side)
+  are not handled well. The elements near the tip or such corners in the domain can be poorly shaped or folded, and folds there are not
   always caught by the Jacobian and area checks in the statistics, so check such meshes visually.
 - Interfaces that are embedded in other interfaces are defined after the interfaces that contain
   them. Only the material assignment depends on this ("painter's algorithm").
@@ -74,8 +73,223 @@ The main steps of the interface meshing procedure are given below in the order i
     and $360^\circ - \alpha$ on the other.
     The joint type only describes one side, so the interface code decides from the actual
     angle between the edges where it matters (e.g. for the corner constraints in the smoother).
+- Corners of an interface are expected at the joints of its chain. Paving always puts a node at each
+  joint, but a sharp bend inside a single curve (e.g. a spline through a corner) is only treated as
+  strong curvature, which gives small elements there, not as a corner.
 
-## 1. Sizing
+## Interface paving
+
+Paving, or advancing front meshing, is an approach where the
+elements are built from the boundary inward, one row at a time.
+In HOHQMesh it is used locally, only along interface curves,
+in a band around each interface.
+The rest of the domain keeps the elements of the
+background grid and applies the algorithm of Schneiders that uses templates.
+Compared with moving grid nodes onto the curve and applying templates, paving offers three advantages:
+
+- The element size along the curve comes from its geometry, i.e. curvature,
+  its length between joints, and its distance to itself and to other curves, rather than from the
+  background grid.
+- Every joint of the chain gets a node, so the corners of the interface are kept sharp.
+- The first row of elements on each side of an interface is aligned with the respective curve
+  from the start, so no elements need to be split afterwards.
+
+The routines are in `MeshGeneratorMethods.f90`. The main steps for one interface chain are:
+
+| Step | What is done | Main routines |
+|------|--------------|---------------|
+| 1 | Sample the curve and find the element sizes along it | `SampleInterfaceChain`, `InterfaceCurveSizes` |
+| 2 | Choose the band of elements to remove, keeping elements on the edge of the mesh and making the band edge one simple loop on each side of the curve | `PaveInterfaceWithBand` |
+| 3 | Place the nodes on the curve | `PaveInterfaceWithBand` |
+| 4 | Pave one row of elements on each side of the curve | `PaveRow` |
+| 5 | Fill the gap between each new row and the edge of the band | `FillBetweenLoops`, `SplitFill`, `RemoveDoublets` |
+| 6 | Try three band widths (of increasing size), apply the best result | `PaveInterface`, `worstQuadQuality`, `CommitPavePlan` |
+
+Steps 2 through 5 work on a copy of the local geometry. They compute the list of elements to
+remove, the positions of the new nodes on the curve and in the band, the new quads, and the quality
+of the worst one, but they do not change the mesh. This result, the *plan*, is applied in step 6
+only for the best band width.
+After this choice, the band elements are removed, the new nodes are created, and the
+new quads are added.
+
+The plan for a particular band width is discarded, and the next width is tried, if
+
+- the edge of the band does not form exactly one loop on the outside AND at most one loop on the inside of the curve (step 2)
+- the edge of the band forms more than 32 loops (step 2)
+- there would be fewer than four nodes on the curve (step 3)
+- no valid row of elements can be paved along the curve (step 4)
+- the gap between the new row and the edge of the band cannot be filled with quads (step 5)
+- the band is one of the two wider ones and it contains a node of another curve (step 6)
+
+If the plans for all three widths are discarded, the mesh is unchanged and the chain is meshed with
+the fallback strategy.
+
+### 1. Sizes along the curve
+
+Each chain is sampled at equal steps of its parameter, 2000 samples per curve, or fewer for
+a chain of many curves so that the total number of samples stays near 40000 (at least 200 per curve).
+`InterfaceCurveSizes` then sets the element size $h$ at each sample to be the smallest of:
+
+- the **control size** of the sizer (the base size and the refinement regions), limited so that
+  at least `minNumberOfElementsInsideArea` elements fit across the extent of the curve,
+- the **curvature size**, at which an element spans at most `paveMaxTurn` (30°) of turning of the
+  curve. The turning is summed over a window one size long, which is found iteratively, and it is
+  not summed across a joint, so a corner of the chain does not make the elements next to it small,
+- the **proximity size**, the distance divided by `closeCurveFactor` to a part of the same curve that
+  is near in space but at least three times as far along the curve, with no joint in between (e.g.
+  across a thin tip or a narrow gap), or to a node of another curve that is still in the mesh.
+
+The sizes are then graded so that they grow by at most half the distance along the curve. The
+sizes used for the band (`hBand`) end here. The sizes used to place the nodes on the curve (`hs`)
+are, in addition, at most the length of the piece of the chain between two joints, so that every
+curve of the chain gets at least one edge, and graded again.
+
+### 2. The band
+
+All elements with a node closer to the curve than `paveBandWidth` (1.5) times `hBand` at the nearest
+point of the curve are removed, together with all elements that touch a node of the interface path.
+The band is then made simple, so that its edge forms clean loops:
+
+- An element with three or more sides on the band is added to it.
+- At a node where the edge of the band touches itself, all elements around the node are added to the band.
+- Elements with a side on the edge of the mesh, i.e. at an outer or inner boundary, are kept. A band
+  can therefore reach the boundary, but it does not remove the elements there, and the boundary
+  elements are generated later as usual.
+
+The edge of the band **must** then be one loop outside of the curve and at most one loop inside of it.
+No loop inside means that the entire inside of the curve is in the band. If there are more loops, the
+elements outside of the band are cut into separate islands. Only the largest group of connected
+elements on each side of the curve is kept, the other ones are added to the band, and the band is
+made simple again. This is tried three times (with different bandwidths) before paving fails for this band width.
+
+### 3. Nodes on the curve
+
+A node is put at each joint of the chain. Between two joints, the number of edges is the
+integral of $1/h$ along the curve, rounded, and the nodes are placed at equal steps of that integral,
+so that the edges follow the sizes `hs`. The node pinned to a joint in
+[step 5 of the fallback](#5-joints-pinning-nodes-and-deciding-ties) is reused at that joint, so the joint keeps its node type. The other nodes on the curve are new.
+
+A region that is filled with quadrilaterals must have an even number of edges on its boundary. The
+loop of the band edge inside the curve is the edge of a region of quadrilaterals, so it always has an even number of edges.
+The loop outside of the curve need not be, since the region outside of it can also be
+bounded by other curves. The number of nodes on the curve is therefore chosen with the same parity as
+the outside loop, by adding one edge to the piece whose rounding lost the most. Both sides share the
+nodes on the curve.
+
+### 4. First row of paved elements
+
+`PaveRow` adds one row of elements on each side of the curve, along the polygon of the curve nodes.
+A new node is placed off the curve, along the bisector of the angle $\theta$ at each curve node.
+Its distance from the curve node is normally 0.8 times the mean length of the two curve edges at
+that node. In a thin part of the region, the row could run into the other side. So, the distance is
+also limited to 0.45 times the distance to the nearest other node of the curve or of the band edge.
+How many elements a curve node gets depends on $\theta$, the angle on the side being paved:
+
+| Angle at the curve node | Elements at the node | Purpose |
+|---|---|---|
+| $\theta <$ `paveWedgeAngle` (120°) | one, a "wedge" | the node is a corner of a single element, which closes the row at an acute corner |
+| $\theta >$ `paveFanAngle` (240°) | three, a "fan" | the reflex angle is split into three angles of about 90° |
+| otherwise | two | a regular row |
+
+At a wedge, the two neighbors of the corner node do not get nodes of their own.
+The wedge element is completed by the node opposite to the corner, at the fourth corner of a parallelogram.
+Two wedges are not put next to each other.
+
+The new row is rejected if one of its elements is folded, or if the new front crosses itself or the
+band edge.
+In that case the row is tried again with half the distance from the curve, down to a tenth of it, before paving fails for this band width.
+
+### 5. Filling the gap
+
+The region between the new front and the band edge is filled with quadrilaterals in `FillBetweenLoops`:
+
+- If there is no band edge on this side (the whole inside of a curve is in the band), the front
+  itself is the polygon to fill.
+- Otherwise, two chords connect the front to the band edge, roughly opposite to each other, which cuts the
+  region into two polygons. The chords are tried from the shortest pairs of nodes, and a chord must not
+  cross either loop. New nodes are placed along each chord, about as far apart as the edges of the front, with the parity that gives both polygons an even number of nodes.
+
+Each polygon is then split into quadrilaterals by `SplitFill`. It cuts the polygon recursively along
+the chord that best splits the angles at its two ends, with a length close to a whole number of
+edges, which gets new nodes along it. Nodes that already end a chord are penalized, which keeps the
+valence low. A four-sided polygon is an element. Finally, `RemoveDoublets` merges the two elements at
+a new node that has only two elements, since its angles would be near 180° in both and
+smoothing cannot fix that.
+
+### 6. Band widths and the choice
+
+The best width of the band depends on the curve and its neighbors. A wider band leaves more room to
+grade from the size along the curve to the size of the background grid, but it can run into other curves.
+`PaveInterface`, thus, plans the paving for three widths: 1, 4/3 and 3/2 times `paveBandWidth`. A
+wider band is rejected if it would remove an element with a node on another curve, since the paved
+regions of two nearby curves would then meet in the gap between them and squeeze the elements there.
+
+Each successful plan is scored by `worstQuadQuality` in three steps:
+
+1. A copy of the plan's new interior nodes is smoothed with 20 Laplace passes, which is a cheap
+   prediction of  how the smoother would move the nodes later.
+2. The quality of each new element is computed. The smallest sine of the angles of each element times the ratio of
+   its shortest to its longest side. Both flat and stretched elements therefore score low. The angles
+   at the nodes of the band edge are left out, since the smoother moves those nodes later as well.
+3. The score of the plan is the mean quality of the worst tenth of the new elements.
+
+The plan with the highest score is applied by `CommitPavePlan`, which removes the elements
+of the band and adds the new nodes and elements, and the chain is marked as paved (`chainWasPaved`).
+
+### After paving
+
+The rest of the procedure remains the same as for the fallback, with two exceptions:
+
+- The nodes on the curve are not redistributed along it (`RedistributeNodesAlongBoundaries`), since
+  they are already placed by size and at the joints.
+- The elements at the curve are not split (step 7 of the fallback), since the first row of elements is
+  already aligned with the curve.
+
+The topology cleanup, the smoothing with the corner constraints, the valence reduction on the interfaces, the untangling and the material assignment (steps 6 and 8 to 10 of the fallback) apply as usual.
+During smoothing, the nodes on a paved curve slide along it and the nodes at the joints stay fixed, as for the fallback.
+
+### Limitations
+
+- Only interface curves are paved. The outer and inner boundaries use the cookie cutter together with Scheinders template approach. The element size along them comes from the background grid and the refinement regions. Where, for
+  example, a short arc of the outer boundary meets a long straight line, the closely spaced nodes along the arc can meet coarse elements in a fan of thin elements. A refinement center at the arc helps there.
+- Paving is not guaranteed to succeed. A chain for which all three band widths fail (see the
+  [list of failure cases](#interface-paving)) is meshed with the fallback strategy. Its mesh then has
+  the quality of the fallback, not of paving.
+- The settings are in `ProgramGlobals.f90`, not in the control file:
+
+    | Setting | Default | Meaning |
+    |---|---|---|
+    | `interfacePaving` | `.TRUE.` | pave the interfaces; otherwise always use the fallback |
+    | `paveBandWidth` | 1.5 | width of the band on each side of the curve, in local element sizes |
+    | `paveWedgeAngle` | 120° | below this angle, a curve node gets one element |
+    | `paveFanAngle` | 240° | above this angle, a curve node gets three elements |
+    | `paveMaxTurn` | 30° | the most turning of the curve along one element |
+    | `paveSamplesPerCurve` | 0 | samples of each curve; 0 chooses them from the number of curves in the chain |
+
+## Fallback: moving grid nodes onto the curve
+
+This is the strategy for an interface chain that is not paved, either because paving failed for it or
+because `interfacePaving` is switched off. Steps 1 to 5 also prepare the paving, see the
+[overview](#overview). Instead of new elements, a closed path of existing edges of the background grid
+mesh near the curve is chosen, and the nodes of that path are moved **onto** the interface curve. The
+elements next to the curve are then split with templates so that they have reasonable shapes on both sides.
+
+The main steps of the interface meshing procedure are given below in the order in which they are performed.
+
+| Step | What is done | Main routines |
+|------|--------------|---------------|
+| 1 | Size the background grid for both sides of the interface | `Sizer.f90` |
+| 2 | Find the elements near each interface curve | `MarkInterfaceElements` |
+| 3 | Choose the closed path of edges that becomes the interface | `CollectInterfaceEdgesFromElementSides`, `PruneInterfaceEdges` |
+| 4 | Move the nodes of the path onto the curve | `LocateEdgeImagesOnBoundaries`, `MoveInterfaceNodesToBoundary` |
+| 5 | Pin nodes to the joints of the chain and spread the others out | `FlagEndNodes`, `SpreadCollapsedBoundaryLocations`, `MoveInterfaceNodesToImages` |
+| 6 | Topology cleanup and the first smoothing, with corner constraints | `PerformTopologyCleanup`, `SetInterfaceCornerConstraints` |
+| 7 | Split the elements touching the interface with templates | `SplitInterfaceElements` |
+| 8 | Reduce high valences on the interface | `ReduceNodeValences(nodesOnInterfaces = .TRUE.)` |
+| 9 | Final smoothing, then untangle and open up nearly flat elements | `UntangleInvertedElements` |
+| 10 | Assign the material IDs | `SetMaterialProperties` |
+
+### 1. Sizing
 
 The sizer refines the background grid so that there are sufficient elements between curves that face
 each other and across thin parts of an interface curve. As an interface is meshed on both sides, the
@@ -85,7 +299,7 @@ The distances are found by searches over the points of the segmented curves, whi
 are copied into plain arrays and filtered with bounding boxes to keep large models (with many curve
 segments or with many points) computationally efficient.
 
-## 2. Marking interface elements
+### 2. Marking interface elements
 
 `MarkInterfaceElements` (`MeshGeneratorMethods.f90`) loops over the interface curves and the
 elements of the background grid mesh. The four corners of each element are classified with the
@@ -94,7 +308,7 @@ with corners on both sides straddles the curve. An element whose corners are all
 still marked if a point of the curve, or a point interpolated along a curve segment, lies inside
 the element. The nodes of a marked element get the chain ID of the curve (`bCurveChainID`).
 
-## 3. Choosing the interface path
+### 3. Choosing the interface path
 
 The edges that will be moved onto the interface curve are chosen in
 `CollectInterfaceEdgesFromElementSides` (`MeshBoundaryMethods.f90`). The idea is to classify
@@ -156,7 +370,7 @@ edges and chords that are left at thin features, so that every node of the path 
 interface edges. The nodes of the path are marked `INSIDE`, which here means "on the interface",
 and their edges get the type `ON_INTERFACE`.
 
-## 4. Moving the nodes onto the curve
+### 4. Moving the nodes onto the curve
 
 Unlike for outer and inner boundaries, no boundary elements are generated for an interface.
 The nodes of the path are associated with the nearest location on the interface curve
@@ -166,7 +380,7 @@ curve parameter in a window around the previous guess before refining with `fmin
 (`ParametrizationAtPointNear`). This avoids finding a point on the wrong side of a thin
 region of the domain, where the distance has more than one local minimum.
 
-## 5. Joints: pinning nodes and deciding ties
+### 5. Joints: pinning nodes and deciding ties
 
 After the nodes are on the interface curve, each joint of the chain gets one node pinned to it in `FlagEndNodes` (`MeshGeneratorMethods.f90`).
 This is what keeps corners of the interface sharp.
@@ -197,7 +411,7 @@ pinned node at the joint. Pinned nodes are kept fixed during smoothing (`SetNode
 All other interface nodes slide along the curve where the smoother removes the normal component of
 their acceleration. This matches the strategy used for nodes on a physical boundary.
 
-## 6. Topology cleanup and the first smoothing
+### 6. Topology cleanup and the first smoothing
 
 The interior topology cleanup (`PerformTopologyCleanup`) reduces valence 7 nodes and removes
 diamond elements away from the curves. The nodes on the boundary and interface curves are left
@@ -222,7 +436,7 @@ side extensions only apply in the first smoothing. In the second smoothing the e
 corner have been split (described next), and holding the new nodes on those lines would squeeze the
 elements between them into slivers.
 
-## 7. Templates for the elements at the interface
+### 7. Templates for the elements at the interface
 
 After the nodes are on the interface curve, the elements on both sides of it can be triangles (three nodes
 on the curve), wedges (one node on the curve) or regular quads (two nodes, one edge on the curve).
@@ -272,7 +486,7 @@ opposite to it.
 
 **Zero or four nodes**: the element is kept as is.
 
-### Corner elements
+#### Corner elements
 
 The three-way split cuts the angle at the middle interface node in two. That is fine where the
 curve is smooth, but at a sharp corner of the interface it yields two thin elements.
@@ -285,7 +499,7 @@ angle at that node is less than 135° (`MAX_CORNER_ANGLE`), the element is split
 (`quadMinScaledJacobian`); a tie goes to `P`–`(f+3)`. The corner node then belongs to one element
 only and keeps its full angle.
 
-## 8. Valences on the interface
+### 8. Valences on the interface
 
 Splitting an element with three nodes on the curve adds an element at its middle node. Where the
 interface path turns, this leaves a fan of thin elements around a node of valence 7 on the curve.
@@ -295,7 +509,7 @@ a diamond element, while the node itself stays on the curve. Nodes at or next to
 alone, since more elements on one side of a corner are expected there and these elements are
 constrained by the smoother.
 
-## 9. Untangling and opening flat elements
+### 9. Untangling and opening flat elements
 
 After the final smoothing, `UntangleInvertedElements` (`MeshCleaner.f90`) repairs the elements
 that the smoother could not fix. It uses the **corner Jacobian** of an element: at each corner it
@@ -340,7 +554,7 @@ folded over at that corner. The two steps are:
 These steps apply to all elements, not only those at interfaces. These clean-up steps are needed
 mostly where curves come close to each other or meet at a corner.
 
-## 10. Material assignment
+### 10. Material assignment
 
 For the ISM-MM format, `SetMaterialProperties` assigns the material IDs after all changes to the
 mesh are done. The IDs themselves are set up before meshing, from the `material name` of each
