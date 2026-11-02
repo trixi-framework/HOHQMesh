@@ -66,10 +66,11 @@
 !        Local variables
 !        ---------------
 !
-         REAL(KIND=RP) :: xp(3), xpp(3)
+         REAL(KIND=RP) :: x(3), xp(3), xpp(3)
          REAL(KIND=RP) :: d1
          REAL(KIND=RP) :: tangent(3), B(3), Nhat(3)
 
+         x   = curve % positionAt(t)
          xp  = curve % tangentAt(t)
          xpp = curve % secondDerivativeAt(t)
 !
