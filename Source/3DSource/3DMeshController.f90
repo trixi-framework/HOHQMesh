@@ -146,14 +146,14 @@
 
             obj             => controlDict % objectForKey(key = SIMPLE_ROTATION_ALGORITHM_KEY)
             generatorDict   => valueDictionaryFromObject(obj)
-            algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
+            algorithmChoice = SIMPLE_ROTATION_ALGORITHM
             CALL CheckSimpleRotationBlock(dict = generatorDict)
 
          ELSE IF ( controlDict % containsKey(key = SWEEP_CURVE_CONTROL_KEY) )     THEN
 
             obj             => controlDict % objectForKey(key = SWEEP_CURVE_CONTROL_KEY)
             generatorDict   => valueDictionaryFromObject(obj)
-            algorithmChoice = SIMPLE_EXTRUSION_ALGORITHM
+            algorithmChoice = SWEEP_ALGORITHM
             IF ( .NOT. ASSOCIATED(modelDict) )     THEN
                CALL ThrowErrorExceptionOfType(poster = "Check3DMeshParametersIntegrity", &
                                               msg    = "A model block and sweep curve is required for sweeping", &
