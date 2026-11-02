@@ -1578,6 +1578,13 @@
 
          ALLOCATE( self%boundaryCurveMap(self%curveCount) )
          ALLOCATE( self%curveType(self%curveCount) ) ! Number of chains is always <= number of curves
+!
+!        -------------------------------------------------------------
+!        Curves that are not in a boundary chain, e.g. a sweep curve,
+!        are in no chain. Chain ids start at 1, so they match no chain.
+!        -------------------------------------------------------------
+!
+         self % boundaryCurveMap = NONE
          chainCount = 0
 !
 !        -----------
