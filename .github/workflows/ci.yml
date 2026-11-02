@@ -71,13 +71,13 @@ jobs:
             shell: bash
             test_type: valgrind
             coverage: false
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             os_name: linux
             compiler: gfortran-12
             shell: bash
             test_type: regular
             coverage: false
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             os_name: linux
             compiler: gfortran-12
             shell: bash
