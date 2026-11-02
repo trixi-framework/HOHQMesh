@@ -265,6 +265,8 @@
 !
       CLASS(SMCurve)                 , POINTER :: crv
       TYPE(SMParametricEquationCurve), POINTER :: blobCurve
+      CLASS(SMCurve)                 , POINTER :: optimizedCurve
+      CLASS(MultiSegmentModalCurve)  , POINTER :: msmCurve
       TYPE(GaussQuadratureType)                :: gQuad
       TYPE(OptimizerOptions)                   :: options
       CHARACTER(LEN=64)                        :: xEqn, yEqn, zEqn

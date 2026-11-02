@@ -389,7 +389,7 @@
       INTEGER                                            :: nVars
 
 
-      INTEGER           ::  eqPos, nl, nr, n
+      INTEGER           ::  eqPos, nf, nl, nr, n
 !
       FindExpression = .false.
       variableNames   = "%none"
@@ -399,6 +399,7 @@
 !      parentheses that should surround the arguments.
 !      ----------------------------------------------------------------
 !
+      nf    = LEN_TRIM(equation)
       eqPos = INDEX(equation,"=")
 
       IF (eqPos == 0)     THEN
@@ -587,7 +588,7 @@
 !     ---------------
 !
       INTEGER :: l, m, k
-      LOGICAL :: isNumber, isFunction, isVariable
+      LOGICAL :: isNumber, isFunction, isOperator, isVariable
 !
 !     ----------------------
 !     Examine each component
@@ -646,9 +647,11 @@
 !           See if it is an operator
 !           ------------------------
 !
+            isOperator = .false.
             DO m = 1, SIZE(operators)
                IF( components(l) == operators(m) )     THEN
                   classification(l) = TYPE_OPERATOR
+                  isOperator = .true.
                   EXIT
                END IF
             END DO

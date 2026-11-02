@@ -293,9 +293,10 @@
 !        ---------------
 !
          REAL(KIND=RP), DIMENSION(3) :: x
-         INTEGER                     :: N
+         INTEGER                     :: N, nDim
          
          N    = self%numKnots
+         nDim = N
          
          x(1) = SplineEval( N, t, self%t, self%x, self%bX, self%cX, self%dX )
          x(2) = SplineEval( N, t, self%t, self%y, self%bY, self%cY, self%dY )

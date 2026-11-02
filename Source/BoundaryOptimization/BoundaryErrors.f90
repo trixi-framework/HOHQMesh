@@ -67,6 +67,7 @@
 
       CLASS(SMChainedCurve)         , POINTER  :: modelChain
       CLASS(MultiSegmentCurve)      , POINTER  :: boundaryPolynomial
+      CLASS(SMCurve)                , POINTER  :: modelCurve, polyCurve
       CLASS(FTObject)               , POINTER  :: obj
 
       INTEGER                                  :: N, Ng, c

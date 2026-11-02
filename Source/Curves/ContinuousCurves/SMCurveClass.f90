@@ -373,7 +373,7 @@
 !     ROW_END,ROW_SIDE,ROW_CORNER,ROW_REVERSAL
 !     ----------------------------------------
 !
-         USE ProgramGlobals, ONLY: INNER
+         USE ProgramGlobals, ONLY: INNER, OUTER
          IMPLICIT NONE
 !
 !        ---------
