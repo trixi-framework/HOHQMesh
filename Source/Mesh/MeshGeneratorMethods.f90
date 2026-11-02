@@ -1807,7 +1807,7 @@
 
          INTEGER                              :: k, l
          INTEGER                              :: w
-         INTEGER                              :: numInside, numOutside
+         INTEGER                              :: numInside, numOutside, location(4)
          CLASS(SMChainedCurve)      , POINTER :: chain           => NULL()
          REAL(KIND=RP)                        :: center(3)
 
@@ -1843,6 +1843,7 @@
                IF(.NOT.e % remove)     THEN
                   numInside  = 0
                   numOutside = 0
+                  location   = UNDEFINED
 !
 !                 -----------------------------------------------------------------
 !                 Count the nodes inside and outside of 'curveArray', the interface
@@ -1861,9 +1862,11 @@
 
                      w = curveArray % windingNumber( node % x )
                      IF ( abs(w) == 0 ) THEN
-                        numOutside = numOutside + 1
+                        location(k)                   = OUTSIDE
+                        numOutside                    = numOutside + 1
                      ELSE
-                        numInside  = numInside + 1
+                        location(k)                   = INSIDE
+                        numInside                     = numInside + 1
                      END IF
                   END DO
 !

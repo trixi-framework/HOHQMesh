@@ -296,8 +296,10 @@
 !        ---------------
 !
          REAL(KIND=RP), DIMENSION(3) ::  v
+         REAL(KIND=RP)               :: vNorm
 
          v     = neighborLoc - selfLoc
+         vNorm = SQRT( v(1)*v(1) + v(2)*v(2) ) + restLength
          force = springConstant*v
 
       END SUBROUTINE LinearSpringForce

@@ -364,6 +364,7 @@
          TYPE(SMNode)   , POINTER   :: node => NULL()
          TYPE(SMEdge)   , POINTER   :: edge => NULL()
 
+         CLASS(FTLinkedList)        , POINTER :: list => NULL()
          CLASS(FTLinkedListIterator), POINTER :: iterator => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
 
@@ -389,6 +390,7 @@
 !        Remove elements and their associated nodes
 !        ------------------------------------------
 !
+         list     => mesh % elements
          iterator => mesh % elementsIterator
 
          CALL iterator % setToStart()
@@ -414,6 +416,7 @@
 !        ------------
 !
          IF( ASSOCIATED( mesh % edges ) )     THEN
+            list     => mesh % edges
             iterator => mesh % edgesIterator
 
             CALL iterator % setToStart()
@@ -438,6 +441,7 @@
 !        Remove nodes that have been marked for removal
 !        ----------------------------------------------
 !
+         list     => mesh % nodes
          iterator => mesh % nodesIterator
 
          CALL iterator % setToStart()

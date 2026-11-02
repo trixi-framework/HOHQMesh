@@ -408,7 +408,7 @@
 !
          REAL(KIND=RP)  :: xl(3), xR(3), xMid(3)
          REAL(KIND=RP)  :: xPrime(3), xDoublePrime(3)
-         REAL(KIND=RP)  :: tL, tR, dt, c, d, s
+         REAL(KIND=RP)  :: tL, tR, atT, dt, c, d, s
          shouldSubdivide = .FALSE.
 
          xL   = self % leftNode % x
@@ -417,6 +417,7 @@
 
          tL  = self % leftNode % t
          tR  = self % rightNode % t
+         atT = midNode % t
          dt  = 0.5_RP*(tR - tL)
 
          xPrime       = 0.5_RP*(xR - xL)/dt

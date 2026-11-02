@@ -1312,7 +1312,7 @@
 
          INTEGER                          :: numBoundaries, numEdges, numNodes
          INTEGER                          :: k, j, m
-         INTEGER                          :: curveDirection
+         INTEGER                          :: locRelativeToBoundary, curveDirection
          INTEGER                          :: id1, id2, sharedNodeID, eId1, eId2, eId, idMin
          REAL(KIND=RP)                    :: x0(3), x1(3), x2(3), c
 !
@@ -1373,6 +1373,7 @@
                END IF
 
                j = j + 1
+               locRelativeToBoundary = currentEdge % nodes(2) % node % bCurveSide
                CALL iterator % moveToNext()
             END DO
             CALL releaseFTLinkedListIteratorClass(self = iterator)

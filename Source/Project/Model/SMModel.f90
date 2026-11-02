@@ -600,6 +600,7 @@
 !        ---------------
 !
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         INTEGER      , PARAMETER                :: DONT_SKIP = 0, SKIP = 1
          TYPE(FTException), POINTER              :: e
 !
          curveChain % optimization = NONE

@@ -1277,11 +1277,13 @@
          INTEGER                          :: mark(4)
 
          REAL(KIND=RP)  , DIMENSION(3)    :: p
-         REAL(KIND=RP)                    :: t
+         REAL(KIND=RP)                    :: t, tSave
 
          CLASS(SMCurve)       , POINTER   :: c => NULL()
          CLASS(SMChainedCurve), POINTER   :: chain  => NULL()      ! Returned also so that it, too can be used.
+         TYPE(SMNode)                     :: nodeCopy(4) ! Two extra but not a big deal.
          TYPE (SMElement)     , POINTER   :: eTest => NULL()
+         LOGICAL                          :: badArrayOriginal(6)      ! Node valence <= 6
          INTEGER                          :: nodeID
 
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
@@ -1307,13 +1309,20 @@
 !
          IF( boundaryNodeCount < 2 )   RETURN
 !
-!        ------------------------------------------
-!        Check that the elements around the nodes
-!        on the boundary are there
-!        ------------------------------------------
+!        --------------------------------
+!        See what we are starting with
+!        i.e., see if any of the elements
+!        are bad.
+!        --------------------------------
 !
+         badArrayOriginal = .false.
          DO k = 1,4
             IF( mark(k) == CBE_ON_BOUNDARY )     THEN
+!
+!              --------------------------------------------
+!              Find the quality of the neighboring elements
+!              --------------------------------------------
+!
                nodeID = elementNodes(k) % node % id
 
                DO j = 1, numElementsForNode(nodeID)
@@ -1323,6 +1332,7 @@
                      CALL ThrowErrorExceptionOfType("CleanUpBoundaryElement",msg,FT_ERROR_WARNING)
                      RETURN
                   END IF
+                  badArrayOriginal(j) = elementIsBad(eTest)
                END DO
             END IF
          END DO
@@ -1353,9 +1363,11 @@
 
             sourceNode  => elementNodes(m) % node
             node        => elementNodes(k) % node
+            nodeCopy(k) =  node % typeCopy()
 
             p      = sourceNode % x
             t      = node % whereOnBoundary
+            tSave  = t
 !
             c => model % curveWithID(node % bCurveID, chain)
             t = ParametrizationAtPointNear(c,p,t)
@@ -1372,6 +1384,37 @@
 
             node % x                = c % positionAt(t)
          END DO
+!
+!        --------------------------------------------------------------
+!        This element has been adjusted. See if the new element and the
+!        neighbors of the nodes have been messed up. If so, go back to
+!        the original.
+!        --------------------------------------------------------------
+!
+!         badArrayNew = .false.
+!         DO k = 1, 4
+!            IF( mark(k) == CBE_OFF_BOUNDARY )     CYCLE
+!            IF(elementNodes(k) % node % activeStatus == INACTIVE) CYCLE
+!            IF(elementNodes(k) % node % nodeType /= ROW_SIDE)     CYCLE
+!!
+!!           -----------------------------------
+!!           Check the elements around this node
+!!           -----------------------------------
+!!
+!            nodeID   = elementNodes(k) % node % id
+!            failed = .false.
+!            DO j = 1, numElementsForNode(nodeID)
+!               eTest          => elementsForNodes(j,nodeID) % element
+!               badArrayNew(j) = elementIsBad(eTest)
+!               IF(badArrayNew(j) .AND. (.NOT.badArrayOriginal(j))) failed = .true.
+!            END DO
+!            IF(failed) THEN
+!               nodeCopy(k) % activeStatus = INACTIVE
+!               obj => e % nodes % objectAtIndex(k) !Supersceeded with new data structure
+!               CALL cast(obj,node)
+!               CALL copyOfNodeType(nodeCopy(k),node)
+!            END IF
+!         END DO
       END SUBROUTINE CleanUpBoundaryElement
 !
 !////////////////////////////////////////////////////////////////////////

@@ -71,6 +71,7 @@
 !        ---------
 !
          CLASS(MultiSegmentCurve) :: self
+         CLASS(SMCurve), POINTER  :: parentCurve
          REAL(KIND=RP)            :: cuts(0:)
          INTEGER                  :: N
          CHARACTER(LEN=*)         :: curveName
@@ -211,6 +212,7 @@
 !     Local variables 
 !     ----------------
 !
+      INTEGER                  :: N
       INTEGER                  :: qOrder
       INTEGER                  :: nSegments
       INTEGER                  :: j
@@ -219,6 +221,7 @@
       
       nSegments = self % nSegments
 
+      N      = self % polyOrder
       qOrder = SIZE(nodes) - 1
             
       segmentArcLength = 0.0_RP
