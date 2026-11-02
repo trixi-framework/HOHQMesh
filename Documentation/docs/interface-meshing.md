@@ -148,7 +148,7 @@ curve of the chain gets at least one edge, and graded again.
 
 All elements with a node closer to the curve than `paveBandWidth` (1.5) times `hBand` at the nearest
 point of the curve are removed, together with all elements that touch a node of the interface path.
-The band is then made simple, so that its edge forms clean loops:
+The band is then made "simple", so that its edge forms clean loops:
 
 - An element with three or more sides on the band is added to it.
 - At a node where the edge of the band touches itself, all elements around the node are added to the band.
@@ -158,9 +158,21 @@ The band is then made simple, so that its edge forms clean loops:
 
 The edge of the band **must** then be one loop outside of the curve and at most one loop inside of it.
 No loop inside means that the entire inside of the curve is in the band. If there are more loops, the
-elements outside of the band are cut into separate islands. Only the largest group of connected
-elements on each side of the curve is kept, the other ones are added to the band, and the band is
-made simple again. This is tried three times (with different bandwidths) before paving fails for this band width.
+band has cut the elements on one side of the curve into separate islands, e.g. where the curve passes
+close to a boundary. The largest group of connected elements on each side of the curve is kept. The
+other islands are handled by `ReconnectIsland`:
+
+- An island of 20 elements or more is reconnected to the largest group if possible. The shortest
+  path of band elements between them is put back, using only elements whose nodes are at least one
+  local element size from the curve, or else at least half of one. The path may also cross smaller
+  islands. Parts of the band that are then no longer attached to the curve are put back as well.
+- An island that is smaller, or cannot be reconnected, is added to the band and paved over. The fill
+  step then meshes it at about the size along the curve, which can give far more elements than it had.
+  The elements of the large islands paved over are counted for the plan, see
+  [step 6](#6-band-widths-and-the-choice).
+
+The band is then made "simple" again, where its loops are checked. This is done up to four times
+for one band width, with reconnection only in the first two, before paving fails for this band width.
 
 ### 3. Nodes on the curve
 
@@ -233,8 +245,10 @@ Each successful plan is scored by `worstQuadQuality` in three steps:
    at the nodes of the band edge are left out, since the smoother moves those nodes later as well.
 3. The score of the plan is the mean quality of the worst tenth of the new elements.
 
-The plan with the highest score is applied by `CommitPavePlan`, which removes the elements
-of the band and adds the new nodes and elements, and the chain is marked as paved (`chainWasPaved`).
+The plan that paves over the fewest elements of large islands (step 2) is applied, and among plans
+that tie, the one with the highest score. `CommitPavePlan` applies the winning plan where
+it removes the elements of the band and adds the new nodes and elements,
+and the chain is marked as paved (`chainWasPaved`).
 
 ### After paving
 
@@ -247,6 +261,9 @@ The rest of the procedure remains the same as for the fallback, with two excepti
 
 The topology cleanup, the smoothing with the corner constraints, the valence reduction on the interfaces, the untangling and the material assignment (steps 6 and 8 to 10 of the fallback) apply as usual.
 During smoothing, the nodes on a paved curve slide along it and the nodes at the joints stay fixed, as for the fallback.
+An edge between two nodes of a paved curve may not get shorter than 3/4 of its length at the start of each smoothing (`MIN_PAVED_EDGE_FRACTION` in `SpringMeshSmoother.f90`).
+Otherwise the springs of squeezed elements, e.g. at the tip of a narrow wedge,
+can pull a node along the curve almost onto its neighbor and leave a sliver there.
 
 ### Limitations
 
