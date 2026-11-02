@@ -36,6 +36,7 @@
       USE MeshBoundaryMethodsModule
       USE MeshSmootherClass
       USE Geometry, ONLY: angleBetween
+      USE ProgramGlobals, ONLY: chainWasPaved, MAX_PAVED_CHAIN_ID
       IMPLICIT NONE
 !
 !     ---------
@@ -103,6 +104,11 @@
       INTEGER, PARAMETER, PRIVATE :: FREE_NODE = 0, INACTIVE_NODE = 1, NODE_ON_CURVE = 2, NODE_ON_CORNER_LINE = 3
       REAL(KIND=RP), PARAMETER                  , PRIVATE :: MAX_CONSTRAINED_CORNER_ANGLE = 150.0_RP
 !
+!     Two nodes of an edge on a paved interface curve may not slide closer
+!     than this fraction of their distance before smoothing
+!
+      REAL(KIND=RP), PARAMETER                  , PRIVATE :: MIN_PAVED_EDGE_FRACTION = 0.75_RP
+!
 !     Default parameters
 !
       REAL(KIND=RP), PRIVATE :: defaultSpringConstant           = 1.0_RP
@@ -165,6 +171,9 @@
 !
          INTEGER                      :: k, nodeID, N
          REAL(KIND=RP)                :: maxV
+         INTEGER      , DIMENSION(:,:), ALLOCATABLE :: pavedEdges
+         REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: minPavedEdgeLength
+         REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: xPrevious
          TYPE(SMNode)       , POINTER :: node => NULL()
          CLASS(FTObject)    , POINTER :: obj => NULL()
          CLASS(FTLinkedList), POINTER :: boundaryNodesList => NULL()
@@ -222,11 +231,14 @@
 !
          CALL GatherSmoothingArrays( mesh, model, nodePointers, x, edgeNodes, elementNodes, &
                                      getsEdgeForce, getsCrossForce, constraintType, tangent )
+         CALL GatherPavedCurveEdges( nodePointers, x, edgeNodes, constraintType, pavedEdges, minPavedEdgeLength )
+         ALLOCATE( xPrevious(3,N) )
 
          DO k = 1, self % numSmoothingSteps
             nodeAcceleration = 0.0_RP
             CALL AccumulateAcceleration( self, x, edgeNodes, elementNodes, getsEdgeForce, getsCrossForce )
             CALL ConstrainBoundaryNodes( constraintType, tangent )
+            xPrevious = x
 
             maxV = 0.0_RP
             DO nodeID = 1, N
@@ -237,6 +249,7 @@
                IF ( hasCornerConstraint(nodeID) )     CALL KeepNodeAwayFromCorner( nodeID, x(:,nodeID), nodeVelocity(:,nodeID) )
                maxV = MAX(maxV, ABS(nodeVelocity(1,nodeID)), ABS(nodeVelocity(2,nodeID)) )
             END DO
+            CALL KeepPavedCurveNodesApart( x, xPrevious, pavedEdges, minPavedEdgeLength )
 
          END DO
 
@@ -784,6 +797,84 @@
          IF ( DOT_PRODUCT(velocity(1:2), cornerDirection(1:2,id)) < 0.0_RP )     velocity = 0.0_RP
 
       END SUBROUTINE KeepNodeAwayFromCorner
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE GatherPavedCurveEdges( nodePointers, x, edgeNodes, constraintType, pavedEdges, minLength )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------------
+!        The edges whose two nodes are on the same paved interface chain,
+!        with at least one of them sliding along it (the other can be a
+!        fixed joint), and the shortest length each may get while smoothing:
+!        MIN_PAVED_EDGE_FRACTION of its length now. Paving spaces those
+!        nodes by the size along the curve, but the springs of squeezed
+!        elements, e.g. at the tip of a narrow wedge, can pull a node
+!        along the curve almost onto its neighbor.
+!        ----------------------------------------------------------------
+!
+         TYPE(SMNodePtr), DIMENSION(:)  , ALLOCATABLE :: nodePointers
+         REAL(KIND=RP)  , DIMENSION(:,:)              :: x
+         INTEGER        , DIMENSION(:,:)              :: edgeNodes
+         INTEGER        , DIMENSION(:)                :: constraintType
+         INTEGER        , DIMENSION(:,:), ALLOCATABLE :: pavedEdges
+         REAL(KIND=RP)  , DIMENSION(:)  , ALLOCATABLE :: minLength
+
+         INTEGER :: j, k, m, a, b, chainID
+         LOGICAL :: onPavedChain
+
+         DO m = 0, 1
+            IF ( m == 1 )     ALLOCATE( pavedEdges(2,j), minLength(j) )
+            j = 0
+            DO k = 1, SIZE(edgeNodes, 2)
+               a = edgeNodes(1,k)
+               b = edgeNodes(2,k)
+               IF ( constraintType(a) /= NODE_ON_CURVE .AND. constraintType(b) /= NODE_ON_CURVE )     CYCLE
+               IF ( nodePointers(a) % node % distToBoundary /= 0.0_RP )     CYCLE
+               IF ( nodePointers(b) % node % distToBoundary /= 0.0_RP )     CYCLE
+               chainID = nodePointers(a) % node % bCurveChainID
+               IF ( nodePointers(b) % node % bCurveChainID /= chainID )     CYCLE
+               onPavedChain = .FALSE.
+               IF ( chainID >= 0 .AND. chainID <= MAX_PAVED_CHAIN_ID )     onPavedChain = chainWasPaved(chainID)
+               IF ( .NOT.onPavedChain )     CYCLE
+               j = j + 1
+               IF ( m == 1 )     THEN
+                  pavedEdges(:,j) = [a, b]
+                  minLength(j)    = MIN_PAVED_EDGE_FRACTION*NORM2(x(1:2,a) - x(1:2,b))
+               END IF
+            END DO
+         END DO
+
+      END SUBROUTINE GatherPavedCurveEdges
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE KeepPavedCurveNodesApart( x, xPrevious, pavedEdges, minLength )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------------
+!        Stop the two nodes of a paved curve edge (GatherPavedCurveEdges)
+!        that have come closer than its shortest length: put them back to
+!        where they were before this step, xPrevious, and stop them
+!        ----------------------------------------------------------------
+!
+         REAL(KIND=RP), DIMENSION(:,:) :: x, xPrevious
+         INTEGER      , DIMENSION(:,:) :: pavedEdges
+         REAL(KIND=RP), DIMENSION(:)   :: minLength
+
+         INTEGER :: j, a, b
+
+         DO j = 1, SIZE(minLength)
+            a = pavedEdges(1,j)
+            b = pavedEdges(2,j)
+            IF ( NORM2(x(1:2,a) - x(1:2,b)) >= minLength(j) )     CYCLE
+            x(:,a) = xPrevious(:,a)
+            x(:,b) = xPrevious(:,b)
+            nodeVelocity(:,a) = 0.0_RP
+            nodeVelocity(:,b) = 0.0_RP
+         END DO
+
+      END SUBROUTINE KeepPavedCurveNodesApart
 !
 !////////////////////////////////////////////////////////////////////////
 !

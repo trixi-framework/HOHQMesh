@@ -821,6 +821,7 @@ FTObjectClass.o
 
 SpringMeshSmoother.o :$(HOHQMESHPATH)/Source/Mesh/SpringMeshSmoother.f90 \
 FatalErrorException.o \
+ProgramGlobals.o \
 Geometry.o \
 MeshSmoother.o \
 MeshBoundaryMethods.o \

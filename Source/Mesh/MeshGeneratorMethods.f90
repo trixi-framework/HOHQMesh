@@ -48,11 +48,14 @@
 !     band widths can be tried and the best one applied (CommitPavePlan)
 !     without meshing it again. bandEdge(:,side) are the nodes on the
 !     edge of the remaining mesh, local nodes nc+1..nc+nfr(side) of sx.
+!     nDropped counts the elements of large islands that the band cut
+!     off from the rest of the mesh and that are paved over instead.
 !     ---------------------------------------------------------------
 !
       TYPE PavePlan
-         LOGICAL                         :: ok    = .FALSE.
-         REAL(KIND=RP)                   :: score = 0.0_RP
+         LOGICAL                         :: ok       = .FALSE.
+         REAL(KIND=RP)                   :: score    = 0.0_RP
+         INTEGER                         :: nDropped = 0
          CLASS(SMChainedCurve), POINTER  :: chain => NULL()
          INTEGER                         :: chainID, nCurves, bCurveSide, nc, nfr(2), nAll(2), nQ(2)
          LOGICAL                         :: ccw
@@ -3546,6 +3549,98 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
+      SUBROUTINE ReconnectIsland( elems, nE, nodeEl, nodeElCount, removed, comp, island, mainland, &
+                                  otherSide, nodeDistance, minDistance, found )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        An island of kept elements (comp = island) that the band of an
+!        interface curve cut off from the rest of the mesh on the same
+!        side (comp = mainland): find the shortest path across which they
+!        meet, through band elements whose nodes are at least minDistance
+!        local sizes from the curve (nodeDistance) and through other
+!        islands, but not through the mesh on the other side of the curve
+!        (comp = otherSide). Put the band elements of the path back
+!        (removed = .FALSE.) and join the path to the mainland
+!        (comp = mainland). found = .FALSE. if there is no such path.
+!        -------------------------------------------------------------
+!
+         TYPE(SMElementPtr) :: elems(:)
+         INTEGER            :: nE, nodeEl(:,:), nodeElCount(:), comp(:), island, mainland, otherSide
+         LOGICAL            :: removed(:), found
+         REAL(KIND=RP)      :: nodeDistance(:), minDistance
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, ALLOCATABLE      :: parent(:), queue(:)
+         TYPE(SMElement), POINTER  :: e
+         INTEGER                   :: f, g, k, m, head, tail
+         LOGICAL                   :: farFromCurve
+         INTEGER, EXTERNAL         :: Loop
+
+         found = .FALSE.
+         ALLOCATE( parent(nE), queue(nE) )
+         parent = 0
+         tail   = 0
+         DO f = 1, nE
+            IF ( removed(f) )            CYCLE
+            IF ( comp(f) /= island )     CYCLE
+            parent(f)   = f
+            tail        = tail + 1
+            queue(tail) = f
+         END DO
+!
+!        -------------------------------------------------------------
+!        Breadth first search from the island through band elements and
+!        other islands
+!        -------------------------------------------------------------
+!
+         head = 0
+         DO WHILE ( head < tail )
+            head = head + 1
+            f    = queue(head)
+            e    => elems(f) % element
+            DO k = 1, 4
+               g = elementWithDirectedEdge( e % nodes(Loop(k+1,4)) % node % id, e % nodes(k) % node % id, &
+                                            elems, nodeEl, nodeElCount )
+               IF ( g == 0 )     CYCLE
+               IF ( parent(g) /= 0 )     CYCLE
+               IF ( .NOT.removed(g) )     THEN
+                  IF ( comp(g) == otherSide )     CYCLE
+                  IF ( comp(g) == mainland )     THEN
+!
+!                    -----------------------------------------------
+!                    Reached the mainland: put the band elements of
+!                    the path back
+!                    -----------------------------------------------
+!
+                     found = .TRUE.
+                     DO WHILE ( parent(f) /= f )
+                        removed(f) = .FALSE.
+                        comp(f)    = mainland
+                        f          = parent(f)
+                     END DO
+                     RETURN
+                  END IF
+               ELSE
+                  farFromCurve = .TRUE.
+                  DO m = 1, 4
+                     IF ( nodeDistance(elems(g) % element % nodes(m) % node % id) < minDistance )     farFromCurve = .FALSE.
+                  END DO
+                  IF ( .NOT.farFromCurve )     CYCLE
+               END IF
+               parent(g)   = f
+               tail        = tail + 1
+               queue(tail) = g
+            END DO
+         END DO
+
+      END SUBROUTINE ReconnectIsland
+!
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION newInteriorNode( mesh, x2 ) RESULT(node)
          IMPLICIT NONE
          TYPE (SMMesh), POINTER :: mesh
@@ -3819,8 +3914,10 @@
 !        when interfacePaving is set. The width of the band suited to a
 !        chain depends on its size and its neighbors, so plan the paving
 !        for the default width and two wider ones, score each by its worst
-!        quads, and apply the best plan. The samples of the curve and the
-!        sizes along it do not depend on the width, so they are found once.
+!        quads, and apply the best plan: the one that drops the fewest
+!        elements of large islands, then the one with the best score. The
+!        samples of the curve and the sizes along it do not depend on the
+!        width, so they are found once.
 !        ---------------------------------------------------------------
 !
          TYPE (SMMesh)      , POINTER :: mesh
@@ -3841,7 +3938,9 @@
             IF ( .NOT.plan % ok )     CYCLE
             IF ( .NOT.bestPlan % ok )     THEN
                CALL MovePavePlan( plan, bestPlan )
-            ELSE IF ( plan % score > bestPlan % score )     THEN
+            ELSE IF ( plan % nDropped < bestPlan % nDropped )     THEN
+               CALL MovePavePlan( plan, bestPlan )
+            ELSE IF ( plan % nDropped == bestPlan % nDropped .AND. plan % score > bestPlan % score )     THEN
                CALL MovePavePlan( plan, bestPlan )
             END IF
          END DO
@@ -3971,6 +4070,7 @@
 
          to % ok         =  from % ok
          to % score      =  from % score
+         to % nDropped   =  from % nDropped
          to % chain      => from % chain
          to % chainID    =  from % chainID
          to % nCurves    =  from % nCurves
@@ -3998,7 +4098,10 @@
 !        Mesh the band around an interface curve from the curve outward,
 !        as boundary-first meshers do:
 !          1. Remove the elements within bandScale*paveBandWidth local
-!             element sizes of the curve, on both sides.
+!             element sizes of the curve, on both sides. Where the band
+!             cuts a large part of the mesh off, reconnect it through
+!             the band (ReconnectIsland), or else pave over it and count
+!             its elements in plan % nDropped.
 !          2. Put new nodes on the curve, spaced by the size hs taken
 !             from the curve geometry (SampleInterfaceChain), with a node
 !             at each joint and corner. Both sides share them.
@@ -4024,12 +4127,21 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER, PARAMETER :: MAX_GROUP = 16, MAX_LOOPS = 32
+         INTEGER, PARAMETER :: MAX_GROUP = 16, MAX_LOOPS = 32, NUMBER_OF_PASSES = 4
+!
+!        An island of fewer elements than MIN_ISLAND_SIZE is paved over.
+!        A larger one is reconnected through band elements as far from
+!        the curve as possible: at least RECONNECT_DISTANCES(1) local
+!        sizes, else at least RECONNECT_DISTANCES(2).
+!
+         INTEGER      , PARAMETER :: MIN_ISLAND_SIZE = 20
+         REAL(KIND=RP), PARAMETER :: RECONNECT_DISTANCES(2) = [1.0_RP, 0.5_RP]
          TYPE(SMNodePtr), DIMENSION(:), POINTER :: seq
          TYPE(SMElementPtr), ALLOCATABLE :: elems(:)
          TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:)
          INTEGER           , ALLOCATABLE :: nodeElCount(:), nodeEl(:,:), nOut(:), cnt(:)
-         LOGICAL           , ALLOCATABLE :: removed(:), used(:)
+         LOGICAL           , ALLOCATABLE :: removed(:), used(:), attached(:)
+         REAL(KIND=RP)     , ALLOCATABLE :: nodeDistance(:)
          REAL(KIND=RP)     , ALLOCATABLE :: cx(:,:), cg(:), sx(:,:,:), wSeg(:)
          INTEGER           , ALLOCATABLE :: featureIdx(:), nSeg(:)
          INTEGER           , ALLOCATABLE :: eFrom(:), eTo(:), loopNodes(:), quads(:,:,:), newFront(:,:)
@@ -4047,7 +4159,8 @@
          TYPE(PointCellGrid)             :: polylineGrid
          INTEGER                         :: nFeat, i2
          REAL(KIND=RP) :: bandFactor, bandReach, wedgeAngle, fanAngle, d, ds, area, w, target, frac, x3(3), rowScale
-         LOGICAL  :: changed, ccw, ok, inside
+         LOGICAL  :: changed, ccw, ok, inside, found, reconnected
+         INTEGER  :: nDropped, try
          INTEGER, EXTERNAL              :: Loop
 
          plan % ok  = .FALSE.
@@ -4113,11 +4226,13 @@
 !
 !        -----------------------------------------------------
 !        1. The band: elements with a node closer to the curve
-!           than bandFactor local sizes
+!           than bandFactor local sizes. nodeDistance is the
+!           distance of a node to the curve in local sizes.
 !        -----------------------------------------------------
 !
-         ALLOCATE( removed(nE), cnt(nE) )
-         removed = .FALSE.
+         ALLOCATE( removed(nE), cnt(nE), nodeDistance(maxID) )
+         removed      = .FALSE.
+         nodeDistance = HUGE(1.0_RP)
          bandReach = bandFactor*MAXVAL(hBand)
          xMin = MINVAL(xs, DIM = 2) - bandReach
          xMax = MAXVAL(xs, DIM = 2) + bandReach
@@ -4126,6 +4241,7 @@
             IF ( nodeElCount(nid) == 0 )     CYCLE
             IF ( ANY(nodeForID(nid) % node % x(1:2) < xMin) .OR. ANY(nodeForID(nid) % node % x(1:2) > xMax) )     CYCLE
             CALL NearestOnPolyline( nodeForID(nid) % node % x(1:2), xs, nS, polylineGrid, iS, d, searchRadius = bandReach )
+            nodeDistance(nid) = d/hBand(iS)
             IF ( d < bandFactor*hBand(iS) )     THEN
                DO k = 1, nodeElCount(nid)
                   removed(nodeEl(k,nid)) = .TRUE.
@@ -4153,8 +4269,9 @@
             END DO
          END DO
 !
-         ALLOCATE( eFrom(4*nE), eTo(4*nE), comp(nE), stack(nE), compSize(1000), compInside(1000) )
-         DO pass = 1, 3
+         ALLOCATE( eFrom(4*nE), eTo(4*nE), comp(nE), stack(nE), compSize(1000), compInside(1000), attached(nE) )
+         nDropped = 0
+         DO pass = 1, NUMBER_OF_PASSES
 !        ------------------------------------------------------------
 !        Make the edge of the band simple: remove the elements at nodes
 !        where it touches itself, and the elements that stick into it
@@ -4251,14 +4368,16 @@
             END IF
          END DO
          IF ( nOutLoops == 1 .AND. nInLoops <= 1 )     EXIT
-         IF ( pass == 3 )     THEN
+         IF ( pass == NUMBER_OF_PASSES )     THEN
             DEALLOCATE(seq)
             RETURN
          END IF
 !
 !        -------------------------------------------------------------
-!        Islands of elements cut off by the band: keep only the largest
-!        group of connected elements on each side of the curve
+!        Islands of elements cut off by the band: keep the largest
+!        group of connected elements on each side of the curve. In the
+!        first two passes, reconnect each large island to it through the
+!        band. Pave over the remaining islands.
 !        -------------------------------------------------------------
 !
          comp = 0
@@ -4301,10 +4420,66 @@
                keep(side) = i
             END IF
          END DO
+         reconnected = .FALSE.
+         DO i = 1, nComp
+            IF ( i == keep(1) .OR. i == keep(2) )     CYCLE
+            IF ( compSize(i) < MIN_ISLAND_SIZE )     CYCLE
+            side  = MERGE(1, 2, compInside(i))
+            found = .FALSE.
+            DO try = 1, SIZE(RECONNECT_DISTANCES)
+               IF ( pass > 2 .OR. found )     EXIT
+               CALL ReconnectIsland( elems, nE, nodeEl, nodeElCount, removed, comp, i, keep(side), keep(3-side), &
+                                     nodeDistance, RECONNECT_DISTANCES(try), found )
+            END DO
+            IF ( found )     THEN
+               reconnected = .TRUE.
+               WHERE ( comp(1:nE) == i )     comp(1:nE) = keep(side)
+            ELSE
+               nDropped = nDropped + compSize(i)
+            END IF
+         END DO
          DO f = 1, nE
             IF ( removed(f) )     CYCLE
             IF ( comp(f) /= keep(1) .AND. comp(f) /= keep(2) )     removed(f) = .TRUE.
          END DO
+!
+!        -------------------------------------------------------------
+!        A reconnection can cut parts of the band off from the curve.
+!        Those are not paved: put their elements back.
+!        -------------------------------------------------------------
+!
+         IF ( reconnected )     THEN
+            attached = .FALSE.
+            nStack   = 0
+            DO i = 1, n
+               nid = seq(i) % node % id
+               DO k = 1, nodeElCount(nid)
+                  f = nodeEl(k,nid)
+                  IF ( removed(f) .AND. .NOT.attached(f) )     THEN
+                     attached(f)    = .TRUE.
+                     nStack         = nStack + 1
+                     stack(nStack)  = f
+                  END IF
+               END DO
+            END DO
+            DO WHILE ( nStack > 0 )
+               g      = stack(nStack)
+               nStack = nStack - 1
+               e => elems(g) % element
+               DO k = 1, 4
+                  p = elementWithDirectedEdge( e % nodes(Loop(k+1,4)) % node % id, e % nodes(k) % node % id, &
+                                               elems, nodeEl, nodeElCount )
+                  IF ( p == 0 )     CYCLE
+                  IF ( .NOT.removed(p) .OR. attached(p) )     CYCLE
+                  attached(p)   = .TRUE.
+                  nStack        = nStack + 1
+                  stack(nStack) = p
+               END DO
+            END DO
+            DO f = 1, nE
+               IF ( removed(f) .AND. .NOT.attached(f) )     removed(f) = .FALSE.
+            END DO
+         END IF
          DEALLOCATE( loopNodes, used )
          END DO
          IF ( nInLoops == 0 )     iFr(1) = 0
@@ -4462,6 +4637,7 @@
          plan % nAll       =  nAll
          plan % nQ         =  nQ
          plan % ccw        =  ccw
+         plan % nDropped   =  nDropped
          plan % removedElements = PACK(elems(1:nE), removed(1:nE))
          plan % seq = seq
          ALLOCATE( plan % bandEdge(MAX(1, MAXVAL(nfr)), 2) )
