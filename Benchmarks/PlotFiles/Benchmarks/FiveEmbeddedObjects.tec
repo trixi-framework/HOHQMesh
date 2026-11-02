@@ -1,4 +1,4 @@
-  TITLE = "SEM Quad mesh" 
+  TITLE = "SEM Quad mesh"
   VARIABLES = "x", "y", "z", "material ID"
  ZONE I=           6 ,J=           6 , F=POINT
   1.6612059561347044E+02  3.8455229037554417E+01  0.0000000000000000E+00 0
