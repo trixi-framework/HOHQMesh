@@ -148,6 +148,7 @@
                obj => interiorCurves(k) % curveArray
                CALL release(obj)
             END DO
+            DEALLOCATE( interiorCurves )
          END IF
 
          IF( ASSOCIATED(interfaceCurves) )     THEN
@@ -155,6 +156,7 @@
                obj => interfaceCurves(k) % curveArray
                CALL release(obj)
             END DO
+            DEALLOCATE( interfaceCurves )
          END IF
 
          NULLIFY( outerBoundaryCurve )
@@ -1235,12 +1237,12 @@
          boundaryEdgeLoopsAreClosed = .TRUE.
          IF ( .NOT.ASSOCIATED(boundaryEdgesArray) )     RETURN
 
-         ALLOCATE(iterator)
          DO j = 1, boundaryEdgesArray % COUNT()
             obj => boundaryEdgesArray % objectAtIndex(j)
             IF ( .NOT.ASSOCIATED(obj) )     CYCLE
             CALL cast(obj,edgeList)
             IF ( edgeList % COUNT() == 0 )     CYCLE
+            ALLOCATE(iterator)
             CALL iterator % initWithFTLinkedListClass(edgeList)
 
             maxNodeID = 0
@@ -1265,11 +1267,11 @@
                CALL iterator % moveToNext()
             END DO
             IF ( ANY(edgeCount /= 0 .AND. edgeCount /= 2) )     boundaryEdgeLoopsAreClosed = .FALSE.
-            DEALLOCATE( edgeCount )
 
+            DEALLOCATE( edgeCount )
+            CALL releaseFTLinkedListIteratorClass(iterator)
             IF ( .NOT.boundaryEdgeLoopsAreClosed )     EXIT
          END DO
-         CALL releaseFTLinkedListIteratorClass(iterator)
 
       END FUNCTION boundaryEdgeLoopsAreClosed
 !
@@ -2790,8 +2792,13 @@
             END IF
 
          END DO
-
-         RETURN
+!
+!        --------------------------------------------------------
+!        GatheredNodes allocates nodeArray, so deallocate it here.
+!        Node pointers are weak, so no refcounts change.
+!        --------------------------------------------------------
+!
+         DEALLOCATE( nodeArray )
       END SUBROUTINE SpreadCollapsedBoundaryLocations
 
 !

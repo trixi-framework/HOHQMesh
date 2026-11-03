@@ -575,8 +575,10 @@
 !
                      newBoundaryEdge => edgesForElements(interiorEdgeNumber,e % id) % edge
                      IF( ASSOCIATED(newBoundaryEdge % elements(2) % element, e ) )    THEN
+                        CALL releaseSMElement( newBoundaryEdge % elements(2) % element )
                         NULLIFY( newBoundaryEdge % elements(2) % element )
                      ELSE
+                        CALL releaseSMElement( newBoundaryEdge % elements(1) % element )
                         newBoundaryEdge % elements(1) % element => newBoundaryEdge % elements(2) % element
                         NULLIFY( newBoundaryEdge % elements(2) % element )
                      END IF

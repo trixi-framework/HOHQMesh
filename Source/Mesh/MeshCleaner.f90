@@ -984,8 +984,8 @@
          IF( errorCode == A_OK_ERROR_CODE)     THEN
             CALL makeNodeToElementConnections(mesh, errorCode)
             DO j = 1, numBoundaries
-               ALLOCATE(edgeListIterator)
                IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
+               ALLOCATE(edgeListIterator)
 
                obj  => boundaryEdgesArray % objectAtIndex(j)
                CALL cast(obj,currentEdgeList)

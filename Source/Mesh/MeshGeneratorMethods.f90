@@ -2570,7 +2570,12 @@
             CALL iterator % moveToNext()
          END DO
 
-         DEALLOCATE( boundaryCurves)
+         ! Deallocate all the internal memory on each curve
+         ! then release the other memory
+         DO k = 1, 4
+            CALL Destruct( boundaryCurves(k) )
+         END DO
+         DEALLOCATE( boundaryCurves )
 
       END SUBROUTINE ComputeFacePatches
 !
@@ -2754,6 +2759,7 @@
                   e => elementsForNodes(i, oldNode % id) % element
                   DO j = 1, e % eType
                      IF ( ASSOCIATED(e % nodes(j) % node, oldNode) )     THEN
+                        CALL releaseSMNode(e % nodes(j) % node)
                         e % nodes(j) % node => newNode
                         e % boundaryInfo % nodeIDs(j) = newNode % id
                         CALL newNode % retain()

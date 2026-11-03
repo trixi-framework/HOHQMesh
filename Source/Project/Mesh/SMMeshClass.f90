@@ -155,7 +155,7 @@
          interiorCurves     => NULL()
          interfaceCurves    => NULL()
          boundaryEdgesArray => NULL()
-         
+
       END SUBROUTINE initSMMesh
 !
 !////////////////////////////////////////////////////////////////////////
@@ -571,10 +571,11 @@
 !           the MutableObjectArray class. The operation is essentially identical
 !           (though a bit less efficient) than the destructor, so it's not clear
 !           where the problem is/was.
+!           We remove the boundaryEdgesArray instances from last to first.
 !           --------------------------------------------------------------------
 !
             numBoundaries = boundaryEdgesArray % COUNT()
-            DO k = 1, numBoundaries
+            DO k = numBoundaries, 1, -1
                CALL boundaryEdgesArray % removeObjectAtIndex(indx = k)
             END DO
             CALL releaseFTMutableObjectArray(boundaryEdgesArray)
