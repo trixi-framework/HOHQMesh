@@ -166,6 +166,10 @@
             CALL releaseFTLinkedList(self % innerBoundaries)
          END IF
 
+         IF ( ASSOCIATED(self % interfaceBoundaries) )     THEN
+            CALL releaseFTLinkedList(self % interfaceBoundaries)
+         END IF
+
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             CALL releaseChainedCurveClass(self % outerBoundary)
          END IF
