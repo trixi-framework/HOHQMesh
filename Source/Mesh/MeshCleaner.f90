@@ -1473,15 +1473,17 @@
 
          IF(.NOT.isDiamond) RETURN
 !
-!        --------------------------------------
-!        Do not remove a diamond if one node is
-!        attached to a boundary
-!        --------------------------------------
+!        -------------------------------------------------------------
+!        Do not remove a diamond if one of its nodes is attached to a
+!        boundary or interface curve. Collapsing it merges the two
+!        3-valence nodes, so the other two nodes each lose an element.
+!        On a curve that undoes the corner templates, e.g. the fan at
+!        a joint of a paved interface chain.
+!        -------------------------------------------------------------
 !
-         IF ( elementNodes(localIDs(1)) % node % bCurveID /= UNDEFINED .OR. &
-              elementNodes(localIDs(2)) % node % bCurveID /= UNDEFINED )     THEN
-            RETURN
-         END IF
+         DO k = 1, 4
+            IF ( elementNodes(k) % node % bCurveID /= UNDEFINED )     RETURN
+         END DO
 
          e % remove = .true.
 !
