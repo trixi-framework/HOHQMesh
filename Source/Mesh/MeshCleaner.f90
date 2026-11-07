@@ -39,6 +39,7 @@
       USE ConnectionsModule
       USE ElementOperations
       USE InterfaceElementMethods
+      USE LineReflectionModule
       IMPLICIT NONE
 !
 !--------------------------------------------------------------------
@@ -55,6 +56,25 @@
          USE SMMeshClass
          IMPLICIT NONE
 !
+!        ---------------------------------------------------------------
+!        Clean up the interior high valence nodes and the diamonds. The
+!        operation depends on the valence of the node:
+!
+!           valence 7    : CleanUp7ValenceNode_InMesh puts a diamond into
+!                          one of its elements, leaving a valence 5 node
+!           valence 6, 8 : SplitHighValenceNodes splits the node and puts
+!                          a diamond between two of its valence 3
+!                          neighbors. A valence 7 node that is left is
+!                          split the same way if it can be.
+!
+!        The order matters. The valence 7 nodes are reduced before the
+!        diamonds are removed (removing the diamonds first makes some
+!        meshes fail), and the split comes after since its diamonds must
+!        stay. A split can leave a valence 7 node, so the valence 7 nodes
+!        are reduced once more after it. Interface and boundary nodes are
+!        handled later, in CleanUpBoundaryElements.
+!        ---------------------------------------------------------------
+!
 !        ---------
 !        Arguments
 !        ---------
@@ -66,7 +86,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER  :: numberOfValenceChanges, numberOfDiamondsRemoved
+         INTEGER  :: numberOfValenceChanges, numberOfDiamondsRemoved, numberOfSplits
          LOGICAL  :: valenceHasChanged, diamondsHaveBeenRemoved
 
          valenceHasChanged       = .false.
@@ -99,6 +119,34 @@
             diamondsHaveBeenRemoved = .true.
             IF ( PrintMessage )     THEN
                PRINT *, "      Number of diamond elements removed = ", numberOfDiamondsRemoved
+            END IF
+         END IF
+!
+!        ------------------------------------------------
+!        Split the valence 6 to 8 nodes next to valence 3
+!        nodes left by the quadtree transition templates
+!        ------------------------------------------------
+!
+         CALL SplitHighValenceNodes( mesh, numberOfSplits, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+
+         IF ( numberOfSplits > 0 )     THEN
+            valenceHasChanged = .true.
+            IF ( PrintMessage )     THEN
+               PRINT *, "      Number of high valence nodes split = ", numberOfSplits
+            END IF
+!
+!           ------------------------------------------------------
+!           Reduce the valence 7 nodes that are left. The cleanup
+!           uses the edges, which the splits have not updated
+!           ------------------------------------------------------
+!
+            CALL mesh % syncEdges()
+            CALL ReduceNodeValences( mesh, numberOfValenceChanges, errorCode, nodesOnInterfaces = .FALSE. )
+            IF(errorCode > A_OK_ERROR_CODE)     RETURN
+
+            IF ( numberOfValenceChanges > 0 .AND. printMessage )     THEN
+               PRINT *, "      Valences have been modified ", numberOfValenceChanges, " time(s)"
             END IF
          END IF
 !
@@ -179,10 +227,11 @@
                   anyNodeCleaned = .TRUE.
                   IF ( wasChanged )     numberOfValenceChanges = numberOfValenceChanges + 1
                CASE( 8 )
-!                  CALL CleanUp8ValenceNode_InMesh(nodeID, mesh) TODO:
 !
+!                 Interior valence 8 nodes are split by SplitHighValenceNodes.
 !                 On an interface curve, the fan of elements on one side of a
-!                 valence 8 node can be thinned the same way (see CleanUpBoundaryElements)
+!                 valence 8 node can be thinned the same way as for valence 7
+!                 (see CleanUpBoundaryElements)
 !
                   IF ( nodesOnInterfaces )     THEN
                      CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode, nodesOnInterfaces, wasChanged, &
@@ -690,6 +739,325 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
+      SUBROUTINE SplitHighValenceNodes( mesh, numberOfSplits, errorCode )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        The quadtree transition templates leave interior valence 6
+!        nodes with two valence 3 neighbors (a 3-6-3 pattern), and valence
+!        8 nodes with four where two refinement fronts meet. Split each
+!        such node of valence 6, 7, or 8 into two and insert a diamond
+!        element between two of its valence 3 neighbors, which become
+!        regular. The two nodes share the elements of the old node plus
+!        the diamond. If they get four each they are regular. The usual
+!        2/4 split of a valence 6 node leaves a valence 5 and a valence 3
+!        node at opposite corners of the diamond (a kite), and a valence
+!        8 node becomes two valence 5 nodes. Valence 7 nodes are mostly
+!        reduced before by CleanUp7ValenceNode_InMesh, a valence 7 node
+!        that is left is split if it can be. Nodes changed in a pass are
+!        not used again in that same pass, and passes are repeated until
+!        nothing changes.
+!        ---------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMMesh) :: mesh
+         INTEGER       :: numberOfSplits
+         INTEGER       :: errorCode
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, PARAMETER   :: maxSplitPasses = 4
+         INTEGER              :: pass, nodeID, numNodes, splitsInPass
+         INTEGER, ALLOCATABLE :: valence(:)
+         LOGICAL, ALLOCATABLE :: touched(:)
+         LOGICAL              :: wasSplit
+
+         numberOfSplits = 0
+         DO pass = 1, maxSplitPasses
+            CALL MakeNodeToElementConnections( mesh, errorCode )
+            IF(errorCode > A_OK_ERROR_CODE)     RETURN
+
+            numNodes = SIZE(numElementsForNode)
+            ALLOCATE( valence(numNodes), touched(numNodes) )
+            valence      = numElementsForNode
+            touched      = .FALSE.
+            splitsInPass = 0
+            DO nodeID = 1, numNodes
+               IF ( valence(nodeID) < 6 .OR. valence(nodeID) > 8 )     CYCLE
+               IF ( touched(nodeID) )          CYCLE
+               CALL SplitHighValenceNode( nodeID, mesh, valence, touched, wasSplit )
+               IF ( wasSplit )     splitsInPass = splitsInPass + 1
+            END DO
+            DEALLOCATE( valence, touched )
+            CALL deallocateNodeToElementConnections()
+
+            numberOfSplits = numberOfSplits + splitsInPass
+            IF ( splitsInPass == 0 )     EXIT
+         END DO
+
+      END SUBROUTINE SplitHighValenceNodes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SplitHighValenceNode( id, mesh, valence, touched, wasSplit )
+         IMPLICIT NONE
+!
+!        -------------------------------------------------------------
+!        Split the interior node with the given id, of valence 6 to 8,
+!        if two of its neighbors are interior valence 3 nodes that are
+!        not next to each other around it. The node array valence and
+!        the touched marks are updated for the next nodes of the pass.
+!        -------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         INTEGER       :: id
+         TYPE (SMMesh) :: mesh
+         INTEGER       :: valence(:)
+         LOGICAL       :: touched(:)
+         LOGICAL       :: wasSplit
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, PARAMETER         :: maxSplitValence = 8
+         INTEGER                    :: k, m, j, a, c, groupSize, bestA, bestC, bestDeviation, deviation, try, nodeID
+         INTEGER                    :: nodeValence
+         INTEGER                    :: localID(maxSplitValence), order(maxSplitValence)
+         INTEGER                    :: nextID(maxSplitValence), prevID(maxSplitValence), ringLocalID(maxSplitValence)
+         LOGICAL                    :: used(maxSplitValence), found, isValenceThreeSpoke(maxSplitValence)
+         LOGICAL                    :: inFirstGroup(maxSplitValence), isRightHanded
+         REAL(KIND=RP)              :: xNode(3), xFirst(3), xSecond(3), d(3), side(3), t, sideSign
+         TYPE (SMNode)    , POINTER :: node => NULL(), newNode => NULL()
+         TYPE (SMElement) , POINTER :: e => NULL()
+         CLASS(FTObject)  , POINTER :: obj => NULL()
+         TYPE(SMElementPtr)         :: ring(maxSplitValence), elements(maxSplitValence)
+         TYPE(SMNodePtr)            :: spoke(maxSplitValence), elementNodes(4)
+         INTEGER, EXTERNAL          :: Loop
+
+         wasSplit = .FALSE.
+         nodeValence = numElementsForNode(id)
+         IF ( nodeValence > maxSplitValence )     RETURN
+
+         e    => elementsForNodes(1,id) % element
+         node => e % nodes(ElementLocalNodeIDForNodeID(id, e)) % node
+         IF ( node % bCurveID /= UNDEFINED )     RETURN
+!
+!        ------------------------------------------------------------
+!        Order the elements counterclockwise around the node. Element
+!        m of the ring spans from spoke m to spoke m+1.
+!        ------------------------------------------------------------
+!
+         nextID = 0
+         prevID = 0
+         DO k = 1, nodeValence
+            elements(k) % element => elementsForNodes(k,id) % element
+            localID(k) = ElementLocalNodeIDForNodeID( id, elements(k) % element )
+            nextID(k)  = elements(k) % element % nodes(Loop(localID(k)+1,4)) % node % id
+            prevID(k)  = elements(k) % element % nodes(Loop(localID(k)-1,4)) % node % id
+         END DO
+         used     = .FALSE.
+         order(1) = 1
+         used(1)  = .TRUE.
+         DO m = 2, nodeValence
+            found = .FALSE.
+            DO k = 1, nodeValence
+               IF ( used(k) )     CYCLE
+               IF ( nextID(k) == prevID(order(m-1)) )     THEN
+                  order(m) = k
+                  used(k)  = .TRUE.
+                  found    = .TRUE.
+                  EXIT
+               END IF
+            END DO
+            IF ( .NOT.found )     RETURN
+         END DO
+         IF ( prevID(order(nodeValence)) /= nextID(order(1)) )     RETURN
+
+         DO m = 1, nodeValence
+            k = order(m)
+            ring(m) % element => elements(k) % element
+            ringLocalID(m)    =  localID(k)
+            spoke(m) % node   => elements(k) % element % nodes(Loop(localID(k)+1,4)) % node
+         END DO
+!
+!        -------------------------------------------------------
+!        Leave the node alone if anything around it was changed
+!        in this pass
+!        -------------------------------------------------------
+!
+         DO m = 1, nodeValence
+            DO j = 1, 4
+               nodeID = ring(m) % element % nodes(j) % node % id
+               IF ( nodeID > SIZE(touched) )     RETURN
+               IF ( touched(nodeID) )            RETURN
+            END DO
+         END DO
+!
+!        -------------------------------------------------------------
+!        Find two interior valence 3 spokes. The node keeps the
+!        groupSize elements between them plus the diamond, the new node
+!        gets the rest plus the diamond. Take the pair for which these
+!        two valences are closest to 4. A pair of neighboring spokes
+!        would leave a valence 2 node and is not used.
+!        -------------------------------------------------------------
+!
+         DO m = 1, nodeValence
+            isValenceThreeSpoke(m) = valence(spoke(m) % node % id) == 3
+            IF ( spoke(m) % node % bCurveID /= UNDEFINED )     isValenceThreeSpoke(m) = .FALSE.
+         END DO
+
+         bestDeviation = HUGE(1)
+         bestA         = 0
+         bestC         = 0
+         DO a = 1, nodeValence - 1
+            IF ( .NOT.isValenceThreeSpoke(a) )     CYCLE
+            DO c = a + 1, nodeValence
+               IF ( .NOT.isValenceThreeSpoke(c) )     CYCLE
+               groupSize = c - a
+               IF ( groupSize < 2 .OR. groupSize > nodeValence - 2 )     CYCLE
+               deviation = ABS(groupSize + 1 - 4) + ABS(nodeValence - groupSize + 1 - 4)
+               IF ( deviation < bestDeviation )     THEN
+                  bestDeviation = deviation
+                  bestA         = a
+                  bestC         = c
+               END IF
+            END DO
+         END DO
+         IF ( bestA == 0 )     RETURN
+!
+!        -----------------------------------------------------------------
+!        Ring elements bestA .. bestC-1 keep the node, the others get the
+!        new node. The two are moved apart across the line between the
+!        two valence 3 spokes, each toward the side of its own elements.
+!        Smaller moves are tried until all elements are right handed.
+!        -----------------------------------------------------------------
+!
+         inFirstGroup = .FALSE.
+         inFirstGroup(bestA:bestC-1) = .TRUE.
+
+         xNode    = node % x
+         d        = spoke(bestC) % node % x - spoke(bestA) % node % x
+         side     = [-d(2), d(1), 0.0_RP]
+         side     = side/NORM2(side)
+         sideSign = 0.0_RP
+         DO m = 1, nodeValence
+            k = Loop(ringLocalID(m)+2,4)
+            IF ( inFirstGroup(m) )     THEN
+               sideSign = sideSign + DOT_PRODUCT(side, ring(m) % element % nodes(k) % node % x - xNode)
+            ELSE
+               sideSign = sideSign - DOT_PRODUCT(side, ring(m) % element % nodes(k) % node % x - xNode)
+            END IF
+         END DO
+         IF ( sideSign < 0.0_RP )     side = -side
+
+         t = 0.25_RP*NORM2(d)
+         isRightHanded = .FALSE.
+         DO try = 1, 3
+            xFirst  = xNode + t*side
+            xSecond = xNode - t*side
+            isRightHanded = splitIsRightHanded( node, ring(1:nodeValence), inFirstGroup(1:nodeValence), xFirst, xSecond )
+            IF ( isRightHanded )     EXIT
+            t = 0.5_RP*t
+         END DO
+         IF ( .NOT.isRightHanded )     RETURN
+!
+!        ------------------------------------
+!        Move the node and make the new node
+!        ------------------------------------
+!
+         node % x = xFirst
+         ALLOCATE(newNode)
+         CALL newNode % initWithLocationAndID(xSecond, mesh % newNodeID())
+         obj => newNode
+         CALL mesh % nodes % add(obj)
+         CALL releaseSMNode(newNode)
+
+         DO m = 1, nodeValence
+            IF ( inFirstGroup(m) )     CYCLE
+            k = ringLocalID(m)
+            CALL releaseSMNode(ring(m) % element % nodes(k) % node)
+            ring(m) % element % nodes(k) % node => newNode
+            CALL newNode % retain()
+         END DO
+!
+!        ---------------------------------------------
+!        The diamond between the two valence 3 spokes
+!        ---------------------------------------------
+!
+         elementNodes(1) % node => spoke(bestA) % node
+         elementNodes(2) % node => newNode
+         elementNodes(3) % node => spoke(bestC) % node
+         elementNodes(4) % node => node
+         IF ( signedQuadArea(elementNodes) < 0.0_RP )     THEN
+            elementNodes(2) % node => node
+            elementNodes(4) % node => newNode
+         END IF
+         ALLOCATE(e)
+         CALL e % initWithNodesIDAndType( elementNodes, mesh % newElementID(), QUAD )
+         obj => e
+         CALL mesh % elements % add(obj)
+         CALL releaseSMElement(e)
+!
+!        -----------------------------------------------
+!        Valences and marks for the rest of the pass.
+!        The new node has an id beyond the touched marks
+!        -----------------------------------------------
+!
+         valence(spoke(bestA) % node % id) = 4
+         valence(spoke(bestC) % node % id) = 4
+         valence(id)                       = bestC - bestA + 1
+         DO m = 1, nodeValence
+            DO j = 1, 4
+               nodeID = ring(m) % element % nodes(j) % node % id
+               IF ( nodeID <= SIZE(touched) )     touched(nodeID) = .TRUE.
+            END DO
+         END DO
+         wasSplit = .TRUE.
+
+      END SUBROUTINE SplitHighValenceNode
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION splitIsRightHanded( node, ring, inFirstGroup, xFirst, xSecond )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        True if no element around a node being split is tangled when
+!        the node is put at xFirst for the elements of the first group
+!        and at xSecond for the others. The node is put back afterwards.
+!        ---------------------------------------------------------------
+!
+         TYPE (SMNode), POINTER :: node
+         TYPE(SMElementPtr)     :: ring(:)
+         LOGICAL                :: inFirstGroup(:)
+         REAL(KIND=RP)          :: xFirst(3), xSecond(3)
+         REAL(KIND=RP)          :: x0(3)
+         INTEGER                :: m
+
+         x0 = node % x
+         splitIsRightHanded = .TRUE.
+         DO m = 1, SIZE(ring)
+            IF ( inFirstGroup(m) )     THEN
+               node % x = xFirst
+            ELSE
+               node % x = xSecond
+            END IF
+            IF ( elementIsTangled(ring(m) % element) )     splitIsRightHanded = .FALSE.
+         END DO
+         node % x = x0
+      END FUNCTION splitIsRightHanded
+!
+!////////////////////////////////////////////////////////////////////////
+!
       REAL(KIND=RP) FUNCTION signedQuadArea( quadNodes )
          IMPLICIT NONE
 !
@@ -737,33 +1105,6 @@
          isEdgeAlongCurve = a % bCurveID /= UNDEFINED .AND. b % bCurveID /= UNDEFINED .AND. &
                             a % bCurveChainID == b % bCurveChainID
       END FUNCTION isEdgeAlongCurve
-!
-!////////////////////////////////////////////////////////////////////////
-!
-!      SUBROUTINE CleanUp8ValenceNode_InMesh(id,mesh)
-!         IMPLICIT NONE
-!!
-!!        ---------
-!!        Arguments
-!!        ---------
-!!
-!         INTEGER       :: id
-!         TYPE (SMMesh) :: mesh
-!!
-!!        ---------------
-!!        Local variables
-!!        ---------------
-!!
-!!         INTEGER                  :: k
-!!         TYPE(SMElement), POINTER :: e
-!!         REAL(KIND=RP)            :: theta
-!!
-!!        ----------------------------------------
-!!        Find the element with the smallest angle
-!!        ----------------------------------------
-!!
-!
-!      END SUBROUTINE CleanUp8ValenceNode_InMesh
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1892,5 +2233,321 @@
                           - a(1,2)*(a(2,1)*a(3,3) - a(2,3)*a(3,1)) &
                           + a(1,3)*(a(2,1)*a(3,2) - a(2,2)*a(3,1))
       END FUNCTION determinant3x3
+
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ImproveElementShapes( mesh, errorCode, symmetryLine )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------------
+!        The spring smoother leaves some elements with poor angles, mostly
+!        at irregular nodes such as the valence 5 and 3 nodes of the kites
+!        made by SplitHighValenceNodes. Each node of an element whose
+!        smallest scaled corner Jacobian is below minAcceptedScaledJacobian
+!        and that is not on a boundary is moved by a compass search to where
+!        the worst element around it has the best shape, see
+!        MoveNodeToImproveShapes. Repeat a few sweeps since moving one
+!        node changes the elements of its neighbors.
+!
+!        If the mesh was reflected across a symmetry line, given as the
+!        coefficients a, b, c of a*x + b*y + c = 0, nodes are moved in
+!        mirror pairs: the node on the positive side of the line is
+!        optimized, and its partner is put at its reflection so that the
+!        mesh stays symmetric. A node without a partner is not moved.
+!        -----------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMMesh) , POINTER  :: mesh
+         INTEGER                  :: errorCode
+         REAL(KIND=RP), OPTIONAL  :: symmetryLine(3)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedListIterator), POINTER     :: iterator => NULL()
+         CLASS(FTObject)            , POINTER     :: obj      => NULL()
+         TYPE (SMElement)           , POINTER     :: e        => NULL()
+         TYPE (SMNode)              , POINTER     :: node     => NULL(), partner => NULL()
+         TYPE (SMNodePtr)           , ALLOCATABLE :: nodeArray(:)
+         INTEGER                    , ALLOCATABLE :: partnerID(:)
+         REAL(KIND=RP)              , ALLOCATABLE :: areaAtStart(:)
+         REAL(KIND=RP)                            :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES), x(3)
+         INTEGER                                  :: sweep, k, numMoves, numElementsTreated
+         LOGICAL                                  :: isSymmetric, moved
+!
+!        ---------------------------------------------------------------------
+!        Note, these parameters are kept here rather than in ProgramGlobals to
+!        avoid the same spurious warning in gfortran 15 the same reason as
+!        described in UntangleInvertedElements
+!        ---------------------------------------------------------------------
+!
+         INTEGER      , PARAMETER :: numShapeSweeps            = 6
+         REAL(KIND=RP), PARAMETER :: minAcceptedScaledJacobian = 0.8_RP
+
+         isSymmetric = PRESENT(symmetryLine)
+         iterator => mesh % elementsIterator
+         CALL MakeNodeToElementConnections( mesh, errorCode )
+         IF ( errorCode > A_OK_ERROR_CODE )     RETURN
+!
+!        --------------------------------------------------------------
+!        Element areas before the moves. A node may not change the size
+!        of its elements much, so that the size grading is kept
+!        --------------------------------------------------------------
+!
+         ALLOCATE( areaAtStart(mesh % elements % COUNT()) )
+         CALL iterator % setToStart()
+         DO WHILE ( .NOT.iterator % isAtEnd() )
+            obj => iterator % object()
+            CALL castToSMElement(obj,e)
+            CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
+            areaAtStart(e % id) = shapeMeasures(SIGNED_AREA_INDEX)
+            CALL iterator % moveToNext()
+         END DO
+
+         IF ( isSymmetric )     THEN
+            ALLOCATE( nodeArray(SIZE(numElementsForNode)), partnerID(SIZE(numElementsForNode)) )
+            partnerID = 0
+            CALL mesh % nodesIterator % setToStart()
+            DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
+               obj => mesh % nodesIterator % object()
+               CALL castToSMNode(obj,node)
+               nodeArray(node % id) % node => node
+               CALL mesh % nodesIterator % moveToNext()
+            END DO
+         END IF
+
+         DO sweep = 1, numShapeSweeps
+            numMoves           = 0
+            numElementsTreated = 0
+            CALL iterator % setToStart()
+            DO WHILE ( .NOT.iterator % isAtEnd() )
+               obj => iterator % object()
+               CALL castToSMElement(obj,e)
+               IF ( elementMinScaledJacobian(e) < minAcceptedScaledJacobian )     THEN
+                  numElementsTreated = numElementsTreated + 1
+                  DO k = 1, 4
+                     node => e % nodes(k) % node
+                     IF ( node % distToBoundary == 0.0_RP )     CYCLE
+                     IF ( node % bCurveID /= UNDEFINED )        CYCLE
+
+                     IF ( isSymmetric )     THEN
+                        partner => mirrorPartner( node, nodeArray, partnerID, symmetryLine )
+                        IF ( .NOT.ASSOCIATED(partner) )     CYCLE
+                        IF ( DOT_PRODUCT(symmetryLine(1:2), node % x(1:2)) + symmetryLine(3) < 0.0_RP )     THEN
+                           partner => node
+                           node    => nodeArray(partnerID(partner % id)) % node
+                        END IF
+                     END IF
+
+                     CALL MoveNodeToImproveShapes( node, areaAtStart, minAcceptedScaledJacobian, moved )
+                     IF ( .NOT.moved )     CYCLE
+                     numMoves = numMoves + 1
+                     IF ( isSymmetric )     THEN
+                        x = reflectAboutLine(node % x, symmetryLine(1), symmetryLine(2), symmetryLine(3))
+                        partner % x(1:2) = x(1:2)
+                     END IF
+                  END DO
+               END IF
+               CALL iterator % moveToNext()
+            END DO
+            IF ( sweep == 1 .AND. printMessage .AND. numElementsTreated > 0 )     &
+               PRINT *, "   Improving the shapes of ", numElementsTreated, " elements"
+            IF ( numMoves == 0 )     EXIT
+         END DO
+
+         CALL deallocateNodeToElementConnections()
+
+      END SUBROUTINE ImproveElementShapes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE MoveNodeToImproveShapes( node, areaAtStart, minAcceptedScaledJacobian, moved )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------------
+!        Compass search for the position of the node that maximizes the
+!        smallest shape quality of the elements around it, see
+!        StarQualities. Steps in eight directions are tried, the best
+!        that improves is taken, otherwise the step is halved. A step is
+!        only taken if the smallest scaled Jacobian of the elements around
+!        the node does not fall below its value at the start, or below
+!        minAcceptedScaledJacobian if that is smaller, so that the angles
+!        are not traded for sizes.
+!        -----------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (SMNode), POINTER :: node
+         REAL(KIND=RP)          :: areaAtStart(:)
+         REAL(KIND=RP)          :: minAcceptedScaledJacobian
+         LOGICAL                :: moved
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         TYPE (SMElement), POINTER :: e
+         REAL(KIND=RP)             :: x0(3), xBest(2), best, quality, stepSize, minStepSize
+         REAL(KIND=RP)             :: edgeLength, scaledJacobian, scaledJacobianFloor
+         INTEGER                   :: i, k, direction, bestDirection, numIterations
+         INTEGER, EXTERNAL         :: Loop
+         INTEGER      , PARAMETER  :: maxSearchIterations = 60
+         REAL(KIND=RP), PARAMETER  :: s = 0.7071067811865476_RP ! 1/sqrt(2)
+         REAL(KIND=RP), PARAMETER  :: directions(2,8) = RESHAPE( [ 1.0_RP, 0.0_RP,  s,  s,  0.0_RP,  1.0_RP, -s,  s, &
+                                                                  -1.0_RP, 0.0_RP, -s, -s,  0.0_RP, -1.0_RP,  s, -s], [2,8] )
+
+         moved = .FALSE.
+         x0    = node % x
+!
+!        ----------------------------------------------------
+!        Step sizes relative to the shortest edge at the node
+!        ----------------------------------------------------
+!
+         edgeLength = HUGE(1.0_RP)
+         DO i = 1, numElementsForNode(node % id)
+            e => elementsForNodes(i, node % id) % element
+            k =  ElementLocalNodeIDForNodeID( node % id, e )
+            edgeLength = MIN(edgeLength, NORM2(e % nodes(Loop(k+1,4)) % node % x(1:2) - x0(1:2)), &
+                                         NORM2(e % nodes(Loop(k-1,4)) % node % x(1:2) - x0(1:2)))
+         END DO
+         stepSize    = 0.1_RP * edgeLength
+         minStepSize = 1.0e-3_RP * edgeLength
+
+         CALL StarQualities( node, areaAtStart, best, scaledJacobianFloor )
+         scaledJacobianFloor = MIN(scaledJacobianFloor, minAcceptedScaledJacobian)
+         xBest               = x0(1:2)
+         numIterations       = 0
+         DO WHILE ( stepSize > minStepSize .AND. numIterations < maxSearchIterations )
+            numIterations = numIterations + 1
+            bestDirection = 0
+            DO direction = 1, 8
+               node % x(1:2) = xBest + stepSize*directions(:,direction)
+               CALL StarQualities( node, areaAtStart, quality, scaledJacobian )
+               IF ( quality > best + 1.0e-6_RP .AND. scaledJacobian >= scaledJacobianFloor )     THEN
+                  best          = quality
+                  bestDirection = direction
+               END IF
+            END DO
+            IF ( bestDirection == 0 )     THEN
+               stepSize = 0.5_RP*stepSize
+            ELSE
+               xBest = xBest + stepSize*directions(:,bestDirection)
+               moved = .TRUE.
+            END IF
+         END DO
+         node % x(1:2) = xBest
+
+      END SUBROUTINE MoveNodeToImproveShapes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE StarQualities( node, areaAtStart, shapeQuality, minScaledJacobian )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------------
+!        Smallest shape quality and smallest scaled Jacobian of the
+!        elements around the node. The shape quality of an element is the
+!        inverse of its condition number, which is 1 for a square and
+!        lower for skewed corners or edges of unequal length, times
+!        min(r, 1/r) where r is the ratio of its area to its area at the
+!        start, so that sizes are kept.
+!        ----------------------------------------------------------------
+!
+         TYPE (SMNode), POINTER    :: node
+         REAL(KIND=RP)             :: areaAtStart(:)
+         REAL(KIND=RP)             :: shapeQuality, minScaledJacobian
+
+         TYPE (SMElement), POINTER :: e
+         REAL(KIND=RP)             :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES), areaRatio, quality
+         INTEGER                   :: i
+
+         shapeQuality      = HUGE(1.0_RP)
+         minScaledJacobian = HUGE(1.0_RP)
+         DO i = 1, numElementsForNode(node % id)
+            e => elementsForNodes(i, node % id) % element
+            CALL ComputeElementShapeMeasures2D( e, shapeMeasures )
+            areaRatio = shapeMeasures(SIGNED_AREA_INDEX)/areaAtStart(e % id)
+            IF ( areaRatio <= 0.0_RP )     THEN
+               quality = -1.0_RP
+            ELSE
+               quality = MIN(areaRatio, 1.0_RP/areaRatio)/shapeMeasures(CONDITION_INDEX)
+            END IF
+            shapeQuality      = MIN(shapeQuality, quality)
+            minScaledJacobian = MIN(minScaledJacobian, elementMinScaledJacobian(e))
+         END DO
+      END SUBROUTINE StarQualities
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION elementMinScaledJacobian( e )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        Smallest over the corners of the corner Jacobian divided by
+!        the lengths of the two edges, the sine of the corner angle
+!        ------------------------------------------------------------
+!
+         TYPE (SMElement), POINTER :: e
+         INTEGER                   :: k
+         INTEGER, EXTERNAL         :: Loop
+         REAL(KIND=RP)             :: x(2)
+
+         elementMinScaledJacobian = HUGE(1.0_RP)
+         DO k = 1, 4
+            x = e % nodes(k) % node % x(1:2)
+            elementMinScaledJacobian = MIN( elementMinScaledJacobian, elementCornerJacobian(e, k)       &
+                                            /( NORM2(e % nodes(Loop(k-1,4)) % node % x(1:2) - x)        &
+                                              *NORM2(e % nodes(Loop(k+1,4)) % node % x(1:2) - x) ) )
+         END DO
+      END FUNCTION elementMinScaledJacobian
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION mirrorPartner( node, nodeArray, partnerID, symmetryLine ) RESULT(partner)
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        The node at the reflection of the given node across the
+!        symmetry line, or NULL if there is none. Found by a search over
+!        all nodes the first time it is asked for, and remembered in
+!        partnerID for both nodes (-1 means there is no partner).
+!        ---------------------------------------------------------------
+!
+         TYPE (SMNode)  , POINTER :: node
+         TYPE (SMNodePtr)         :: nodeArray(:)
+         INTEGER                  :: partnerID(:)
+         REAL(KIND=RP)            :: symmetryLine(3)
+         TYPE (SMNode)  , POINTER :: partner
+
+         REAL(KIND=RP)            :: xMirror(3), tolerance, distance, closest
+         INTEGER                  :: j, closestID
+
+         partner => NULL()
+         IF ( partnerID(node % id) == 0 )     THEN
+            xMirror   = reflectAboutLine(node % x, symmetryLine(1), symmetryLine(2), symmetryLine(3))
+            tolerance = 1.0e-8_RP*MAX(1.0_RP, MAXVAL(ABS(node % x(1:2))))
+            closest   = HUGE(1.0_RP)
+            closestID = -1
+            DO j = 1, SIZE(nodeArray)
+               IF ( j == node % id )     CYCLE
+               distance = NORM2(nodeArray(j) % node % x(1:2) - xMirror(1:2))
+               IF ( distance < closest )     THEN
+                  closest   = distance
+                  closestID = j
+               END IF
+            END DO
+            IF ( closest > tolerance )     closestID = -1
+            partnerID(node % id) = closestID
+            IF ( closestID > 0 )     partnerID(closestID) = node % id
+         END IF
+         IF ( partnerID(node % id) > 0 )     partner => nodeArray(partnerID(node % id)) % node
+      END FUNCTION mirrorPartner
 
       END Module MeshCleaner
