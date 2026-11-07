@@ -70,6 +70,17 @@
          CLASS(FTObject), POINTER ::  object => NULL()
       END TYPE ObjectPointerWrapper
 !
+!     ------------------------------------------------------------
+!     The curve with a given id and the chain it is in, as found by
+!     searchCurveInModelWithID. Curves that were not found are not
+!     associated.
+!     ------------------------------------------------------------
+!
+      TYPE CurveAndChain
+         CLASS(SMCurve)       , POINTER :: curve => NULL()
+         CLASS(SMChainedCurve), POINTER :: chain => NULL()
+      END TYPE CurveAndChain
+!
 !     ---------------------
 !     Class type definition
 !     ---------------------
@@ -91,6 +102,7 @@
          CLASS(SMTopography)        , POINTER     :: topography => NULL()
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
+         TYPE(CurveAndChain)        , ALLOCATABLE :: curveForID(:)       ! Built on the first curveWithID
 !
 !        ========
          CONTAINS
@@ -154,6 +166,10 @@
             CALL releaseFTLinkedList(self % innerBoundaries)
          END IF
 
+         IF ( ASSOCIATED(self % interfaceBoundaries) )     THEN
+            CALL releaseFTLinkedList(self % interfaceBoundaries)
+         END IF
+
          IF ( ASSOCIATED(self % outerBoundary) )     THEN
             CALL releaseChainedCurveClass(self % outerBoundary)
          END IF
@@ -174,6 +190,10 @@
 
          IF ( ALLOCATED(self % curveType) )     THEN
             DEALLOCATE(self % curveType)
+         END IF
+
+         IF ( ALLOCATED(self % curveForID) )     THEN
+            DEALLOCATE(self % curveForID)
          END IF
 
          IF ( ASSOCIATED(self % topography) )     THEN
@@ -1562,6 +1582,13 @@
 
          ALLOCATE( self%boundaryCurveMap(self%curveCount) )
          ALLOCATE( self%curveType(self%curveCount) ) ! Number of chains is always <= number of curves
+!
+!        -------------------------------------------------------------
+!        Curves that are not in a boundary chain, e.g. a sweep curve,
+!        are in no chain. Chain ids start at 1, so they match no chain.
+!        -------------------------------------------------------------
+!
+         self % boundaryCurveMap = NONE
          chainCount = 0
 !
 !        -----------
@@ -1791,6 +1818,58 @@
       FUNCTION curveInModelWithID( self, curveID, chain ) RESULT(curve)
          IMPLICIT NONE
 !
+!        ---------------------------------------------------------------
+!        The curve with the id curveID and the chain it is in. The model
+!        does not change once it is meshed, so the curves are searched
+!        for once, on the first call, and looked up after that. A curve
+!        that is not found is searched for every time.
+!        ---------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         INTEGER                        :: curveID
+         CLASS(SMModel)                 :: self
+         CLASS(SMChainedCurve), POINTER :: chain
+         CLASS(SMCurve)       , POINTER :: curve
+!
+!        ---------------
+!        Local Variables
+!        ---------------
+!
+         INTEGER :: k
+
+         IF ( .NOT.ALLOCATED(self % curveForID) .AND. ALLOCATED(self % boundaryCurveMap) )     THEN
+            ALLOCATE( self % curveForID(SIZE(self % boundaryCurveMap)) )
+            DO k = 1, SIZE(self % curveForID)
+               curve => searchCurveInModelWithID( self, k, chain )
+               IF ( ASSOCIATED(curve) )     THEN
+                  self % curveForID(k) % curve => curve
+                  self % curveForID(k) % chain => chain
+               END IF
+            END DO
+         END IF
+
+         IF ( ALLOCATED(self % curveForID) )     THEN
+            IF ( curveID >= 1 .AND. curveID <= SIZE(self % curveForID) )     THEN
+               IF ( ASSOCIATED(self % curveForID(curveID) % curve) )     THEN
+                  curve => self % curveForID(curveID) % curve
+                  chain => self % curveForID(curveID) % chain
+                  RETURN
+               END IF
+            END IF
+         END IF
+
+         curve => searchCurveInModelWithID( self, curveID, chain )
+
+      END FUNCTION curveInModelWithID
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION searchCurveInModelWithID( self, curveID, chain ) RESULT(curve)
+         IMPLICIT NONE
+!
 !        ---------
 !        Arguments
 !        ---------
@@ -1852,7 +1931,7 @@
             END DO
          END IF
 
-      END FUNCTION curveInModelWithID
+      END FUNCTION searchCurveInModelWithID
 !
 !////////////////////////////////////////////////////////////////////////
 !

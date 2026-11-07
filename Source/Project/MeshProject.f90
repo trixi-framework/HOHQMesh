@@ -365,6 +365,7 @@
 
          IF (  ASSOCIATED(self % hexMesh) )     THEN
             CALL DestructStructuredHexMesh(hexMesh  = self % hexMesh)
+            DEALLOCATE(self % hexMesh)
          END IF
 
          IF ( ASSOCIATED( self % boundaryPolynomialsArray) )     THEN
@@ -466,7 +467,6 @@
          CLASS(FTValueDictionary)    , POINTER :: smootherDict, refinementsDict
          CLASS(FTValueDictionary)    , POINTER :: scaleTransformDict, rotationTransformDict
          CLASS(FTLinkedList)         , POINTER :: refinementsList
-         CLASS(FTLinkedListIterator) , POINTER :: refinementIterator => NULL()
          CLASS(FTObject)             , POINTER :: obj => NULL()
          CLASS(SpringMeshSmoother)   , POINTER :: springSmoother => NULL()
 
@@ -498,7 +498,6 @@
 
          IF ( controlDict % containsKey(key = REFINEMENT_REGIONS_KEY) )     THEN
 
-            ALLOCATE(refinementIterator)
             obj             => controlDict % objectForKey(key = REFINEMENT_REGIONS_KEY)
             refinementsDict => valueDictionaryFromObject(obj)
             obj             => refinementsDict % objectForKey(key = "LIST")
@@ -1073,6 +1072,7 @@
                CALL curveIterator % moveToNext()
                CALL segmentedIterator % moveToNext()
             END DO
+            CALL releaseFTLinkedListIteratorClass(segmentedIterator)
          END IF
 
       END SUBROUTINE ResizeSegmentedCurves
@@ -1277,6 +1277,8 @@
                CALL curveIterator % moveToNext()
                CALL segmentedIterator % moveToNext()
             END DO
+
+            CALL releaseFTLinkedListIteratorClass(segmentedIterator)
          END IF
          !TODO Add interface boundaries
 
@@ -1427,6 +1429,7 @@
             rightB  = segmentedOuterBoundary % boundingBox(BBOX_RIGHT)
             topB    = segmentedOuterBoundary % boundingBox(BBOX_TOP)
             bottomB = segmentedOuterBoundary % boundingBox(BBOX_BOTTOM)
+            CALL releaseChainChainedSegmentedCurve(segmentedOuterBoundary)
          ELSE
             msg = "To automatically create background grid, the model needs an outer boundary curve"
             CALL ThrowErrorExceptionOfType(poster = "BuildbackgroundGridFromModel",msg = msg,typ = FT_ERROR_FATAL)

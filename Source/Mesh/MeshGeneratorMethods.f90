@@ -288,6 +288,8 @@
       INTEGER                                          :: j
       INTEGER                                          :: idOfOuterBoundary
       INTEGER                                          :: numberOfMaterials
+      INTEGER                                          :: numberOfDetachedElements, pass
+      INTEGER, PARAMETER                               :: MAX_BOUNDARY_CLEANUP_PASSES = 5
       CHARACTER(LEN=SM_CURVE_NAME_LENGTH)              :: materialName
       CHARACTER(LEN=SM_CURVE_NAME_LENGTH), ALLOCATABLE :: materialNames(:)
 
@@ -369,6 +371,15 @@
             ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:numberOfMaterials))
             mesh % materialNameForID = materialNames(0:numberOfMaterials)
             DEALLOCATE( materialNames )
+      ELSE
+!
+!           ----------------------------------------------------------
+!           Without interfaces all elements are the background
+!           material, which the ISM-MM format still writes out
+!           ----------------------------------------------------------
+!
+            ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:0))
+            mesh % materialNameForID(BACKGROUND_MATERIAL_ID) = project % backgroundMaterialName
       END IF
 !
 !     -------------------------------------
@@ -418,60 +429,95 @@
 !
       CALL DoLazyDelete( mesh )
 !
-!     -------------------------------------------
-!     Prepare for generating boundary elements by
-!     building, collecting and ordering boundary
-!     edges
-!     -------------------------------------------
+!     ------------------------------------------------------------
+!     Elements left on their own or attached only at a node (e.g.
+!     near a sharp tip) cannot be part of a boundary edge loop
+!     ------------------------------------------------------------
 !
-      CALL mesh % buildEdgeList()
+      CALL RemoveDetachedElements( mesh, numberOfDetachedElements )
+      IF ( PrintMessage .AND. numberOfDetachedElements > 0 )     THEN
+         PRINT *, "      Elements removed that were detached from the rest of the mesh: ", numberOfDetachedElements
+      END IF
 
-      IF( model % curveCount == 0 )     RETURN
+      IF( model % curveCount == 0 )     THEN
+         CALL mesh % buildEdgeList()
+         RETURN
+      END IF
 
       numBoundaryEdgeLists = model%numberOfInnerCurves + &
                              model%numberOfOuterCurves + &
                              model%numberOfInterfaceCurves
 
-      CALL AllocateBoundaryEdgesArray(numBoundaryEdgeLists)
-      CALL CollectBoundaryEdges( mesh, errorCode, useElementSides = .TRUE. )
-
-      IF( errorCode > A_OK_ERROR_CODE)     RETURN
-
-      CALL OrderBoundaryEdges( mesh )
-
-      IF ( catch(WARNING_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
-         exception => errorObject()
-         CALL throw(exception)
-         RETURN
-      END IF
-!
-!     -------------------------------------------------------
-!     Smooth the edges along exterior and interior boundaries
-!     before generating the boundary elements.
-!     -------------------------------------------------------
-!
-      CALL smoothBoundaryEdges
-!
-!     -------------------------------------------------------------
-!     Associate the boundary edges with elements and see if any
-!     elements must be eliminated for having nodes too close to
-!     a boundary, etc.
-!     -------------------------------------------------------------
-!
       idOfOuterBoundary = UNDEFINED
       IF( ASSOCIATED( sizer % outerBoundary ) ) idOfOuterBoundary = sizer % outerBoundary % id
+!
+!     --------------------------------------------------------------
+!     Removing the elements too close to the boundaries can detach
+!     others again, so repeat until the boundary edges form loops
+!     --------------------------------------------------------------
+!
+      DO pass = 1, MAX_BOUNDARY_CLEANUP_PASSES
+!
+!        -------------------------------------------
+!        Prepare for generating boundary elements by
+!        building, collecting and ordering boundary
+!        edges
+!        -------------------------------------------
+!
+         IF ( pass == 1 )     THEN
+            CALL mesh % buildEdgeList()
+         ELSE
+            CALL mesh % syncEdges()
+         END IF
 
-      CALL LocateEdgeImagesOnBoundaries( mesh, model, idOfOuterBoundary, skipInterfaces = .FALSE. )
+         CALL AllocateBoundaryEdgesArray(numBoundaryEdgeLists)
+         CALL CollectBoundaryEdges( mesh, errorCode, useElementSides = .TRUE. )
 
-      IF ( catch(FATAL_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
-         CALL destroyTemporaryBoundaryArrays
-         exception => errorObject()
-         CALL throw(exception)
-         RETURN
-      END IF
+         IF( errorCode > A_OK_ERROR_CODE)     RETURN
+         IF ( .NOT.boundaryEdgeLoopsAreClosed() )     THEN
+            errorCode = BOUNDARY_LOOP_OPEN_ERROR_CODE
+            RETURN
+         END IF
 
-      CALL CleanUpBoundaryCurves( mesh, model, errorCode )
-      IF(errorCode > A_OK_ERROR_CODE)     RETURN
+         CALL OrderBoundaryEdges( mesh )
+
+         IF ( catch(WARNING_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
+            exception => errorObject()
+            CALL throw(exception)
+            RETURN
+         END IF
+!
+!        -------------------------------------------------------
+!        Smooth the edges along exterior and interior boundaries
+!        before generating the boundary elements.
+!        -------------------------------------------------------
+!
+         CALL smoothBoundaryEdges
+!
+!        -------------------------------------------------------------
+!        Associate the boundary edges with elements and see if any
+!        elements must be eliminated for having nodes too close to
+!        a boundary, etc.
+!        -------------------------------------------------------------
+!
+         CALL LocateEdgeImagesOnBoundaries( mesh, model, idOfOuterBoundary, skipInterfaces = .FALSE. )
+
+         IF ( catch(FATAL_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
+            CALL destroyTemporaryBoundaryArrays
+            exception => errorObject()
+            CALL throw(exception)
+            RETURN
+         END IF
+
+         CALL CleanUpBoundaryCurves( mesh, model, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+
+         CALL RemoveDetachedElements( mesh, numberOfDetachedElements )
+         IF ( numberOfDetachedElements == 0 )     EXIT
+         IF ( PrintMessage )     THEN
+            PRINT *, "      Elements removed that were detached from the rest of the mesh: ", numberOfDetachedElements
+         END IF
+      END DO
 !
 !     ------------------------------------------
 !     The edge lists are also no longer in sync.
@@ -1002,13 +1048,17 @@
 !        ------------------------------------------------------------------
 !        For GenerateBoundaryElements: the cyclic shift of the boundary
 !        nodes so that the first two and the last three are not joints. It
-!        is zero if the nodes are already in such an order, or if there is
-!        no such order (joints only a few nodes apart).
+!        is zero if the nodes are already in such an order.
+!
+!        If the joints are too close together for that (only a few nodes
+!        apart), use the first shift at which the templates tile the loop
+!        instead (see templatesTileLoop). If there is none, it is zero.
 !        ------------------------------------------------------------------
 !
          TYPE(SMNodePtr), DIMENSION(:) :: nodeArray
          INTEGER                       :: n, shift, j, nodeType
          LOGICAL                       :: isFree
+         INTEGER                       :: types(SIZE(nodeArray))
 
          n = SIZE(nodeArray)
          boundaryLoopStartShift = 0
@@ -1027,7 +1077,58 @@
             END IF
          END DO
 
+         DO j = 1, n
+            types(j) = nodeArray(j) % node % nodeType
+         END DO
+         DO shift = 0, n-1
+            IF ( templatesTileLoop( CSHIFT(types, shift) ) )     THEN
+               boundaryLoopStartShift = shift
+               RETURN
+            END IF
+         END DO
+
       END FUNCTION boundaryLoopStartShift
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION templatesTileLoop( types )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------------
+!        For GenerateBoundaryElements: true if, starting at the first
+!        node, the templates use the boundary nodes exactly once around
+!        the loop. The template at node k is chosen by the type of node
+!        k+1 and moves on by one node (row side or end), two (corner) or
+!        four (reversal). The first node must be a row side, so that the
+!        boundary node made for it can close the loop. The second node
+!        must not be a corner or reversal, whose templates would move that
+!        boundary node to the joint. The walk must reach the last node,
+!        whose row side template then closes the loop.
+!        ----------------------------------------------------------------
+!
+         INTEGER, DIMENSION(:) :: types
+         INTEGER               :: n, k, nextType
+
+         n = SIZE(types)
+         templatesTileLoop = .FALSE.
+         IF ( types(1) /= NONE .AND. types(1) /= ROW_SIDE )     RETURN
+         IF ( types(2) == ROW_CORNER .OR. types(2) == ROW_REVERSAL )     RETURN
+
+         k = 1
+         DO WHILE ( k < n )
+            nextType = types(k+1)
+            SELECT CASE ( nextType )
+               CASE( ROW_CORNER )
+                  k = k + 2
+               CASE( ROW_REVERSAL )
+                  k = k + 4
+               CASE DEFAULT
+                  k = k + 1
+            END SELECT
+         END DO
+         templatesTileLoop = k == n
+
+      END FUNCTION templatesTileLoop
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -1115,8 +1216,7 @@
 
                DO k = 1, 4
 
-                  w = ACWindingFunction( e % nodes(k) % node % x, outerBoundaryCurve % x, &
-                                         outerBoundaryCurve % nSegments )
+                  w = outerBoundaryCurve % windingNumber( e % nodes(k) % node % x, throughLastPoint = .TRUE. )
                   IF ( abs(w) == 0 ) THEN
                      e % remove    = .true.
                      removedHere   = .true.
@@ -1248,7 +1348,7 @@
                         DO k = 1, 4
 
                           node => e % nodes(k) % node
-                          w = ACWindingFunction( node % x, curveArray % x, curveArray % nSegments )
+                          w = curveArray % windingNumber( node % x, throughLastPoint = .TRUE. )
                           IF ( ABS(w) >= 1 ) THEN
                              e % remove  = .true.
                              removedHere = .true.
@@ -1417,14 +1517,13 @@
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
 
-         INTEGER                              :: k, l, j, m, mSteps
+         INTEGER                              :: k, l, j, i, c, ix, iy, ix0, ix1, iy0, iy1
          REAL(KIND=RP)                        :: w
          REAL(KIND=RP)                        :: nodes(3,4)
-         REAL(KIND=RP)                        :: x1(3), x2(3) !, xRight, yTop, xLeft, yBottom
-         REAL(KIND=RP)                        :: h, hMin, dz, z(3), segmentLength
+         REAL(KIND=RP)                        :: h, hMin
          LOGICAL                              :: isInterfaceElement
          INTEGER                              :: numInside, numOutside, location(4)
-         REAL(KIND=RP)                        :: curveBox(6), elementBox(4), margin
+         REAL(KIND=RP)                        :: elementBox(4), margin
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1437,7 +1536,6 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 
             CALL elementIterator % setToStart()
 !
@@ -1461,7 +1559,7 @@
                   location   = UNDEFINED
                   DO k = 1, 4
                      node => e % nodes(k) % node
-                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( node % x )
                      IF ( ABS(w) > 0.6_RP ) THEN
                         location(k)                   = INSIDE
                         numInside                     = numInside + 1
@@ -1516,51 +1614,37 @@
                                 + 8.0_RP*SPACING(MAXVAL(ABS(elementBox)))
                      elementBox = elementBox + margin*[-1.0_RP, 1.0_RP, -1.0_RP, 1.0_RP]
 !
-!                    ----------------------------------------------------------------------
-!                    See if any of the curve points are inside the element. If the elements
-!                    are small compared to the spacing on the curve, linearly interpolate
-!                    the curve segment and see if those fall inside the element. HACK:
-!                    the decision on how big is too big is arbitrary at the moment.
-!                    ----------------------------------------------------------------------
+!                    ----------------------------------------------------------------
+!                    See if the curve passes through the element. Only the segments
+!                    in the cells of the curve's segment grid that the box overlaps
+!                    can reach it. Without a grid, look at all of the segments.
+!                    ----------------------------------------------------------------
 !
-                     DO j = 1, curveArray % nSegments-1
-                        IF ( MAX(curveArray % x(1,j), curveArray % x(1,j+1)) < elementBox(1) .OR. &
-                             MIN(curveArray % x(1,j), curveArray % x(1,j+1)) > elementBox(2) .OR. &
-                             MAX(curveArray % x(2,j), curveArray % x(2,j+1)) < elementBox(3) .OR. &
-                             MIN(curveArray % x(2,j), curveArray % x(2,j+1)) > elementBox(4) )     CYCLE
-!
-!                       ---------------------------------------------------
-!                       See if one of the boundary points is in the element
-!                       ---------------------------------------------------
-!
-                        IF ( PointInQuad( nodes, curveArray % x(:,j) ) )     THEN
-                           isInterfaceElement = .true.
-                           EXIT
-                        END IF
-!
-!                       ------------------------------------------------------------------
-!                       If not, interpolate (currently see how much smaller the element is
-!                       and divide by 5 )
-!                       ------------------------------------------------------------------
-!
-                        x1 = curveArray % x(:,j)
-                        x2 = curveArray % x(:,j+1)
-                        segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
-
-                        IF( segmentLength > 0.25_RP*hMin )     THEN
-                           mSteps = NINT(segmentLength/hMin)*5
-                           dz = 1.0_RP/REAL(mSteps, RP)
-                           DO m = 1, mSteps-1
-                              z = x1 + m*dz*(x2 - x1)
-                              IF ( PointInQuad( nodes, z ) )     THEN
-                                 isInterfaceElement = .true.
-                                EXIT
-                              END IF
+                     IF ( curveArray % nCellsX == 0 )     THEN
+                        DO j = 1, curveArray % nSegments-1
+                           IF ( segmentPassesThroughElement(curveArray, j, nodes, elementBox, hMin) )     THEN
+                              isInterfaceElement = .TRUE.
+                              EXIT
+                           END IF
+                        END DO
+                     ELSE
+                        CALL curveArray % cellRangeForBox( elementBox, ix0, ix1, iy0, iy1 )
+                        DO iy = iy0, iy1
+                           DO ix = ix0, ix1
+                              c = ix + (iy - 1)*curveArray % nCellsX
+                              DO i = curveArray % cellStart(c), curveArray % cellStart(c+1) - 1
+                                 j = curveArray % cellSegments(i)
+                                 IF ( j < 1 )     CYCLE
+                                 IF ( segmentPassesThroughElement(curveArray, j, nodes, elementBox, hMin) )     THEN
+                                    isInterfaceElement = .TRUE.
+                                    EXIT
+                                 END IF
+                              END DO
+                              IF ( isInterfaceElement )     EXIT
                            END DO
-                           IF( isInterfaceElement )     EXIT
-                        END IF
-
-                     END DO !Loop over segments
+                           IF ( isInterfaceElement )     EXIT
+                        END DO
+                     END IF
                   END IF
                END IF !(.NOT.e%remove)
 !
@@ -1573,7 +1657,7 @@
                      node => e % nodes(k) % node
                      node % bCurveChainID = curveArray % id
                      IF(node % bCurveSide == UNDEFINED )     THEN
-                        w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                        w = curveArray % windingNumber( node % x )
 
                         IF ( ABS(w) > 0.6_RP ) THEN
                            node % bCurveSide    = INSIDE
@@ -1590,6 +1674,64 @@
          END DO !l = 1, SIZE(interfaceCurves)
 
       END SUBROUTINE MarkInterfaceElements
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION segmentPassesThroughElement( curveArray, j, nodes, elementBox, hMin )
+      USE Geometry
+      IMPLICIT NONE
+!
+!     ----------------------------------------------------------------------
+!     True if segment j of the curve, from x(:,j) to x(:,j+1), reaches into
+!     the element with corners nodes: if its first point is inside, or, if
+!     the segment is long compared to the element, a point along it is.
+!     Segments that do not reach the box of the element are skipped. HACK:
+!     the decision on how long is too long is arbitrary at the moment.
+!     ----------------------------------------------------------------------
+!
+         CLASS(SegmentedCurveArray), POINTER :: curveArray
+         INTEGER                             :: j
+         REAL(KIND=RP)                       :: nodes(3,4), elementBox(4), hMin
+         INTEGER                             :: m, mSteps
+         REAL(KIND=RP)                       :: x1(3), x2(3), dz, z(3), segmentLength
+
+         segmentPassesThroughElement = .FALSE.
+         IF ( MAX(curveArray % x(1,j), curveArray % x(1,j+1)) < elementBox(1) .OR. &
+              MIN(curveArray % x(1,j), curveArray % x(1,j+1)) > elementBox(2) .OR. &
+              MAX(curveArray % x(2,j), curveArray % x(2,j+1)) < elementBox(3) .OR. &
+              MIN(curveArray % x(2,j), curveArray % x(2,j+1)) > elementBox(4) )     RETURN
+!
+!        ---------------------------------------------------
+!        See if one of the boundary points is in the element
+!        ---------------------------------------------------
+!
+         IF ( PointInQuad( nodes, curveArray % x(:,j) ) )     THEN
+            segmentPassesThroughElement = .TRUE.
+            RETURN
+         END IF
+!
+!        ------------------------------------------------------------------
+!        If not, interpolate (currently see how much smaller the element is
+!        and divide by 5 )
+!        ------------------------------------------------------------------
+!
+         x1 = curveArray % x(:,j)
+         x2 = curveArray % x(:,j+1)
+         segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
+
+         IF( segmentLength > 0.25_RP*hMin )     THEN
+            mSteps = NINT(segmentLength/hMin)*5
+            dz = 1.0_RP/REAL(mSteps, RP)
+            DO m = 1, mSteps-1
+               z = x1 + m*dz*(x2 - x1)
+               IF ( PointInQuad( nodes, z ) )     THEN
+                  segmentPassesThroughElement = .TRUE.
+                  RETURN
+               END IF
+            END DO
+         END IF
+
+      END FUNCTION segmentPassesThroughElement
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1627,7 +1769,7 @@
          INTEGER                              :: w
          INTEGER                              :: numInside, numOutside, location(4)
          CLASS(SMChainedCurve)      , POINTER :: chain           => NULL()
-         REAL(KIND=RP)                        :: center(3), curveBox(6)
+         REAL(KIND=RP)                        :: center(3)
 
          IF( .NOT.ASSOCIATED( interfaceCurves ) )    RETURN
 !
@@ -1636,7 +1778,6 @@
 !
          DO l = 1, SIZE(interfaceCurves)
             curveArray => interfaceCurves(l) % curveArray
-            curveBox   =  bBoxWithMargin( curveArray % boundingBox )
 !
 !           ---------------------------------------------------------------
 !           The material ID of the interface was set from the material
@@ -1679,7 +1820,7 @@
                      IF ( node % distToBoundary == 0.0_RP .AND. &
                           node % bCurveChainID == curveArray % id )     CYCLE
 
-                     w = acWindingFunctionInBox( node % x, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( node % x )
                      IF ( abs(w) == 0 ) THEN
                         location(k)                   = OUTSIDE
                         numOutside                    = numOutside + 1
@@ -1699,7 +1840,7 @@
                      DO k = 1, 4
                         center = center + 0.25_RP*e % nodes(k) % node % x
                      END DO
-                     w = acWindingFunctionInBox( center, curveArray % x, curveArray % nSegments-1, curveBox )
+                     w = curveArray % windingNumber( center )
                      IF ( abs(w) /= 0 )     numInside = numInside + 1
                   END IF
 !
@@ -2389,7 +2530,12 @@
             CALL iterator % moveToNext()
          END DO
 
-         DEALLOCATE( boundaryCurves)
+         ! Deallocate all the internal memory on each curve
+         ! then release the other memory
+         DO k = 1, 4
+            CALL Destruct( boundaryCurves(k) )
+         END DO
+         DEALLOCATE( boundaryCurves )
 
       END SUBROUTINE ComputeFacePatches
 !
@@ -2573,6 +2719,7 @@
                   e => elementsForNodes(i, oldNode % id) % element
                   DO j = 1, e % eType
                      IF ( ASSOCIATED(e % nodes(j) % node, oldNode) )     THEN
+                        CALL releaseSMNode(e % nodes(j) % node)
                         e % nodes(j) % node => newNode
                         e % boundaryInfo % nodeIDs(j) = newNode % id
                         CALL newNode % retain()

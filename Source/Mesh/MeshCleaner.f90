@@ -142,7 +142,7 @@
 !
          INTEGER                                 :: nodeID
          INTEGER     , DIMENSION(:), ALLOCATABLE :: localNumElementsForNode
-         LOGICAL                                 :: wasChanged
+         LOGICAL                                 :: wasChanged, connectionsAreCurrent, anyNodeCleaned
 
          numberOfValenceChanges = 0
 !
@@ -158,6 +158,15 @@
          ALLOCATE(localNumElementsForNode(SIZE(numElementsForNode)))
          localNumElementsForNode = numElementsForNode
 !
+!        ------------------------------------------------------------
+!        The cleanup needs the node to element and node to edge
+!        connections of the current mesh. They are made by the first
+!        cleanup and again after each one that changes the mesh.
+!        ------------------------------------------------------------
+!
+         connectionsAreCurrent = .FALSE.
+         anyNodeCleaned        = .FALSE.
+!
 !        --------------------------------
 !        Check and clean up node valences
 !        --------------------------------
@@ -165,7 +174,9 @@
          DO nodeID = 1, SIZE(localNumElementsForNode)
             SELECT CASE ( localNumElementsForNode(nodeID) )
                CASE( 7 )
-                  CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode, nodesOnInterfaces, wasChanged)
+                  CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode, nodesOnInterfaces, wasChanged, &
+                                                  connectionsAreCurrent)
+                  anyNodeCleaned = .TRUE.
                   IF ( wasChanged )     numberOfValenceChanges = numberOfValenceChanges + 1
                CASE( 8 )
 !                  CALL CleanUp8ValenceNode_InMesh(nodeID, mesh) TODO:
@@ -174,7 +185,9 @@
 !                 valence 8 node can be thinned the same way (see CleanUpBoundaryElements)
 !
                   IF ( nodesOnInterfaces )     THEN
-                     CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode, nodesOnInterfaces, wasChanged)
+                     CALL CleanUp7ValenceNode_InMesh(nodeID, mesh, errorCode, nodesOnInterfaces, wasChanged, &
+                                                     connectionsAreCurrent)
+                     anyNodeCleaned = .TRUE.
                      IF ( wasChanged )     numberOfValenceChanges = numberOfValenceChanges + 1
                   END IF
                CASE DEFAULT
@@ -183,6 +196,10 @@
          END DO
 
          DEALLOCATE(localNumElementsForNode)
+         IF ( anyNodeCleaned )     THEN
+            CALL deallocateNodeToEdgeConnections()
+            CALL deallocateNodeToElementConnections()
+         END IF
 
       END SUBROUTINE ReduceNodeValences
 !
@@ -206,46 +223,175 @@
          TYPE (SMElement)           , POINTER :: currentElement  => NULL()
          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
          CLASS(FTObject)            , POINTER :: obj             => NULL()
+         LOGICAL, ALLOCATABLE                 :: nodeWasChanged(:)
+         LOGICAL                              :: touchesChangedNode
+         INTEGER                              :: pass, k, id, numberRemovedInPass
+         INTEGER, PARAMETER                   :: maxDiamondPasses = 10
+!
+!        ---------------------------------------------------------------
+!        Removing a diamond changes the valences of the nodes of its
+!        element and moves the elements around it to a new node that the
+!        node to element connections do not know about. Elements that
+!        touch those nodes are skipped in this sweep. Sweep again after
+!        the deleted elements are gone until no diamonds are left. The
+!        sweep uses its own iterator, since making the connections
+!        renumbers the elements with the mesh's elements iterator.
+!        ---------------------------------------------------------------
 !
          numberOfDiamondsRemoved = 0
-         CALL MakeNodeToElementConnections( mesh, errorCode )
+         DO pass = 1, maxDiamondPasses
+            CALL MakeNodeToElementConnections( mesh, errorCode )
+            IF ( errorCode > A_OK_ERROR_CODE )     RETURN
+            ALLOCATE( nodeWasChanged(SIZE(numElementsForNode)) )
+            nodeWasChanged      = .FALSE.
+            numberRemovedInPass = 0
+
+            ALLOCATE(elementIterator)
+            CALL elementIterator % initWithFTLinkedList(mesh % elements)
+            CALL elementIterator % setToStart()
+            DO WHILE ( .NOT.elementIterator % isAtEnd() )
+               obj => elementIterator % object()
+               CALL castToSMElement(obj,currentElement)
+
+               touchesChangedNode = .FALSE.
+               DO k = 1, 4
+                  id = currentElement % nodes(k) % node % id
+                  IF ( id > SIZE(nodeWasChanged) )     THEN
+                     touchesChangedNode = .TRUE.
+                  ELSE IF ( nodeWasChanged(id) )     THEN
+                     touchesChangedNode = .TRUE.
+                  END IF
+               END DO
+
+               IF ( .NOT.touchesChangedNode )     THEN
+                  CALL DeleteElementIfDiamond( currentElement, mesh )
+                  IF ( currentElement % remove )     THEN
+                     numberRemovedInPass = numberRemovedInPass + 1
+                     DO k = 1, 4
+                        nodeWasChanged(currentElement % nodes(k) % node % id) = .TRUE.
+                     END DO
+                  END IF
+               END IF
+
+               CALL elementIterator % moveToNext()
+            END DO
+            CALL releaseFTLinkedListIteratorClass(elementIterator)
+            DEALLOCATE( nodeWasChanged )
+            CALL deallocateNodeToElementConnections()
+
+            IF ( numberRemovedInPass == 0 )     EXIT
+            numberOfDiamondsRemoved = numberOfDiamondsRemoved + numberRemovedInPass
 !
-!        -------------------------------------------
-!        Go through each element and remove diamonds
-!        -------------------------------------------
+!           ------------------------------------------
+!           Clean up & remove deleted elements & nodes
+!           ------------------------------------------
 !
-         elementIterator => mesh % elementsIterator
-         CALL elementIterator % setToStart()
-
-         DO WHILE ( .NOT.elementIterator % isAtEnd() )
-            obj => elementIterator % object()
-            CALL castToSMElement(obj,currentElement)
-
-            CALL DeleteElementIfDiamond( currentElement, mesh, errorCode )
-
-            IF ( currentElement % remove )     THEN
-               numberOfDiamondsRemoved = numberOfDiamondsRemoved + 1
-            END IF
-
-            CALL elementIterator % moveToNext()
+            CALL DoLazyDelete( mesh )
          END DO
 !
-!        ------------------------------------------
-!        Clean up & remove deleted elements & nodes
-!        ------------------------------------------
+!        -----------------------------------------------------------
+!        Removing a diamond takes an element from each of its other
+!        two nodes, so a node that was in three elements is left in
+!        two (a doublet). Merge those two elements.
+!        -----------------------------------------------------------
 !
-         CALL deallocateNodeToElementConnections()
-
-         IF ( numberOfDiamondsRemoved > 0 )     THEN
-            CALL DoLazyDelete( mesh )
-         END IF
-
+         IF ( numberOfDiamondsRemoved > 0 )     CALL RemoveDoubletNodes( mesh, errorCode )
 
       END SUBROUTINE RemoveDiamondElements
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CleanUp7ValenceNode_InMesh(id, mesh, errorCode, nodesOnInterfaces, wasChanged)
+      SUBROUTINE RemoveDoubletNodes( mesh, errorCode )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        An interior node in only two elements, (v,a,p,b) and (v,b,q,a),
+!        has an angle above 180 degrees in one of them, which smoothing
+!        cannot fix. Merge them into (a,p,b,q), which leaves v unused.
+!        Elements that touch a node changed in a sweep are skipped and
+!        the sweep is repeated, as in RemoveDiamondElements.
+!        ---------------------------------------------------------------
+!
+         TYPE (SMMesh) :: mesh
+         INTEGER       :: errorCode
+         TYPE (SMNode)   , POINTER :: v
+         TYPE (SMElement), POINTER :: e1, e2
+         CLASS(FTObject) , POINTER :: obj
+         LOGICAL, ALLOCATABLE      :: nodeWasChanged(:)
+         INTEGER                   :: pass, k, i, j, id, numberMerged
+         INTEGER, PARAMETER        :: maxDoubletPasses = 10
+         INTEGER, EXTERNAL         :: Loop
+
+         DO pass = 1, maxDoubletPasses
+            CALL MakeNodeToElementConnections( mesh, errorCode )
+            IF ( errorCode > A_OK_ERROR_CODE )     RETURN
+            ALLOCATE( nodeWasChanged(SIZE(numElementsForNode)) )
+            nodeWasChanged = .FALSE.
+            numberMerged   = 0
+
+            CALL mesh % nodesIterator % setToStart()
+            DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
+               obj => mesh % nodesIterator % object()
+               CALL castToSMNode(obj, v)
+               CALL mesh % nodesIterator % moveToNext()
+               id = v % id
+               IF ( id > SIZE(numElementsForNode) )     CYCLE
+               IF ( numElementsForNode(id) /= 2 )       CYCLE
+               IF ( v % bCurveID /= UNDEFINED )         CYCLE
+               e1 => elementsForNodes(1,id) % element
+               e2 => elementsForNodes(2,id) % element
+               IF ( e1 % remove .OR. e2 % remove )      CYCLE
+               IF ( elementTouchesChangedNode(e1, nodeWasChanged) )     CYCLE
+               IF ( elementTouchesChangedNode(e2, nodeWasChanged) )     CYCLE
+!
+!              e1 = (v,a,p,b) from local node i, e2 = (v,b,q,a) from j
+!
+               i = ElementLocalNodeIDForNodeID( id, e1 )
+               j = ElementLocalNodeIDForNodeID( id, e2 )
+               IF ( .NOT.ASSOCIATED(e2 % nodes(Loop(j+1,4)) % node, e1 % nodes(Loop(i+3,4)) % node) )     CYCLE
+               IF ( .NOT.ASSOCIATED(e2 % nodes(Loop(j+3,4)) % node, e1 % nodes(Loop(i+1,4)) % node) )     CYCLE
+
+               DO k = 1, 4
+                  nodeWasChanged(e1 % nodes(k) % node % id) = .TRUE.
+                  nodeWasChanged(e2 % nodes(k) % node % id) = .TRUE.
+               END DO
+               CALL releaseSMNode( e1 % nodes(i) % node )
+               e1 % nodes(i) % node => e2 % nodes(Loop(j+2,4)) % node
+               CALL e1 % nodes(i) % node % retain()
+               e2 % remove  = .TRUE.
+               numberMerged = numberMerged + 1
+            END DO
+            DEALLOCATE( nodeWasChanged )
+            CALL deallocateNodeToElementConnections()
+
+            IF ( numberMerged == 0 )     EXIT
+            CALL DoLazyDelete( mesh )
+         END DO
+
+      END SUBROUTINE RemoveDoubletNodes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION elementTouchesChangedNode( e, nodeWasChanged )
+         IMPLICIT NONE
+         TYPE (SMElement), POINTER :: e
+         LOGICAL                   :: nodeWasChanged(:)
+         INTEGER                   :: k, id
+
+         elementTouchesChangedNode = .FALSE.
+         DO k = 1, 4
+            id = e % nodes(k) % node % id
+            IF ( id > SIZE(nodeWasChanged) )     THEN
+               elementTouchesChangedNode = .TRUE.
+            ELSE IF ( nodeWasChanged(id) )     THEN
+               elementTouchesChangedNode = .TRUE.
+            END IF
+         END DO
+      END FUNCTION elementTouchesChangedNode
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE CleanUp7ValenceNode_InMesh(id, mesh, errorCode, nodesOnInterfaces, wasChanged, connectionsAreCurrent)
       USE ErrorTypesModule
 !
 !     ----------------------------------------------------------
@@ -257,6 +403,10 @@
 !     (nodesOnInterfaces = .TRUE.) or only one that is not on
 !     any boundary or interface curve (nodesOnInterfaces = .FALSE.)
 !     is changed. wasChanged tells whether the node was changed.
+!     The node to element and node to edge connections are made
+!     unless connectionsAreCurrent, which is then set. A change to
+!     the mesh unsets it. The connections are left for the next
+!     call and must be deallocated by the caller.
 !     ----------------------------------------------------------
 !
          IMPLICIT NONE
@@ -270,6 +420,7 @@
          INTEGER       :: errorCode
          LOGICAL       :: nodesOnInterfaces
          LOGICAL       :: wasChanged
+         LOGICAL       :: connectionsAreCurrent
 !
 !        ---------------
 !        Local variables
@@ -301,8 +452,11 @@
 !        Make current connections
 !        ------------------------
 !
-         CALL MakeNodeToElementConnections( mesh, errorCode )
-         CALL MakeNodeToEdgeConnections   ( mesh )
+         IF ( .NOT.connectionsAreCurrent )     THEN
+            CALL MakeNodeToElementConnections( mesh, errorCode )
+            CALL MakeNodeToEdgeConnections   ( mesh )
+            connectionsAreCurrent = .TRUE.
+         END IF
 !
          e    => elementsForNodes(1,id) % element
          node => e % nodes(ElementLocalNodeIDForNodeID(id, e)) % node
@@ -310,8 +464,6 @@
          wasChanged    = .FALSE.
          IF ( (nodesOnInterfaces .AND. .NOT.isOnInterfaceCurve(node)) .OR. &
               (.NOT.nodesOnInterfaces .AND. nodeIsOnCurve) )     THEN
-            CALL deallocateNodeToEdgeConnections()
-            CALL deallocateNodeToElementConnections()
             RETURN
          END IF
 !
@@ -333,8 +485,6 @@
                END DO
             END DO
             IF ( nearJoint )     THEN
-               CALL deallocateNodeToEdgeConnections()
-               CALL deallocateNodeToElementConnections()
                RETURN
             END IF
          END IF
@@ -368,8 +518,6 @@
          END DO
 
          IF ( .NOT.ASSOCIATED(eTarget) )     THEN
-            CALL deallocateNodeToEdgeConnections()
-            CALL deallocateNodeToElementConnections()
             RETURN
          END IF
 !
@@ -411,8 +559,6 @@
             WRITE(msg,*) "Bad element topology for node at ", &
                            eTarget % nodes(localIDForTarget) % node % x, ". Aborting cleanup."
             CALL ThrowErrorExceptionOfType("CleanUp7ValenceNode_InMesh",msg,FT_ERROR_WARNING)
-            CALL deallocateNodeToEdgeConnections()
-            CALL deallocateNodeToElementConnections()
             RETURN
          END IF
 !
@@ -446,8 +592,6 @@
          IF( cnt /= 2 )     THEN
             PRINT *, "Bad element topology in CleanUp7ValenceNode_InMesh for node at ", &
                      eTarget % nodes(localIDForTarget) % node % x
-            CALL deallocateNodeToEdgeConnections()
-            CALL deallocateNodeToElementConnections()
             RETURN
          END IF
 !
@@ -462,8 +606,6 @@
                                   newEdgePointers(1) % edge % nodes(2) % node) .AND. &
                  isEdgeAlongCurve(newEdgePointers(2) % edge % nodes(1) % node,   &
                                   newEdgePointers(2) % edge % nodes(2) % node) )     THEN
-               CALL deallocateNodeToEdgeConnections()
-               CALL deallocateNodeToElementConnections()
                RETURN
             END IF
          END IF
@@ -541,10 +683,8 @@
          obj => e
          CALL mesh % elements % add(obj)
          CALL releaseSMElement(e)
-         wasChanged = .TRUE.
-!
-         CALL deallocateNodeToEdgeConnections()
-         CALL deallocateNodeToElementConnections()
+         wasChanged            = .TRUE.
+         connectionsAreCurrent = .FALSE.
 
       END SUBROUTINE CleanUp7ValenceNode_InMesh
 !
@@ -815,7 +955,7 @@
 !        ---------------
 !
          INTEGER                              :: numBoundaries
-         INTEGER                              :: j, numberOfValenceChanges
+         INTEGER                              :: j, numberOfValenceChanges, numberOfDiamondsRemoved
          CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
          CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
          TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
@@ -844,8 +984,8 @@
          IF( errorCode == A_OK_ERROR_CODE)     THEN
             CALL makeNodeToElementConnections(mesh, errorCode)
             DO j = 1, numBoundaries
-               ALLOCATE(edgeListIterator)
                IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
+               ALLOCATE(edgeListIterator)
 
                obj  => boundaryEdgesArray % objectAtIndex(j)
                CALL cast(obj,currentEdgeList)
@@ -955,6 +1095,26 @@
                                                 numberOfValenceChanges, " time(s)"
                CALL mesh % renumberObjects(whichIterator = NODES)
                CALL mesh % syncEdges()
+            END IF
+!
+!           -------------------------------------------------------------
+!           Splitting the interface elements leaves diamonds next to the
+!           interfaces. Remove those not attached to a curve, as in the
+!           topology cleanup.
+!           -------------------------------------------------------------
+!
+            CALL RemoveDiamondElements( mesh, numberOfDiamondsRemoved, errorCode )
+            IF(errorCode > A_OK_ERROR_CODE)     RETURN
+            IF ( numberOfDiamondsRemoved > 0 )     THEN
+               IF ( printMessage )     PRINT *, "      Number of diamond elements removed near interfaces = ", &
+                                                numberOfDiamondsRemoved
+!
+!              The edges of the removed diamonds kept their old nodes in
+!              the mesh. Rebuild the edges, then delete the nodes that no
+!              element uses (DoLazyDelete also renumbers).
+!
+               CALL mesh % syncEdges()
+               CALL DoLazyDelete( mesh )
             END IF
          END IF
 
@@ -1259,7 +1419,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE DeleteElementIfDiamond(e, mesh, errorCode)
+      SUBROUTINE DeleteElementIfDiamond(e, mesh)
          IMPLICIT NONE
 !
 !        ---------
@@ -1268,7 +1428,6 @@
 !
          TYPE (SMElement), POINTER :: e
          TYPE(SMMesh)              :: mesh
-         INTEGER                   :: errorCode
 !
 !        ---------------
 !        Local variables
@@ -1367,12 +1526,6 @@
                CALL newNode % retain()
             END DO
          END DO
-!
-!        -------------------------------------------------------------------
-!        New nodes were added, so we must re-compute the element connections
-!        -------------------------------------------------------------------
-!
-         CALL makeNodeToElementConnections(mesh, errorCode)
 
       END SUBROUTINE DeleteElementIfDiamond
 !
@@ -1409,6 +1562,7 @@
          TYPE (SMNode)              , POINTER :: node     => NULL()
          INTEGER                              :: sweep, k, numInverted, numInvertedAtStart
          INTEGER                              :: numOpened
+         REAL(KIND=RP), ALLOCATABLE           :: xAtStart(:,:)
 !
 !        ----------------------------------------------------------------------
 !        Note, these two parameters are kept here rather than in ProgramGlobals
@@ -1426,6 +1580,21 @@
          CALL MakeNodeToElementConnections( mesh, errorCode )
          IF ( errorCode > A_OK_ERROR_CODE )     RETURN
 !
+!        -----------------------------------------------------------
+!        Node positions before untangling. Each node may only move
+!        within the box of its star at these positions so that
+!        repeated moves cannot carry it away from its neighbors
+!        -----------------------------------------------------------
+!
+         ALLOCATE( xAtStart(2, SIZE(numElementsForNode)) )
+         CALL mesh % nodesIterator % setToStart()
+         DO WHILE ( .NOT.mesh % nodesIterator % isAtEnd() )
+            obj => mesh % nodesIterator % object()
+            CALL castToSMNode(obj,node)
+            xAtStart(:, node % id) = node % x(1:2)
+            CALL mesh % nodesIterator % moveToNext()
+         END DO
+!
          numInvertedAtStart = -1
          DO sweep = 1, numUntanglePasses
             numInverted = 0
@@ -1438,7 +1607,7 @@
                   DO k = 1, 4
                      node => e % nodes(k) % node
                      IF ( node % distToBoundary == 0.0_RP )     CYCLE
-                     CALL MoveNodeIntoItsKernel( node, 0.5_RP )
+                     CALL MoveNodeIntoItsKernel( node, 0.5_RP, xAtStart )
                   END DO
                END IF
                CALL iterator % moveToNext()
@@ -1465,7 +1634,7 @@
                DO k = 1, 4
                   node => e % nodes(k) % node
                   IF ( node % distToBoundary == 0.0_RP )     CYCLE
-                  CALL MoveNodeIntoItsKernel( node, 0.5_RP )
+                  CALL MoveNodeIntoItsKernel( node, 0.5_RP, xAtStart )
                END DO
                IF ( elementMaxAngle(e) <= maxAcceptedAngle )     numOpened = numOpened + 1
             END IF
@@ -1539,7 +1708,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE MoveNodeIntoItsKernel( node, fraction )
+      SUBROUTINE MoveNodeIntoItsKernel( node, fraction, xAtStart )
          IMPLICIT NONE
 !
 !        -----------------------------------------------------------------
@@ -1555,6 +1724,7 @@
 !
          TYPE (SMNode), POINTER :: node
          REAL(KIND=RP)          :: fraction
+         REAL(KIND=RP)          :: xAtStart(:,:)
 !
 !        ---------------
 !        Local variables
@@ -1593,21 +1763,23 @@
          IF ( n < 3 )     RETURN
 !
 !        -------------------------------------------------------------
-!        Keep the node within the box spanned by its star, so that it
-!        is not thrown far away when the polygon is large or open
+!        Keep the node within the box spanned by its star before
+!        untangling started, so that it is not thrown far away when
+!        the polygon is large or open, nor carried away by repeated
+!        moves
 !        -------------------------------------------------------------
 !
          starRadius = 0.0_RP
          DO i = 1, numElementsForNode(id)
             e => elementsForNodes(i,id) % element
             DO k = 1, 4
-               starRadius = MAX(starRadius, NORM2(e % nodes(k) % node % x(1:2) - x0(1:2)))
+               starRadius = MAX(starRadius, NORM2(xAtStart(:, e % nodes(k) % node % id) - xAtStart(:,id)))
             END DO
          END DO
-         g(:,n+1) = [ 1.0_RP, 0.0_RP]; h(n+1) = starRadius - x0(1)
-         g(:,n+2) = [-1.0_RP, 0.0_RP]; h(n+2) = starRadius + x0(1)
-         g(:,n+3) = [ 0.0_RP, 1.0_RP]; h(n+3) = starRadius - x0(2)
-         g(:,n+4) = [ 0.0_RP,-1.0_RP]; h(n+4) = starRadius + x0(2)
+         g(:,n+1) = [ 1.0_RP, 0.0_RP]; h(n+1) = starRadius - xAtStart(1,id)
+         g(:,n+2) = [-1.0_RP, 0.0_RP]; h(n+2) = starRadius + xAtStart(1,id)
+         g(:,n+3) = [ 0.0_RP, 1.0_RP]; h(n+3) = starRadius - xAtStart(2,id)
+         g(:,n+4) = [ 0.0_RP,-1.0_RP]; h(n+4) = starRadius + xAtStart(2,id)
          n = n + 4
 
          current = distanceInside( g, h, n, x0(1:2) )
@@ -1628,7 +1800,13 @@
                END DO
             END DO
          END DO
-         IF ( best <= MAX(current, 0.0_RP) )     RETURN
+!
+!        ---------------------------------------------------------------
+!        Ignore improvements at roundoff level, which can come from a
+!        vertex where the node would sit on top of one of its neighbors
+!        ---------------------------------------------------------------
+!
+         IF ( best <= MAX(current, 0.0_RP) + 1.0E-3_RP*starRadius )     RETURN
 !
 !        ----------------------------------------------------------
 !        The smallest distance is concave along the segment from x0

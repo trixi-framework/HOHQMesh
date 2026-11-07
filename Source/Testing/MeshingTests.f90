@@ -338,7 +338,7 @@
       END IF
 
       CALL releaseMeshProject(project)
-      CALL releaseFTValueDictionary(controlDict)
+      CALL releaseFTValueDictionary(projectDict)
       CLOSE(fUnit)
 
 
