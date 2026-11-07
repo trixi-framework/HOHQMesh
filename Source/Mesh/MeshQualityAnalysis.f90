@@ -617,7 +617,7 @@
 !
             c = L(:,k).cross.L(:,loop(k+1))
             IF( c*r < 0.0_RP )     THEN
-               theta = 360.0_RP - c
+               theta = 360.0_RP - theta
             END IF
 
             angles(loop(k+1)) = theta !angle between edges k & k+1 <=> node k.
