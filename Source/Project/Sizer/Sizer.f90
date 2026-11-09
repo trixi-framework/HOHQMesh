@@ -1245,17 +1245,17 @@
       REAL(KIND=RP) FUNCTION nearestFacingPoint( tree, other, x, nHat, normalsAligned, reachSquared, &
                                                  selfIndex, isOuterBoundary, isInterface )
 !
-!      ---------------------------------------------------------------
+!      -----------------------------------------------------------------
 !      The smallest squared distance from x to a point of other that
 !      faces it (see FacingPointDistances) and is at most reachSquared
 !      away; HUGE if there is none. With selfIndex, x is that point of
 !      other itself, and a point faces it as in isFacingPoint, in either
-!      order (see CurveToCurveBoundaryDistances). Nodes that are further away than
-!      that, or whose normals cannot face nHat (when the normals are
-!      unit vectors in the plane), are skipped; the margins on those
-!      tests are well above rounding, so no point that counts is
-!      missed. The nearer child is searched first.
-!      ---------------------------------------------------------------
+!      order (see CurveToCurveBoundaryDistances). Nodes that are further
+!      away than that, or whose normals cannot face nHat (when the
+!      normals are unit vectors in the plane), are skipped; the margins
+!      on those tests are well above rounding, so no point that counts
+!      is missed. The nearer child is searched first.
+!      -----------------------------------------------------------------
 !
       IMPLICIT NONE
       TYPE(ChainPointTree) :: tree
