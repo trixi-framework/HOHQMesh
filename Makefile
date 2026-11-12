@@ -464,6 +464,7 @@ CurveConversions.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Mesh/MeshBoundaryMethods.f90
 
 MeshCleaner.o :$(HOHQMESHPATH)/Source/Mesh/MeshCleaner.f90 \
+LineReflectionModule.o \
 MeshQualityAnalysis.o \
 Connections.o \
 InterfaceElementMethods.o \
