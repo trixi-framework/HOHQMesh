@@ -1,0 +1,78 @@
+#!/bin/bash
+#
+# Regenerate the benchmark data of the regression tests and refresh the
+# reference plot and stats files.
+#
+# For each control file listed in Benchmarks/BenchmarkFiles.txt (or only
+# the control files given as arguments) this script
+#   1. runs ./HOHQMesh -generateTest -f <control file>, which rewrites the
+#      "test file name" file in Benchmarks/BenchmarkData and writes the
+#      mesh, plot and stats files to the Benchmarks/*/Tests folders
+#   2. copies the plot and stats files from Benchmarks/PlotFiles/Tests and
+#      Benchmarks/StatsFiles/Tests to Benchmarks/PlotFiles/Benchmarks and
+#      Benchmarks/StatsFiles/Benchmarks
+#
+# Usage, from the HOHQMesh directory after building:
+#   ./Utilities/updatebenchmarks                     # all benchmarks
+#   ./Utilities/updatebenchmarks Benchmarks/ControlFiles/Pill.control ...
+#
+# Review the result with "git diff --stat Benchmarks" before committing.
+
+set -eo pipefail
+
+if [ ! -x ./HOHQMesh ] || [ ! -f Benchmarks/BenchmarkFiles.txt ]; then
+   echo "Run this from the HOHQMesh directory after building ./HOHQMesh" >&2
+   exit 1
+fi
+
+# Value of "<key> = value" in a control file, skipping % comment lines
+controlValue() {
+   grep -v '^[[:space:]]*%' "$1" | grep -m1 -i "^[[:space:]]*$2[[:space:]]*=" \
+      | sed -e 's/^[^=]*=[[:space:]]*//' -e 's/[[:space:]]*$//' || true
+}
+
+# Copy a file written to a .../Tests folder to the sibling .../Benchmarks folder
+copyToBenchmarks() {
+   local fileName=$1
+   local lowerName
+   lowerName=$(echo "$fileName" | tr '[:upper:]' '[:lower:]')
+   if [ -z "$fileName" ] || [ "$lowerName" = "none" ]; then
+      return
+   fi
+   case "$fileName" in
+      */Tests/*) ;;
+      *) echo "   skipped $fileName (not in a Tests folder)"; return ;;
+   esac
+   if [ ! -f "$fileName" ]; then
+      echo "   WARNING: $fileName was not written" >&2
+      return
+   fi
+   local target=${fileName/\/Tests\//\/Benchmarks\/}
+   cp "$fileName" "$target"
+   echo "   copied $fileName -> $target"
+}
+
+if [ $# -gt 0 ]; then
+   controlFiles=("$@")
+else
+   controlFiles=()
+   while read -r line; do
+      line=${line%"${line##*[![:space:]]}"}   # trailing blanks and Windows line endings
+      if [ -n "$line" ]; then controlFiles+=("$line"); fi
+   done < Benchmarks/BenchmarkFiles.txt
+fi
+
+for controlFile in "${controlFiles[@]}"; do
+   echo "$controlFile"
+   if [ -z "$(controlValue "$controlFile" "test file name")" ]; then
+      echo "   ERROR: no \"test file name\" in $controlFile" >&2
+      exit 1
+   fi
+   ./HOHQMesh -generateTest -f "$controlFile" > /dev/null
+   copyToBenchmarks "$(controlValue "$controlFile" "plot file name")"
+   copyToBenchmarks "$(controlValue "$controlFile" "stats file name")"
+done
+
+echo
+echo "Updated benchmark files:"
+git status --short Benchmarks
