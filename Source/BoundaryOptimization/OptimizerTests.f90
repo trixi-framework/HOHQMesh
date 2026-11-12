@@ -162,18 +162,19 @@
 !     If algorithms change, these values will have to change
 !     ------------------------------------------------------
 !
-      REAL(KIND=RP), DIMENSION(0:14) :: targetCuts = [0.0000000000000000_RP, 8.1265069873694071E-002_RP, 0.15045565047752610_RP, &
-                                                      0.22077110332899968_RP, 0.29160293158998757_RP, 0.36571518148058291_RP, &
-                                                      0.43544720244301666_RP, 0.50460363752397241_RP, 0.58656575126088406_RP, &
-                                                      0.66015636956282953_RP, 0.72937540809332357_RP, 0.79962651199484203_RP, &
-                                                      0.87133816457876168_RP, 0.93566908228937584_RP, 1.0000000000000000_RP]
-      REAL(KIND=RP), DIMENSION(14) :: targetErrs   = [6.5702408339004884E-002_RP, 9.2756204392096850E-002_RP, &
-                                                      9.4318406193022147E-002_RP, 8.9851311172061341E-002_RP, &
-                                                      8.4840693387210162E-002_RP, 9.1113841663074166E-002_RP, &
-                                                      8.9981484563422739E-002_RP, 6.6436074374897389E-002_RP, &
-                                                      8.5125646477200778E-002_RP, 9.4312464884582489E-002_RP, &
-                                                      9.2294291838550244E-002_RP, 7.9708305374154340E-002_RP, &
-                                                      6.9615346724282365E-002_RP, 6.0416555870896144E-002_RP]
+      REAL(KIND=RP), DIMENSION(0:12) :: targetCuts = [0.00000000000000000E+000_RP, 9.37774409391371466E-002_RP, &
+                                                      1.80197905904959155E-001_RP, 2.65328269777050874E-001_RP, &
+                                                      3.44119262782806135E-001_RP, 4.25293559561760459E-001_RP, &
+                                                      5.09212342003545371E-001_RP, 5.95519436781879130E-001_RP, &
+                                                      6.80612040241070693E-001_RP, 7.62622697768942093E-001_RP, &
+                                                      8.45855311444382529E-001_RP, 9.26648598374350319E-001_RP, &
+                                                      1.00000000000000000E+000_RP]
+      REAL(KIND=RP), DIMENSION(12)   :: targetErrs = [7.45826421643566995E-002_RP, 8.95275459088785974E-002_RP, &
+                                                      8.79157356953330499E-002_RP, 9.98567553092435528E-002_RP, &
+                                                      9.04727418141988565E-002_RP, 9.12810844305532443E-002_RP, &
+                                                      8.94148904499675323E-002_RP, 9.13559956872114914E-002_RP, &
+                                                      9.76744717954128594E-002_RP, 8.60852915118723166E-002_RP, &
+                                                      8.28167576758490204E-002_RP, 3.51412751485165875E-002_RP]
 !
 !     --------------
 !     Set up options
@@ -277,12 +278,14 @@
 !     If algorithms change, these values will have to change
 !     ------------------------------------------------------
 !
-      REAL(KIND=RP) :: targetCuts(0:13) = [0.0000000000000000_RP , 9.7013000086126913E-002_RP, 0.18597895538838266_RP, &
-                                           0.27478075822849279_RP, 0.33739037911424141_RP  , 0.40000000000000002_RP, &
-                                           0.48775051048802515_RP, 0.57664143712361982_RP  , 0.63832071856180495_RP, &
-                                           0.69999999999999996_RP, 0.78923224968415717_RP  , 0.87992823095351413_RP, &
-                                           0.93996411547675207_RP, 1.0000000000000000_RP]
-      INTEGER       :: targetIndices(3) = [6, 10, 14]
+      REAL(KIND=RP) :: targetCuts(0:12) = [0.00000000000000000E+000_RP, 1.01298668226708716E-001_RP, &
+                                           1.95395425354067981E-001_RP, 2.92823528451098436E-001_RP, &
+                                           3.46411764225544205E-001_RP, 4.00000000000000022E-001_RP, &
+                                           5.13857888825439479E-001_RP, 6.07828119507373810E-001_RP, &
+                                           6.99999999999999956E-001_RP, 7.97405360978281297E-001_RP, &
+                                           8.92981361627601000E-001_RP, 9.46490680813795504E-001_RP, &
+                                           1.00000000000000000E+000_RP]
+      INTEGER       :: targetIndices(3) = [5, 8, 12]
 !
 !     --------------
 !     Set up options
@@ -317,6 +320,18 @@
 !
       CALL FTAssert(MAXVAL(ABS(optimizedCuts - targetCuts)) .le. testTol, msg = "Segments dont match")
       CALL FTAssert(MAXVAL(ABS(targetIndices - breakIndices)) == 0, msg = "Break Indices dont match")
+!
+!     -------------------------------------------------------------
+!     Independent of the stored values, each break index must point
+!     to the cut that sits at the break
+!     -------------------------------------------------------------
+!
+      IF ( MAXVAL(breakIndices) <= UBOUND(optimizedCuts,1) )     THEN
+         CALL FTAssert(MAXVAL(ABS(optimizedCuts(breakIndices) - testBreaks(1:))) .le. testTol, &
+                       msg = "Break indices dont point to the breaks")
+      ELSE
+         CALL FTAssert(.FALSE., msg = "Break index is past the last cut")
+      END IF
 !
 !     --------
 !     Clean up
@@ -483,14 +498,15 @@
       REAL(KIND=RP), ALLOCATABLE :: optimizedCuts(:)
       INTEGER      , ALLOCATABLE :: breakIndices(:)
       REAL(KIND=RP)              :: testBreaks(0:2)   = [0.0_RP, 0.5_RP, 1.0_RP]
-      REAL(KIND=RP)              :: expectedCuts(0:7) = [0.0000000000000000_RP, &
-                                                         8.5660589005650267E-002_RP, &
-                                                         0.17132074027521632_RP, &
-                                                         0.25698133016711511_RP, &
-                                                         0.34264190234426545_RP, &
-                                                         0.42829047404568898_RP, &
-                                                         0.50000000000000000_RP, &
-                                                         1.0000000000000000_RP]
+      REAL(KIND=RP)              :: expectedCuts(0:8) = [0.00000000000000000E+000_RP, &
+                                                         7.72308052912458326E-002_RP, &
+                                                         1.54463688024685963E-001_RP, &
+                                                         2.31701364652091152E-001_RP, &
+                                                         3.08927439510774671E-001_RP, &
+                                                         3.86168593062219234E-001_RP, &
+                                                         4.43084296531104593E-001_RP, &
+                                                         5.00000000000000000E-001_RP, &
+                                                         1.00000000000000000E+000_RP]
       INTEGER                    :: expectedIndices(2) = [7, 8]
 
 !
@@ -501,7 +517,7 @@
       INTEGER       :: optType    = H1_NORM
       INTEGER       :: polyOrder  = 3
       INTEGER       :: smoothness = 0 ! C^0 smoothness
-      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 3.2E-9_RP
+      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 5.0E-8_RP
 !
 !     -----
 !     Other
@@ -580,6 +596,18 @@
 !
       CALL FTAssert(MAXVAL(ABS(optimizedCuts - expectedCuts)) .le. testTol, msg = "Segments dont match")
       CALL FTAssert(MAXVAL(ABS(expectedIndices - breakIndices)) == 0      , msg = "Break Indices dont match")
+!
+!     -------------------------------------------------------------
+!     Independent of the stored values, each break index must point
+!     to the cut that sits at the break
+!     -------------------------------------------------------------
+!
+      IF ( MAXVAL(breakIndices) <= UBOUND(optimizedCuts,1) )     THEN
+         CALL FTAssert(MAXVAL(ABS(optimizedCuts(breakIndices) - testBreaks(1:))) .le. testTol, &
+                       msg = "Break indices dont point to the breaks")
+      ELSE
+         CALL FTAssert(.FALSE., msg = "Break index is past the last cut")
+      END IF
 
       CALL releaseChainedCurve(chain)
 

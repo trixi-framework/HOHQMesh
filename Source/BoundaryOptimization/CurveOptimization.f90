@@ -64,7 +64,6 @@
    IMPLICIT NONE
 
    INTEGER, PARAMETER, PRIVATE :: MAX_DEPTH = 10
-   INTEGER, PARAMETER, PRIVATE :: LEFT_SIDE = 0, RIGHT_SIDE = 1
    INTEGER, PARAMETER          :: USER_NORM = 1, MAX_NORM   = 2, MAX_NORM_DERIV = 3
 !
 !  ========
@@ -213,22 +212,22 @@
                             optimized          = optimizedCurve)
 !
 !        --------------------------------------------------------------------------
-!        See if the error is within tolerance. Since the marching can only use the
-!        FIXED_CONSTRAINT option, and since errors increase as the constraint
-!        order increases, then the error won't be within the tolerance. If not,
-!        create a new tolerance that is small enough so that when done we should
-!        be OK
+!        See if the error is within the requested tolerance. Since the marching can
+!        only use the FIXED_CONSTRAINT option, and since errors increase as the
+!        constraint order increases, the error might not be. If not, march again
+!        with a tolerance that is smaller by the amount that the error is too large.
 !        --------------------------------------------------------------------------
 !
          CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
          CALL SegmentErrors(exact          = curve,    &
                             segmentedCurve = msmCurve, &
                             gQuad          = gQuad,    &
-                            errors         = errors)
+                            errors         = errors,   &
+                            whichNorm      = options % whichNorm)
          e = MAXVAL(errors(:,USER_NORM))
-         IF ( e .LE. options % toler )     EXIT
+         IF ( e .LE. savedOptions % toler )     EXIT
 
-         errorRatio = options % toler/e
+         errorRatio = savedOptions % toler/e
          options % toler = options % toler*errorRatio
 !
          IF ( n < 3 )     THEN
@@ -239,6 +238,7 @@
 
       END DO
 
+      options   =  savedOptions
       optimized => optimizedCurve
 !
    END SUBROUTINE OptimizeCurveByMarching
@@ -286,7 +286,7 @@
 !
       CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(0), breaks(1)-Limit], &
                                     options, gQuad, tmpA)
-      breakIndices = [SIZE(tmpA)]
+      breakIndices = [SIZE(tmpA) - 1] ! tmpA holds cuts 0:K, so the break is cut K
       tmpA(UBOUND(tmpA)) = breaks(1)
       IF(nBreaks == 1) THEN
          ALLOCATE(optimizedCuts(0:SIZE(tmpA)-1))
@@ -320,6 +320,8 @@
 !  segment so that the H^1 error is less than the tolerance allowed for that segment.
 !  ----------------------------------------------------------------------------------
 !
+      USE ErrorTypesModule
+      USE FTExceptionClass, ONLY: FT_ERROR_WARNING
       IMPLICIT NONE
 !
 !     ---------
@@ -337,65 +339,83 @@
 !     Local variables
 !     ---------------
 !
-      LOGICAL                                :: steppingNotDone
       REAL(KIND=RP)                          :: cuts(0:1)
-      REAL(KIND=RP)                          :: iterToler = 1.0E-6_RP
-      REAL(KIND=RP)                          :: fR, h, f, h2
-      REAL(KIND=RP)                          :: tL, tMid, tR
+      REAL(KIND=RP)                          :: fR, h, h2
+      REAL(KIND=RP)                          :: tL, tCut, tR
+      REAL(KIND=RP)                          :: minStep
       REAL(KIND=RP)                          :: e, hStar, cFactor, targetError
       INTEGER                                :: k, nCuts
+      CHARACTER(LEN=2*DEFAULT_CHARACTER_LENGTH) :: msg
+!
+!     ---------------------------------------------------------------
+!     Segments shorter than minStep are not resolved by the marching.
+!     It is relative to the range so that the result does not depend
+!     on how many curves are in the chain.
+!     ---------------------------------------------------------------
+!
+      REAL(KIND=RP), PARAMETER               :: MIN_STEP_FRACTION = 1.0E-7_RP
 
       ALLOCATE(optimizedCuts(0:1))
       optimizedCuts = tRange  ! will be added to as marching progresses
+
+      tL      = tRange(1)
+      tR      = tRange(2)
+      cuts    = [tL, tR] ! = [t_{k-1},t_k]
+      minStep = MIN_STEP_FRACTION*(tR - tL)
+!
+!     ------------------------------------------------------------------
+!     If the approximation already satisfies the approximation tolerance
+!     then the marchingFunction will be negative. Positive means
+!     the tolerance is not met and a search must be done
+!     ------------------------------------------------------------------
+!
+      fR = marchingFunction(curve, polyOrder, cuts, options, gQuad)
+      IF(fR .le. 0.0_RP) RETURN
 !
 !     ---------------------------------------
 !     Loop until hit the end at t = tRange(2)
 !     ---------------------------------------
 !
-      tL              = tRange(1)
-      tR              = tRange(2)
-      cuts            = [tL, tR] ! = [t_{k-1},t_k]
-      h               = tR - tL
+      k = 0 ! Segment number
+      DO
+         tCut = iterate(tL, tR, fR, minStep, curve, polyOrder, options, gQuad)
 !
-!     ------------------------------------------------------------------
-!     If the approximation already satisfies the approximation tolerance
-!     then the marchingfunction will be negative. Positive means
-!     the tolerance is not met and a search must be done
-!     fR = marchingfunction(curve, polyOrder, cuts, options, gQuad)
-!     ------------------------------------------------------------------
+!        ------------------------------------------------------------
+!        No segment of resolvable length starting at tL satisfies the
+!        tolerance. Stop here rather than add zero length segments.
+!        ------------------------------------------------------------
 !
-      fR = marchingfunction(curve, polyOrder, cuts, options, gQuad)
-      IF(fr .le. 0.0_RP) RETURN
+         IF ( tCut - tL < minStep )     THEN
+            WRITE(msg,'(A,ES10.3,A,F9.6,A)') "The tolerance ", options % toler,   &
+                                " cannot be met by a segment starting at t = ", tL, &
+                                ". The tolerance may be too small for this curve."
+            CALL ThrowErrorExceptionOfType(poster = "FindOptimizedCutsInRange", &
+                                           msg    = msg,                        &
+                                           typ    = FT_ERROR_WARNING)
+            EXIT
+         END IF
 !
-!     --------------------------
-!     Find the intervals in turn
-!     --------------------------
+!        -------------------------------------------------------------
+!        The segment reaches the end of the range to within what can be
+!        resolved. Don't leave a sliver.
+!        -------------------------------------------------------------
 !
-      steppingNotDone = .TRUE.
-      k               = 0 ! Segment number
-
-      DO WHILE(steppingNotDone)
-         k    = k + 1
-         tMid = iterate(tL, tR, curve, polyOrder, options, gQuad, iterToler, RIGHT_SIDE)
-!
-!        -------------------------------------------------
-!        converged... add this point to the segments array
-!        and prepare for the next
-!        -------------------------------------------------
-!
-         IF (ABS(tMid - tRange(2)) <= iterToler) EXIT
-         CALL addCut(cuts = optimizedCuts, valueToAdd = tMid, atIndex = k)
-         tL   = tMid
-         tR   = tRange(2)
-         cuts = [tL,tR]
+         IF ( tR - tCut < minStep )     EXIT
 !
 !        ----------------------------------------------------
+!        Converged...add this point to the cuts, and prepare
+!        for the next.
 !        We're done if the remaining segment has small enough
 !        errors
 !        ----------------------------------------------------
 !
-         f = marchingFunction(curve, polyOrder, cuts, options, gQuad)
-         IF(f .le. 0.0_RP)    EXIT
+         k = k + 1
+         CALL addCut(cuts = optimizedCuts, valueToAdd = tCut, atIndex = k)
+         tL   = tCut
+         cuts = [tL,tR]
+
+         fR = marchingFunction(curve, polyOrder, cuts, options, gQuad)
+         IF(fR .le. 0.0_RP)    EXIT
 
       END DO !Stepping
 !
@@ -409,191 +429,160 @@
 !     than 25%, which is a completely arbitrary number.
 !     --------------------------------------------------------------------
 !
-       nCuts       = SIZE(optimizedCuts) - 1
-       h2          = optimizedCuts(nCuts) - optimizedCuts(nCuts-2)
-       h           = optimizedCuts(nCuts) - optimizedCuts(nCuts-1)
-       cuts        = [optimizedCuts(nCuts-1), optimizedCuts(nCuts)]
-       targetError = options % safetyFactor*options % toler
-       e           = marchingFunction(curve, polyOrder, cuts, options, gQuad) + targetError
-       cFactor     = (targetError/(e + 1.0E-14_RP))**(1.0_RP/polyOrder)
+      nCuts = SIZE(optimizedCuts) - 1
+      IF ( nCuts < 2 )     RETURN ! Only one segment, so there is nothing to balance
 
-       IF ( cFactor > 1.25_RP )     THEN
-          hStar       = h*cFactor
-          optimizedCuts(nCuts-1) = optimizedCuts(nCuts) - MIN(hStar, 0.5_RP*h2)
-       END IF
+      h2          = optimizedCuts(nCuts) - optimizedCuts(nCuts-2)
+      h           = optimizedCuts(nCuts) - optimizedCuts(nCuts-1)
+      cuts        = [optimizedCuts(nCuts-1), optimizedCuts(nCuts)]
+      targetError = options % safetyFactor*options % toler
+      e           = marchingFunction(curve, polyOrder, cuts, options, gQuad) + targetError
+      cFactor     = (targetError/(e + 1.0E-14_RP))**(1.0_RP/polyOrder)
+
+      IF ( cFactor > 1.25_RP )     THEN
+         hStar       = h*cFactor
+         optimizedCuts(nCuts-1) = optimizedCuts(nCuts) - MIN(hStar, 0.5_RP*h2)
+      END IF
 
    END SUBROUTINE FindOptimizedCutsInRange
 !
 !////////////////////////////////////////////////////////////////////////
 !
+   REAL(KIND=RP) FUNCTION iterate(tL, tR, fR, minStep, curve, polyOrder, options, gQuad)
 !
-!////////////////////////////////////////////////////////////////////////
+!  -----------------------------------------------------------------------------------
+!  Find the end, t, of the longest segment [tL,t] in [tL,tR] whose error is within the
+!  tolerance, i.e. find the root of the marchingFunction, f, which is negative when
+!  the tolerance is met.
 !
-   REAL(KIND=RP) FUNCTION iterate(tL, tR, curve, polyOrder, options, gQuad, iterToler, side)
-   !
-   !  -----------------------------------------------------------------------------------
-   !  Iterate to find the point t_{k+1} such that the error on [t_k,t_{k+1}] is less than
-   !  iterToler.
-   !  -----------------------------------------------------------------------------------
-   !
-         IMPLICIT NONE
-   !
-   !     ---------
-   !     Arguments
-   !     ---------
-   !
-         REAL(KIND=RP)             :: tL, tR
-         CLASS(SMCurve), POINTER   :: curve              ! The curve to be approximated
-         INTEGER                   :: polyOrder          ! polynomial order of the new approximation
-         TYPE(OptimizerOptions)    :: options            ! parameters for the approximation
-         TYPE(GaussQuadratureType) :: gQuad
-         REAL(KIND=RP)             :: iterToler
-         INTEGER                   :: side
-   !
-   !     ---------------
-   !     Local variables
-   !     ---------------
-   !
-         REAL(KIND=RP)   :: cuts(0:1)
-         REAL(KIND=RP)   :: fL, fR
-         REAL(KIND=RP)   :: tN, tNm1, fN, fNm1, tNp1, fNp1
-         INTEGER         :: maxIterB = 6 ! Should get to 0.016
-         INTEGER         :: maxIterS = 8 ! Should get to iterToler
-         INTEGER         :: maxIter
-         INTEGER         :: n
-         LOGICAL         :: done
+!  The search keeps a bracket [a,b] with f(a) <= 0 < f(b), and always returns a, the
+!  side that satisfies the tolerance. It starts with a = tL, where the segment has no
+!  length and no error, and with b = tR, where the caller has found f = fR > 0.
+!  If no point within the tolerance is found, the result is tL, which the caller
+!  must check for.
+!
+!  The error grows like a high power of the segment length, so the secant through
+!  the ends of the starting bracket says nothing useful about where the root is.
+!  Therefore the segment is first halved until it meets the tolerance, which gives a
+!  bracket no more than a factor of two wide with computed values at both ends.
+!  After that, new points come from the Pegasus method, a fast modification of
+!  Regula Falsi. See
+!
+!     Dowell, M., Jarratt, P. (1972)
+!     The "Pegasus" method for computing the root of an equation.
+!     https://doi.org/10.1007/BF01932959
+!
+!  A Pegasus point is used only if it falls inside of the bracket, and bisection
+!  is used for the next point any time a step leaves more than three quarters of the
+!  bracket, so the bracket shrinks to minStep in a bounded number of steps.
+!  -----------------------------------------------------------------------------------
+!
+      IMPLICIT NONE
+!
+!     ---------
+!     Arguments
+!     ---------
+!
+      REAL(KIND=RP)             :: tL, tR             ! The range to search
+      REAL(KIND=RP)             :: fR                 ! marchingFunction on [tL,tR]. Must be > 0
+      REAL(KIND=RP)             :: minStep            ! Smallest bracket size to resolve
+      CLASS(SMCurve), POINTER   :: curve              ! The curve to be approximated
+      INTEGER                   :: polyOrder          ! polynomial order of the new approximation
+      TYPE(OptimizerOptions)    :: options            ! parameters for the approximation
+      TYPE(GaussQuadratureType) :: gQuad
+!
+!     ---------------
+!     Local variables
+!     ---------------
+!
+      REAL(KIND=RP)   :: cuts(0:1)
+      REAL(KIND=RP)   :: a, b, c          ! The bracket and the new point
+      REAL(KIND=RP)   :: fA, fC           ! marchingFunction at a and c
+      REAL(KIND=RP)   :: gA, gB           ! Pegasus scaled function values, for interpolation only
+      REAL(KIND=RP)   :: targetError, bracketSize
+      INTEGER         :: n, lastMoved
+      LOGICAL         :: bisectNext
+!
+!     -----------------------------------------------------------------
+!     Stop when the error at a is within F_TOLERANCE of the target, as
+!     a fraction of the target. The bracket shrinks by at least a
+!     quarter every other step, so MAX_ITERATIONS is only a backstop.
+!     -----------------------------------------------------------------
+!
+      REAL(KIND=RP), PARAMETER :: F_TOLERANCE    = 1.0E-3_RP
+      INTEGER      , PARAMETER :: MAX_ITERATIONS = 200
+      INTEGER      , PARAMETER :: NEITHER = 0, MOVED_A = 1, MOVED_B = 2
 
-         cuts = [tL, tR] ! = [t_{k-1},t_k]
-         iterate = bisect(maxIterB, side, done)
-         IF ( done ) RETURN
-   !
-   !     -----------------------------------
-   !     Pegasus method to finish
-   !     (fast modification of Regula Falsi)
-   !
-   !     See paper
-   !     Dowell, M., Jarratt, P. (1972)
-   !     The “Pegasus” method for computing
-   !       the root of an equation.
-   !     https://doi.org/10.1007/BF01932959
-   !     -----------------------------------
-   !
-         tN   = tR; fN   = fR
-         tNm1 = tL; fNm1 = fL
+      targetError = options % safetyFactor * options % toler
 
-         ! Important note. This assumes that
-         ! fN and fNm1 have opposite sign, otherwise it won't bracket.
-         DO n = 1, maxIterS
-            ! Regula Falsi position
-            ! (Intersection of secant line with the t axis)
-            ! tNp1 = tN - (tN - tNm1) * fN / (fN - fNm1)
-            tNp1 = (fN * tNm1 - tN * fNm1) / (fN - fNm1)
-            cuts(1) = tNp1
-            fNp1    = marchingFunction(curve, polyOrder, cuts, options, gQuad)
+      a  = tL; fA = -targetError ! No length, so no error. See marchingFunction
+      b  = tR
+      gA = fA; gB = fR
 
-            ! Check for convergence
-            IF ( ( ABS(fNp1) <= iterToler ) .OR. ( ABS(tN - tNm1) <= iterToler ) )    THEN
-               iterate = tNp1
-               RETURN
+      cuts       = [tL, tR]
+      lastMoved  = NEITHER
+      bisectNext = .FALSE.
+
+      DO n = 1, MAX_ITERATIONS
+
+         bracketSize = b - a
+         IF ( bracketSize <= minStep )              EXIT
+         IF ( fA >= -F_TOLERANCE*targetError )      EXIT
+!
+!        ----------------------------------------------------------------
+!        Choose the next point. Bisect while a is still at tL, i.e. until
+!        some segment has met the tolerance, and after any step that left
+!        more than 3/4 of the bracket. Otherwise use the Pegasus point,
+!        the intersection of the secant line with the t axis.
+!        ----------------------------------------------------------------
+!
+         IF ( bisectNext .OR. (a <= tL) )     THEN
+            c = a + 0.5_RP*bracketSize       ! Bisection step
+         ELSE
+            c = (gB*a - gA*b)/(gB - gA)      ! Pegasus step
+         END IF
+
+!        The point must be strictly inside the bracket. If not, e.g. from
+!        rounding or a NaN (which fails both comparisons), bisect instead.
+         IF ( .NOT.((c > a) .AND. (c < b)) )   c = a + 0.5_RP*bracketSize
+
+         cuts(1) = c
+         fC      = marchingFunction(curve, polyOrder, cuts, options, gQuad)
+!
+!        ---------------------------------------------------------------
+!        Update the bracket. A NaN counts as not meeting the tolerance.
+!        When the same end is replaced twice in a row, Pegasus scales the
+!        function value at the end that stays.
+!        ---------------------------------------------------------------
+!
+         IF ( fC <= 0.0_RP )     THEN
+            IF ( lastMoved == MOVED_A )     THEN
+               IF( gA + fC < 0.0_RP ) gB = gB*gA/(gA + fC)
             END IF
-
-            ! Update endpoints
-            IF ( fNm1 * fNp1 < 0.0_RP )    THEN
-               ! tNm1 stays the same
-               ! Pegasus scaling of left function value
-               fNm1 = fNm1 * fN / (fN + fNp1)
-
-               ! Replace right endpoint
-               tN = tNp1
-               fN = fNp1
-            ELSE
-               ! tN stays the same
-               ! Pegasus scaling of right function value
-               fN = fNm1 * fN / (fNm1 + fNp1)
-
-               ! Replace left endpoint
-               tNm1 = tNp1
-               fNm1 = fNp1
+            a  = c; fA = fC; gA = fC
+            lastMoved = MOVED_A
+         ELSE
+            IF ( lastMoved == MOVED_B )     THEN
+               IF( gB + fC > 0.0_RP ) gA = gA*gB/(gB + fC)
             END IF
-         END DO
-   !
-   !     ---------------------------------------------------------------
-   !     If Pegasus doesn't converge, we get to here. Just use bisection
-   !     to finish the job.
-   !     ---------------------------------------------------------------
-   !
-         maxIter = NINT(LOG((tR - tL)/iterToler)/LOG(2.0_RP))+1
-         iterate = bisect(maxIter, side, done)
-   !
-   !     ========
-         CONTAINS
-   !     ========
-   !
-   !////////////////////////////////////////////////////////////////////////
-   !
-      REAL(KIND=RP) FUNCTION bisect(maxIter, side, done)
-   !
-   !  -----------------------------------------------------------------------------------
-   !  Iterate to find the point t_{k+1} such that the error on [t_k,t_{k+1}] is less than
-   !  iterToler.
-   !  -----------------------------------------------------------------------------------
-   !
-         IMPLICIT NONE
-   !
-   !     ---------
-   !     Arguments
-   !     ---------
-   !
-         INTEGER                   :: maxIter
-         LOGICAL                   :: done
-         INTEGER                   :: side
-   !
-   !     ---------------
-   !     Local variables
-   !     ---------------
-   !
-         REAL(KIND=RP)   :: tMid, h
-         REAL(KIND=RP)   :: fMid
-         INTEGER         :: n
+            b  = c; gB = fC
+            lastMoved = MOVED_B
+         END IF
+!
+!        ------------------------------------------------------------------
+!        The test is against 3/4 and not 1/2 of the bracket on purpose. A
+!        bisection step leaves exactly half, to within rounding, so a test
+!        against 1/2 is decided by the last bit. The points chosen, and so
+!        the cuts, would then differ from one platform to another.
+!        ------------------------------------------------------------------
+!
+         bisectNext = (b - a) > 0.75_RP*bracketSize
 
-   !
-   !    -----------------------------------------------------
-   !    Iterate on error function until tolerance is satisfied
-   !    -----------------------------------------------------
-   !
-         fL = - options % safetyFactor*options % toler ! the best case. See marchingFunction
-   !
-   !     ---------
-   !     Bisection
-   !     ---------
-   !
-         done = .FALSE.
-         DO n = 1, maxIter
-            h       = tR - tL
-            tMid    = tL + 0.5_RP*h
-            cuts(side) = tMid
-            fMid = marchingFunction(curve, polyOrder, cuts, options, gQuad)
+      END DO
 
-            IF(0.5_RP*ABS(h) .le. iterToler) THEN ! If marching R -> L, h < 0
-               bisect = tMid
-               done   = .TRUE.
-               RETURN
-            END IF
+      iterate = a
 
-            IF ( fMid*fL < 0.0_RP )     THEN
-               tR = tMid
-               fR = fMid
-            ELSE
-               tL = tMid
-               fL = fMid
-            END IF
-         END DO
-
-         bisect = tMid
-
-      END FUNCTION bisect
-
-      END FUNCTION iterate
+   END FUNCTION iterate
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -664,7 +653,8 @@
       CALL SegmentErrors(exact          = curve,    &
                          segmentedCurve = msmCurve, &
                          gQuad          = gQuad,    &
-                         errors         = errors)
+                         errors         = errors,   &
+                         whichNorm      = options % whichNorm)
 
       CALL releaseBaseCurve(optimizedCurve)
 
@@ -732,10 +722,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   SUBROUTINE SegmentErrors(exact, segmentedCurve, gQuad, errors)
+   SUBROUTINE SegmentErrors(exact, segmentedCurve, gQuad, errors, whichNorm)
 !
 !  -------------------------------------------------------------------
-!  Compute the H^1 errors in each of the segments of a segmented curve
+!  Compute the errors in each of the segments of a segmented curve.
+!  The USER_NORM column is the L2 or H1 (default) error, according to
+!  whichNorm, per unit arc length of the segment. It is the same
+!  measure as reported by ComputeBoundaryErrors, so the tolerance
+!  means the same thing when choosing segments as when checking them.
 !  -------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -748,6 +742,7 @@
       CLASS(MultiSegmentModalCurve), POINTER :: segmentedCurve
       TYPE(GaussQuadratureType)              :: gQuad
       REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
+      INTEGER, OPTIONAL                      :: whichNorm
 !
 !     ----------------
 !     Local variables
@@ -755,23 +750,30 @@
 !
       INTEGER       :: nSegments
       INTEGER       :: k
+      INTEGER       :: normType
+
+      normType = H1_NORM
+      IF(PRESENT(whichNorm)) normType = whichNorm
 
       nSegments = segmentedCurve % nSegments
       ALLOCATE(errors(nSegments,3), source = 0.0_RP)
 
       DO k = 1, nSegments
-         errors(k,:) =  segmentError(k, exact, segmentedCurve, gQuad)
+         errors(k,:) =  segmentError(k, exact, segmentedCurve, gQuad, normType)
       END DO
 
    END SUBROUTINE SegmentErrors
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   FUNCTION segmentError(k, exact, segmentedCurve, gQuad) RESULT(er)
+   FUNCTION segmentError(k, exact, segmentedCurve, gQuad, whichNorm) RESULT(er)
 !
-!  ---------------------------------------------------------------
-!  Compute the H^1 errors on the k'th segment of a segmented curve
-!  ---------------------------------------------------------------
+!  ---------------------------------------------------------------------
+!  Compute the errors on the k'th segment of a segmented curve. The
+!  USER_NORM error is normalized by the arc length of the segment so
+!  that, like the pointwise error, it scales as h^N and does not depend
+!  on the length of the segment itself.
+!  ---------------------------------------------------------------------
 !
       IMPLICIT NONE
 !
@@ -783,6 +785,7 @@
       CLASS(SMCurve)               , POINTER :: exact
       CLASS(MultiSegmentModalCurve), POINTER :: segmentedCurve
       TYPE(GaussQuadratureType)              :: gQuad
+      INTEGER                                :: whichNorm
       REAL(KIND=RP)                          :: er(3)
 !
 !     ----------------
@@ -791,7 +794,7 @@
 !
       INTEGER       :: qOrder
       INTEGER       :: j
-      REAL(KIND=RP) :: t, h, dsdt
+      REAL(KIND=RP) :: t, h, dsdt, arc
       REAL(KIND=RP) :: e, e0(3), e1(3), eMax, eMaxDeriv
 
       qOrder = gQuad % N
@@ -806,11 +809,16 @@
          e0   = (exact % positionAt(t)   - segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_FUNCTION))**2
          e1   = (exact % derivativeAt(t) - dsdt*segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE))**2
 
-         e         = e + (e0(1) + e0(2) + e1(1) + e1(2))*gQuad % weights(j)
+         IF ( whichNorm == L2_NORM )     THEN
+            e = e + (e0(1) + e0(2))*gQuad % weights(j)
+         ELSE
+            e = e + (e0(1) + e0(2) + e1(1) + e1(2))*gQuad % weights(j)
+         END IF
          eMax      = MAX(eMax,e0(1),e0(2))
          eMaxDeriv = MAX(eMaxDeriv,e1(1),e1(2))
       END DO
-      er(USER_NORM)       = SQRT(0.5_RP*h*e)
+      arc                 = segmentArcLength(segmentedCurve, k, gQuad % nodes, gQuad % weights)
+      er(USER_NORM)       = SQRT(0.5_RP*h*e/arc)
       er(MAX_NORM)        = SQRT(eMax)
       er(MAX_NORM_DERIV)  = SQRT(eMaxDeriv)
 

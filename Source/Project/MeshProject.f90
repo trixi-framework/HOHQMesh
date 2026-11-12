@@ -950,7 +950,6 @@
 !        ---------------
 !
          INTEGER      , ALLOCATABLE :: breakIndices(:)    ! index in optimizedCuts where break boundaries occur
-         REAL(KIND=RP), ALLOCATABLE :: arcLengths(:)
          TYPE(OptimizerOptions)     :: options
          CLASS(SMCurve), POINTER    :: crv
          REAL(KIND=RP)              :: minSegment
@@ -968,7 +967,6 @@
          crv => curve
          CALL FindOptimizedCuts(crv, polyOrder, breaks, options, gQuad, &
                                 cuts, breakIndices)
-         CALL curveSegmentLengths(crv, polyOrder, cuts, options, gQuad, arcLengths)
 
          nSegments = UBOUND(cuts,1)
          ALLOCATE(segmentsSizes(nSegments))
@@ -979,10 +977,10 @@
          DO j = 1, nSegments
             x2 = curve % positionAt(cuts(j))
 !
-!           ------------------------------------------------------------------
-!           Choose the segment size to be the largest of the x or y projection
-!           of the vector between the two segment points
-!           ------------------------------------------------------------------
+!           ------------------------------------------------------------
+!           Choose the segment size to be the distance between the two
+!           segment points
+!           ------------------------------------------------------------
 !
             segmentsSizes(j) = sqrt((x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
             minSegment = MIN(minSegment, segmentsSizes(j))
@@ -990,7 +988,7 @@
          END DO
 
          IF ( printMessage )     THEN
-            PRINT *, "Minimum size for for accurate approximation of the curve ", &
+            PRINT *, "Minimum size for accurate approximation of the curve ", &
             TRIM(curve % curveName()), " is ", minSegment
          END IF
 

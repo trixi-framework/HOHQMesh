@@ -82,14 +82,16 @@
 !
             IF ( errorCode > A_OK_ERROR_CODE )     EXIT
 !
-!           -----------------------------------
-!           Gather and set boundary information
-!           and from that, create boundary
-!           polynomial approximations to the
-!           boundary chains.
-!           -----------------------------------
+!           ------------------------------------------------------
+!           Gather and set boundary information and from that,
+!           create boundary polynomial approximations to the
+!           boundary chains. If requested the curves are optimized
+!           so that the errors measured are those of the curves
+!           that will be output, including any continuity
+!           constraints.
+!           ------------------------------------------------------
 !
-            CALL ComputeBoundaryApproximations(project, .FALSE.)
+            CALL ComputeBoundaryApproximations(project)
             CALL ComputeBoundaryErrors(project)
             CALL ResetInverseScales(project, needsRemesh)
 !
@@ -143,10 +145,14 @@
 !       -------------------------------------------------------------
 !       Re-compute the boundary polynomials with the optimized curves
 !       if that has been requested
+!       NOTE: (1) Redundant if the accuracy loop exits normally
+!             (2) Needed after the background grid retry loop that
+!                 does not recompute the boundary approximation or
+!                 check the accuracy
 !       -------------------------------------------------------------
 !
         CALL ResetProjectBoundaryObjects(project)
-        CALL ComputeBoundaryApproximations(project, .TRUE.)
+        CALL ComputeBoundaryApproximations(project)
 
       END SUBROUTINE GenerateQuadMesh
 !
@@ -3011,7 +3017,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ComputeBoundaryPolynomials( project, chainNodesArray, performOptimization)
+      SUBROUTINE ComputeBoundaryPolynomials( project, chainNodesArray)
 !
 !     -----------------------------------------------------------------
 !     Generate multisegment curves that span the curve segments in the
@@ -3032,7 +3038,6 @@
 !
          TYPE(MeshProject)     :: project
          TYPE(JaggedNodeArray) :: chainNodesArray(:) !Array of arrays of nodes along the boundary
-         LOGICAL               :: performOptimization
 !
 !        ---------------
 !        Local variables
@@ -3121,10 +3126,12 @@
 !           -------------------------------------------------------------
 !
             crv => modelChain
-            IF ( modelChain % optimization /= NONE .AND. performOptimization)     THEN
+            IF ( modelChain % optimization /= NONE )     THEN
 
                CALL SetDefaultOptions(options)
-               options % whichNorm = modelChain % optimization
+               options % whichNorm          = modelChain % optimization
+               options % internalConstraint = modelChain % continuity
+               options % toler              = modelChain % tolerance
                CALL OptimizeCurve(curve              = crv,                     &
                                   polyOrder          = N,                       &
                                   cuts               = nodeTs,                  &
@@ -3279,11 +3286,10 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   SUBROUTINE ComputeBoundaryApproximations(project, optimize)
+   SUBROUTINE ComputeBoundaryApproximations(project)
       IMPLICIT NONE
 
       CLASS(MeshProject), POINTER :: project
-      LOGICAL                     :: optimize
 !
 !     ---------------
 !     Local Variables
@@ -3305,7 +3311,7 @@
       ALLOCATE(chainNodesArray(numBoundaryChains))
       CALL SortBoundaryNodesToChains(project % mesh % nodesIterator, &
                                      numBoundaryChains, chainNodesArray)
-      CALL ComputeBoundaryPolynomials( project, chainNodesArray, optimize)
+      CALL ComputeBoundaryPolynomials( project, chainNodesArray)
       CALL setElementBoundaryInfo(project)
 !
 !     -----------------------------------------

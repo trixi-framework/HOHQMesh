@@ -104,8 +104,7 @@
          INTEGER                    :: nSegments
          REAL(KIND=RP), ALLOCATABLE :: cuts(:)
          REAL(KIND=RP), ALLOCATABLE :: dsdt(:)
-         REAL(KIND=RP), ALLOCATABLE :: breaks(:)
-         REAL(KIND=RP), ALLOCATABLE :: breakIndices(:)
+         INTEGER      , ALLOCATABLE :: breakIndices(:) ! cut indices where only continuity (C^0) is imposed
          INTEGER                    :: internalConstraint
          INTEGER                    :: endConstraint
 
@@ -161,7 +160,10 @@
 !     M                    = Quadrature order
 !     nSegments            = Number of segments in the total domain
 !     cuts(0:nSegments)    = segment points (TODO: Come up with better names)
-!     breakIndices         = marks the segments at which breaks are placed
+!     breakIndices         = indices into cuts at which breaks are placed. Only
+!                            continuity (C^0) is imposed at an interior break, since
+!                            the curve can have a corner there. Indices 0 and
+!                            nSegments, the chain ends, are ignored.
 !     options(OptimizerOptions):
 !        options % internalConstraint = smoothness order at internal interfaces.
 !                                       0 = continuity, 1 = 1st derivative, etc.
@@ -207,10 +209,18 @@
       self % M = M
 
       totalStateVectors = (N+1)*nSegments
+!
+!     ------------------------------------------------------
+!     Total number of constraints:
+!     Endpoint constraints
+!       + one constraint per derivative at each interior cut
+!     The number of derivatives are 0 to internalConstraint
+!     at an ordinary cut and only derivative = 0 (continuity)
+!     at a break.
+!     See FUNCTION highestDerivativeAt
 
-!     Total number of constraints
-!     2 endpoints + subdivision*number of derivatives
 !     This gives the number of rows in C^T
+!     -------------------------------------------------------
 
       IF ( self % endConstraint == NO_CONSTRAINT )     THEN
          nc = 0
@@ -219,7 +229,10 @@
       ELSE
          nc = 2
       END IF
-      nConstraints      = nc + (nSegments-1)*(self % internalConstraint+1)
+      nConstraints = nc
+      DO k = 1, nSegments-1
+         nConstraints = nConstraints + highestDerivativeAt(self, k) + 1
+      END DO
 
 !     Sizes of the transpose of the constraint matrix. C^T b = d
       constraintCol     = totalStateVectors
@@ -354,6 +367,7 @@
 !        ---------------
 !
          INTEGER                    :: r, c, j, N, cl, k
+         INTEGER                    :: highestDerivative
          REAL(KIND=RP), ALLOCATABLE :: CAPlus(:,:)
          REAL(KIND=RP), ALLOCATABLE :: CAMinus(:,:)
 
@@ -396,7 +410,14 @@
 
          cl = 1; c = cl + N+1 ! & Pick up r above where boundary constraints left off
          DO k = 2, self % nSegments
-            DO j = 0, self % internalConstraint
+!
+!           -------------------------------------------------
+!           Only C^0 continuity at a break (cut index k-1), as
+!           the curve can have a corner there
+!           -------------------------------------------------
+!
+            highestDerivative = highestDerivativeAt(self, k-1)
+            DO j = 0, highestDerivative
                self % CTrans(r,c:c+N)   =  CAMinus(:,j)*self % dsdt(k)**j
                self % CTrans(r,cl:cl+N) = -CAPlus(:,j) *self % dsdt(k-1)**j
                r = r + 1
@@ -405,6 +426,47 @@
          END DO
 
       END SUBROUTINE ConstructConstraintMatrix
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION isBreakAt(self, cutIndex)
+!
+!        ----------------------------------------------------------
+!        True if the interior cut point cutIndex is a break, so that
+!        only C^0 continuity is imposed there
+!        ----------------------------------------------------------
+!
+         IMPLICIT NONE
+         CLASS(MultiH1Optimizer) :: self
+         INTEGER                 :: cutIndex
+
+         isBreakAt = .FALSE.
+         IF ( .NOT. ALLOCATED(self % breakIndices) )     RETURN
+         isBreakAt = ANY(self % breakIndices == cutIndex)
+
+      END FUNCTION isBreakAt
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION highestDerivativeAt(self, cutIndex)
+!
+!        --------------------------------------------------------------
+!        The highest derivative made continuous at the interior cut
+!        point cutIndex: zero at a break, and internalConstraint
+!        otherwise.
+!        --------------------------------------------------------------
+!
+         IMPLICIT NONE
+         CLASS(MultiH1Optimizer) :: self
+         INTEGER                 :: cutIndex
+
+         IF ( isBreakAt(self, cutIndex) )     THEN
+            highestDerivativeAt = 0
+         ELSE
+            highestDerivativeAt = self % internalConstraint
+         END IF
+
+      END FUNCTION highestDerivativeAt
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -660,7 +722,7 @@
 
       DO m = 2, p
          DO k = m, N
-            C(k,m) = (2*k-1)*C(k-1,m-1) - C(k-2,m)
+            C(k,m) = (2*k-1)*C(k-1,m-1) + C(k-2,m)
          END DO
       END DO
 
@@ -785,7 +847,13 @@
       REAL(KIND=RP)       :: C(0:5,0:3)
       REAL(KIND=RP)       :: L2Prime = 3.0_RP
       REAL(KIND=RP)       :: L3Prime = 6.0_RP, L3DoublePrime = 15.0_RP
-
+      REAL(KIND=RP)       :: expected
+      INTEGER             :: k, m, j
+!
+!     ----------------------------------
+!     Hand computed values at the right end
+!     ----------------------------------
+!
       CALL ConstructContinuityArray(C,N,p,1.0_RP)
 
       r = .FALSE.
@@ -793,6 +861,39 @@
       r = (C(2,1) - L2Prime) == 0.0_RP .AND. (C(3,2)-L3DoublePrime) == 0
       r = r .AND. (C(3,1) - L3Prime)       == 0.0_RP
       r = r .AND. (C(3,3) - L3DoublePrime) == 0.0_RP
+!
+!     ----------------------------------------------------------------
+!     All of the values at the right end, where the m^th derivative of
+!     L_k is (k+m)!/(2^m m! (k-m)!), and at the left end, where it is
+!     that times (-1)^(k+m).
+!     ----------------------------------------------------------------
+!
+      DO m = 0, p
+         DO k = m, N
+            expected = 1.0_RP
+            DO j = k-m+1, k+m
+               expected = expected*j
+            END DO
+            DO j = 1, m
+               expected = expected/(2.0_RP*j)
+            END DO
+            r = r .AND. ABS(C(k,m) - expected) <= 1.0E-12_RP*expected
+         END DO
+      END DO
+
+      CALL ConstructContinuityArray(C,N,p,-1.0_RP)
+      DO m = 0, p
+         DO k = m, N
+            expected = (-1.0_RP)**(k+m)
+            DO j = k-m+1, k+m
+               expected = expected*j
+            END DO
+            DO j = 1, m
+               expected = expected/(2.0_RP*j)
+            END DO
+            r = r .AND. ABS(C(k,m) - expected) <= 1.0E-12_RP*ABS(expected)
+         END DO
+      END DO
 
    END FUNCTION spotCheckSmoothnessConditionsIsOK
 
