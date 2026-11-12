@@ -218,6 +218,7 @@ InterpolationAndDerivatives.o
 
 CurveOptimization.o :$(HOHQMESHPATH)/Source/BoundaryOptimization/CurveOptimization.f90 \
 SMCurveClass.o \
+FatalErrorException.o \
 ConstrainedMultiH1Optimizer.o \
 MultiSegmentModalCurve.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/BoundaryOptimization/CurveOptimization.f90

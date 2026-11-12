@@ -572,10 +572,16 @@ resulting mesh.
   [`Source/BoundaryOptimization/CurveOptimization.f90`](https://github.com/trixi-framework/HOHQMesh/blob/main/Source/BoundaryOptimization/CurveOptimization.f90).
 
 - The nonlinear solve for (3) is performed in the `FUNCTION iterate`,
-- found in the same file, which combines
-  bisection (`FUNCTION bisect`) and the Pegasus
+  found in the same file.
+  It keeps a bracket around the root and returns the end that satisfies the tolerance, so every segment it produces does too.
+  After that, new points come from the Pegasus
   method, (Dowell, M., Jarratt, P. (1972) The "Pegasus" method for
-  computing the root of an equation, [DOI: 10.1007/BF01932959](https://doi.org/10.1007/BF01932959))
+  computing the root of an equation, [DOI: 10.1007/BF01932959](https://doi.org/10.1007/BF01932959)),
+  with bisection used whenever a step does not at least halve the bracket.
+
+- If no segment of resolvable length satisfies the tolerance, the marching
+  stops with a warning. This happens when the tolerance is smaller than the
+  accuracy to which the curve and its derivative can be evaluated.
 
 - The marching function (2) is implemented in `FUNCTION marchingFunction`.
 
