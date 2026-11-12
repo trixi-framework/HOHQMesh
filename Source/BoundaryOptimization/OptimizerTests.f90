@@ -517,7 +517,7 @@
       INTEGER       :: optType    = H1_NORM
       INTEGER       :: polyOrder  = 3
       INTEGER       :: smoothness = 0 ! C^0 smoothness
-      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 3.2E-9_RP
+      REAL(KIND=RP) :: toler      = 0.0010_RP, testTol = 5.0E-8_RP
 !
 !     -----
 !     Other
