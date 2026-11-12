@@ -118,7 +118,7 @@
 !        ========
 !
          PROCEDURE :: initSMSegment
-         PROCEDURE :: destruct => destructSMSegment
+         FINAL     :: destructSMSegment
 
       END TYPE SMSegment
 !
@@ -267,7 +267,7 @@
 !
       RECURSIVE SUBROUTINE DestructSMSegment(self)
          IMPLICIT NONE
-         CLASS(SMSegment)           :: self
+         TYPE(SMSegment)           :: self
 
          CALL releaseSMSegmentedCurveNode(self % leftNode)
          CALL releaseSMSegmentedCurveNode(self % rightNode)
@@ -297,7 +297,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       RECURSIVE SUBROUTINE subdivideSMSegment(self, atT, h, alongCurve, controls, savingNodesTo)
-         USE SizerControls
+         USE SizerControls, ONLY: SizerControlPointers, controlsSize
          IMPLICIT NONE
 !
 !        ---------
@@ -307,7 +307,7 @@
          CLASS(SMSegment)   , POINTER :: self
          CLASS(SMCurve)               :: alongCurve
          CLASS(FTLinkedList)          :: savingNodesTo
-         CLASS(FTLinkedList), POINTER :: controls
+         TYPE(SizerControlPointers)   :: controls
          REAL(KIND=RP)                :: h, atT, hLoc, cSize
 !
 !        ---------------
@@ -330,8 +330,8 @@
          CALL nodeMid % initSMSegmentedCurveNode(x = xMid,t = atT)
 
          hLoc = h
-         IF(ASSOCIATED(controls))     THEN
-            cSize = controlsSize(controlsList = controls,x = xMid)
+         IF(ALLOCATED(controls % centers))     THEN
+            cSize = controlsSize(controls = controls,x = xMid)
             hLoc = MIN(hLoc, cSize)
          END IF
 
@@ -443,6 +443,7 @@
          USE ProgramGlobals, ONLY:curvatureFactor, INNER, ROW_SIDE, UNDEFINED
          USE SMSplineCurveClass
          USE IntervalSearchModule, ONLY: searchArrayForValue
+         USE SizerControls, ONLY: SizerControlPointers, GatherSizerControls
 !
 !     ------------------------------------------------
 !     Construct the curve given a Curve class instance
@@ -481,6 +482,7 @@
          CLASS(SMSplineCurve), POINTER             :: spline
          LOGICAL                                   :: useSplinePoints
          LOGICAL                                   :: useSegmentOptimization
+         TYPE(SizerControlPointers)                :: controlPointers
 !
 !        -------------
 !        Preliminaries
@@ -489,8 +491,8 @@
          useSegmentOptimization = .FALSE.
          IF ( PRESENT(segmentsSizes) .AND. PRESENT(cuts) .AND. &
               PRESENT(chainCount)    .AND. PRESENT(chainID) )     THEN
-            useSegmentOptimization = .TRUE. 
-         END IF 
+            useSegmentOptimization = .TRUE.
+         END IF
 !
 !        ----
 !        Self
@@ -538,11 +540,12 @@
 !        Subdivide if necessary
 !        ----------------------
 !
-         CALL subdivideSMSegment(self          = rootSegment, &
-                                 atT           = 0.5_RP,      &
-                                 alongCurve    = theCurve,    &
-                                 h             = self % h,    &
-                                 controls      = controls,    &
+         IF ( ASSOCIATED(controls) )     CALL GatherSizerControls( controls, controlPointers )
+         CALL subdivideSMSegment(self          = rootSegment,     &
+                                 atT           = 0.5_RP,          &
+                                 alongCurve    = theCurve,        &
+                                 h             = self % h,        &
+                                 controls      = controlPointers, &
                                  savingNodesTo = nodes)
 !
 !        ------------------------------------
@@ -550,6 +553,7 @@
 !        ------------------------------------
 !
          CALL initArrayWithLinkedList( self % nodeArray, nodes )
+         CALL releaseFTLinkedListClass(nodes)
          N = self % nodeArray % COUNT()
 
          CALL releaseSMSegment(self = rootSegment)
@@ -603,12 +607,12 @@
                xDoublePrime = [2.0_RP*spline % cx(j), 2.0_RP*spline % cy(j), 2.0_RP*spline % cz(j)]
                IF ( useSegmentOptimization )     THEN
                   t = (REAL((chainID - 1),RP) + spline % t(j))/REAL(chainCount,RP)
-                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = t) 
+                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = t)
                   s = MIN( h, c ) !Choose the smaller of h or optimized size
-               ELSE 
+               ELSE
                   c = Curvature( xPrime, xDoublePrime)
                   s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature
-               END IF 
+               END IF
 
                ALLOCATE(p)
                CALL p % initSMSegmentedCurveNode(x = [spline % x(j), spline % y(j), spline % z(j)], &
@@ -683,12 +687,12 @@
 
                IF ( useSegmentOptimization )     THEN
                   t = (REAL((chainID - 1),RP) + p % t)/REAL(chainCount,RP)
-                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = t) 
+                  c = searchArrayForValue(searchArray = cuts,array = segmentsSizes,t = t)
                   s = MIN( h, c ) !Choose the smaller of h or optimized size
-               ELSE 
+               ELSE
                   c = Curvature( xPrime, xDoublePrime)
                   s = curvatureFactor/MAX( 1.0_RP/h, c ) !Choose the smaller of h or radius of curvature
-               END IF 
+               END IF
 
                p % invScale = 1.0_RP/s
                norm         = SQRT(xPrime(1)**2 + xPrime(2)**2)
