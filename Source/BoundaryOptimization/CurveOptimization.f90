@@ -213,22 +213,22 @@
                             optimized          = optimizedCurve)
 !
 !        --------------------------------------------------------------------------
-!        See if the error is within tolerance. Since the marching can only use the
-!        FIXED_CONSTRAINT option, and since errors increase as the constraint
-!        order increases, then the error won't be within the tolerance. If not,
-!        create a new tolerance that is small enough so that when done we should
-!        be OK
+!        See if the error is within the requested tolerance. Since the marching can
+!        only use the FIXED_CONSTRAINT option, and since errors increase as the
+!        constraint order increases, the error might not be. If not, march again
+!        with a tolerance that is smaller by the amount that the error is too large.
 !        --------------------------------------------------------------------------
 !
          CALL castToMultiSegmentModalCurve(optimizedCurve, msmCurve)
          CALL SegmentErrors(exact          = curve,    &
                             segmentedCurve = msmCurve, &
                             gQuad          = gQuad,    &
-                            errors         = errors)
+                            errors         = errors,   &
+                            whichNorm      = options % whichNorm)
          e = MAXVAL(errors(:,USER_NORM))
-         IF ( e .LE. options % toler )     EXIT
+         IF ( e .LE. savedOptions % toler )     EXIT
 
-         errorRatio = options % toler/e
+         errorRatio = savedOptions % toler/e
          options % toler = options % toler*errorRatio
 !
          IF ( n < 3 )     THEN
@@ -239,6 +239,7 @@
 
       END DO
 
+      options   =  savedOptions
       optimized => optimizedCurve
 !
    END SUBROUTINE OptimizeCurveByMarching
@@ -286,7 +287,7 @@
 !
       CALL FindOptimizedCutsInRange(curve, polyOrder, [breaks(0), breaks(1)-Limit], &
                                     options, gQuad, tmpA)
-      breakIndices = [SIZE(tmpA)]
+      breakIndices = [SIZE(tmpA) - 1] ! tmpA holds cuts 0:K, so the break is cut K
       tmpA(UBOUND(tmpA)) = breaks(1)
       IF(nBreaks == 1) THEN
          ALLOCATE(optimizedCuts(0:SIZE(tmpA)-1))
@@ -664,7 +665,8 @@
       CALL SegmentErrors(exact          = curve,    &
                          segmentedCurve = msmCurve, &
                          gQuad          = gQuad,    &
-                         errors         = errors)
+                         errors         = errors,   &
+                         whichNorm      = options % whichNorm)
 
       CALL releaseBaseCurve(optimizedCurve)
 
@@ -732,10 +734,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   SUBROUTINE SegmentErrors(exact, segmentedCurve, gQuad, errors)
+   SUBROUTINE SegmentErrors(exact, segmentedCurve, gQuad, errors, whichNorm)
 !
 !  -------------------------------------------------------------------
-!  Compute the H^1 errors in each of the segments of a segmented curve
+!  Compute the errors in each of the segments of a segmented curve.
+!  The USER_NORM column is the L2 or H1 (default) error, according to
+!  whichNorm, per unit arc length of the segment. It is the same
+!  measure as reported by ComputeBoundaryErrors, so the tolerance
+!  means the same thing when choosing segments as when checking them.
 !  -------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -748,6 +754,7 @@
       CLASS(MultiSegmentModalCurve), POINTER :: segmentedCurve
       TYPE(GaussQuadratureType)              :: gQuad
       REAL(KIND=RP), ALLOCATABLE             :: errors(:,:)
+      INTEGER, OPTIONAL                      :: whichNorm
 !
 !     ----------------
 !     Local variables
@@ -755,23 +762,30 @@
 !
       INTEGER       :: nSegments
       INTEGER       :: k
+      INTEGER       :: normType
+
+      normType = H1_NORM
+      IF(PRESENT(whichNorm)) normType = whichNorm
 
       nSegments = segmentedCurve % nSegments
       ALLOCATE(errors(nSegments,3), source = 0.0_RP)
 
       DO k = 1, nSegments
-         errors(k,:) =  segmentError(k, exact, segmentedCurve, gQuad)
+         errors(k,:) =  segmentError(k, exact, segmentedCurve, gQuad, normType)
       END DO
 
    END SUBROUTINE SegmentErrors
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   FUNCTION segmentError(k, exact, segmentedCurve, gQuad) RESULT(er)
+   FUNCTION segmentError(k, exact, segmentedCurve, gQuad, whichNorm) RESULT(er)
 !
-!  ---------------------------------------------------------------
-!  Compute the H^1 errors on the k'th segment of a segmented curve
-!  ---------------------------------------------------------------
+!  ---------------------------------------------------------------------
+!  Compute the errors on the k'th segment of a segmented curve. The
+!  USER_NORM error is normalized by the arc length of the segment so
+!  that, like the pointwise error, it scales as h^N and does not depend
+!  on the length of the segment itself.
+!  ---------------------------------------------------------------------
 !
       IMPLICIT NONE
 !
@@ -783,6 +797,7 @@
       CLASS(SMCurve)               , POINTER :: exact
       CLASS(MultiSegmentModalCurve), POINTER :: segmentedCurve
       TYPE(GaussQuadratureType)              :: gQuad
+      INTEGER                                :: whichNorm
       REAL(KIND=RP)                          :: er(3)
 !
 !     ----------------
@@ -791,7 +806,7 @@
 !
       INTEGER       :: qOrder
       INTEGER       :: j
-      REAL(KIND=RP) :: t, h, dsdt
+      REAL(KIND=RP) :: t, h, dsdt, arc
       REAL(KIND=RP) :: e, e0(3), e1(3), eMax, eMaxDeriv
 
       qOrder = gQuad % N
@@ -806,11 +821,16 @@
          e0   = (exact % positionAt(t)   - segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_FUNCTION))**2
          e1   = (exact % derivativeAt(t) - dsdt*segmentedCurve % valueInSegment(k, t, which = LA_EVALUATE_DERIVATIVE))**2
 
-         e         = e + (e0(1) + e0(2) + e1(1) + e1(2))*gQuad % weights(j)
+         IF ( whichNorm == L2_NORM )     THEN
+            e = e + (e0(1) + e0(2))*gQuad % weights(j)
+         ELSE
+            e = e + (e0(1) + e0(2) + e1(1) + e1(2))*gQuad % weights(j)
+         END IF
          eMax      = MAX(eMax,e0(1),e0(2))
          eMaxDeriv = MAX(eMaxDeriv,e1(1),e1(2))
       END DO
-      er(USER_NORM)       = SQRT(0.5_RP*h*e)
+      arc                 = segmentArcLength(segmentedCurve, k, gQuad % nodes, gQuad % weights)
+      er(USER_NORM)       = SQRT(0.5_RP*h*e/arc)
       er(MAX_NORM)        = SQRT(eMax)
       er(MAX_NORM_DERIV)  = SQRT(eMaxDeriv)
 

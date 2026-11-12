@@ -530,12 +530,17 @@ could contribute an amount of error which we bound in terms of the local
 error tolerance $\tau$ as
 
 $$
- e_k =\sqrt{\frac{h_{k}}{2}\int\limits_{-1}^{1}\left\{ \left| \vec{\Gamma}(t_{k}+h_{k}(s+1)/2 ) - \sum_{j=0}^N \vec{b}^{(k)}_j \phi_j(s) \right|^2 + \left|\vec{\Gamma}'(t_{k}+h_{k}(s+1)/2 ) - \sum_{j=0}^N \vec{b}^{(k)}_j \frac{ds}{dt}\phi'_j(s) \right|^2 \right\} \,\mathrm{d}s}
+ e_k =\sqrt{\frac{h_{k}}{2\ell_k}\int\limits_{-1}^{1}\left\{ \left| \vec{\Gamma}(t_{k}+h_{k}(s+1)/2 ) - \sum_{j=0}^N \vec{b}^{(k)}_j \phi_j(s) \right|^2 + \left|\vec{\Gamma}'(t_{k}+h_{k}(s+1)/2 ) - \sum_{j=0}^N \vec{b}^{(k)}_j \frac{ds}{dt}\phi'_j(s) \right|^2 \right\} \,\mathrm{d}s}
 \le \tau,
 \tag{2}
 $$
 
-where $h_k = t_k - t_{k-1}$ is the length of the interval.
+where $h_k = t_k - t_{k-1}$ is the length of the interval and $\ell_k$ is the
+arc length of the approximation on that interval. Dividing by $\ell_k$ makes
+$e_k$ an error per unit length, so it does not shrink just because a segment
+is short. For the $\mathbb L^2$ norm the derivative term is dropped. The same
+measure is used for the boundary errors that HOHQMesh reports and uses to
+decide whether to remesh, so the tolerance has the same meaning in both places.
 Then the problem becomes: For each $k$ find $h_{k}$ such that
 
 $$

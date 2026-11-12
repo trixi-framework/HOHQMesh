@@ -267,9 +267,17 @@
 !     Where to write the results
 !     --------------------------
 !
-      m = INDEX(STRING = project % runParams % statsFileName, SUBSTRING = ".")
-      IF ( m == -1 )     THEN
-         OPEN(NEWUNIT = normUnit, FILE = project % runParams % statsFileName //"_ErrorNorms")
+!
+!     ---------------------------------------------------------------
+!     Insert "_ErrorNorms" before the file extension, if there is one.
+!     Only a "." after the last "/" starts an extension, so leading
+!     "./" or "../" and dots in directory names are skipped. INDEX
+!     returns 0 when the substring is not found.
+!     ---------------------------------------------------------------
+!
+      m = INDEX(STRING = project % runParams % statsFileName, SUBSTRING = ".", BACK = .TRUE.)
+      IF ( m <= INDEX(STRING = project % runParams % statsFileName, SUBSTRING = "/", BACK = .TRUE.) )     THEN
+         OPEN(NEWUNIT = normUnit, FILE = TRIM(project % runParams % statsFileName) //"_ErrorNorms")
       ELSE
          str = project % runParams % statsFileName
          str = str(1:m-1) //"_ErrorNorms.txt"
