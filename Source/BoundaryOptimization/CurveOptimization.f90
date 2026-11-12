@@ -473,8 +473,8 @@
 !     https://doi.org/10.1007/BF01932959
 !
 !  A Pegasus point is used only if it falls inside of the bracket, and bisection
-!  is used for the next point any time a step does not at least halve the bracket,
-!  so the bracket shrinks to minStep in a bounded number of steps.
+!  is used for the next point any time a step leaves more than three quarters of the
+!  bracket, so the bracket shrinks to minStep in a bounded number of steps.
 !  -----------------------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -505,8 +505,8 @@
 !
 !     -----------------------------------------------------------------
 !     Stop when the error at a is within F_TOLERANCE of the target, as
-!     a fraction of the target. The bracket halves at least every other
-!     step, so MAX_ITERATIONS is only a backstop.
+!     a fraction of the target. The bracket shrinks by at least a
+!     quarter every other step, so MAX_ITERATIONS is only a backstop.
 !     -----------------------------------------------------------------
 !
       REAL(KIND=RP), PARAMETER :: F_TOLERANCE    = 1.0E-3_RP
@@ -531,8 +531,8 @@
 !
 !        ----------------------------------------------------------------
 !        Choose the next point. Bisect while a is still at tL, i.e. until
-!        some segment has met the tolerance, and after any step that did
-!        not at least halve the bracket. Otherwise use the Pegasus point,
+!        some segment has met the tolerance, and after any step that left
+!        more than 3/4 of the bracket. Otherwise use the Pegasus point,
 !        the intersection of the secant line with the t axis.
 !        ----------------------------------------------------------------
 !
@@ -568,8 +568,15 @@
             b  = c; gB = fC
             lastMoved = MOVED_B
          END IF
-
-         bisectNext = (b - a) > 0.5_RP*bracketSize
+!
+!        ------------------------------------------------------------------
+!        The test is against 3/4 and not 1/2 of the bracket on purpose. A
+!        bisection step leaves exactly half, to within rounding, so a test
+!        against 1/2 is decided by the last bit. The points chosen, and so
+!        the cuts, would then differ from one platform to another.
+!        ------------------------------------------------------------------
+!
+         bisectNext = (b - a) > 0.75_RP*bracketSize
 
       END DO
 

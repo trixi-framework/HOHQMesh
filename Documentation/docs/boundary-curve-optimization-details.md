@@ -577,7 +577,7 @@ resulting mesh.
   After that, new points come from the Pegasus
   method, (Dowell, M., Jarratt, P. (1972) The "Pegasus" method for
   computing the root of an equation, [DOI: 10.1007/BF01932959](https://doi.org/10.1007/BF01932959)),
-  with bisection used whenever a step does not at least halve the bracket.
+  with bisection used whenever a step leaves more than three quarters of the bracket.
 
 - If no segment of resolvable length satisfies the tolerance, the marching
   stops with a warning. This happens when the tolerance is smaller than the
