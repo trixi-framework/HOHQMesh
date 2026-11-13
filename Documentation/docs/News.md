@@ -2,6 +2,7 @@
 
 ## Changes in the v1.6 lifecycle
 
+- Implement paving strategy for the interior/exterior meshing with the existing strategy as a fallback (#190)
 - Add cleanup for high valence nodes left due to quadtree transition templates. A new shape improvement
   step after smoothing repositions the nodes of poorly shaped elements, and preserves the symmetry of
   symmetric meshes (#194)
