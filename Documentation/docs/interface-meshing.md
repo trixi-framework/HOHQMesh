@@ -24,7 +24,7 @@ are created, those that are outside of the domain or too close to a boundary are
 edges that are left are projected onto the curve to create a new layer of boundary elements.
 
 Generally, this cookie cutter strategy does not work for an interface boundary, because both
-sides must shares the boundary nodes in order for the mesh to stay conforming.
+sides must share the boundary nodes for the mesh to stay conforming.
 HOHQMesh has two strategies for an interface:
 
 1. **[Paving](#interface-paving)** (default): a band of elements with the size of the `BACKGROUND_GRID` around the curve are removed. This band is then meshed again from the curve outward. The nodes on the curve are placed by the geometry of the curve, and both sides share them.
@@ -80,7 +80,7 @@ The elements around the path are then replaced, and only the nodes pinned to the
 ## Interface paving
 
 Paving, or advancing front meshing, is an approach where the
-elements are built from the boundary inward, one row at a time.
+elements are built from the boundary geometry, one row at a time.
 In HOHQMesh it is used locally, only along interface curves,
 in a band around each interface.
 The rest of the domain keeps the elements of the
@@ -92,7 +92,7 @@ Compared with moving grid nodes onto the curve and applying templates, paving of
   background grid.
 - Every joint of the chain gets a node, so the corners of the interface are kept sharp.
 - The first row of elements on each side of an interface is aligned with the respective curve
-  from the start, so no elements need to be split afterwards.
+  from the start, so no elements need to be split.
 
 The routines are in `MeshGeneratorMethods.f90`. The main steps for one interface chain are:
 
@@ -126,8 +126,8 @@ the fallback strategy.
 
 ### 1. Sizes along the curve
 
-Each chain is sampled at equal steps of its parameter, 2000 samples per curve, or fewer for
-a chain of many curves so that the total number of samples stays near 40000 (at least 200 per curve).
+Each chain is sampled at equal steps of its parameter, 2,000 samples per curve, or fewer for
+a chain of many curves so that the total number of samples stays near 40,000 (at least 200 per curve).
 `InterfaceCurveSizes` then sets the element size $h$ at each sample to be the smallest of:
 
 - the **control size** of the sizer (the base size and the refinement regions), limited so that
@@ -239,7 +239,7 @@ regions of two nearby curves would then meet in the gap between them and squeeze
 Each successful plan is scored by `worstQuadQuality` in three steps:
 
 1. A copy of the plan's new interior nodes is smoothed with 20 Laplace passes, which is a cheap
-   prediction of  how the smoother would move the nodes later.
+   prediction of how the smoother would move the nodes later.
 2. The quality of each new element is computed. The smallest sine of the angles of each element times the ratio of
    its shortest to its longest side. Both flat and stretched elements therefore score low. The angles
    at the nodes of the band edge are left out, since the smoother moves those nodes later as well.
@@ -252,15 +252,10 @@ and the chain is marked as paved (`chainWasPaved`).
 
 ### After paving
 
-The rest of the procedure remains the same as for the fallback, with two exceptions:
-
-- The nodes on the curve are not redistributed along it (`RedistributeNodesAlongBoundaries`), since
-  they are already placed by size and at the joints.
-- The elements at the curve are not split (step 7 of the fallback), since the first row of elements is
-  already aligned with the curve.
-
-The topology cleanup, the smoothing with the corner constraints, the valence reduction on the interfaces, the untangling and the material assignment (steps 6 and 8 to 10 of the fallback) apply as usual.
-During smoothing, the nodes on a paved curve slide along it and the nodes at the joints stay fixed, as for the fallback.
+The paved elements then go through the same cleanup and smoothing as the rest of the mesh.
+The nodes on a paved curve keep the spacing that paving gave them, and the first row of elements
+is left as it is, since it is already aligned with the curve.
+During smoothing, the nodes on the curve slide along it and the nodes at the joints stay fixed.
 An edge between two nodes of a paved curve may not get shorter than 3/4 of its length at the start of each smoothing (`MIN_PAVED_EDGE_FRACTION` in `SpringMeshSmoother.f90`).
 Otherwise the springs of squeezed elements, e.g. at the tip of a narrow wedge,
 can pull a node along the curve almost onto its neighbor and leave a sliver there.
@@ -458,7 +453,7 @@ elements between them into slivers.
 After the nodes are on the interface curve, the elements on both sides of it can be triangles (three nodes
 on the curve), wedges (one node on the curve) or regular quads (two nodes, one edge on the curve).
 In the final cleanup, `SplitInterfaceElements` (`InterfaceElementMethods.f90`) splits every
-element that has a node on an interface. The rule that keeps the mesh conforming is simple:
+element that has a node on an interface. Elements at a paved chain are skipped. The rule that keeps the mesh conforming is simple:
 
 > **Every edge with exactly one node on the interface is split at its midpoint.**
 

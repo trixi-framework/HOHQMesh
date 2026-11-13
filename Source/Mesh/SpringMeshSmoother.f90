@@ -806,13 +806,12 @@
          IMPLICIT NONE
 !
 !        ----------------------------------------------------------------
-!        The edges whose two nodes are on the same paved interface chain,
-!        with at least one of them sliding along it (the other can be a
-!        fixed joint), and the shortest length each may get while smoothing:
-!        MIN_PAVED_EDGE_FRACTION of its length now. Paving spaces those
-!        nodes by the size along the curve, but the springs of squeezed
-!        elements, e.g. at the tip of a narrow wedge, can pull a node
-!        along the curve almost onto its neighbor.
+!        Called once before the smoothing steps. Paving spaces the nodes
+!        along the curve according to the element size there, and the
+!        smoother should not undo that. Without the limit, the springs of
+!        squeezed elements can pull a node along the curve until it sits
+!        almost on top of its neighbor. KeepPavedCurveNodesApart enforces
+!        the limit after each smoothing step.
 !        ----------------------------------------------------------------
 !
          TYPE(SMNodePtr), DIMENSION(:)  , ALLOCATABLE :: nodePointers
@@ -854,11 +853,16 @@
       SUBROUTINE KeepPavedCurveNodesApart( x, xPrevious, pavedEdges, minLength )
          IMPLICIT NONE
 !
-!        ----------------------------------------------------------------
-!        Stop the two nodes of a paved curve edge (GatherPavedCurveEdges)
-!        that have come closer than its shortest length: put them back to
-!        where they were before this step, xPrevious, and stop them
-!        ----------------------------------------------------------------
+!        ---------------------------------------------------------------
+!        Called after each smoothing step. Loops over every edge that
+!        lies on a paved interface curve (the list comes from
+!        GatherPavedCurveEdges) and checks whether the step has pushed
+!        its two nodes closer together than the shortest length allowed
+!        for that edge, minLength. If so, the step is undone for those
+!        two nodes: they go back to where they were before the step,
+!        xPrevious, and their velocities are set to zero so that they do
+!        not keep drifting toward each other in the next step.
+!        ---------------------------------------------------------------
 !
          REAL(KIND=RP), DIMENSION(:,:) :: x, xPrevious
          INTEGER      , DIMENSION(:,:) :: pavedEdges
