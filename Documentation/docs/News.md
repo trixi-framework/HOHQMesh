@@ -2,11 +2,18 @@
 
 ## Changes in the v1.6 lifecycle
 
+- Add cleanup for high valence nodes left due to quadtree transition templates. A new shape improvement
+  step after smoothing repositions the nodes of poorly shaped elements, and preserves the symmetry of
+  symmetric meshes (#194)
+- Improve the mesh cleanup: better diamond element removal and untangling of inverted elements
+  no longer lets nodes drift from their original positions. The sizer is faster for models with
+  many boundary points or refinement regions, and several memory leaks are fixed (#191)
+- Add script to update Benchmark values and associated files (#195)
 - Improve strategy for `INTERFACE_BOUNDARIES` and include documentation of interior/exterior meshing (#186).
 - New strategy to `RedistributeNodesAlongBoundaries` added (#179). The number of times nodes along
-  the boundary are smoothed is `numBoundarySmoothPasses = 10` set in the `ProgramGlobals.f90`.
-- Add boundary curve L2/H1 optimization and error controlled adaptive meshing capability (#166).
-- Whether or not boundary curve optimization is requested, HOHQMesh reports the maximum $L^2$ and $H^1$ errors along the boundaries.
+  the boundary are smoothed is `numBoundarySmoothPasses = 10` set in the `ProgramGlobals.f90`
+- Add boundary curve L2/H1 optimization and error controlled adaptive meshing capability (#166)
+- Whether or not boundary curve optimization is requested, HOHQMesh reports the maximum $L^2$ and $H^1$ errors along the boundaries
 
 ## Changes in the v1.5 lifecycle
 

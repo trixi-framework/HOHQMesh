@@ -263,6 +263,14 @@
          CALL UntangleInvertedElements( project % mesh, errorCode )
          IF(errorCode > A_OK_ERROR_CODE)     RETURN
 !
+!        ------------------------------------------------
+!        Improve the shapes of the elements that are poor
+!        after smoothing, mostly those at irregular nodes
+!        ------------------------------------------------
+!
+         CALL ImproveElementShapes( project % mesh, errorCode )
+         IF(errorCode > A_OK_ERROR_CODE)     RETURN
+!
 !        ----------------------------------------------------------
 !        If this is a multi-material mesh, then set each element's
 !        materialID and materialName
@@ -3256,6 +3264,8 @@
 !////////////////////////////////////////////////////////////////////////
 !
    SUBROUTINE MakeMeshSymmetric(project, symmetryCurve)
+      USE MeshCleaner, ONLY: ImproveElementShapes
+      USE LineReflectionModule
       IMPLICIT NONE
 !
 !     -----------------------------------------------------------
@@ -3274,7 +3284,8 @@
 !      Local variables
 !      ---------------
 !
-       INTEGER :: errorCode
+       INTEGER       :: errorCode
+       REAL(KIND=RP) :: x0(3), x1(3), a, b, c
 
        IF ( allSymmetryCurvesAreColinear(project % model) )     THEN
           CALL ReflectMesh(project % mesh, symmetryCurve)
@@ -3288,6 +3299,16 @@
             CALL project % smoother % smoothMesh(  project % mesh, project % model, errorCode )
             IF(PrintMessage) PRINT *, "   Smoothing done."
           END IF
+!
+!         -------------------------------------------------------------
+!         The smoothing may undo the shape improvements made before the
+!         reflection, so improve the shapes again, in mirror pairs
+!         -------------------------------------------------------------
+!
+          x0 = symmetryCurve % positionAt(t = 0.0_RP)
+          x1 = symmetryCurve % positionAt(t = 1.0_RP)
+          CALL ComputeLineCoefs(x0, x1, a, b, c)
+          CALL ImproveElementShapes( project % mesh, errorCode, symmetryLine = [a, b, c] )
        ELSE
            CALL ThrowErrorExceptionOfType(poster = "HOHQMesh", &
                                           msg    = "A symmetry curve is is not straight or colinear. Ignoring...", &
