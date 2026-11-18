@@ -12,10 +12,6 @@
       plot file format = skeleton
    \end{RUN_PARAMETERS}
 
-   \begin{MESH_PARAMETERS}
-      element type         = hex
-   \end{MESH_PARAMETERS}
-   
    \begin{BACKGROUND_GRID}
       background grid size = [0.75,0.75,0.75]
    \end{BACKGROUND_GRID}

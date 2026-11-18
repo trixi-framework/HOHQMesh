@@ -12,10 +12,6 @@
       plot file format = skeleton
    \end{RUN_PARAMETERS}
 
-   \begin{MESH_PARAMETERS}
-      element type = hex
-   \end{MESH_PARAMETERS}
-
    \begin{BACKGROUND_GRID}
        x0 = [ -3.0, -2.0, 1.0]
        dx = [ 1.0, 1.0, 1.0]
