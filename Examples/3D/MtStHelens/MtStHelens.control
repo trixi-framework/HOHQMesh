@@ -13,9 +13,6 @@
       plot file format = skeleton
    \end{RUN_PARAMETERS}
 
-   \begin{MESH_PARAMETERS}
-      element type         = hex
-   \end{MESH_PARAMETERS}
 %
 % x \in [0.0 km, 9.38 km], y \in [0.0 km, 13.57 km]
 %

@@ -22,10 +22,6 @@
       plot file format = skeleton
    \end{RUN_PARAMETERS}
 
-   \begin{MESH_PARAMETERS}
-      element type = quad
-   \end{MESH_PARAMETERS}
-
    \begin{BACKGROUND_GRID}
       background grid size = [5.0,5.0,5.0]
    \end{BACKGROUND_GRID}
