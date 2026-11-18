@@ -16,7 +16,7 @@
    \begin{SPRING_SMOOTHER}
       smoothing type = LinearAndCrossbarSpring
       smoothing = ON
-      Number of iterations = 40
+      number of iterations = 50
    \end{SPRING_SMOOTHER}
 
 \end{CONTROL_INPUT}
