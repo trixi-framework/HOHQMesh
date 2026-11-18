@@ -335,8 +335,7 @@
 !
       IF(PrintMessage) PRINT *, "   Generate quadtree..."
          chainWasPaved = .FALSE.
-         CALL GenerateGridWithSizerAndType( project % grid, project % sizer, &
-                                            project % meshParams % meshType)
+         CALL GenerateConformingGridWithSizer( project % grid, project % sizer )
          project % numberOfLevelsUsed = highestLevel
          IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN
       IF(PrintMessage) PRINT *, "   Quadtree grid generated"

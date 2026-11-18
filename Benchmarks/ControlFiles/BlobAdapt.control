@@ -11,10 +11,6 @@
    \end{RUN_PARAMETERS}
 
 
-   \begin{MESH_PARAMETERS}
-      element type = quad
-   \end{MESH_PARAMETERS}
-
    \begin{BACKGROUND_GRID}
       background grid size = [0.90,0.90,0.0]
    \end{BACKGROUND_GRID}

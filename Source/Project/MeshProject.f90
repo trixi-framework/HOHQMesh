@@ -60,8 +60,6 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: POLYNOMIAL_ORDER_KEY       = "polynomial order"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: PLOT_FORMAT_KEY            = "plot file format"
 
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_PARAMETERS_KEY         = "MESH_PARAMETERS"
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: MESH_TYPE_KEY               = "mesh type"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: GRID_SIZE_KEY               = "background grid size"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: BACKGROUND_GRID_KEY         = "BACKGROUND_GRID"
 
@@ -80,7 +78,6 @@
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: REFINEMENT_CENTER_KEY       = "REFINEMENT_CENTER"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: REFINEMENT_LINE_KEY         = "REFINEMENT_LINE"
 
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: ELEMENT_TYPE_KEY            = "element type"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SIMPLE_EXTRUSION_BLOCK_KEY  = "SIMPLE_EXTRUSION"
       CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), PARAMETER :: SIMPLE_ROTATION_BLOCK_KEY   = "SIMPLE_ROTATION"
 
@@ -105,11 +102,6 @@
          INTEGER                                 :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
       END TYPE RunParameters
       PRIVATE :: RunParameters
-
-      TYPE MeshParameters
-         INTEGER       :: meshType
-      END TYPE MeshParameters
-      PRIVATE :: MeshParameters
 
       TYPE BackgroundGridParameters
          REAL(KIND=RP) :: backgroundGridSize(3)
@@ -150,7 +142,6 @@
          TYPE(StructuredHexMesh)   , POINTER :: hexMesh  => NULL()
          TYPE(FTMutableObjectArray), POINTER :: boundaryPolynomialsArray => NULL()
          TYPE(RunParameters)                 :: runParams
-         TYPE(MeshParameters)                :: meshParams
          TYPE(BackgroundGridParameters)      :: backgroundParams
          TYPE(RotationTransform)             :: rotationTransformer
          TYPE(ScaleTransform)                :: scaleTransformer
@@ -231,10 +222,9 @@
             modelDict   => valueDictionaryFromObject(obj)
          END IF
 !
-!        --------------------------------------------------------------------
-!        The MESH_PARAMETERS block is optional, but the BACKGROUND_GRID block
-!        must be present
-!        --------------------------------------------------------------------
+!        ------------------------------------------
+!        The BACKGROUND_GRID block must be present
+!        ------------------------------------------
 !
          IF ( .NOT. controlDict % containsKey(key =  BACKGROUND_GRID_KEY) )     THEN
             CALL ThrowErrorExceptionOfType(poster = "initWithDictionary",                         &
@@ -244,8 +234,6 @@
          END IF
 
          CALL SetRunParametersBlock( self % runParams, controlDict )
-         IF(ReturnOnFatalError())     RETURN
-         CALL SetMeshParametersBlock( self % meshParams, controlDict )
          IF(ReturnOnFatalError())     RETURN
 !
 !        -------------------
@@ -1576,46 +1564,6 @@
          END IF
 
       END SUBROUTINE SetRunParametersBlock
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE SetMeshParametersBlock( params, controlDict )
-!
-!        Example block is:
-!
-!         \begin{MESH_PARAMETERS}
-!            element type = quad OR hex
-!         \end{MESH_PARAMETERS}
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE(MeshParameters)              :: params
-         CLASS(FTValueDictionary), POINTER :: controlDict
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         CLASS(FTValueDictionary), POINTER       :: paramsDict
-         CLASS(FTObject)         , POINTER       :: obj
-
-         obj        => controlDict % objectForKey(key = MESH_PARAMETERS_KEY)
-         paramsDict => valueDictionaryFromObject(obj)
-!
-!        ---------------------------
-!        Mesh parameters is optional
-!        ---------------------------
-!
-         params % meshType = 0! CONFORMING
-         IF(.NOT.ASSOCIATED(paramsDict)) THEN
-            params % meshType = 0! CONFORMING
-         END IF
-
-      END SUBROUTINE SetMeshParametersBlock
 !
 !////////////////////////////////////////////////////////////////////////
 !

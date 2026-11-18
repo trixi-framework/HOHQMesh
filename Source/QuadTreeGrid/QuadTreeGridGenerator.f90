@@ -36,12 +36,6 @@
       USE QuadTreeTemplateOperations
       IMPLICIT NONE
 !
-!     ---------
-!     Constants
-!     ---------
-!
-      INTEGER, PARAMETER :: CONFORMING = 0, NON_CONFORMING = 1
-!
 !     ========
       CONTAINS
 !     ========
@@ -49,58 +43,18 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE GenerateGridWithSizerAndType( grid, sizer, gridType )
+      SUBROUTINE GenerateConformingGridWithSizer( grid, sizer ) 
 !
 !     -------------------------------------------------------
 !     This is the main entry to generating a "grid".
 !
 !     grid     = root quad grid, already constructed by the project
 !     sizer    = already constructed sizer object
-!     gridType = either NON_CONFORMING or CONFORMING
 !     
 !     On return, grid has been refined according to the sizer
-!     and grid type
+!     and made conforming with templates
 !     -------------------------------------------------------
 !
-      IMPLICIT NONE
-!
-!      ---------
-!      Arguments
-!      ---------
-!
-      TYPE (QuadTreeGrid), POINTER :: grid
-      CLASS(MeshSizer)             :: sizer
-      INTEGER                      :: gridType
-      
-      IF ( gridType == NON_CONFORMING )     THEN
-         CALL GenerateNCGridWithSizer( grid, sizer )
-      ELSE
-         CALL GenerateConformingGridWithSizer( grid, sizer )
-      END IF
-
-      END SUBROUTINE GenerateGridWithSizerAndType
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE GenerateNCGridWithSizer( grid, sizer ) 
-      IMPLICIT NONE 
-!
-!      ---------
-!      Arguments
-!      ---------
-!
-      TYPE (QuadTreeGrid), POINTER :: grid
-      CLASS(MeshSizer)             :: sizer
-      
-      CALL generateNonconformingQuadTree(grid = grid,sizer = sizer)
-      IF(catch() .AND. (maximumErrorSeverity() == FT_ERROR_FATAL)) RETURN 
-      CALL ConstructQuads( grid )
-      
-      END SUBROUTINE GenerateNCGridWithSizer
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE GenerateConformingGridWithSizer( grid, sizer ) 
       IMPLICIT NONE 
 !
 !      ---------

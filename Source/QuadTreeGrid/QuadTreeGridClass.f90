@@ -862,48 +862,6 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE ConstructQuads( self )
-!
-!     --------------------------------------------------
-!     Routine that creates the quads for template0 grids
-!     --------------------------------------------------
-!
-      IMPLICIT NONE
-      TYPE (QuadTreeGrid), POINTER :: self
-      INTEGER                   :: i, j, N, M
-
-      N = self % N(1)
-      M = self % N(2)
-
-      DO j = 1, M
-         DO i = 1, N
-            IF ( .NOT.ASSOCIATED(self % quads(i,j) % quad) )     THEN
-               ALLOCATE(self % quads(i,j) % quad)
-               CALL self % quads(i,j) % quad % init()
-            END IF
-            CALL PointNodePtr_To_(self % quads(i,j) % quad % nodes(1), self % nodes(i-1,j-1))
-            CALL PointNodePtr_To_(self % quads(i,j) % quad % nodes(2), self % nodes(i  ,j-1))
-            CALL PointNodePtr_To_(self % quads(i,j) % quad % nodes(3), self % nodes(i  ,j  ))
-            CALL PointNodePtr_To_(self % quads(i,j) % quad % nodes(4), self % nodes(i-1,j  ))
-         END DO
-      END DO
-!
-!     --------------------------
-!     Continue with the children
-!     --------------------------
-!
-      IF( .NOT.ASSOCIATED(self % children) )      RETURN
-
-      DO j = 1, M
-         DO i = 1, N
-            IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL ConstructQuads( self % children(i,j) % grid )
-         END DO
-      END DO
-
-      END SUBROUTINE ConstructQuads
-!
-!////////////////////////////////////////////////////////////////////////
-!
       RECURSIVE SUBROUTINE AssignNodeLevels( self )
       IMPLICIT NONE
       TYPE (QuadTreeGrid), POINTER :: self
