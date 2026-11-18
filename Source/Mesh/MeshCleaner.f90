@@ -1878,10 +1878,10 @@
          USE ProgramGlobals, ONLY: chainWasPaved, MAX_PAVED_CHAIN_ID
          IMPLICIT NONE
 !
-!        ------------------------------------------------------------
+!        --------------------------------------------------------------
 !        True if the node is on an interface chain whose band was paved
 !        (model % interfacePaving). Those elements are not split.
-!        ------------------------------------------------------------
+!        --------------------------------------------------------------
 !
          TYPE (SMNode), POINTER :: node
          INTEGER                :: k

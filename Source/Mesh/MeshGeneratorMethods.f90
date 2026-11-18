@@ -311,7 +311,7 @@
 !     Local variables
 !     ---------------
 !
-      LOGICAL                       :: paved
+      LOGICAL                      :: paved
       TYPE (QuadTreeGrid), POINTER :: grid      => NULL()
       TYPE (SMMesh)      , POINTER :: mesh      => NULL()
       TYPE (SMModel)     , POINTER :: model     => NULL()
@@ -410,10 +410,10 @@
             DEALLOCATE( materialNames )
       ELSE
 !
-!           ----------------------------------------------------------
+!           --------------------------------------------------
 !           Without interfaces all elements are the background
 !           material, which the ISM-MM format still writes out
-!           ----------------------------------------------------------
+!           --------------------------------------------------
 !
             ALLOCATE(CHARACTER(SM_CURVE_NAME_LENGTH) :: mesh % materialNameForID(0:0))
             mesh % materialNameForID(BACKGROUND_MATERIAL_ID) = project % backgroundMaterialName
@@ -446,10 +446,9 @@
 !
       CALL generateTemporaryBoundaryArrays( sizer )
 !
-!     --------------------------------------------
-!     Mark the elements outside or near boundaries
-!     then remove.
-!     --------------------------------------------
+!     --------------------------------------------------------
+!     Mark the elements outside or near boundaries then remove
+!     --------------------------------------------------------
 !
       IF( numberOfBoundaries > 0 )     THEN
          ALLOCATE( mesh % curveTypeForID(numberOfBoundaries) )
@@ -488,10 +487,10 @@
       idOfOuterBoundary = UNDEFINED
       IF( ASSOCIATED( sizer % outerBoundary ) ) idOfOuterBoundary = sizer % outerBoundary % id
 !
-!     --------------------------------------------------------------
+!     ------------------------------------------------------------
 !     Removing the elements too close to the boundaries can detach
 !     others again, so repeat until the boundary edges form loops
-!     --------------------------------------------------------------
+!     ------------------------------------------------------------
 !
       DO pass = 1, MAX_BOUNDARY_CLEANUP_PASSES
 !
@@ -531,11 +530,11 @@
 !
          CALL smoothBoundaryEdges
 !
-!        -------------------------------------------------------------
+!        ---------------------------------------------------------
 !        Associate the boundary edges with elements and see if any
 !        elements must be eliminated for having nodes too close to
 !        a boundary, etc.
-!        -------------------------------------------------------------
+!        ---------------------------------------------------------
 !
          CALL LocateEdgeImagesOnBoundaries( mesh, model, idOfOuterBoundary, skipInterfaces = .FALSE. )
 
@@ -587,11 +586,11 @@
          CALL SpreadCollapsedBoundaryLocations( list, model )
          IF( boundaryEdgesType(j) == INTERFACE_EDGES )     THEN
 !
-!           ---------------------------------------------------------
-!           With model % interfacePaving, pave the band around the interface
-!           chain. Otherwise, or if paving fails, move the nearby nodes
-!           onto the curve.
-!           ---------------------------------------------------------
+!           ------------------------------------------------------
+!           With model % interfacePaving, pave the band around the
+!           interface chain. Otherwise, or if paving fails, move
+!           the nearby nodes onto the curve.
+!           ------------------------------------------------------
 !
             paved = .FALSE.
             IF ( model % interfacePaving )     CALL PaveInterface( mesh, model, sizer, list, paved )
@@ -3622,10 +3621,10 @@
             queue(tail) = f
          END DO
 !
-!        -------------------------------------------------------------
-!        Breadth first search from the island through band elements and
-!        other islands
-!        -------------------------------------------------------------
+!        ----------------------------------------------------------
+!        Breadth first search from the island through band elements
+!        and other islands
+!        ----------------------------------------------------------
 !
          head = 0
          DO WHILE ( head < tail )
@@ -3641,10 +3640,10 @@
                   IF ( comp(g) == otherSide )     CYCLE
                   IF ( comp(g) == mainland )     THEN
 !
-!                    -----------------------------------------------
-!                    Reached the mainland: put the band elements of
-!                    the path back
-!                    -----------------------------------------------
+!                    -------------------------------------------
+!                    Reached the mainland: put the band elements
+!                    of the path back
+!                    -------------------------------------------
 !
                      found = .TRUE.
                      DO WHILE ( parent(f) /= f )
@@ -3718,9 +3717,9 @@
       SUBROUTINE AppendUnique( list, n, id )
          IMPLICIT NONE
 !
-!        --------------------------------------------
+!        ---------------------------------------------
 !        Append id unless it is already the last entry
-!        --------------------------------------------
+!        ---------------------------------------------
 !
          INTEGER :: list(:), n, id
          IF ( n > 0 )     THEN
@@ -3781,9 +3780,9 @@
                   END IF
                END IF
 !
-!              ------------------------------------------
+!              --------------------------------------------
 !              Both halves must be smaller than the polygon
-!              ------------------------------------------
+!              --------------------------------------------
 !
                DO WHILE ( d + 1 + k >= nIds .OR. nIds - d + 1 + k >= nIds )
                   k = k - 2
@@ -3820,9 +3819,9 @@
          END DO
          IF ( best == -HUGE(best) )     RETURN
 !
-!        ----------------------------------------------
+!        -----------------------------------------------
 !        Nodes on the chord and the two halves, both ccw
-!        ----------------------------------------------
+!        -----------------------------------------------
 !
          i = iBest
          j = jBest
@@ -3870,8 +3869,9 @@
 !
          REAL(KIND=RP) :: xPrev(2), x(2), xNext(2)
          REAL(KIND=RP), PARAMETER :: DEG = 180.0_RP/PI
-         cornerAngle = MODULO((ATAN2(xPrev(2) - x(2), xPrev(1) - x(1)) - ATAN2(xNext(2) - x(2), xNext(1) - x(1)))*DEG, &
-                              360.0_RP)
+         cornerAngle = MODULO((  ATAN2(xPrev(2) - x(2), xPrev(1) - x(1))       &
+                               - ATAN2(xNext(2) - x(2), xNext(1) - x(1)))*DEG, &
+                               360.0_RP)
       END FUNCTION cornerAngle
 !
 !////////////////////////////////////////////////////////////////////////
@@ -3942,10 +3942,10 @@
 !        -------------------------------------------------------------------
 !        Pave the band around an interface chain (PaveInterfaceWithBand),
 !        when model % interfacePaving is set. The width of the band suited
-!        to a chain depends on its size and its neighbors, so plan the
-!        paving for the default width and two wider ones, score each by its 
-!        worst quads, and apply the best plan: the one that drops the fewest
-!        fewest elements of large islands, then the one with the best score.
+!        to a chain depends on its size and its neighbors. So plan the
+!        paving for the default width and two wider ones and score each by
+!        its worst quads. Apply the best plan: the one that drops the fewest
+!        elements of large islands, then the one with the best score.
 !        The samples of the curve and the sizes along it do not depend on
 !        the width, so they are found once.
 !        -------------------------------------------------------------------
@@ -3983,12 +3983,12 @@
       SUBROUTINE SampleInterfaceChain( mesh, model, sizer, list, xs, hs, hBand, isFeature )
          IMPLICIT NONE
 !
-!        ---------------------------------------------------------------
+!        --------------------------------------------------------------
 !        Samples xs of the interface chain whose nodes are in list, and
 !        the element sizes along it (InterfaceCurveSizes): hs for the
 !        nodes on the curve, hBand for the width of the band, and
 !        isFeature at the joints of the chain.
-!        ---------------------------------------------------------------
+!        --------------------------------------------------------------
 !
          TYPE (SMMesh)      , POINTER :: mesh
          TYPE (SMModel)     , POINTER :: model
@@ -4033,10 +4033,10 @@
             xs(:,i) = x3(1:2)
          END DO
 !
-!        -------------------------------------------------------------
+!        -----------------------------------------------------------
 !        Nodes of the remaining elements on the other boundaries and
 !        interfaces, whose distance limits the size
-!        -------------------------------------------------------------
+!        -----------------------------------------------------------
 !
          maxID = 0
          CALL mesh % nodesIterator % setToStart()
@@ -4205,10 +4205,10 @@
          bCurveSide =  seq(1) % node % bCurveSide
          nS         =  SIZE(hs)
 !
-!        ---------------------------------------------------------
+!        -----------------------------------------------------------
 !        Node and element tables, and the local element size at each
 !        node: the average length of the element sides at the node
-!        ---------------------------------------------------------
+!        -----------------------------------------------------------
 !
          maxID = 0
          CALL mesh % nodesIterator % setToStart()
@@ -4285,10 +4285,10 @@
             END DO
          END DO
 !
-!        -------------------------------------------------------
+!        -----------------------------------------------------
 !        Keep the elements with a side on the edge of the mesh
 !        (e.g. on the outer boundary)
-!        -------------------------------------------------------
+!        -----------------------------------------------------
 !
          DO f = 1, nE
             e => elems(f) % element
@@ -4302,10 +4302,10 @@
          ALLOCATE( eFrom(4*nE), eTo(4*nE), comp(nE), stack(nE), compSize(1000), compInside(1000), attached(nE) )
          nDropped = 0
          DO pass = 1, NUMBER_OF_PASSES
-!        ------------------------------------------------------------
+!        --------------------------------------------------------------
 !        Make the edge of the band simple: remove the elements at nodes
 !        where it touches itself, and the elements that stick into it
-!        ------------------------------------------------------------
+!        --------------------------------------------------------------
 !
          DO iter = 1, 100
             nF   = 0
@@ -4348,10 +4348,10 @@
             IF ( .NOT.changed )     EXIT
          END DO
 !
-!        -----------------------------------------------------------
-!        Loops of the band edge, with the band on the left, and on which
-!        side of the curve each is
-!        -----------------------------------------------------------
+!        ---------------------------------------------------------
+!        Loops of the band edge, with the band on the left, and on
+!        which side of the curve each is
+!        ---------------------------------------------------------
 !
          ALLOCATE( loopNodes(nF), used(nF) )
          used   = .FALSE.
@@ -4406,8 +4406,8 @@
 !        -------------------------------------------------------------
 !        Islands of elements cut off by the band: keep the largest
 !        group of connected elements on each side of the curve. In the
-!        first two passes, reconnect each large island to it through the
-!        band. Pave over the remaining islands.
+!        first two passes, reconnect each large island to it through
+!        the band. Pave over the remaining islands.
 !        -------------------------------------------------------------
 !
          comp = 0
@@ -4473,10 +4473,10 @@
             IF ( comp(f) /= keep(1) .AND. comp(f) /= keep(2) )     removed(f) = .TRUE.
          END DO
 !
-!        -------------------------------------------------------------
+!        ------------------------------------------------------------
 !        A reconnection can cut parts of the band off from the curve.
 !        Those are not paved: put their elements back.
-!        -------------------------------------------------------------
+!        ------------------------------------------------------------
 !
          IF ( reconnected )     THEN
             attached = .FALSE.
@@ -4517,8 +4517,8 @@
 !        ------------------------------------------------------------
 !        2. Nodes on the curve: a node at each feature (joint)
 !           and, between two features, as many edges as sizes fit, so
-!           the total has the parity of the band edge, placed evenly in
-!           the integral of 1/size
+!           the total has the parity of the band edge, placed evenly
+!           in the integral of 1/size
 !        ------------------------------------------------------------
 !
          nFeat = 0
@@ -4616,10 +4616,10 @@
          END DO
 
 !
-!        ----------------------------------------------------------
-!        4. Fill between each new front and the edge of the remaining
-!           elements
-!        ----------------------------------------------------------
+!        -------------------------------------------
+!        4. Fill between each new front and the edge
+!           of the remaining elements
+!        -------------------------------------------
 !
          DO side = 1, 2
             CALL FillBetweenLoops( sx(:,:,side), nAll(side), newFront(:,side), nNew(side), nc, nfr(side), &
@@ -4631,11 +4631,11 @@
             END IF
          END DO
 !
-!        ------------------------------------------------------------
+!        -----------------------------------------------------------
 !        A band wider than the default must not reach another curve:
-!        between curves close together the paved regions would meet in
-!        the gap and squeeze the elements there
-!        ------------------------------------------------------------
+!        between curves close together the paved regions would meet
+!        in the gap and squeeze the elements there
+!        -----------------------------------------------------------
 !
          IF ( bandScale > 1.0_RP )     THEN
             DO f = 1, nE
@@ -4697,6 +4697,11 @@
          TYPE (SMMesh) , POINTER :: mesh
          TYPE (SMModel), POINTER :: model
          TYPE(PavePlan)          :: plan
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          TYPE(SMNodePtr)         :: curveNodes(plan % nc), sideNodes(MAXVAL(plan % nAll)), q(4)
          LOGICAL                 :: nodeUsed(MAXVAL(plan % nAll))
          REAL(KIND=RP)           :: gNode, d, x3(3)
@@ -4772,7 +4777,11 @@
          INTEGER       :: nf, nfr, nAll, nQ, nNew
          INTEGER       :: quads(:,:), newFront(:)
          LOGICAL       :: ok
-
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          INTEGER, PARAMETER       :: SIDE_NODE = 0, WEDGE = 1, FAN3 = 2, IN_WEDGE = 3
          REAL(KIND=RP), PARAMETER :: DEG = 180.0_RP/PI
          INTEGER       :: typ(nf), rowIdx(nf), s1(nf), s2(nf), jn(nf)
@@ -4887,10 +4896,10 @@
          END DO
          IF ( nNew > 1 .AND. newFront(nNew) == newFront(1) )     nNew = nNew - 1
 !
-!        -------------------------------------------------------------
+!        ----------------------------------------------------------
 !        Checks: no folded quads, and the new front crosses neither
 !        itself nor the edge of the remaining mesh
-!        -------------------------------------------------------------
+!        ----------------------------------------------------------
 !
          IF ( nNew < 4 )     RETURN
          DO k = 1, nQ
@@ -4982,7 +4991,7 @@
       SUBROUTINE NearestOnPolyline( x, xs, nS, grid, iNear, dist, searchRadius )
          IMPLICIT NONE
 !
-!        ----------------------------------------------------------
+!        ------------------------------------------------------------
 !        Distance from x to the closed polyline xs, and the vertex of
 !        the polyline nearest to x, the first of equally near ones.
 !        The cells of grid, the vertices sorted by BuildPointCellGrid,
@@ -4991,14 +5000,19 @@
 !        ring is searched to allow for rounding at the cell edges.
 !        With a searchRadius, the search stops once every vertex not
 !        yet seen is further away than that. The result is then the
-!        nearest vertex if it is within searchRadius; otherwise dist is
-!        only known to be larger.
-!        ----------------------------------------------------------
+!        nearest vertex if it is within searchRadius; otherwise dist
+!        is only known to be larger.
+!        ------------------------------------------------------------
 !
          INTEGER                 :: nS, iNear
          REAL(KIND=RP)           :: x(2), xs(2,nS), dist
          TYPE(PointCellGrid)     :: grid
          REAL(KIND=RP), OPTIONAL :: searchRadius
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          INTEGER             :: i, j, k, cell, ring, ix, iy, ix0, iy0
          REAL(KIND=RP)       :: d, t, u(2), best
          INTEGER, EXTERNAL   :: Loop
@@ -5048,7 +5062,12 @@
 !
          INTEGER       :: nS
          REAL(KIND=RP) :: x(2), xs(2,nS)
-         INTEGER       :: i, j
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER           :: i, j
          INTEGER, EXTERNAL :: Loop
 
          pointInPolygon = .FALSE.
@@ -5074,6 +5093,7 @@
 !
          INTEGER :: m, nc, side
          LOGICAL :: ccw
+
          INTEGER, EXTERNAL :: Loop
          IF ( (side == 1) .EQV. ccw )     THEN
             sideCurveIndex = m
@@ -5128,7 +5148,11 @@
          INTEGER       :: nAll, nFront, b0, nB, nQ
          INTEGER       :: front(:), quads(:,:)
          LOGICAL       :: ok
-
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          INTEGER, PARAMETER :: MAX_TRIES = 12
          INTEGER       :: i, j, nBr, t1, t2, i1, j1, i2, j2, di, dj, nAll0, nQ0, nTried, nFirst
          INTEGER       :: nShort, nSorted
@@ -5366,7 +5390,11 @@
          INTEGER       :: nAll, nFront, b0, nB, i1, j1, i2, j2, nQ
          INTEGER       :: front(:), quads(:,:), nChords(:)
          LOGICAL       :: ok
-
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          INTEGER       :: k1, k2, c, n1, n2, kChord1, kChord2
          INTEGER       :: poly1(2*(nFront + nB) + 200), poly2(2*(nFront + nB) + 200)
          REAL(KIND=RP) :: len1, len2
@@ -5464,7 +5492,11 @@
          INTEGER       :: nS, nPer, nCurves, nOther
          REAL(KIND=RP) :: xs(2,nS), turnMax, xOther(2,*), hs(nS), hBand(nS)
          LOGICAL       :: isFeature(nS)
-
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          REAL(KIND=RP), PARAMETER :: GROWTH = 0.5_RP, NEAR_RATIO = 3.0_RP
          INTEGER, PARAMETER       :: MAX_COARSE = 2000, CURVATURE_ITERATIONS = 6, CORNER_SAMPLES = 2
          REAL(KIND=RP) :: arc(nS+1), absTurn(nS), hBase(nS), hCurv(nS), hProx(nS), hNew(nS)
@@ -5555,10 +5587,10 @@
             hCurv = hNew
          END DO
 !
-!        -------------------------------------------------------------
-!        Proximity, on a coarser set of samples: parts of the curve near
-!        in space but far along it, not separated by a feature
-!        -------------------------------------------------------------
+!        ----------------------------------------------------------
+!        Proximity, on a coarser set of samples: parts of the curve
+!        near in space but far along it, not separated by a feature
+!        ----------------------------------------------------------
 !
          featureCount(0) = 0
          DO i = 1, nS
@@ -5601,9 +5633,9 @@
          hs    = hBand
          CALL GradeSizes( hBand, xs, nS, GROWTH )
 !
-!        ---------------------------------------------------
+!        ----------------------------------------------------
 !        At most the length of the piece between two features
-!        ---------------------------------------------------
+!        ----------------------------------------------------
 !
          DO i = 1, nS
             IF ( .NOT.isFeature(i) )     CYCLE

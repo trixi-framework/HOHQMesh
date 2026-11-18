@@ -101,13 +101,13 @@
 !
 !     How the acceleration of a node is constrained, see ConstrainBoundaryNodes
 !
-      INTEGER, PARAMETER, PRIVATE :: FREE_NODE = 0, INACTIVE_NODE = 1, NODE_ON_CURVE = 2, NODE_ON_CORNER_LINE = 3
-      REAL(KIND=RP), PARAMETER                  , PRIVATE :: MAX_CONSTRAINED_CORNER_ANGLE = 150.0_RP
+      INTEGER      , PARAMETER, PRIVATE :: FREE_NODE = 0, INACTIVE_NODE = 1, NODE_ON_CURVE = 2, NODE_ON_CORNER_LINE = 3
+      REAL(KIND=RP), PARAMETER, PRIVATE :: MAX_CONSTRAINED_CORNER_ANGLE = 150.0_RP
 !
 !     Two nodes of an edge on a paved interface curve may not slide closer
 !     than this fraction of their distance before smoothing
 !
-      REAL(KIND=RP), PARAMETER                  , PRIVATE :: MIN_PAVED_EDGE_FRACTION = 0.75_RP
+      REAL(KIND=RP), PARAMETER, PRIVATE :: MIN_PAVED_EDGE_FRACTION = 0.75_RP
 !
 !     Default parameters
 !
@@ -171,9 +171,6 @@
 !
          INTEGER                      :: k, nodeID, N
          REAL(KIND=RP)                :: maxV
-         INTEGER      , DIMENSION(:,:), ALLOCATABLE :: pavedEdges
-         REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: minPavedEdgeLength
-         REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: xPrevious
          TYPE(SMNode)       , POINTER :: node => NULL()
          CLASS(FTObject)    , POINTER :: obj => NULL()
          CLASS(FTLinkedList), POINTER :: boundaryNodesList => NULL()
@@ -183,6 +180,9 @@
          INTEGER        , DIMENSION(:,:), ALLOCATABLE :: edgeNodes, elementNodes
          INTEGER        , DIMENSION(:)  , ALLOCATABLE :: constraintType
          LOGICAL        , DIMENSION(:)  , ALLOCATABLE :: getsEdgeForce, getsCrossForce
+         INTEGER        , DIMENSION(:,:), ALLOCATABLE :: pavedEdges
+         REAL(KIND=RP)  , DIMENSION(:)  , ALLOCATABLE :: minPavedEdgeLength
+         REAL(KIND=RP)  , DIMENSION(:,:), ALLOCATABLE :: xPrevious
 !
 !        -------------------------
 !        Allocate temporary memory
@@ -820,7 +820,11 @@
          INTEGER        , DIMENSION(:)                :: constraintType
          INTEGER        , DIMENSION(:,:), ALLOCATABLE :: pavedEdges
          REAL(KIND=RP)  , DIMENSION(:)  , ALLOCATABLE :: minLength
-
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          INTEGER :: j, k, m, a, b, chainID
          LOGICAL :: onPavedChain
 
@@ -867,7 +871,11 @@
          REAL(KIND=RP), DIMENSION(:,:) :: x, xPrevious
          INTEGER      , DIMENSION(:,:) :: pavedEdges
          REAL(KIND=RP), DIMENSION(:)   :: minLength
-
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          INTEGER :: j, a, b
 
          DO j = 1, SIZE(minLength)
