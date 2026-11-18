@@ -53,4 +53,16 @@ benchmark information in `/Benchmarks/BenchmarkData`.
 It then copies the plot and stats files written to `/Benchmarks/PlotFiles/Tests` and `/Benchmarks/StatsFiles/Tests` into the reference folders
 `/Benchmarks/PlotFiles/Benchmarks` and `/Benchmarks/StatsFiles/Benchmarks`, and finally lists the
 changed files.
+
+A different compiler, compiler version, optimization level or machine changes the last digits of
+many results even when the meshing algorithms are unchanged. So the script restores the rewritten
+files of a test case to their committed versions if all of them differ only by such roundoff, that is,
+every number agrees within the tolerance of the test suite (relative `1e-4`, absolute `1e-5`) and
+nothing else changed. If any file of a test case has a real change, all of its files are kept, so
+that its benchmark data, plot and stats files stay consistent with each other. New files are always kept.
+To keep the roundoff changes as well, e.g., to
+deliberately refresh all of the reference files after a compiler update, add `--keep-roundoff`
+```
+./Utilities/updatebenchmarks --keep-roundoff
+```
 Check these changes, e.g., with `git diff --stat Benchmarks`, before committing them.

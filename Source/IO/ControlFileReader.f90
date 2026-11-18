@@ -347,6 +347,21 @@
                RETURN 
             ELSE 
                dict => valueDictionaryFromObject(collection)
+!
+!              ------------------------------------------------------
+!              A key line between the objects of a list block, e.g. a
+!              key after the first CHAIN in INTERFACE_BOUNDARIES
+!              ------------------------------------------------------
+!
+               IF ( .NOT. ASSOCIATED(dict) )     THEN
+                  ALLOCATE(exception)
+                  CALL exception % initFatalException( "Unexpected line in the " // TRIM(objectName) // &
+                                                       " block: " // TRIM(ADJUSTL(line)) //             &
+                                                       ". Keys must come before the first block in it.")
+                  CALL throw(exception)
+                  CALL releaseFTException(exception)
+                  RETURN
+               END IF
                CALL readBlock(fileUnit  = fileUnit, &
                               blockDict = dict, &
                               firstLine = line,    &
@@ -407,7 +422,9 @@
               CALL newDict % addObjectForKey(obj,"LIST")
               CALL releaseFTLinkedListClass(self = newList)
               
-              IF(objectName == "CHAIN" .OR. objectName == "OUTER_BOUNDARY")     THEN ! Read (possible) chain parameters
+              IF( objectName == "CHAIN"          .OR. &
+                  objectName == "OUTER_BOUNDARY" .OR. &
+                  objectName == "INTERFACE_BOUNDARIES" )     THEN ! Read (possible) block parameters
                  DO 
                     READ(fileUnit,"(A)", END = 1000) line
                     CALL replaceTabs(line)
@@ -416,6 +433,7 @@
                        BACKSPACE(fileUnit)
                        EXIT
                     END IF 
+                    IF (TRIM(line) == "" .OR. line(1:1) == "%") CYCLE
                     CALL addKeyAndValueFromLineToDict(blockDict = newDict,line = line)
                  END DO 
               END IF

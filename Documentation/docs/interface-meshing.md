@@ -34,7 +34,8 @@ HOHQMesh has two strategies for an interface:
    they have reasonable shapes on both sides.
 
 Each interface chain is paved if possible. If paving fails for a chain, or if paving is switched off
-(`interfacePaving` in `ProgramGlobals.f90`), that chain is meshed with the fallback strategy. So a mesh can contain paved and fallback interfaces.
+with `paving = OFF` at the top of the [`INTERFACE_BOUNDARIES`](the-model.md) block, that chain is meshed
+with the fallback strategy. So a mesh can contain paved and fallback interfaces.
 Both strategies start from the same steps: the sizing, the
 marking of the elements near the curve, the choice of the interface path and the pinning of nodes to the
 joints of the chain (steps 1 to 5 of the [fallback](#fallback-moving-grid-nodes-onto-the-curve)).
@@ -267,11 +268,12 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
 - Paving is not guaranteed to succeed. A chain for which all three band widths fail (see the
   [list of failure cases](#interface-paving)) is meshed with the fallback strategy. Its mesh then has
   the quality of the fallback, not of paving.
-- The settings are in `ProgramGlobals.f90`, not in the control file:
+- Paving is switched on or off for all interfaces with the `paving = ON` or `OFF` key at the top of the
+  `INTERFACE_BOUNDARIES` block (default `ON`). It sets `interfacePaving` in `ProgramGlobals.f90`.
+  The remaining settings are in `ProgramGlobals.f90` only, not in the control file:
 
     | Setting | Default | Meaning |
     |---|---|---|
-    | `interfacePaving` | `.TRUE.` | pave the interfaces; otherwise always use the fallback |
     | `paveBandWidth` | 1.5 | width of the band on each side of the curve, in local element sizes |
     | `paveWedgeAngle` | 120° | below this angle, a curve node gets one element |
     | `paveFanAngle` | 240° | above this angle, a curve node gets three elements |
@@ -281,7 +283,7 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
 ## Fallback: moving grid nodes onto the curve
 
 This is the strategy for an interface chain that is not paved, either because paving failed for it or
-because `interfacePaving` is switched off. Steps 1 to 5 also prepare the paving, see the
+because paving is switched off with `paving = OFF`. Steps 1 to 5 also prepare the paving, see the
 [overview](#overview). Instead of new elements, a closed path of existing edges of the background grid
 mesh near the curve is chosen, and the nodes of that path are moved **onto** the interface curve. The
 elements next to the curve are then split with templates so that they have reasonable shapes on both sides.
