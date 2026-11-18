@@ -253,7 +253,9 @@
 !     If stats are not requested then boundary errors are not written either
 !     ----------------------------------------------------------------------
 !
-      IF ( project % runParams % statsFileName == "none" )     RETURN
+      str = project % runParams % statsFileName
+      CALL toLower(str)
+      IF ( str == "none" )     RETURN
 !
 !     -------
 !     Aliases
