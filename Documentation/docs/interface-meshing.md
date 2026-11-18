@@ -161,19 +161,12 @@ The edge of the band **must** then be one loop outside of the curve and at most 
 No loop inside means that the entire inside of the curve is in the band. If there are more loops, the
 band has cut the elements on one side of the curve into separate islands, e.g. where the curve passes
 close to a boundary. The largest group of connected elements on each side of the curve is kept. The
-other islands are handled by `ReconnectIsland`:
-
-- An island of 20 elements or more is reconnected to the largest group if possible. The shortest
-  path of band elements between them is put back, using only elements whose nodes are at least one
-  local element size from the curve, or else at least half of one. The path may also cross smaller
-  islands. Parts of the band that are then no longer attached to the curve are put back as well.
-- An island that is smaller, or cannot be reconnected, is added to the band and paved over. The fill
-  step then meshes it at about the size along the curve, which can give far more elements than it had.
-  The elements of the large islands paved over are counted for the plan, see
-  [step 6](#6-band-widths-and-the-choice).
+other islands are added to the band and paved over. The fill step meshes them at about the element size
+along the curve. Where an island is coarser than that, e.g. in an open region of the background grid
+next to the outer boundary, paving it over adds elements there.
 
 The band is then made "simple" again, where its loops are checked. This is done up to four times
-for one band width, with reconnection only in the first two, before paving fails for this band width.
+for one band width before paving fails for this band width.
 
 ### 3. Nodes on the curve
 
@@ -246,8 +239,7 @@ Each successful plan is scored by `worstQuadQuality` in three steps:
    at the nodes of the band edge are left out, since the smoother moves those nodes later as well.
 3. The score of the plan is the mean quality of the worst tenth of the new elements.
 
-The plan that paves over the fewest elements of large islands (step 2) is applied, and among plans
-that tie, the one with the highest score. `CommitPavePlan` applies the winning plan where
+The plan with the highest score is applied. `CommitPavePlan` applies the winning plan where
 it removes the elements of the band and adds the new nodes and elements,
 and the chain is marked as paved (`chainWasPaved`).
 
@@ -263,11 +255,15 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
 
 ### Limitations
 
-- Only interface curves are paved. The outer and inner boundaries use the cookie cutter together with Scheinders template approach. The element size along them comes from the background grid and the refinement regions. Where, for
+- Only interface curves are paved. The outer and inner boundaries use the cookie cutter together with Schneiders template approach. The element size along them comes from the background grid and the refinement regions. Where, for
   example, a short arc of the outer boundary meets a long straight line, the closely spaced nodes along the arc can meet coarse elements in a fan of thin elements. A refinement center at the arc helps there.
 - Paving is not guaranteed to succeed. A chain for which all three band widths fail (see the
   [list of failure cases](#interface-paving)) is meshed with the fallback strategy. Its mesh then has
   the quality of the fallback, not of paving.
+- Where the band of a chain cuts part of the mesh off from the rest, e.g. between a curve and the
+  outer boundary, that part is [paved over](#2-the-band) at the element size along the curve. In a
+  region that the background grid and the refinement regions leave coarse, this can add many elements.
+  A refinement center there, or a smaller background grid, keeps the sizes closer.
 - Paving is switched on or off for all interfaces with the `paving = ON` or `OFF` key at the top of the
   `INTERFACE_BOUNDARIES` block (default `ON`). It sets `interfacePaving` of the model (`SMModel`).
   The remaining settings are in `ProgramGlobals.f90` only, not in the control file:
