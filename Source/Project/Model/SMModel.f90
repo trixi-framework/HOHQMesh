@@ -104,6 +104,7 @@
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
          TYPE(CurveAndChain)        , ALLOCATABLE :: curveForID(:)       ! Built on the first curveWithID
+         LOGICAL                                  :: interfacePaving     ! paving = ON/OFF in INTERFACE_BOUNDARIES
 !
 !        ========
          CONTAINS
@@ -141,6 +142,7 @@
          self % numberOfOuterCurves         =  0
          self % numberOfInnerCurves         =  0
          self % numberOfInterfaceCurves     =  0
+         self % interfacePaving             = .TRUE.
 
          IF( .NOT.ASSOCIATED(modelDict)) RETURN
          CALL constructModelFromDictionary( self, modelDict )
@@ -304,19 +306,16 @@
 !        Import interface boundaries, if any
 !        -----------------------------------
 !
-!        Paving is ON unless the INTERFACE_BOUNDARIES block switches it off.
-!        It is reset here for every model, since several control files are
-!        meshed in one run of the test suite.
+!        Paving is ON (set in initWithContentsOfDictionary) unless the
+!        INTERFACE_BOUNDARIES block switches it off.
 !
-         interfacePaving = .TRUE.
-
          IF ( modelDict% containsKey(key = INTERFACE_BOUNDARIES_BLOCK_KEY) )     THEN
             ALLOCATE( self % interfaceBoundaries )
             CALL self % interfaceBoundaries % init()
 
             obj                 => modelDict % objectForKey(key = INTERFACE_BOUNDARIES_BLOCK_KEY)
             innerBoundariesDict => valueDictionaryFromObject(obj)
-            CALL SetInterfacePaving( innerBoundariesDict )
+            CALL SetInterfacePaving( self, innerBoundariesDict )
 
             obj                 => innerBoundariesDict % objectForKey(key = "LIST")
             innerBoundariesList => linkedListFromObject(obj)
@@ -394,7 +393,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE SetInterfacePaving( interfaceBoundariesDict )
+      SUBROUTINE SetInterfacePaving( self, interfaceBoundariesDict )
 !
 !        Reads the optional paving switch, which must come before the
 !        first chain or curve in the block:
@@ -413,6 +412,7 @@
 !        Arguments
 !        ---------
 !
+         CLASS(SMModel)                    :: self
          CLASS(FTValueDictionary), POINTER :: interfaceBoundariesDict
 !
 !        ---------------
@@ -427,9 +427,9 @@
                                                            requestedLength = LINE_LENGTH)
          SELECT CASE ( TRIM(ADJUSTL(str)) )
             CASE ( "ON" )
-               interfacePaving = .TRUE.
+               self % interfacePaving = .TRUE.
             CASE ( "OFF" )
-               interfacePaving = .FALSE.
+               self % interfacePaving = .FALSE.
             CASE DEFAULT
                CALL ThrowErrorExceptionOfType(poster = "SetInterfacePaving",                                 &
                                               msg    = "Unknown value for paving in INTERFACE_BOUNDARIES: " &

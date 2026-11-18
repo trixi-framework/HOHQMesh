@@ -133,11 +133,12 @@
          INTEGER       :: refinementType          = 2
 !
 !        -----------------------------------------------------
-!        Interface paving parameters. See interface_meshing.md
-!        in the Documentation for a description.
+!        Interface paving parameters. See interface-meshing.md
+!        in the Documentation for a description. The ON/OFF
+!        switch is SMModel % interfacePaving, read from the
+!        control file.
 !        -----------------------------------------------------
 !
-         LOGICAL            :: interfacePaving     = .TRUE.
          REAL(KIND=RP)      :: paveBandWidth       = 1.5_RP
          REAL(KIND=RP)      :: paveWedgeAngle      = 120.0_RP
          REAL(KIND=RP)      :: paveFanAngle        = 240.0_RP

@@ -588,13 +588,13 @@
          IF( boundaryEdgesType(j) == INTERFACE_EDGES )     THEN
 !
 !           ---------------------------------------------------------
-!           With interfacePaving, pave the band around the interface
+!           With model % interfacePaving, pave the band around the interface
 !           chain. Otherwise, or if paving fails, move the nearby nodes
 !           onto the curve.
 !           ---------------------------------------------------------
 !
             paved = .FALSE.
-            IF ( interfacePaving )     CALL PaveInterface( mesh, model, sizer, list, paved )
+            IF ( model % interfacePaving )     CALL PaveInterface( mesh, model, sizer, list, paved )
             IF ( .NOT.paved )     CALL MoveInterfaceNodesToImages( list, model )
          END IF
       END DO
@@ -3939,16 +3939,16 @@
       SUBROUTINE PaveInterface( mesh, model, sizer, list, paved )
          IMPLICIT NONE
 !
-!        ---------------------------------------------------------------
+!        -------------------------------------------------------------------
 !        Pave the band around an interface chain (PaveInterfaceWithBand),
-!        when interfacePaving is set. The width of the band suited to a
-!        chain depends on its size and its neighbors, so plan the paving
-!        for the default width and two wider ones, score each by its worst
-!        quads, and apply the best plan: the one that drops the fewest
-!        elements of large islands, then the one with the best score. The
-!        samples of the curve and the sizes along it do not depend on the
-!        width, so they are found once.
-!        ---------------------------------------------------------------
+!        when model % interfacePaving is set. The width of the band suited
+!        to a chain depends on its size and its neighbors, so plan the
+!        paving for the default width and two wider ones, score each by its 
+!        worst quads, and apply the best plan: the one that drops the fewest
+!        fewest elements of large islands, then the one with the best score.
+!        The samples of the curve and the sizes along it do not depend on
+!        the width, so they are found once.
+!        -------------------------------------------------------------------
 !
          TYPE (SMMesh)      , POINTER :: mesh
          TYPE (SMModel)     , POINTER :: model

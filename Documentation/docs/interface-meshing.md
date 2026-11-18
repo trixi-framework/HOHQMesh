@@ -269,7 +269,7 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
   [list of failure cases](#interface-paving)) is meshed with the fallback strategy. Its mesh then has
   the quality of the fallback, not of paving.
 - Paving is switched on or off for all interfaces with the `paving = ON` or `OFF` key at the top of the
-  `INTERFACE_BOUNDARIES` block (default `ON`). It sets `interfacePaving` in `ProgramGlobals.f90`.
+  `INTERFACE_BOUNDARIES` block (default `ON`). It sets `interfacePaving` of the model (`SMModel`).
   The remaining settings are in `ProgramGlobals.f90` only, not in the control file:
 
     | Setting | Default | Meaning |

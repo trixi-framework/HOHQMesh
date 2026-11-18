@@ -1880,7 +1880,7 @@
 !
 !        ------------------------------------------------------------
 !        True if the node is on an interface chain whose band was paved
-!        (interfacePaving). Those elements are not split.
+!        (model % interfacePaving). Those elements are not split.
 !        ------------------------------------------------------------
 !
          TYPE (SMNode), POINTER :: node
