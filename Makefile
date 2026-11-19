@@ -581,7 +581,8 @@ GaussQuadrature.o
 
 MultiSegmentModalCurve.o :$(HOHQMESHPATH)/Source/Curves/DiscreteCurves/MultiSegmentModalCurve.f90 \
 LegendreAlgorithms.o \
-MultiSegmentCurve.o
+MultiSegmentCurve.o \
+Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/DiscreteCurves/MultiSegmentModalCurve.f90
 
 MultiSegmentNodalCurve.o :$(HOHQMESHPATH)/Source/Curves/DiscreteCurves/MultiSegmentNodalCurve.f90 \

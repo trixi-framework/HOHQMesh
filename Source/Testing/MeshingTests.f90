@@ -85,6 +85,7 @@
       EXTERNAL :: polynomialApproximationTest, BlobCurveTest
       EXTERNAL :: legendreApproximationTests, SmoothnessCheck, CircleTest, BlobBreaksTest
       EXTERNAL :: ScannerTests, SegmentedCurveCheck, MultiSegmentNodalCurveTest, NodalCircleTest
+      EXTERNAL :: MultiSegmentModalCurveTest
 !
 !     ------------------------------------------------------------------------------------
 !     The control files are located in a Benchmarks directory at the end of (if not empty)
@@ -112,6 +113,7 @@
       CALL testSuite % addTestSubroutineWithName(SegmentedCurveCheck,"Segmented Curve Tests")
       CALL testSuite % addTestSubroutineWithName(MultiSegmentNodalCurveTest,"MultiSegment Nodal Curve Tests")
       CALL testSuite % addTestSubroutineWithName(NodalCircleTest,"MultiSegment Nodal Circle Tests")
+      CALL testSuite % addTestSubroutineWithName(MultiSegmentModalCurveTest,"MultiSegment Modal Curve Tests")
       CALL testSuite % addTestSubroutineWithName(SegmentedChainTests,"Segmented Chain Tests")
 !
 !     --------------------------------

@@ -259,107 +259,125 @@
 
       END FUNCTION MSMCClassName
 !
+!////////////////////////////////////////////////////////////////////////
+!
+   END Module MultiSegmentModalCurveClass
+!
 !///////////////////////////////////////////////////////////////////////
 !
 !                     TESTS
 !
 !///////////////////////////////////////////////////////////////////////
 !
+   SUBROUTINE MultiSegmentModalCurveTest()
 !
-!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!  -----------------------------------------------------------------------
+!  Checks a three-segment modal curve against values computed directly
+!  from the Legendre modes L0 = 1, L1 = s, L2 = (3s^2 - 1)/2 on each
+!  segment, s in [-1,1]:
+!     - findInterval returns the right segment
+!     - positionAt matches the modal sum
+!     - derivativeAt matches d/dt of the modal sum, including the factor
+!       ds/dt = 2/(t_k - t_{k-1}) from the segment map, and agrees with a
+!       centered finite difference of positionAt
+!     - the segment end points and lengths stored by the constructor
 !
-!    LOGICAL FUNCTION MultiSegmentModalCurveIsOK()
-!       IMPLICIT NONE
-
-!       CLASS(MultiSegmentModalCurve), POINTER :: self
-!       CLASS(SMCurve)               , POINTER :: parentCurve => NULL()
-! !
-! !     ----------------------------------------------------------
-! !     Polynomial with three modes and three segments
-! !     We don't care3 in this test if the segments are continuous
-! !     ----------------------------------------------------------
-! !
-!       REAL(KIND=RP) :: coefs(3,2,3)
-!       REAL(KIND=RP) :: cuts(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
-!       REAL(KIND=RP) :: t, tol = 1.0E-9_RP
-!       INTEGER       :: k
-
-!       MultiSegmentModalCurveIsOK = .TRUE.
-
-!       coefs(:,1,1) = [1.0_RP, 0.0_RP, 2.0_RP]
-!       coefs(:,2,1) = [1.1_RP, 0.1_RP, 2.1_RP]
-!       coefs(:,1,2) = [0.0_RP, 0.0_RP, 2.0_RP]
-!       coefs(:,2,2) = [0.1_RP, 0.1_RP, 2.1_RP]
-!       coefs(:,1,3) = [1.0_RP, 0.0_RP, 0.0_RP]
-!       coefs(:,2,3) = [1.1_RP, 0.0_RP, 0.1_RP]
-
-!       ALLOCATE(self)
-!       CALL self % constructMultiSegmentModalCurve( parentCurve, cuts, coefs,"Test Curve",1)
-! !
-! !     ---------------
-! !     Check intervals
-! !     ---------------
-! !
-!       IF( findInterval(self % cuts, t = 0.25_RP) .NE. 1) MultiSegmentModalCurveIsOK = .FALSE.
-!       IF( findInterval(self % cuts, t = 0.50_RP) .NE. 2) MultiSegmentModalCurveIsOK = .FALSE.
-!       IF( findInterval(self % cuts, t = 0.80_RP) .NE. 3) MultiSegmentModalCurveIsOK = .FALSE.
-! !
-! !     ------------
-! !     Check values
-! !     ------------
-! !
-!       MultiSegmentModalCurveIsOK = .TRUE.
-!       DO k = 0, 5
-!          t = cuts(0) + k*(cuts(3) - cuts(0))/5.0_RP
-!          MultiSegmentModalCurveIsOK = MAXVAL(ABS(self % positionAt(t) - testPolynomialAt(self,t))) < tol
-!          MultiSegmentModalCurveIsOK = MultiSegmentModalCurveIsOK .AND. MAXVAL(ABS(self % derivativeAt(t) - &
-!                                       testPolynomialDerivAt(self,t))) < tol
-!       END DO
-
-!       CALL releaseMultiSegmentModalCurve(self)
-
-!    END FUNCTION MultiSegmentModalCurveIsOK
+!  Replaces MultiSegmentModalCurveIsOK (2026-11-19), which could never
+!  fail: it reset its result after the interval checks, kept only the
+!  last point of its loop, and its expected derivative left out ds/dt.
+!  -----------------------------------------------------------------------
 !
-!////////////////////////////////////////////////////////////////////////
+      USE SMConstants
+      USE MultiSegmentModalCurveClass
+      USE IntervalSearchModule
+      USE FTAssertions
+      IMPLICIT NONE
 !
-!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!     ---------------
+!     Local variables
+!     ---------------
 !
-!    FUNCTION testPolynomialAt(self, t)  RESULT(p)
-!       IMPLICIT NONE
-!       TYPE(MultiSegmentModalCurve) :: self
-!       REAL(KIND=RP)                :: t
-!       INTEGER                      :: k
-!       REAL(KIND=RP)                :: p(3), s
-
-!       p = 0.0_RP
-!       k = findInterval(self % cuts, t)
-!       s = InvAffineMap(t0 = self % cuts(k-1),t1 = self % cuts(k),t = t)
-
-!       p(1) = self % coefs(0,1,k)*P0(s) + self % coefs(1,1,k)*P1(s) + self % coefs(2,1,k)*P2(s)
-!       p(2) = self % coefs(0,2,k)*P0(s) + self % coefs(1,2,k)*P1(s) + self % coefs(2,2,k)*P2(s)
-
-!    END FUNCTION testPolynomialAt
+      CLASS(MultiSegmentModalCurve), POINTER :: self
+      CLASS(SMCurve)               , POINTER :: parentCurve => NULL()
 !
-!////////////////////////////////////////////////////////////////////////
+!     Three modes (N = 2), two coordinates, three segments. The segments
+!     need not join; each is checked strictly inside its own interval.
 !
-!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+      REAL(KIND=RP) :: coefs(0:2,2,3)
+      REAL(KIND=RP) :: cuts(0:3)  = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
+      REAL(KIND=RP) :: sTest(5)   = [-0.9_RP, -0.5_RP, 0.0_RP, 0.5_RP, 0.9_RP]
+      REAL(KIND=RP) :: tol = 1.0E-12_RP, fdTol = 1.0E-6_RP, delta = 1.0E-6_RP
+      REAL(KIND=RP) :: s, t, h, x(3), xExact(3), dx(3), dxExact(3), dxFD(3)
+      REAL(KIND=RP) :: xStart(3), xEnd(3)
+      REAL(KIND=RP) :: eVal, eDeriv, eFD, ePoints, eLengths
+      INTEGER       :: k, j
+
+      coefs(:,1,1) = [1.0_RP, 0.0_RP, 2.0_RP]
+      coefs(:,2,1) = [1.1_RP, 0.1_RP, 2.1_RP]
+      coefs(:,1,2) = [0.0_RP, 0.0_RP, 2.0_RP]
+      coefs(:,2,2) = [0.1_RP, 0.1_RP, 2.1_RP]
+      coefs(:,1,3) = [1.0_RP, 0.0_RP, 0.0_RP]
+      coefs(:,2,3) = [1.1_RP, 0.0_RP, 0.1_RP]
+
+      ALLOCATE(self)
+      CALL self % constructMultiSegmentModalCurve(parentCurve, cuts, coefs, "Test Curve", 1)
 !
-!    FUNCTION testPolynomialDerivAt(self, t)  RESULT(p)
-!       IMPLICIT NONE
-!       TYPE(MultiSegmentModalCurve) :: self
-!       REAL(KIND=RP)                :: t
-!       INTEGER                      :: k
-!       REAL(KIND=RP)                :: p(3), s
+!     ---------------
+!     Check intervals
+!     ---------------
+!
+      CALL FTAssert(test = findInterval(self % cuts, t = 0.25_RP) == 1, msg = "Modal curve: first find interval failed")
+      CALL FTAssert(test = findInterval(self % cuts, t = 0.50_RP) == 2, msg = "Modal curve: second find interval failed")
+      CALL FTAssert(test = findInterval(self % cuts, t = 0.80_RP) == 3, msg = "Modal curve: third find interval failed")
+!
+!     -------------------------------------------------------
+!     Check values and derivatives inside each of the segments
+!     -------------------------------------------------------
+!
+      eVal = 0.0_RP; eDeriv = 0.0_RP; eFD = 0.0_RP
+      DO k = 1, 3
+         h = cuts(k) - cuts(k-1)
+         DO j = 1, SIZE(sTest)
+            s = sTest(j)
+            t = cuts(k-1) + 0.5_RP*h*(s + 1.0_RP)
 
-!       p = 0.0_RP
-!       k = findInterval(self % cuts, t)
-!       s = InvAffineMap(t0 = self % cuts(k-1),t1 = self % cuts(k),t = t)
+            xExact     = 0.0_RP
+            xExact(1:2) = coefs(0,:,k) + coefs(1,:,k)*s + coefs(2,:,k)*0.5_RP*(3.0_RP*s**2 - 1.0_RP)
+            dxExact     = 0.0_RP
+            dxExact(1:2) = (coefs(1,:,k) + coefs(2,:,k)*3.0_RP*s)*2.0_RP/h
 
-!       p(1) = self % coefs(0,1,k)*P0Prime(s) + self % coefs(1,1,k)*P1Prime(s) + &
-!              self % coefs(2,1,k)*P2Prime(s)
-!       p(2) = self % coefs(0,2,k)*P0Prime(s) + self % coefs(1,2,k)*P1Prime(s) + &
-!              self % coefs(2,2,k)*P2Prime(s)
+            x    = self % positionAt(t)
+            dx   = self % derivativeAt(t)
+            dxFD = (self % positionAt(t + delta) - self % positionAt(t - delta))/(2.0_RP*delta)
 
-!    END FUNCTION testPolynomialDerivAt
+            eVal   = MAX(eVal  , MAXVAL(ABS(x  - xExact)))
+            eDeriv = MAX(eDeriv, MAXVAL(ABS(dx - dxExact)))
+            eFD    = MAX(eFD   , MAXVAL(ABS(dx - dxFD)))
+         END DO
+      END DO
+      CALL FTAssert(test = eVal   < tol  , msg = "Modal curve: positionAt does not match the modal sum")
+      CALL FTAssert(test = eDeriv < tol  , msg = "Modal curve: derivativeAt does not match d/dt of the modal sum")
+      CALL FTAssert(test = eFD    < fdTol, msg = "Modal curve: derivativeAt does not match a finite difference")
+!
+!     ----------------------------------------------------------
+!     Segment end points and lengths stored by the constructor.
+!     At s = -1 the modal sum is c0 - c1 + c2, at s = 1 c0 + c1 + c2.
+!     ----------------------------------------------------------
+!
+      ePoints = 0.0_RP; eLengths = 0.0_RP
+      xStart = 0.0_RP
+      xStart(1:2) = coefs(0,:,1) - coefs(1,:,1) + coefs(2,:,1)
+      ePoints = MAX(ePoints, MAXVAL(ABS(self % segmentPoints(:,0) - xStart)))
+      DO k = 1, 3
+         xStart = 0.0_RP; xEnd = 0.0_RP
+         xStart(1:2) = coefs(0,:,k) - coefs(1,:,k) + coefs(2,:,k)
+         xEnd(1:2)   = coefs(0,:,k) + coefs(1,:,k) + coefs(2,:,k)
+         ePoints  = MAX(ePoints , MAXVAL(ABS(self % segmentPoints(:,k) - xEnd)))
+         eLengths = MAX(eLengths, ABS(self % segmentLengths(k) - NORM2(xEnd - xStart)))
+      END DO
+      CALL FTAssert(test = ePoints  < tol, msg = "Modal curve: stored segment end points are wrong")
+      CALL FTAssert(test = eLengths < tol, msg = "Modal curve: stored segment lengths are wrong")
 
-   END Module MultiSegmentModalCurveClass
+      CALL releaseMultiSegmentModalCurve(self)
+
+   END SUBROUTINE MultiSegmentModalCurveTest
