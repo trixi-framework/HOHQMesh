@@ -9,3 +9,25 @@ set -eox pipefail
 ./HOHQMesh -verbose -f Examples/2D/GingerbreadMan/GingerbreadMan.control -sLimit 8
 ./HOHQMesh || true # will fail
 ./HOHQMesh -this-does-not-exist || true # will fail
+
+# Read the control file from standard input: "-f none" (case insensitive)
+# makes ReadControlFile read stdin instead of a file
+./HOHQMesh -f none < Benchmarks/ControlFiles/Pill.control
+
+# Write the output files and a regenerated test file under a temporary
+# directory with -path, so that no tracked file is overwritten
+outDir=$(mktemp -d)
+mkdir -p "$outDir"/Benchmarks/MeshFiles/Tests "$outDir"/Benchmarks/PlotFiles/Tests \
+         "$outDir"/Benchmarks/StatsFiles/Tests "$outDir"/Benchmarks/BenchmarkData
+./HOHQMesh -generateTest -f Benchmarks/ControlFiles/Pill.control -path "$outDir"
+test -s "$outDir"/Benchmarks/MeshFiles/Tests/Pill.mesh
+test -s "$outDir"/Benchmarks/PlotFiles/Tests/Pill.tec
+test -s "$outDir"/Benchmarks/StatsFiles/Tests/Pill.txt
+test -s "$outDir"/Benchmarks/BenchmarkData/Pill.txt
+
+# Print the verbose messages of a 3D run. All extrusion and sweep
+# algorithms print the same messages, so one case is enough
+./HOHQMesh -verbose -f Benchmarks/ControlFiles/HalfCircleExtrude.control -path "$outDir"
+test -s "$outDir"/Benchmarks/MeshFiles/Tests/HalfCircleExtrude.mesh
+test -s "$outDir"/Benchmarks/PlotFiles/Tests/HalfCircleExtrude.tec
+rm -rf "$outDir"

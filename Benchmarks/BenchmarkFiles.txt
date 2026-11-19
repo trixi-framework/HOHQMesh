@@ -28,3 +28,4 @@ Benchmarks/ControlFiles/interface_star5_83deg.control
 Benchmarks/ControlFiles/ScaleTransformExtrude.control
 Benchmarks/ControlFiles/RotationTransformExtrude.control
 Benchmarks/ControlFiles/DefaultSweep.control
+Benchmarks/ControlFiles/NearbyInnerCircles.control

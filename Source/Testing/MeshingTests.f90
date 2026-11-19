@@ -39,6 +39,8 @@
       USE EncoderModule
       USE FTAssertions
       USE SegmentedChainTestsModule
+      USE EquationEvaluatorTestsModule
+      USE BoundaryIntersectionTestsModule
       IMPLICIT NONE
 !
 !---------------------------------------------------------------------
@@ -115,6 +117,10 @@
       CALL testSuite % addTestSubroutineWithName(NodalCircleTest,"MultiSegment Nodal Circle Tests")
       CALL testSuite % addTestSubroutineWithName(MultiSegmentModalCurveTest,"MultiSegment Modal Curve Tests")
       CALL testSuite % addTestSubroutineWithName(SegmentedChainTests,"Segmented Chain Tests")
+      CALL testSuite % addTestSubroutineWithName(ChainedCurveJoinTests,"Chained Curve Join Tests")
+      CALL testSuite % addTestSubroutineWithName(EquationEvaluatorTests,"Equation Evaluator Tests")
+      CALL testSuite % addTestSubroutineWithName(EquationFormatExceptionTests,"Equation Format Exception Tests")
+      CALL testSuite % addTestSubroutineWithName(BoundaryIntersectionTests,"Boundary Intersection Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...

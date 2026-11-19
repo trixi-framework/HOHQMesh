@@ -1,0 +1,73 @@
+%
+% ------------------------------------------------------------------
+% Control file for two inner circles that are close together, but do
+% not touch, inside a larger circle. The bounding boxes of the inner
+% circles overlap, so CheckForBoundaryIntersections must compare
+% their points (TwoCurvesAsPointsIntersect) to find that they do not
+% cross.
+%   Circle1: center (0,0),     radius 1
+%   Circle2: center (1.2,1.2), radius 0.5
+% The gap between them is 1.2*sqrt(2) - 1.5, about 0.197.
+% ------------------------------------------------------------------
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/NearbyInnerCircles.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/NearbyInnerCircles.tec
+      stats file name  = none
+      test file name   = Benchmarks/BenchmarkData/NearbyInnerCircles.txt
+      mesh file format = ISM
+      polynomial order = 4
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.5,0.5,0.5]
+   \end{BACKGROUND_GRID}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+    \begin{OUTER_BOUNDARY}
+       \begin{PARAMETRIC_EQUATION_CURVE}
+          name = outer
+          xEqn = x(t) = 4.0*cos(2*pi*t)
+          yEqn = y(t) = 4.0*sin(2*pi*t)
+          zEqn = z(t) = 0.0
+       \end{PARAMETRIC_EQUATION_CURVE}
+    \end{OUTER_BOUNDARY}
+
+    \begin{INNER_BOUNDARIES}
+
+       \begin{CHAIN}
+          name = InnerCircle1
+          \begin{PARAMETRIC_EQUATION_CURVE}
+             name = Circle1
+             xEqn = x(t) = cos(2*pi*t)
+             yEqn = y(t) = sin(2*pi*t)
+             zEqn = z(t) = 0.0
+          \end{PARAMETRIC_EQUATION_CURVE}
+       \end{CHAIN}
+
+       \begin{CHAIN}
+          name = InnerCircle2
+          \begin{PARAMETRIC_EQUATION_CURVE}
+             name = Circle2
+             xEqn = x(t) = 1.2 + 0.5*cos(2*pi*t)
+             yEqn = y(t) = 1.2 + 0.5*sin(2*pi*t)
+             zEqn = z(t) = 0.0
+          \end{PARAMETRIC_EQUATION_CURVE}
+       \end{CHAIN}
+
+    \end{INNER_BOUNDARIES}
+
+\end{MODEL}
+\end{FILE}

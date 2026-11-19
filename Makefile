@@ -26,12 +26,14 @@ ConstrainedMultiH1Optimizer.o \
 ControlFileReader.o \
 CurveConversions.o \
 CurveInterpolantClass.o \
+BoundaryIntersectionTests.o \
 CurveOptimization.o \
 CurveTests.o \
 DataFileTopographyClass.o \
 ElementOperations.o \
 Encoder.o \
 EquationEvaluatorClass.o \
+EquationEvaluatorTests.o \
 FatalErrorException.o \
 FileAndStringProcessing.o \
 Frenet.o \
@@ -503,6 +505,8 @@ MeshOutputMethods.o
 MeshingTests.o :$(HOHQMESHPATH)/Source/Testing/MeshingTests.f90 \
 TestDataClass.o \
 SegmentedChainTests.o \
+EquationEvaluatorTests.o \
+BoundaryIntersectionTests.o \
 Encoder.o \
 MeshQualityAnalysis.o \
 HOHQMesh.o \
@@ -671,10 +675,31 @@ SMConstants.o \
 SMLine.o \
 FRSegmentedCurveClass.o \
 ChainedSegmentedCurveClass.o \
+SMChainedCurveClass.o \
+ProgramGlobals.o \
 FTLinkedListClass.o \
+FTValueClass.o \
 FTExceptionClass.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/SegmentedChainTests.f90
+
+EquationEvaluatorTests.o :$(HOHQMESHPATH)/Source/Testing/EquationEvaluatorTests.f90 \
+SMConstants.o \
+EquationEvaluatorClass.o \
+ParametricEquationCurveClass.o \
+ParametricEquationTopographyClass.o \
+FTValueClass.o \
+FTExceptionClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/EquationEvaluatorTests.f90
+
+BoundaryIntersectionTests.o :$(HOHQMESHPATH)/Source/Testing/BoundaryIntersectionTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+Geometry.o \
+MeshBoundaryMethods.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/BoundaryIntersectionTests.f90
 
 ScannerTests.o :$(HOHQMESHPATH)/Source/Testing/ScannerTests.f90 \
 Assert.o \

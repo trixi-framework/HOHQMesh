@@ -2439,7 +2439,7 @@
             bBox(BBOX_LEFT)   = MIN(c1(1,i),c1(1,i+1))
             bBox(BBOX_BOTTOM) = MIN(c1(2,i),c1(2,i+1))
             bBox(BBOX_RIGHT)  = MAX(c1(1,i),c1(1,i+1))
-            bBox(BBOX_TOP)    = MAX(c1(1,i),c1(1,i+1))
+            bBox(BBOX_TOP)    = MAX(c1(2,i),c1(2,i+1))
 
             DO j = 0, n2
               IF ( Point_IsInsideBox(p = c2(:,j),bBox = bBox) ) THEN
