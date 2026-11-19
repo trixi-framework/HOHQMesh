@@ -296,8 +296,11 @@ Within this block one defines as many curves or `CHAIN`s as there are inner boun
 Interior interface boundary curves are defined inside the `INTERFACE_BOUNDARIES` block, as if they are interior boundaries,
 
 	\begin{INTERFACE_BOUNDARIES}
+		paving = ON **or** OFF (Optional)
 	...
 	\end{INTERFACE_BOUNDARIES}
+
+The optional `paving` key selects how all of the interface curves in the block are [meshed](interface-meshing.md). With `paving = ON`, the default, the elements in a band around each interface chain are removed and the band is [paved](interface-meshing.md#interface-paving) again from the curve outward. A chain for which paving fails is meshed with the [fallback strategy](interface-meshing.md#fallback-moving-grid-nodes-onto-the-curve), which moves nodes of the background grid onto the curve. With `paving = OFF`, every interface chain is meshed with the fallback strategy. Like the `name` of a `CHAIN`, the key must come before the first `CHAIN` or curve in the block.
 
 Interface boundaries, unlike interior boundaries, do not create holes in model domain or the mesh. _Interface boundaries that are contained (embedded) in other interface boundaries must be defined within the block in order from outer to inner to properly define the material names_. The ordering of interface boundaries that are not embedded in another is not important. (Additions to HOHQMesh to remove this restriction will require code to determine whether or not a given curve is embedded within another, and has not yet been implemented. HOHQMesh essentially uses a painters algorithm to specify the material names.) If interface curves are not being used to delineate material boundaries (i.e. for mesh alignment alone and not with the ISM-MM mesh file format), then the ordering is unimportant.
 

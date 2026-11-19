@@ -185,7 +185,7 @@
 !
          CALL WriteBoundaryErrors(project)
          IF ( .NOT.test )     THEN
-            IF ( SIZE(project % L2ErrorMax) > 0 )     THEN
+            IF ( ALLOCATED(project % L2ErrorMax) )     THEN
                PRINT *, "Boundary Error Quality:"
                WRITE(6,"(A32,4x,A12,A16)") "Boundary Name", "Max L2 Error", "Max H1 Error"
                DO k = 1, SIZE(project % L2ErrorMax)
