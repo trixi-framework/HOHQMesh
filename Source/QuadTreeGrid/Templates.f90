@@ -250,7 +250,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !  Unused 3-Refinement templates (commented out 2026-11-19)
-!      
+!
 !  Kept in case 3-Refinement is ever reinstated.
 !  See comment block above ConstructNodesForTemplate2A in this file.
 !
@@ -684,9 +684,12 @@
 !       and the TEMPLATE2A/2B/3/4 cases in the dispatch routines
 !    3. Re-enable the REFINEMENT_3 IF in ConstructNodesForTemplate1 and 
 !       ConstructQuadsForTemplate1 in this file
-!    4. Uncomment Determine3TemplateType, the ELSE branch in DoLevelOperation,
-!       and the 2A/2B/3 cases in NodeLocs_ForTemplate_At
-!    5. Set refinementType = 3 in ProgramGlobals.f90
+!    4. Uncomment Determine3TemplateType and the ELSE branch in DoLevelOperation
+!    5. Uncomment NodesTemplates.f90, including the 2A/2B/3 cases in
+!       NodeLocs_ForTemplate_At, and in Refine replace the TEMPLATE0-only
+!       CYCLE and inline corner indices with the NodeLocs_ForTemplate_At
+!       call (template grids must be examined again under 3-Refinement)
+!    6. Set refinementType = 3 in ProgramGlobals.f90
 !
 !////////////////////////////////////////////////////////////////////////
 !

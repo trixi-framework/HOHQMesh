@@ -277,14 +277,48 @@
       CALL SetNeighborPointers( self )
       DO j = 1, M
          DO i = 1, N
-             IF( ASSOCIATED(self % children(i,j) % grid ) )     cycle ! this grid is not already subdivided.
+             IF( ASSOCIATED(self % children(i,j) % grid ) )     CYCLE ! this grid is not already subdivided.
 !
 !               -------------------------------------------------
 !               Find the nodes for self that make up the i,j quad
 !               -------------------------------------------------
+
+!               (commented out 2026-11-19)
+!                CALL NodeLocs_ForTemplate_At( nodeLocs, self % templateType, i, j, self % rotation )
+!                IF( SUM(nodeLocs) == 0 )     CYCLE ! Template type 2 has no nodelocs??
+
 !
-                CALL NodeLocs_ForTemplate_At( nodeLocs, self % templateType, i, j, self % rotation )
-                IF( SUM(nodeLocs) == 0 )     CYCLE ! Template type 2 has no nodelocs??
+!               ------------------------------------------------------------------
+!               Only ordinary (TEMPLATE0) grids are examined (changed 2026-11-19).
+!
+!               Grids built from a 2-Refinement template (TEMPLATE1, TEMPLATE2)
+!               never need further subdivision. FlattenNodeLevels guarantees that
+!               the corner node levels of every quad differ by at most one, so a
+!               template cell is never adjacent to a cell two levels finer and
+!               none of its sub-quads can have a marked active corner. Measured
+!               over all benchmarks, examples and stress cases, 0 of ~50k
+!               template sub-quads needed refinement.
+!
+!               Previously the corners came from NodeLocs_ForTemplate_At (see
+!               NodesTemplates.f90). Its TEMPLATE1 locations were written for
+!               the 3x3 (3-Refinement) layout and are only valid for rotation 1
+!               in 2-Refinement, and TEMPLATE2 grids returned no locations and
+!               were skipped. The result was always TEMPLATE0, so skipping
+!               template grids here does not change the mesh.
+!
+!               If 3-Refinement is ever restored, template grids must be
+!               examined again: replace the CYCLE and the corner indices below
+!               with the NodeLocs_ForTemplate_At call and its SUM(nodeLocs) == 0
+!               check.
+!               See comment block above ConstructNodesForTemplate2A in Templates.f90.
+!               ------------------------------------------------------------------
+!
+                IF( self % templateType /= TEMPLATE0 )     CYCLE
+
+                nodeLocs(:,1) = (/i-1, j-1/)
+                nodeLocs(:,2) = (/i  , j-1/)
+                nodeLocs(:,3) = (/i  , j  /)
+                nodeLocs(:,4) = (/i-1, j  /)
 
                 DO k = 1, 4
                    nodeLevels(k)   = self % nodes(nodeLocs(1,k),nodeLocs(2,k)) % node % level
@@ -423,7 +457,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
 !  Unused 3-Refinement templates (commented out 2026-11-19)
-!      
+!
 !  Kept in case 3-Refinement is ever reinstated.
 !  See comment block above ConstructNodesForTemplate2A in Templates.f90.
 !
