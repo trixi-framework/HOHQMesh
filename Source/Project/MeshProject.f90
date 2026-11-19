@@ -902,22 +902,15 @@
             CALL ComputeInterfaceCurveScales( self % sizer )
          END IF
 !
-!        TODO: ResizeSegmentedCurves is introduced to solve the dilemma that
-!              in order to determine the distances curves are from eachother,
-!              they must be discretized, but once the distances are found, it
-!              may be true that the spacing between the points is large in
-!              comparison. ResizeSegmentedCurves goes back and compares the
-!              spacing between the points in the segmented curves to the
-!              computed spacing between the curves. This appears to be an
-!              iterative process, but is only done once.
-!              The procedure compiles and runs, but until a case arises where
-!              it is necessary, the procedure has not been debugged. Hence,
-!              it is skipped until then.
-!              (2026-11-19) ResizeSegmentedCurves, below in this file, and
-!              ResizeFRSegmentedCurve in FRSegmentedCurveClass.f90 are now
-!              commented out as well. Uncomment both to re-enable this call.
+!        -----------------------------------------------------------
+!        The distances between curves are found from the discretized
+!        curves, but the points of a discretized curve can then be
+!        too far apart compared to those distances. Then the quadtree
+!        boxes along the curve can miss the size request. Add points
+!        where needed and compute the distance scales again.
+!        -----------------------------------------------------------
 !
-!         CALL ResizeSegmentedCurves(self)
+         CALL ResizeSegmentedCurves(self)
 
       END SUBROUTINE BuildSizerBoundaryCurves
 !
@@ -989,89 +982,154 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
-!  Added in 2021 (ae65352) but never called or debugged; see the TODO at the
-!  end of BuildSizerBoundaryCurves for its purpose. It uses
-!  ResizeFRSegmentedCurve (FRSegmentedCurveClass.f90), also commented out.
+      SUBROUTINE ResizeSegmentedCurves( self )
 !
-!       SUBROUTINE ResizeSegmentedCurves( self )
-! !
-! !     -----------------------------------------------------------
-! !     After the spacing between a curve and itself, and a curve
-! !     with other curves is computed, the distance between points
-! !     on the segmented curves might be too large in comparison.
-! !     If so, subdivide the segmented curves further.
-! !     -----------------------------------------------------------
-! !
-!          IMPLICIT NONE
-! !
-! !        ---------
-! !        Arguments
-! !        ---------
-! !
-!          TYPE (MeshProject) :: self
-! !
-! !        ---------------
-! !        Local variables
-! !        ---------------
-! !
-!          CLASS(MeshSizer)            , POINTER :: sizer
-!          CLASS(FRSegmentedCurve)     , POINTER :: frsCurve
-!          CLASS(SMChainedCurve)       , POINTER :: outerBoundary
-!          CLASS(SMCurve)              , POINTER :: cCurve
-!          CLASS(FTLinkedListIterator) , POINTER :: curveIterator, segmentedIterator
-!          CLASS(FTObject)             , POINTER :: obj
-!          CLASS(SMChainedCurve)       , POINTER :: innerCurveChain
-!          CLASS(ChainedSegmentedCurve), POINTER :: innerSegmentedCurveChain
-!          INTEGER                               :: j
+!     -----------------------------------------------------------
+!     After the spacing between a curve and itself, and a curve
+!     with other curves is computed, the distance between points
+!     on the segmented curves might be too large in comparison.
+!     If so, subdivide the segmented curves further and compute
+!     the curve distance scales again with the new points. Repeat
+!     a few times, since the new points can find smaller distances.
+!     -----------------------------------------------------------
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE (MeshProject) :: self
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, PARAMETER :: MAX_RESIZE_PASSES = 3
+         INTEGER            :: pass, numberOfNewPoints
 
-!          sizer => self % sizer
-! !
-! !        --------------
-! !        Outer boundary
-! !        --------------
-! !
-!          IF ( ASSOCIATED( sizer % outerBoundary) )     THEN
-!             outerBoundary => self % model % outerBoundary
-!             DO j = 1, sizer % outerBoundary % curveCount()
-!                cCurve   => outerBoundary % curveAtIndex(j)
-!                frsCurve => sizer % outerBoundary % segmentedCurveAtIndex(j)
-!                CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve)
-!             END DO
-!          END IF
-! !
-! !        ----------------
-! !        Inner boundaries
-! !        ----------------
-! !
-!          IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
-!             curveIterator => self % model % innerBoundariesIterator
-!             ALLOCATE(segmentedIterator)
-!             CALL segmentedIterator % initWithFTLinkedListClass(sizer % innerBoundariesList)
+         DO pass = 1, MAX_RESIZE_PASSES
+            numberOfNewPoints = 0
 
-!             CALL curveIterator % setToStart()
-!             CALL segmentedIterator % setToStart()
+            IF ( ASSOCIATED( self % sizer % outerBoundary) )     THEN
+               numberOfNewPoints = numberOfNewPoints + &
+                    resizedChainPointCount(self % model % outerBoundary, self % sizer % outerBoundary)
+            END IF
+            IF ( ASSOCIATED( self % model % innerBoundaries ) )     THEN
+               numberOfNewPoints = numberOfNewPoints + &
+                    resizedListPointCount(self % model % innerBoundaries, self % sizer % innerBoundariesList)
+            END IF
+            IF ( ASSOCIATED( self % model % interfaceBoundaries ) )     THEN
+               numberOfNewPoints = numberOfNewPoints + &
+                    resizedListPointCount(self % model % interfaceBoundaries, self % sizer % interfaceBoundariesList)
+            END IF
 
-!             DO WHILE (.NOT.curveIterator % isAtEnd())
-!                obj     => curveIterator % object()
-!                CALL castToSMChainedCurve(obj,innerCurveChain)
+            IF ( printMessage )     THEN
+               PRINT *, "   Resizing pass ", pass, " added ", numberOfNewPoints, " curve points"
+            END IF
+            IF ( numberOfNewPoints == 0 )     EXIT
 
-!                obj     => segmentedIterator % object()
-!                CALL castToChainedSegmentedCurve(obj,innerSegmentedCurveChain)
+            CALL ComputeCurveDistanceScales( self % sizer )
+            IF ( ASSOCIATED( self % model % interfaceBoundaries ) ) THEN
+               CALL ComputeInterfaceCurveScales( self % sizer )
+            END IF
+         END DO
 
-!                DO j = 1, innerSegmentedCurveChain % curveCount()
-!                   cCurve   => innerCurveChain % curveAtIndex(j)
-!                   frsCurve => innerSegmentedCurveChain % segmentedCurveAtIndex(j)
-!                   CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve)
-!                END DO
+      END SUBROUTINE ResizeSegmentedCurves
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION resizedListPointCount( curveList, segmentedList )  RESULT(n)
+         USE ChainedSegmentedCurveClass
+         USE SMChainedCurveClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(FTLinkedList) , POINTER :: curveList
+         CLASS(FTLinkedList), POINTER :: segmentedList
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedListIterator) , POINTER :: curveIterator, segmentedIterator
+         CLASS(FTObject)             , POINTER :: obj
+         CLASS(SMChainedCurve)       , POINTER :: curveChain
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedChain
 
-!                CALL curveIterator % moveToNext()
-!                CALL segmentedIterator % moveToNext()
-!             END DO
-!             CALL releaseFTLinkedListIteratorClass(segmentedIterator)
-!          END IF
+         n = 0
+         IF ( .NOT. ASSOCIATED(segmentedList) )     RETURN
 
-!       END SUBROUTINE ResizeSegmentedCurves
+         ALLOCATE(curveIterator, segmentedIterator)
+         CALL curveIterator % initWithFTLinkedList(curveList)
+         CALL segmentedIterator % initWithFTLinkedListClass(segmentedList)
+         CALL curveIterator % setToStart()
+         CALL segmentedIterator % setToStart()
+
+         DO WHILE (.NOT.curveIterator % isAtEnd())
+            obj => curveIterator % object()
+            CALL castToSMChainedCurve(obj,curveChain)
+            obj => segmentedIterator % object()
+            CALL castToChainedSegmentedCurve(obj,segmentedChain)
+
+            n = n + resizedChainPointCount(curveChain, segmentedChain)
+
+            CALL curveIterator % moveToNext()
+            CALL segmentedIterator % moveToNext()
+         END DO
+
+         CALL releaseFTLinkedListIteratorClass(curveIterator)
+         CALL releaseFTLinkedListIteratorClass(segmentedIterator)
+
+      END FUNCTION resizedListPointCount
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION resizedChainPointCount( curveChain, segmentedChain )  RESULT(n)
+         USE ChainedSegmentedCurveClass
+         USE SMChainedCurveClass
+         USE FRSegmentedCurveClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMChainedCurve)       , POINTER :: curveChain
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedChain
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(SMCurve)         , POINTER :: cCurve
+         CLASS(FRSegmentedCurve), POINTER :: frsCurve
+         INTEGER                          :: j, numberOfNewPoints
+
+         n = 0
+         DO j = 1, segmentedChain % curveCount()
+            cCurve   => curveChain % curveAtIndex(j)
+            frsCurve => segmentedChain % segmentedCurveAtIndex(j)
+            CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve, &
+                                        numberOfNewPoints = numberOfNewPoints)
+            n = n + numberOfNewPoints
+         END DO
+!
+!        -------------------------------------------------
+!        The chain caches where each curve starts, so redo
+!        that bookkeeping when points were added
+!        -------------------------------------------------
+!
+         IF ( n > 0 )     THEN
+            DEALLOCATE(segmentedChain % curveStartIndices)
+            segmentedChain % numberOfPointsInChain = segmentedChain % nodeCount()
+            CALL segmentedChain % complete()
+         END IF
+
+      END FUNCTION resizedChainPointCount
 !
 !////////////////////////////////////////////////////////////////////////
 !
