@@ -715,23 +715,29 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE printChainForPlotting( self )
+      SUBROUTINE printChainForPlotting( self, iUnit )
 !
-!     ----------------------
-!     For debugging purposes
-!     ----------------------
+!     ----------------------------------------------------------
+!     For debugging purposes: Print t and the position at N + 1
+!     equally spaced values of t to iUnit (default: the screen)
+!     ----------------------------------------------------------
 !
+         USE, INTRINSIC :: ISO_FORTRAN_ENV, ONLY: OUTPUT_UNIT
          IMPLICIT NONE
          CLASS(SMChainedCurve) :: self
+         INTEGER, OPTIONAL     :: iUnit
          REAL(KIND=RP)         :: t, dt, x(3)
-         INTEGER               :: N, j
+         INTEGER               :: N, j, u
+
+         u = OUTPUT_UNIT
+         IF ( PRESENT(iUnit) )     u = iUnit
 
          N = 200
          dt = 1.0_RP/N
          DO j = 0, N
             t = j*dt
             x = self % positionAt(t)
-            PRINT *, t, x
+            WRITE(u,*) t, x
          END DO
 
       END SUBROUTINE printChainForPlotting

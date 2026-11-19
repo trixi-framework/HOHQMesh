@@ -30,6 +30,7 @@ BoundaryIntersectionTests.o \
 CurveOptimization.o \
 CurveTests.o \
 DataFileTopographyClass.o \
+DebugOutputTests.o \
 ElementOperations.o \
 Encoder.o \
 EquationEvaluatorClass.o \
@@ -504,6 +505,7 @@ MeshOutputMethods.o
 
 MeshingTests.o :$(HOHQMESHPATH)/Source/Testing/MeshingTests.f90 \
 TestDataClass.o \
+DebugOutputTests.o \
 SegmentedChainTests.o \
 EquationEvaluatorTests.o \
 BoundaryIntersectionTests.o \
@@ -692,6 +694,34 @@ FTValueClass.o \
 FTExceptionClass.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/EquationEvaluatorTests.f90
+
+DebugOutputTests.o :$(HOHQMESHPATH)/Source/Testing/DebugOutputTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+Encoder.o \
+HOHQMesh.o \
+MeshProject.o \
+MeshGeneratorMethods.o \
+QuadTreeGridClass.o \
+QuadTreeGridGenerator.o \
+SMMeshObjects.o \
+SMCurveClass.o \
+SMChainedCurveClass.o \
+SMSplineCurveClass.o \
+ParametricEquationCurveClass.o \
+SMPolynomialInterpolantCurveClass.o \
+ChainedSegmentedCurveClass.o \
+FRSegmentedCurveClass.o \
+SegmentedCurveArrayClass.o \
+CurveConversions.o \
+SizerControls.o \
+SMTopographyClass.o \
+ParametricEquationTopographyClass.o \
+DataFileTopographyClass.o \
+FTLinkedListClass.o \
+FTValueDictionaryClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/DebugOutputTests.f90
 
 BoundaryIntersectionTests.o :$(HOHQMESHPATH)/Source/Testing/BoundaryIntersectionTests.f90 \
 SMConstants.o \

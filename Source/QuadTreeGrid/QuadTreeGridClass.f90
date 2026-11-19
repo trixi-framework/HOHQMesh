@@ -1024,13 +1024,24 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE PrintGridDiagnostics( self )
+      RECURSIVE SUBROUTINE PrintGridDiagnostics( self, iUnit )
+!
+!     ----------------------------------------------------------
+!     For debugging: Print the nodes, quads and neighbors of the
+!     grid and all its children to iUnit (default: the screen)
+!     ----------------------------------------------------------
+!
+      USE, INTRINSIC :: ISO_FORTRAN_ENV, ONLY: OUTPUT_UNIT
       IMPLICIT NONE
       TYPE (QuadTreeGrid), POINTER :: self
+      INTEGER, OPTIONAL            :: iUnit
 
-      INTEGER                :: i, j, k, N, M
+      INTEGER                :: i, j, k, N, M, u
       TYPE (SMNode), POINTER :: node
       CLASS(SMQuad), POINTER :: quad
+
+      u = OUTPUT_UNIT
+      IF ( PRESENT(iUnit) )     u = iUnit
 
       N = self % N(1)
       M = self % N(2)
@@ -1039,37 +1050,37 @@
 !     Globals
 !     -------
 !
-      PRINT *, "Highest level = ", highestLevel, " Refcount = ", self % refcount()
+      WRITE(u,*) "Highest level = ", highestLevel, " Refcount = ", self % refcount()
 !
 !     -----------------
 !     Set level on self
 !     -----------------
 !
-      PRINT *, "Nodes at level ", self % level
+      WRITE(u,*) "Nodes at level ", self % level
       DO j = 0, M
          DO i = 0, N
             IF( .NOT.ASSOCIATED( self % nodes(i,j) % node ) ) CYCLE
             node => self % nodes(i,j) % node
-            PRINT *, i, j, self % nodes(i,j) % node % refCount(), node % id, node % level, node % x
+            WRITE(u,*) i, j, self % nodes(i,j) % node % refCount(), node % id, node % level, node % x
          END DO
       END DO
 
-      PRINT *, "Quads at level ", self % level, "Dx = ", self % dx
+      WRITE(u,*) "Quads at level ", self % level, "Dx = ", self % dx
       DO j = 1, M
          DO i = 1, N
             IF( .NOT.ASSOCIATED(self % quads(i,j) % quad) )     CYCLE
             quad => self % quads(i,j) % quad
-            PRINT *, i, j
+            WRITE(u,*) i, j
             DO k = 1, 4
-               PRINT *, quad % nodes(k) % node % id, quad % nodes(k) % node % x
+               WRITE(u,*) quad % nodes(k) % node % id, quad % nodes(k) % node % x
             END DO
          END DO
       END DO
-      PRINT *, "Neighbors to this grid", self % locInParent
-      IF(ASSOCIATED(self % neighborL))   PRINT *, "left", self % neighborL % x0
-      IF(ASSOCIATED(self % neighborR))   PRINT *, "right", self % neighborR % x0
-      IF(ASSOCIATED(self % neighborT))   PRINT *, "top", self % neighborT % x0
-      IF(ASSOCIATED(self % neighborB))   PRINT *, "bottom", self % neighborB % x0
+      WRITE(u,*) "Neighbors to this grid", self % locInParent
+      IF(ASSOCIATED(self % neighborL))   WRITE(u,*) "left", self % neighborL % x0
+      IF(ASSOCIATED(self % neighborR))   WRITE(u,*) "right", self % neighborR % x0
+      IF(ASSOCIATED(self % neighborT))   WRITE(u,*) "top", self % neighborT % x0
+      IF(ASSOCIATED(self % neighborB))   WRITE(u,*) "bottom", self % neighborB % x0
 !
 !     --------------------------
 !     Continue with the children
@@ -1078,7 +1089,7 @@
       IF (ASSOCIATED( self % children ) )     THEN
          DO j = 1, M
             DO i = 1, N
-               IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL PrintGridDiagnostics( self % children(i,j) % grid )
+               IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL PrintGridDiagnostics( self % children(i,j) % grid, u )
             END DO
          END DO
       END IF

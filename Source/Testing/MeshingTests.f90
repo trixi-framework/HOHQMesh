@@ -41,6 +41,7 @@
       USE SegmentedChainTestsModule
       USE EquationEvaluatorTestsModule
       USE BoundaryIntersectionTestsModule
+      USE DebugOutputTestsModule
       IMPLICIT NONE
 !
 !---------------------------------------------------------------------
@@ -196,6 +197,25 @@
 !     Run the tests
 !     -------------
 !
+!
+!     ---------------------------------------------------------------
+!     The debug output tests read benchmark control files, so they get
+!     the control file directory
+!     ---------------------------------------------------------------
+!
+      IF ( TRIM(pathToTestFiles) == "" )     THEN
+         fullPath = "Benchmarks/ControlFiles/"
+      ELSE
+         CALL ConvertToPath(pathToTestFiles)
+         fullPath = TRIM(pathToTestFiles) // "Benchmarks/ControlFiles/"
+      END IF
+      optData => NULL()
+      CALL encode(str = TRIM(fullPath),enc = optDataA)
+      ALLOCATE(optData(SIZE(optDataA)))
+      optData = optDataA
+      CALL testSuite % addTestSubroutineWithName(DebugOutputTests,"Debug Output Tests", optData)
+      DEALLOCATE(optDataA)
+
       CALL testSuite % performTests(numberOfFailedTests)
       CALL finalizeSharedAssertionsManager
       DEALLOCATE(controlFiles)
