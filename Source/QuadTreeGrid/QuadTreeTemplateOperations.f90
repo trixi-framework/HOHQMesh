@@ -54,26 +54,31 @@
 !        ---------
 !
          TYPE (QuadTreeGrid), POINTER :: self
-         INTEGER                   :: rotation ! Used for all other templates, otherwise ignored
+         INTEGER                      :: rotation ! Used for all other templates, otherwise ignored
 
          SELECT CASE ( self % templateType )
 
-            CASE( TEMPLATE0 )
+!            CASE( TEMPLATE0 )
                !PRINT *, "Level 0 templates should not be called"
                !STOP
-
             CASE( TEMPLATE1 )
                CALL ConstructNodesForTemplate1( self, rotation )
             CASE( TEMPLATE2 )
                CALL ConstructNodesForTemplate2( self )
-            CASE( TEMPLATE2A )
-               CALL ConstructNodesForTemplate2A ( self, rotation )
-            CASE( TEMPLATE2B )
-               CALL ConstructNodesForTemplate2B ( self, rotation )
-            CASE( TEMPLATE3 )
-               CALL ConstructNodesForTemplate3 ( self, rotation )
-            CASE( TEMPLATE4 )
-               CALL ConstructNodesForTemplate4 ( self )
+!
+!           ------------------------------------
+!           Only 2-Refinement Templates are used
+!           (commented out 2026-11-19)
+!           ------------------------------------
+!
+!            CASE( TEMPLATE2A )
+!               CALL ConstructNodesForTemplate2A ( self, rotation )
+!            CASE( TEMPLATE2B )
+!               CALL ConstructNodesForTemplate2B ( self, rotation )
+!            CASE( TEMPLATE3 )
+!               CALL ConstructNodesForTemplate3 ( self, rotation )
+!            CASE( TEMPLATE4 )
+!               CALL ConstructNodesForTemplate4 ( self )
             CASE DEFAULT
          END SELECT
 
@@ -113,19 +118,24 @@
                      CALL PointNodePtr_To_(self % quads(i,j) % quad % nodes(4), self % nodes(i-1,j  ))
                   END DO
                END DO
-
             CASE( TEMPLATE1 )
                CALL ConstructQuadsForTemplate1 ( self, rotation )
             CASE( TEMPLATE2 )
                CALL ConstructQuadsForTemplate2( self )
-            CASE( TEMPLATE2A )
-               CALL ConstructQuadsForTemplate2A ( self, rotation )
-            CASE( TEMPLATE2B )
-               CALL ConstructQuadsForTemplate2B ( self, rotation )
-            CASE( TEMPLATE3 )
-               CALL ConstructQuadsForTemplate3 ( self, rotation )
-            CASE( TEMPLATE4 )
-               CALL ConstructQuadsForTemplate4 ( self )
+!
+!           ------------------------------------
+!           Only 2-Refinement Templates are used
+!           (commented out 2026-11-19)
+!           ------------------------------------
+!
+!            CASE( TEMPLATE2A )
+!               CALL ConstructQuadsForTemplate2A ( self, rotation )
+!            CASE( TEMPLATE2B )
+!               CALL ConstructQuadsForTemplate2B ( self, rotation )
+!            CASE( TEMPLATE3 )
+!               CALL ConstructQuadsForTemplate3 ( self, rotation )
+!            CASE( TEMPLATE4 )
+!               CALL ConstructQuadsForTemplate4 ( self )
             CASE DEFAULT
          END SELECT
 
@@ -213,8 +223,11 @@
                      CALL SetNodeActivation( currentGrid, ACTIVE )
                      CALL Refine( currentGrid )
                      CALL SetNodeActivation( currentGrid, INACTIVE )
-                  ELSE
-                     CALL Refine( currentGrid )
+!                  -----------------------------
+!                  (commented out 2026-11-19)
+!                  -----------------------------
+!                  ELSE
+!                     CALL Refine( currentGrid )
                   END IF
                END DO
 
@@ -278,11 +291,17 @@
                    activeStatus(k) = self % nodes(nodeLocs(1,k),nodeLocs(2,k)) % node % activeStatus
                 END DO
 
-                IF( refinementType == REFINEMENT_3 )     THEN
-                   CALL Determine3TemplateType( nodeLevels, level, templateType, rotation )
-                ELSE
+!
+!                ------------------------------------
+!                Only 2-Refinement Templates are used
+!                (commented out 2026-11-19)
+!                ------------------------------------
+!
+!                IF( refinementType == REFINEMENT_3 )     THEN
+!                   CALL Determine3TemplateType( nodeLevels, level, templateType, rotation )
+!                ELSE
                    CALL Determine2TemplateType( activeStatus, nodeLevels, level, templateType, rotation )
-                END IF
+!                END IF
 
                 IF( templateType == TEMPLATE0 ) CYCLE ! No need to refine
 !
@@ -403,83 +422,90 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE Determine3TemplateType( nodeLevels, level, templateType, rotation )
-      IMPLICIT NONE
+!  Unused 3-Refinement templates (commented out 2026-11-19)
+!      
+!  Kept in case 3-Refinement is ever reinstated.
+!  See comment block above ConstructNodesForTemplate2A in Templates.f90.
 !
-!     ---------
-!     Arguments
-!     ---------
+!////////////////////////////////////////////////////////////////////////
 !
-      INTEGER, INTENT(IN)    :: level
-      INTEGER, INTENT(OUT)   :: templateType, rotation
-      INTEGER , DIMENSION(4) :: nodeLevels
-!
-!     ---------------
-!     Local Variables
-!     ---------------
-!
-      INTEGER , DIMENSION(4) :: rotMap = (/2,3,4,1/)
-      INTEGER                :: k, numberOfMarkedNodes
-!
-!     ------------------------------
-!     Mark the nodes for their level
-!     ------------------------------
-!
-      nodeLevels   = nodeLevels - level ! Finds marked nodes
-      numberOfMarkedNodes = 0
-      DO k = 1,4
-         IF( nodeLevels(k) /= 0 )  numberOfMarkedNodes = numberOfMarkedNodes + 1
-      END DO
+!       SUBROUTINE Determine3TemplateType( nodeLevels, level, templateType, rotation )
+!       IMPLICIT NONE
+! !
+! !     ---------
+! !     Arguments
+! !     ---------
+! !
+!       INTEGER, INTENT(IN)    :: level
+!       INTEGER, INTENT(OUT)   :: templateType, rotation
+!       INTEGER , DIMENSION(4) :: nodeLevels
+! !
+! !     ---------------
+! !     Local Variables
+! !     ---------------
+! !
+!       INTEGER , DIMENSION(4) :: rotMap = (/2,3,4,1/)
+!       INTEGER                :: k, numberOfMarkedNodes
+! !
+! !     ------------------------------
+! !     Mark the nodes for their level
+! !     ------------------------------
+! !
+!       nodeLevels   = nodeLevels - level ! Finds marked nodes
+!       numberOfMarkedNodes = 0
+!       DO k = 1,4
+!          IF( nodeLevels(k) /= 0 )  numberOfMarkedNodes = numberOfMarkedNodes + 1
+!       END DO
 
-      SELECT CASE ( numberOfMarkedNodes )
+!       SELECT CASE ( numberOfMarkedNodes )
 
-         CASE( 0 ) ! No subdivision needed
-            templateType = TEMPLATE0
-            rotation     = 0
+!          CASE( 0 ) ! No subdivision needed
+!             templateType = TEMPLATE0
+!             rotation     = 0
 
-         CASE( 1 )
-            templateType = TEMPLATE1
-            DO k = 1, 4
-               rotation = k
-               IF( nodeLevels(k) /= 0 ) EXIT
-            END DO
+!          CASE( 1 )
+!             templateType = TEMPLATE1
+!             DO k = 1, 4
+!                rotation = k
+!                IF( nodeLevels(k) /= 0 ) EXIT
+!             END DO
 
-         CASE( 2 )
-            DO k = 1, 4
-               rotation = k
-               IF( nodeLevels(k) /= 0 ) EXIT
-            END DO
-!
-!           -----------------------------------
-!           Distinguish between types 2A AND 2B
-!           -----------------------------------
-!
-            IF ( ((rotation == 1).OR.(rotation==2)).AND.nodeLevels(rotation+2) /= 0 )     THEN
-               templateType = TEMPLATE2B
-            ELSE
-               templateType = TEMPLATE2A
-               IF( rotation == 1 .AND. nodeLevels(4) /= 0 ) rotation = 4
-            END IF
+!          CASE( 2 )
+!             DO k = 1, 4
+!                rotation = k
+!                IF( nodeLevels(k) /= 0 ) EXIT
+!             END DO
+! !
+! !           -----------------------------------
+! !           Distinguish between types 2A AND 2B
+! !           -----------------------------------
+! !
+!             IF ( ((rotation == 1).OR.(rotation==2)).AND.nodeLevels(rotation+2) /= 0 )     THEN
+!                templateType = TEMPLATE2B
+!             ELSE
+!                templateType = TEMPLATE2A
+!                IF( rotation == 1 .AND. nodeLevels(4) /= 0 ) rotation = 4
+!             END IF
 
-         CASE( 3 )
-            DO k = 1, 4
-               rotation = k
-               IF( nodeLevels(k) == 0 ) EXIT
-            END DO
-            templateType = TEMPLATE3
-            rotation = rotMap(rotation)
+!          CASE( 3 )
+!             DO k = 1, 4
+!                rotation = k
+!                IF( nodeLevels(k) == 0 ) EXIT
+!             END DO
+!             templateType = TEMPLATE3
+!             rotation = rotMap(rotation)
 
-         CASE( 4 )
-            templateType = TEMPLATE4
-            rotation = 0
+!          CASE( 4 )
+!             templateType = TEMPLATE4
+!             rotation = 0
 
-         CASE DEFAULT
-            PRINT *, "Whoa, something messed up in Determine3TemplateType"
-            templateType = TEMPLATE4
-            rotation = 0
-      END SELECT
+!          CASE DEFAULT
+!             PRINT *, "Whoa, something messed up in Determine3TemplateType"
+!             templateType = TEMPLATE4
+!             rotation = 0
+!       END SELECT
 
-      END SUBROUTINE Determine3TemplateType
+!       END SUBROUTINE Determine3TemplateType
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -528,8 +554,9 @@
             templateType = TEMPLATE2
             rotation     = 0
 
-         CASE DEFAULT
-            PRINT *, "Whoa, something messed up in Determine2TemplateType"
+         CASE DEFAULT ! unreachable as, at most, two diagonal corners are active
+!            (commented out 2026-11-19)
+!            PRINT *, "Whoa, something messed up in Determine2TemplateType"
             templateType = TEMPLATE0
             rotation = 0
       END SELECT
