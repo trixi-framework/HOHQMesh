@@ -25,3 +25,6 @@ Benchmarks/ControlFiles/RotatedEllipseWithSubregions.control
 Benchmarks/ControlFiles/BlobAdapt.control
 Benchmarks/ControlFiles/FiveEmbeddedObjects.control
 Benchmarks/ControlFiles/interface_star5_83deg.control
+Benchmarks/ControlFiles/ScaleTransformExtrude.control
+Benchmarks/ControlFiles/RotationTransformExtrude.control
+Benchmarks/ControlFiles/DefaultSweep.control

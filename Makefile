@@ -91,6 +91,7 @@ QuadTreeTemplateOperations.o \
 ReaderExceptions.o \
 ScannerTests.o \
 Scanning.o \
+SegmentedChainTests.o \
 SegmentedCurveArrayClass.o \
 Shortcuts.o \
 SimpleSweep.o \
@@ -501,6 +502,7 @@ MeshOutputMethods.o
 
 MeshingTests.o :$(HOHQMESHPATH)/Source/Testing/MeshingTests.f90 \
 TestDataClass.o \
+SegmentedChainTests.o \
 Encoder.o \
 MeshQualityAnalysis.o \
 HOHQMesh.o \
@@ -662,6 +664,16 @@ ReaderExceptions.o :$(HOHQMESHPATH)/Source/3DSource/ReaderExceptions.f90 \
 FTExceptionClass.o \
 FTValueDictionaryClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/3DSource/ReaderExceptions.f90
+
+SegmentedChainTests.o :$(HOHQMESHPATH)/Source/Testing/SegmentedChainTests.f90 \
+SMConstants.o \
+SMLine.o \
+FRSegmentedCurveClass.o \
+ChainedSegmentedCurveClass.o \
+FTLinkedListClass.o \
+FTExceptionClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/SegmentedChainTests.f90
 
 ScannerTests.o :$(HOHQMESHPATH)/Source/Testing/ScannerTests.f90 \
 Assert.o \

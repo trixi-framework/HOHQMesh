@@ -38,6 +38,7 @@
       USE TestSuiteManagerClass
       USE EncoderModule
       USE FTAssertions
+      USE SegmentedChainTestsModule
       IMPLICIT NONE
 !
 !---------------------------------------------------------------------
@@ -111,6 +112,7 @@
       CALL testSuite % addTestSubroutineWithName(SegmentedCurveCheck,"Segmented Curve Tests")
       CALL testSuite % addTestSubroutineWithName(MultiSegmentNodalCurveTest,"MultiSegment Nodal Curve Tests")
       CALL testSuite % addTestSubroutineWithName(NodalCircleTest,"MultiSegment Nodal Circle Tests")
+      CALL testSuite % addTestSubroutineWithName(SegmentedChainTests,"Segmented Chain Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...
