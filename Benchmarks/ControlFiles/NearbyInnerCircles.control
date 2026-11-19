@@ -1,13 +1,16 @@
 %
 % ------------------------------------------------------------------
-% Control file for two inner circles that are close together, but do
-% not touch, inside a larger circle. The bounding boxes of the inner
+% Control file for two inner circles that are very close together, but
+% do not touch, inside a larger circle. The bounding boxes of the inner
 % circles overlap, so CheckForBoundaryIntersections must compare
 % their points (TwoCurvesAsPointsIntersect) to find that they do not
 % cross.
-%   Circle1: center (0,0),     radius 1
-%   Circle2: center (1.2,1.2), radius 0.5
-% The gap between them is 1.2*sqrt(2) - 1.5, about 0.197.
+%   Circle1: center (0,0),       radius 1
+%   Circle2: center (1.07,1.07), radius 0.5
+% The gap between them is 1.07*sqrt(2) - 1.5, about 0.013. That is
+% much smaller than the boundary point spacing of the circles, so
+% ResizeFRSegmentedCurve must add points to both inner circles near
+% the gap. Without the resizing the mesh generation fails.
 % ------------------------------------------------------------------
 %
 \begin{CONTROL_INPUT}
@@ -15,7 +18,7 @@
    \begin{RUN_PARAMETERS}
       mesh file name   = Benchmarks/MeshFiles/Tests/NearbyInnerCircles.mesh
       plot file name   = Benchmarks/PlotFiles/Tests/NearbyInnerCircles.tec
-      stats file name  = none
+      stats file name  = Benchmarks/StatsFiles/Tests/NearbyInnerCircles.txt
       test file name   = Benchmarks/BenchmarkData/NearbyInnerCircles.txt
       mesh file format = ISM
       polynomial order = 4
@@ -61,8 +64,8 @@
           name = InnerCircle2
           \begin{PARAMETRIC_EQUATION_CURVE}
              name = Circle2
-             xEqn = x(t) = 1.2 + 0.5*cos(2*pi*t)
-             yEqn = y(t) = 1.2 + 0.5*sin(2*pi*t)
+             xEqn = x(t) = 1.07 + 0.5*cos(2*pi*t)
+             yEqn = y(t) = 1.07 + 0.5*sin(2*pi*t)
              zEqn = z(t) = 0.0
           \end{PARAMETRIC_EQUATION_CURVE}
        \end{CHAIN}

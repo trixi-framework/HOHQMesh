@@ -15,15 +15,17 @@ set -eox pipefail
 ./HOHQMesh -f none < Benchmarks/ControlFiles/Pill.control
 
 # Write the output files and a regenerated test file under a temporary
-# directory with -path, so that no tracked file is overwritten
+# directory with -path, so that no tracked file is overwritten. The
+# inner circles are so close that the boundary curves are resized,
+# and -verbose prints the resizing messages
 outDir=$(mktemp -d)
 mkdir -p "$outDir"/Benchmarks/MeshFiles/Tests "$outDir"/Benchmarks/PlotFiles/Tests \
          "$outDir"/Benchmarks/StatsFiles/Tests "$outDir"/Benchmarks/BenchmarkData
-./HOHQMesh -generateTest -f Benchmarks/ControlFiles/Pill.control -path "$outDir"
-test -s "$outDir"/Benchmarks/MeshFiles/Tests/Pill.mesh
-test -s "$outDir"/Benchmarks/PlotFiles/Tests/Pill.tec
-test -s "$outDir"/Benchmarks/StatsFiles/Tests/Pill.txt
-test -s "$outDir"/Benchmarks/BenchmarkData/Pill.txt
+./HOHQMesh -verbose -generateTest -f Benchmarks/ControlFiles/NearbyInnerCircles.control -path "$outDir"
+test -s "$outDir"/Benchmarks/MeshFiles/Tests/NearbyInnerCircles.mesh
+test -s "$outDir"/Benchmarks/PlotFiles/Tests/NearbyInnerCircles.tec
+test -s "$outDir"/Benchmarks/StatsFiles/Tests/NearbyInnerCircles.txt
+test -s "$outDir"/Benchmarks/BenchmarkData/NearbyInnerCircles.txt
 
 # Print the verbose messages of a 3D run. All extrusion and sweep
 # algorithms print the same messages, so one case is enough
