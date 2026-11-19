@@ -16,10 +16,6 @@
       plot file format = skeleton
    \end{RUN_PARAMETERS}
 
-   \begin{MESH_PARAMETERS}
-      element type = quad
-   \end{MESH_PARAMETERS}
-   
    \begin{BACKGROUND_GRID}
        x0 = [-20.0, -20.0,0.0]
        dx = [2.0, 2.0,1.0]

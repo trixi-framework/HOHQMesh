@@ -42,7 +42,6 @@
 !      The CONTROL_INPUT dictionary contains the keys
 !         TYPE
 !         RUN_PARAMETERS
-!         MESH_PARAMETERS
 !         SPRING_SMOOTHER
 !         REFINEMENT_REGIONS
 !         SCALE_TRANSFORMATION
