@@ -530,12 +530,17 @@ could contribute an amount of error which we bound in terms of the local
 error tolerance $\tau$ as
 
 $$
- e_k =\sqrt{\frac{h_{k}}{2}\int\limits_{-1}^{1}\left\{ \left| \vec{\Gamma}(t_{k}+h_{k}(s+1)/2 ) - \sum_{j=0}^N \vec{b}^{(k)}_j \phi_j(s) \right|^2 + \left|\vec{\Gamma}'(t_{k}+h_{k}(s+1)/2 ) - \sum_{j=0}^N \vec{b}^{(k)}_j \frac{ds}{dt}\phi'_j(s) \right|^2 \right\} \,\mathrm{d}s}
+ e_k =\sqrt{\frac{h_{k}}{2\ell_k}\int\limits_{-1}^{1}\left\{ \left| \vec{\Gamma}(t_{k}+h_{k}(s+1)/2 ) - \sum_{j=0}^N \vec{b}^{(k)}_j \phi_j(s) \right|^2 + \left|\vec{\Gamma}'(t_{k}+h_{k}(s+1)/2 ) - \sum_{j=0}^N \vec{b}^{(k)}_j \frac{ds}{dt}\phi'_j(s) \right|^2 \right\} \,\mathrm{d}s}
 \le \tau,
 \tag{2}
 $$
 
-where $h_k = t_k - t_{k-1}$ is the length of the interval.
+where $h_k = t_k - t_{k-1}$ is the length of the interval and $\ell_k$ is the
+arc length of the approximation on that interval. Dividing by $\ell_k$ makes
+$e_k$ an error per unit length, so it does not shrink just because a segment
+is short. For the $\mathbb L^2$ norm the derivative term is dropped. The same
+measure is used for the boundary errors that HOHQMesh reports and uses to
+decide whether to remesh, so the tolerance has the same meaning in both places.
 Then the problem becomes: For each $k$ find $h_{k}$ such that
 
 $$
@@ -567,10 +572,16 @@ resulting mesh.
   [`Source/BoundaryOptimization/CurveOptimization.f90`](https://github.com/trixi-framework/HOHQMesh/blob/main/Source/BoundaryOptimization/CurveOptimization.f90).
 
 - The nonlinear solve for (3) is performed in the `FUNCTION iterate`,
-- found in the same file, which combines
-  bisection (`FUNCTION bisect`) and the Pegasus
+  found in the same file.
+  It keeps a bracket around the root and returns the end that satisfies the tolerance, so every segment it produces does too.
+  After that, new points come from the Pegasus
   method, (Dowell, M., Jarratt, P. (1972) The "Pegasus" method for
-  computing the root of an equation, [DOI: 10.1007/BF01932959](https://doi.org/10.1007/BF01932959))
+  computing the root of an equation, [DOI: 10.1007/BF01932959](https://doi.org/10.1007/BF01932959)),
+  with bisection used whenever a step leaves more than three quarters of the bracket.
+
+- If no segment of resolvable length satisfies the tolerance, the marching
+  stops with a warning. This happens when the tolerance is smaller than the
+  accuracy to which the curve and its derivative can be evaluated.
 
 - The marching function (2) is implemented in `FUNCTION marchingFunction`.
 
