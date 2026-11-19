@@ -57,7 +57,7 @@
 
    \begin{SWEEP_SCALE_FACTOR}
       \begin{PARAMETRIC_EQUATION}
-         eqn = r(t) = 1.0 - 0.5*t
+         eqn = r(t) = 1.0 - 0.75*t
       \end{PARAMETRIC_EQUATION}
    \end{SWEEP_SCALE_FACTOR}
 
