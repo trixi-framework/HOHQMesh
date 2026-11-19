@@ -62,7 +62,6 @@
 !          INTEGER                  :: rotation
          
 !          INTEGER, PARAMETER :: TEMPLATE0 = 0, TEMPLATE1 = 1, TEMPLATE2A = 21, TEMPLATE2B = 22
-!          ! INTEGER, PARAMETER :: TEMPLATE2 = 2 ! TODO: maybe need to add this
 !          INTEGER, PARAMETER :: TEMPLATE3 = 3, TEMPLATE4 = 4 !See Schneiders' papers
          
 !          nodeLocs = 0
