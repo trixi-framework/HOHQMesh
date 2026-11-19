@@ -139,43 +139,45 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION Box_IsInsideBox(testBox,box)
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ---------
-!        Arguments
-!        ---------
-!
-         REAL(KIND=RP) :: box(6), testBox(6)
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         REAL(KIND=RP) :: p(3)
+!       LOGICAL FUNCTION Box_IsInsideBox(testBox,box)
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          REAL(KIND=RP) :: box(6), testBox(6)
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          REAL(KIND=RP) :: p(3)
 
-         Box_IsInsideBox = .true.
-!
-!        -----------------------------------
-!        Check bottom left corner of testBox
-!        -----------------------------------
-!
-         p = [testBox(BBOX_LEFT), testBox(BBOX_BOTTOM), 0.0_RP]
-         IF ( .NOT.Point_IsInsideBox(p,box) )     THEN
-            Box_IsInsideBox = .false.
-            RETURN
-         END IF
-!
-!        -----------------------------------
-!        Check upper right corner of testBox
-!        -----------------------------------
-!
-         p = [testBox(BBOX_RIGHT), testBox(BBOX_TOP), 0.0_RP]
-         IF ( .NOT.Point_IsInsideBox(p,box) )     THEN
-            Box_IsInsideBox = .false.
-         END IF
+!          Box_IsInsideBox = .true.
+! !
+! !        -----------------------------------
+! !        Check bottom left corner of testBox
+! !        -----------------------------------
+! !
+!          p = [testBox(BBOX_LEFT), testBox(BBOX_BOTTOM), 0.0_RP]
+!          IF ( .NOT.Point_IsInsideBox(p,box) )     THEN
+!             Box_IsInsideBox = .false.
+!             RETURN
+!          END IF
+! !
+! !        -----------------------------------
+! !        Check upper right corner of testBox
+! !        -----------------------------------
+! !
+!          p = [testBox(BBOX_RIGHT), testBox(BBOX_TOP), 0.0_RP]
+!          IF ( .NOT.Point_IsInsideBox(p,box) )     THEN
+!             Box_IsInsideBox = .false.
+!          END IF
 
-      END FUNCTION Box_IsInsideBox
+!       END FUNCTION Box_IsInsideBox
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -210,12 +212,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      PURE REAL(KIND=RP) FUNCTION BoundingBoxArea(bBox)
-         IMPLICIT NONE
-         REAL(KIND=RP), INTENT(IN) :: bBox(6)
-         BoundingBoxArea = (bBox(BBOX_RIGHT) - bBox(BBOX_LEFT))*   &
-                           (bBox(BBOX_TOP)   - bBox(BBOX_BOTTOM))
-      END FUNCTION BoundingBoxArea
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       PURE REAL(KIND=RP) FUNCTION BoundingBoxArea(bBox)
+!          IMPLICIT NONE
+!          REAL(KIND=RP), INTENT(IN) :: bBox(6)
+!          BoundingBoxArea = (bBox(BBOX_RIGHT) - bBox(BBOX_LEFT))*   &
+!                            (bBox(BBOX_TOP)   - bBox(BBOX_BOTTOM))
+!       END FUNCTION BoundingBoxArea
 !
 !////////////////////////////////////////////////////////////////////////
 !

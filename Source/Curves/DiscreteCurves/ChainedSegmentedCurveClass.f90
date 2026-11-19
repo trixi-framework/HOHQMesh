@@ -79,7 +79,7 @@
          PROCEDURE :: segmentedCurveAtIndex
          PROCEDURE :: chainNumberForIndex
          PROCEDURE :: localIndexForChainIndexInCurveNumber
-         PROCEDURE :: curveIDAtChainIndex
+!          PROCEDURE :: curveIDAtChainIndex   ! unused, commented out 2026-11-19
 
       END TYPE ChainedSegmentedCurve
 !
@@ -419,89 +419,95 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION normalAtChainIndex(self,indx)  RESULT(x)
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS(ChainedSegmentedCurve) :: self
-         INTEGER                      :: indx
-         REAL(KIND=RP)                :: x(3)
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER                          :: curveNumber, j
-         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
+!       FUNCTION normalAtChainIndex(self,indx)  RESULT(x)
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          CLASS(ChainedSegmentedCurve) :: self
+!          INTEGER                      :: indx
+!          REAL(KIND=RP)                :: x(3)
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          INTEGER                          :: curveNumber, j
+!          CLASS(FRSegmentedCurve), POINTER :: c => NULL()
 
 
-         curveNumber =  self % chainNumberForIndex(indx)
-         c           => self % segmentedCurveAtIndex(curveNumber)
-         j           =  self % localIndexForChainIndexInCurveNumber(indx,curveNumber)
-         x = c % normalAtIndex(j)
+!          curveNumber =  self % chainNumberForIndex(indx)
+!          c           => self % segmentedCurveAtIndex(curveNumber)
+!          j           =  self % localIndexForChainIndexInCurveNumber(indx,curveNumber)
+!          x = c % normalAtIndex(j)
 
-      END FUNCTION normalAtChainIndex
+!       END FUNCTION normalAtChainIndex
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION argumentAtChainIndex(self,indx)  RESULT(t)
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS(ChainedSegmentedCurve) :: self
-         INTEGER                      :: indx
-         REAL(KIND=RP)                :: t
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER                          :: curveNumber, j
-         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
+!       FUNCTION argumentAtChainIndex(self,indx)  RESULT(t)
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          CLASS(ChainedSegmentedCurve) :: self
+!          INTEGER                      :: indx
+!          REAL(KIND=RP)                :: t
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          INTEGER                          :: curveNumber, j
+!          CLASS(FRSegmentedCurve), POINTER :: c => NULL()
 
 
-         curveNumber =  self % chainNumberForIndex(indx)
-         c           => self % segmentedCurveAtIndex(curveNumber)
-         j           =  self % localIndexForChainIndexInCurveNumber(indx,curveNumber)
+!          curveNumber =  self % chainNumberForIndex(indx)
+!          c           => self % segmentedCurveAtIndex(curveNumber)
+!          j           =  self % localIndexForChainIndexInCurveNumber(indx,curveNumber)
 
-         t = c % argumentAtIndex(j)
+!          t = c % argumentAtIndex(j)
 
-      END FUNCTION argumentAtChainIndex
+!       END FUNCTION argumentAtChainIndex
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION curveIDAtChainIndex(self,indx)  RESULT(id)
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS(ChainedSegmentedCurve) :: self
-         INTEGER                      :: indx
-         INTEGER                      :: id
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER                          :: curveNumber, j
-         CLASS(FRSegmentedCurve), POINTER :: c => NULL()
+!       FUNCTION curveIDAtChainIndex(self,indx)  RESULT(id)
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          CLASS(ChainedSegmentedCurve) :: self
+!          INTEGER                      :: indx
+!          INTEGER                      :: id
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          INTEGER                          :: curveNumber, j
+!          CLASS(FRSegmentedCurve), POINTER :: c => NULL()
 
 
-         curveNumber =  self % chainNumberForIndex(indx)
-         c           => self % segmentedCurveAtIndex(curveNumber)
-         j           =  self % localIndexForChainIndexInCurveNumber(indx,curveNumber)
+!          curveNumber =  self % chainNumberForIndex(indx)
+!          c           => self % segmentedCurveAtIndex(curveNumber)
+!          j           =  self % localIndexForChainIndexInCurveNumber(indx,curveNumber)
 
-         id = c % id
+!          id = c % id
 
-      END FUNCTION curveIDAtChainIndex
+!       END FUNCTION curveIDAtChainIndex
 !
 !////////////////////////////////////////////////////////////////////////
 !

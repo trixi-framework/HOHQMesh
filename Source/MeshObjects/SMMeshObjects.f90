@@ -172,7 +172,7 @@
          INTEGER                       :: domainMark ! = INSIDE, OUTSIDE OR ON_BOUNDARY
          TYPE(SMNodePtr), DIMENSION(4) :: nodes
          CONTAINS 
-         PROCEDURE :: initWithNodes => initQuadWithNodes
+!          PROCEDURE :: initWithNodes => initQuadWithNodes   ! unused, commented out 2026-11-19
          PROCEDURE :: init          => initQuad
          FINAL     :: destructQuad
          PROCEDURE :: printDescription => printQuadDescription
@@ -782,20 +782,22 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE initQuadWithNodes(self,nodes)  
-         IMPLICIT NONE
-         CLASS(SMQuad)   :: self
-         TYPE(SMNodePtr) :: nodes(4)
-         INTEGER         :: k
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       SUBROUTINE initQuadWithNodes(self,nodes)  
+!          IMPLICIT NONE
+!          CLASS(SMQuad)   :: self
+!          TYPE(SMNodePtr) :: nodes(4)
+!          INTEGER         :: k
          
-         CALL self % FTObject % init()
+!          CALL self % FTObject % init()
          
-         DO k = 1, 4
-            self % nodes(k) % node => nodes(k) % node
-            CALL self % nodes(k) % node % retain()
-         END DO
+!          DO k = 1, 4
+!             self % nodes(k) % node => nodes(k) % node
+!             CALL self % nodes(k) % node % retain()
+!          END DO
          
-      END SUBROUTINE initQuadWithNodes
+!       END SUBROUTINE initQuadWithNodes
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

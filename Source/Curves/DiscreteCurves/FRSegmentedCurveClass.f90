@@ -776,113 +776,118 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ResizeFRSegmentedCurve( self, curve)
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!  Only called by ResizeSegmentedCurves (MeshProject.f90), which was added in
+!  2021 (ae65352) but never called or debugged; see the TODO at the end of
+!  BuildSizerBoundaryCurves.
 !
-!     -----------------------------------------------------------------------
-!     Use the current value of invScale to make sure that the
-!     spacing between points along the curve is small enough. This is
-!     needed if a curve bends closer to itself or neighboring curves are
-!     closer than the distance between two points along the FRSegmentedCurve.
-!     If so, add extra points along the FRSegmentedCurve.
-!     -----------------------------------------------------------------------
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE( FRSegmentedCurve ) :: self
-         CLASS(SMCurve), POINTER  :: curve
-!
-!        ---------------
-!        Local Variables
-!        ---------------
-!
-         TYPE (FTMutableObjectArray), POINTER :: newPointArray
-         INTEGER                              :: k, j, N, M
-         CLASS(FTObject)            , POINTER :: pObj
-         CLASS(SMSegmentedCurveNode), POINTER :: pk, pkp1, newP
-         LOGICAL                              :: needsRefinement
-         REAL(KIND=RP)                        :: d, dx(3), s, x(3)
-         REAL(KIND=RP)                        :: t, dt, deltaT, jdt
-         REAL(KIND=RP), PARAMETER             :: ALLOWED_SIZE_RATIO = 1.1_RP !A parameter to play with
-         REAL(KIND=RP), PARAMETER             :: DESIRED_SIZE_RATIO = 0.5_RP !A parameter to play with
+!       SUBROUTINE ResizeFRSegmentedCurve( self, curve)
+!          IMPLICIT NONE
+! !
+! !     -----------------------------------------------------------------------
+! !     Use the current value of invScale to make sure that the
+! !     spacing between points along the curve is small enough. This is
+! !     needed if a curve bends closer to itself or neighboring curves are
+! !     closer than the distance between two points along the FRSegmentedCurve.
+! !     If so, add extra points along the FRSegmentedCurve.
+! !     -----------------------------------------------------------------------
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          TYPE( FRSegmentedCurve ) :: self
+!          CLASS(SMCurve), POINTER  :: curve
+! !
+! !        ---------------
+! !        Local Variables
+! !        ---------------
+! !
+!          TYPE (FTMutableObjectArray), POINTER :: newPointArray
+!          INTEGER                              :: k, j, N, M
+!          CLASS(FTObject)            , POINTER :: pObj
+!          CLASS(SMSegmentedCurveNode), POINTER :: pk, pkp1, newP
+!          LOGICAL                              :: needsRefinement
+!          REAL(KIND=RP)                        :: d, dx(3), s, x(3)
+!          REAL(KIND=RP)                        :: t, dt, deltaT, jdt
+!          REAL(KIND=RP), PARAMETER             :: ALLOWED_SIZE_RATIO = 1.1_RP !A parameter to play with
+!          REAL(KIND=RP), PARAMETER             :: DESIRED_SIZE_RATIO = 0.5_RP !A parameter to play with
 
-         N               = self % nodeArray % COUNT()
-         needsRefinement = .FALSE.
-!
-!        -----------------------------------
-!        Test to see if refinement is needed
-!        -----------------------------------
-!
-         DO k = 1, N-1
-               pObj => self % nodeArray % objectAtIndex(k)
-               CALL cast(pObj,pk)
-               pObj => self % nodeArray % objectAtIndex(k+1)
-               CALL cast(pObj,pkp1)
+!          N               = self % nodeArray % COUNT()
+!          needsRefinement = .FALSE.
+! !
+! !        -----------------------------------
+! !        Test to see if refinement is needed
+! !        -----------------------------------
+! !
+!          DO k = 1, N-1
+!                pObj => self % nodeArray % objectAtIndex(k)
+!                CALL cast(pObj,pk)
+!                pObj => self % nodeArray % objectAtIndex(k+1)
+!                CALL cast(pObj,pkp1)
 
-               dx = pkp1 % x - pk % x
-               d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
-               s  = 0.5_RP*(pk % invScale + pkp1 % invScale)
+!                dx = pkp1 % x - pk % x
+!                d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
+!                s  = 0.5_RP*(pk % invScale + pkp1 % invScale)
 
-               IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
-                  needsRefinement = .TRUE.
-                  EXIT
-               END IF
-         END DO
-         PRINT *, "**********************************"
-         IF(.NOT. needsRefinement)     RETURN
-!
-!        ---------------------------------------------------------------
-!        Add new points to the segmented curve so that it is fine enough
-!        ---------------------------------------------------------------
-!
-         ALLOCATE(newPointArray)
-         CALL newPointArray % initWithSize(arraySize = 3*N/2) ! These numbers are arbitrary
-         CALL newPointArray % setChunkSize(chunkSize = 100)   !
+!                IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
+!                   needsRefinement = .TRUE.
+!                   EXIT
+!                END IF
+!          END DO
+!          PRINT *, "**********************************"
+!          IF(.NOT. needsRefinement)     RETURN
+! !
+! !        ---------------------------------------------------------------
+! !        Add new points to the segmented curve so that it is fine enough
+! !        ---------------------------------------------------------------
+! !
+!          ALLOCATE(newPointArray)
+!          CALL newPointArray % initWithSize(arraySize = 3*N/2) ! These numbers are arbitrary
+!          CALL newPointArray % setChunkSize(chunkSize = 100)   !
 
-         DO k = 1, N-1
-               pObj => self % nodeArray % objectAtIndex(k+1)
-               CALL cast(pObj,pkp1)
-               pObj => self % nodeArray % objectAtIndex(k)
-               CALL cast(pObj,pk)
+!          DO k = 1, N-1
+!                pObj => self % nodeArray % objectAtIndex(k+1)
+!                CALL cast(pObj,pkp1)
+!                pObj => self % nodeArray % objectAtIndex(k)
+!                CALL cast(pObj,pk)
 
-               dx = pkp1 % x - pk % x
-               d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
-               s  = MAX(pk % invScale , pkp1 % invScale)
+!                dx = pkp1 % x - pk % x
+!                d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
+!                s  = MAX(pk % invScale , pkp1 % invScale)
 
-               IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
+!                IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
 
-                  CALL newPointArray % addObject(pObj)
+!                   CALL newPointArray % addObject(pObj)
 
-                  deltaT = (pkp1 % t - pk % t)
-                  M = NINT(1.0_RP/(d*s*DESIRED_SIZE_RATIO))
-                  dt = deltaT/M
+!                   deltaT = (pkp1 % t - pk % t)
+!                   M = NINT(1.0_RP/(d*s*DESIRED_SIZE_RATIO))
+!                   dt = deltaT/M
 
-                  DO j = 1, M-1
-                     jdt = j*dt
-                     t   = pk % t + jdt
-                     x   = curve % positionAt(t)
+!                   DO j = 1, M-1
+!                      jdt = j*dt
+!                      t   = pk % t + jdt
+!                      x   = curve % positionAt(t)
 
-                     ALLOCATE(newP)
-                     CALL newP % initSMSegmentedCurveNode(x,t)
+!                      ALLOCATE(newP)
+!                      CALL newP % initSMSegmentedCurveNode(x,t)
 
-                     newP % invScale = pk % invScale*jdt + pkp1 % invScale*(1.0_RP - jdt)
+!                      newP % invScale = pk % invScale*jdt + pkp1 % invScale*(1.0_RP - jdt)
 
-                     pObj => newP
-                     CALL newPointArray % addObject(pObj)
-                     CALL release(pObj)
-                  END DO
-               ELSE
-                  CALL newPointArray % addObject(pObj)
-               END IF
-         END DO
-         pObj => self % nodeArray % objectAtIndex(N)
-         CALL newPointArray % addObject(pObj)
+!                      pObj => newP
+!                      CALL newPointArray % addObject(pObj)
+!                      CALL release(pObj)
+!                   END DO
+!                ELSE
+!                   CALL newPointArray % addObject(pObj)
+!                END IF
+!          END DO
+!          pObj => self % nodeArray % objectAtIndex(N)
+!          CALL newPointArray % addObject(pObj)
 
-         CALL releaseFTMutableObjectArray(self = newPointArray) ! Do the swap still
+!          CALL releaseFTMutableObjectArray(self = newPointArray) ! Do the swap still
 
-      END SUBROUTINE ResizeFRSegmentedCurve
+!       END SUBROUTINE ResizeFRSegmentedCurve
 !
 !////////////////////////////////////////////////////////////////////////
 !

@@ -598,35 +598,39 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION NodeAt_InGrid_(i,j,grid) RESULT(p)
-         IMPLICIT NONE
-         INTEGER                     :: i, j
-         TYPE (QuadTreeGrid), POINTER :: grid
-         TYPE (SMNode)      , POINTER :: p
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       FUNCTION NodeAt_InGrid_(i,j,grid) RESULT(p)
+!          IMPLICIT NONE
+!          INTEGER                     :: i, j
+!          TYPE (QuadTreeGrid), POINTER :: grid
+!          TYPE (SMNode)      , POINTER :: p
 
-         IF ( ASSOCIATED(grid) )     THEN
-            p=> grid % nodes(i,j) % node
-         ELSE
-            NULLIFY(p)
-         END IF
+!          IF ( ASSOCIATED(grid) )     THEN
+!             p=> grid % nodes(i,j) % node
+!          ELSE
+!             NULLIFY(p)
+!          END IF
 
-      END FUNCTION NodeAt_InGrid_
+!       END FUNCTION NodeAt_InGrid_
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION QuadAt_InGrid_(i,j,grid) RESULT(p)
-      IMPLICIT NONE
-      INTEGER                      :: i, j
-      TYPE (QuadTreeGrid), POINTER :: grid
-      CLASS(SMQuad)    , POINTER   :: p
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       FUNCTION QuadAt_InGrid_(i,j,grid) RESULT(p)
+!       IMPLICIT NONE
+!       INTEGER                      :: i, j
+!       TYPE (QuadTreeGrid), POINTER :: grid
+!       CLASS(SMQuad)    , POINTER   :: p
 
-      IF ( ASSOCIATED(grid) )     THEN
-         p=> grid % quads(i,j) % quad
-      ELSE
-         NULLIFY(p)
-      END IF
+!       IF ( ASSOCIATED(grid) )     THEN
+!          p=> grid % quads(i,j) % quad
+!       ELSE
+!          NULLIFY(p)
+!       END IF
 
-      END FUNCTION QuadAt_InGrid_
+!       END FUNCTION QuadAt_InGrid_
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -899,38 +903,40 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE ClearNodeLevels( self )
-      IMPLICIT NONE
-      TYPE (QuadTreeGrid), POINTER :: self
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       RECURSIVE SUBROUTINE ClearNodeLevels( self )
+!       IMPLICIT NONE
+!       TYPE (QuadTreeGrid), POINTER :: self
 
-      INTEGER                    :: i, j,  N, M
+!       INTEGER                    :: i, j,  N, M
 
-      N = self % N(1)
-      M = self % N(2)
-!
-!     -----------------
-!     Set level on self
-!     -----------------
-!
-      DO j = 0, M
-         DO i = 0, N
-            IF( ASSOCIATED(self % nodes(i,j) % node) ) self % nodes(i,j) % node % level = 0
-         END DO
-      END DO
-!
-!     --------------------------
-!     Continue with the children
-!     --------------------------
-!
-      IF( ASSOCIATED(self % children) )     THEN
-         DO j = 1, M
-            DO i = 1, N
-               IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL AssignNodeLevels( self % children(i,j) % grid )
-            END DO
-         END DO
-      END IF
+!       N = self % N(1)
+!       M = self % N(2)
+! !
+! !     -----------------
+! !     Set level on self
+! !     -----------------
+! !
+!       DO j = 0, M
+!          DO i = 0, N
+!             IF( ASSOCIATED(self % nodes(i,j) % node) ) self % nodes(i,j) % node % level = 0
+!          END DO
+!       END DO
+! !
+! !     --------------------------
+! !     Continue with the children
+! !     --------------------------
+! !
+!       IF( ASSOCIATED(self % children) )     THEN
+!          DO j = 1, M
+!             DO i = 1, N
+!                IF( ASSOCIATED( self % children(i,j) % grid ) )  CALL AssignNodeLevels( self % children(i,j) % grid )
+!             END DO
+!          END DO
+!       END IF
 
-      END SUBROUTINE ClearNodeLevels
+!       END SUBROUTINE ClearNodeLevels
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1004,14 +1010,16 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE GetGridLocation( x0, dx, i, j, x )
-         IMPLICIT NONE
-         REAL(KIND=RP), DIMENSION(2), INTENT(IN)  :: x0, dx
-         REAL(KIND=RP), DIMENSION(2), INTENT(IN)  :: x
-         INTEGER                    , INTENT(OUT) :: i,j
-         i = NINT((x(1) - x0(1))/dx(1))
-         j = NINT((x(2) - x0(2))/dx(2))
-      END SUBROUTINE GetGridLocation
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       SUBROUTINE GetGridLocation( x0, dx, i, j, x )
+!          IMPLICIT NONE
+!          REAL(KIND=RP), DIMENSION(2), INTENT(IN)  :: x0, dx
+!          REAL(KIND=RP), DIMENSION(2), INTENT(IN)  :: x
+!          INTEGER                    , INTENT(OUT) :: i,j
+!          i = NINT((x(1) - x0(1))/dx(1))
+!          j = NINT((x(2) - x0(2))/dx(2))
+!       END SUBROUTINE GetGridLocation
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////

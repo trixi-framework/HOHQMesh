@@ -310,25 +310,29 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ConstructTranslationTransform(self, translation)
-         IMPLICIT NONE
-         TYPE(TranslationTransform) :: self
-         REAL(KIND=RP)              :: translation(3)
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       SUBROUTINE ConstructTranslationTransform(self, translation)
+!          IMPLICIT NONE
+!          TYPE(TranslationTransform) :: self
+!          REAL(KIND=RP)              :: translation(3)
 
-         self % translation = translation
+!          self % translation = translation
 
-      END SUBROUTINE ConstructTranslationTransform
+!       END SUBROUTINE ConstructTranslationTransform
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION PerformTranslationTransform(self, x)    RESULT(y)
-         IMPLICIT NONE
-         TYPE(TranslationTransform) :: self
-         REAL(KIND=RP)              :: x(3), y(3)
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       FUNCTION PerformTranslationTransform(self, x)    RESULT(y)
+!          IMPLICIT NONE
+!          TYPE(TranslationTransform) :: self
+!          REAL(KIND=RP)              :: x(3), y(3)
 
-         y = x + self % translation
+!          y = x + self % translation
 
-      END FUNCTION PerformTranslationTransform
+!       END FUNCTION PerformTranslationTransform
 !
 !////////////////////////////////////////////////////////////////////////
 !

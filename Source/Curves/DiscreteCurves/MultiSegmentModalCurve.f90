@@ -266,94 +266,100 @@
 !///////////////////////////////////////////////////////////////////////
 !
 !
-   LOGICAL FUNCTION MultiSegmentModalCurveIsOK()
-      IMPLICIT NONE
-
-      CLASS(MultiSegmentModalCurve), POINTER :: self
-      CLASS(SMCurve)               , POINTER :: parentCurve => NULL()
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!     ----------------------------------------------------------
-!     Polynomial with three modes and three segments
-!     We don't care3 in this test if the segments are continuous
-!     ----------------------------------------------------------
-!
-      REAL(KIND=RP) :: coefs(3,2,3)
-      REAL(KIND=RP) :: cuts(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
-      REAL(KIND=RP) :: t, tol = 1.0E-9_RP
-      INTEGER       :: k
+!    LOGICAL FUNCTION MultiSegmentModalCurveIsOK()
+!       IMPLICIT NONE
 
-      MultiSegmentModalCurveIsOK = .TRUE.
+!       CLASS(MultiSegmentModalCurve), POINTER :: self
+!       CLASS(SMCurve)               , POINTER :: parentCurve => NULL()
+! !
+! !     ----------------------------------------------------------
+! !     Polynomial with three modes and three segments
+! !     We don't care3 in this test if the segments are continuous
+! !     ----------------------------------------------------------
+! !
+!       REAL(KIND=RP) :: coefs(3,2,3)
+!       REAL(KIND=RP) :: cuts(0:3) = [0.0_RP, 0.4_RP, 0.7_RP, 1.0_RP]
+!       REAL(KIND=RP) :: t, tol = 1.0E-9_RP
+!       INTEGER       :: k
 
-      coefs(:,1,1) = [1.0_RP, 0.0_RP, 2.0_RP]
-      coefs(:,2,1) = [1.1_RP, 0.1_RP, 2.1_RP]
-      coefs(:,1,2) = [0.0_RP, 0.0_RP, 2.0_RP]
-      coefs(:,2,2) = [0.1_RP, 0.1_RP, 2.1_RP]
-      coefs(:,1,3) = [1.0_RP, 0.0_RP, 0.0_RP]
-      coefs(:,2,3) = [1.1_RP, 0.0_RP, 0.1_RP]
+!       MultiSegmentModalCurveIsOK = .TRUE.
 
-      ALLOCATE(self)
-      CALL self % constructMultiSegmentModalCurve( parentCurve, cuts, coefs,"Test Curve",1)
-!
-!     ---------------
-!     Check intervals
-!     ---------------
-!
-      IF( findInterval(self % cuts, t = 0.25_RP) .NE. 1) MultiSegmentModalCurveIsOK = .FALSE.
-      IF( findInterval(self % cuts, t = 0.50_RP) .NE. 2) MultiSegmentModalCurveIsOK = .FALSE.
-      IF( findInterval(self % cuts, t = 0.80_RP) .NE. 3) MultiSegmentModalCurveIsOK = .FALSE.
-!
-!     ------------
-!     Check values
-!     ------------
-!
-      MultiSegmentModalCurveIsOK = .TRUE.
-      DO k = 0, 5
-         t = cuts(0) + k*(cuts(3) - cuts(0))/5.0_RP
-         MultiSegmentModalCurveIsOK = MAXVAL(ABS(self % positionAt(t) - testPolynomialAt(self,t))) < tol
-         MultiSegmentModalCurveIsOK = MultiSegmentModalCurveIsOK .AND. MAXVAL(ABS(self % derivativeAt(t) - &
-                                      testPolynomialDerivAt(self,t))) < tol
-      END DO
+!       coefs(:,1,1) = [1.0_RP, 0.0_RP, 2.0_RP]
+!       coefs(:,2,1) = [1.1_RP, 0.1_RP, 2.1_RP]
+!       coefs(:,1,2) = [0.0_RP, 0.0_RP, 2.0_RP]
+!       coefs(:,2,2) = [0.1_RP, 0.1_RP, 2.1_RP]
+!       coefs(:,1,3) = [1.0_RP, 0.0_RP, 0.0_RP]
+!       coefs(:,2,3) = [1.1_RP, 0.0_RP, 0.1_RP]
 
-      CALL releaseMultiSegmentModalCurve(self)
+!       ALLOCATE(self)
+!       CALL self % constructMultiSegmentModalCurve( parentCurve, cuts, coefs,"Test Curve",1)
+! !
+! !     ---------------
+! !     Check intervals
+! !     ---------------
+! !
+!       IF( findInterval(self % cuts, t = 0.25_RP) .NE. 1) MultiSegmentModalCurveIsOK = .FALSE.
+!       IF( findInterval(self % cuts, t = 0.50_RP) .NE. 2) MultiSegmentModalCurveIsOK = .FALSE.
+!       IF( findInterval(self % cuts, t = 0.80_RP) .NE. 3) MultiSegmentModalCurveIsOK = .FALSE.
+! !
+! !     ------------
+! !     Check values
+! !     ------------
+! !
+!       MultiSegmentModalCurveIsOK = .TRUE.
+!       DO k = 0, 5
+!          t = cuts(0) + k*(cuts(3) - cuts(0))/5.0_RP
+!          MultiSegmentModalCurveIsOK = MAXVAL(ABS(self % positionAt(t) - testPolynomialAt(self,t))) < tol
+!          MultiSegmentModalCurveIsOK = MultiSegmentModalCurveIsOK .AND. MAXVAL(ABS(self % derivativeAt(t) - &
+!                                       testPolynomialDerivAt(self,t))) < tol
+!       END DO
 
-   END FUNCTION MultiSegmentModalCurveIsOK
-!
-!////////////////////////////////////////////////////////////////////////
-!
-   FUNCTION testPolynomialAt(self, t)  RESULT(p)
-      IMPLICIT NONE
-      TYPE(MultiSegmentModalCurve) :: self
-      REAL(KIND=RP)                :: t
-      INTEGER                      :: k
-      REAL(KIND=RP)                :: p(3), s
+!       CALL releaseMultiSegmentModalCurve(self)
 
-      p = 0.0_RP
-      k = findInterval(self % cuts, t)
-      s = InvAffineMap(t0 = self % cuts(k-1),t1 = self % cuts(k),t = t)
-
-      p(1) = self % coefs(0,1,k)*P0(s) + self % coefs(1,1,k)*P1(s) + self % coefs(2,1,k)*P2(s)
-      p(2) = self % coefs(0,2,k)*P0(s) + self % coefs(1,2,k)*P1(s) + self % coefs(2,2,k)*P2(s)
-
-   END FUNCTION testPolynomialAt
+!    END FUNCTION MultiSegmentModalCurveIsOK
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   FUNCTION testPolynomialDerivAt(self, t)  RESULT(p)
-      IMPLICIT NONE
-      TYPE(MultiSegmentModalCurve) :: self
-      REAL(KIND=RP)                :: t
-      INTEGER                      :: k
-      REAL(KIND=RP)                :: p(3), s
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!    FUNCTION testPolynomialAt(self, t)  RESULT(p)
+!       IMPLICIT NONE
+!       TYPE(MultiSegmentModalCurve) :: self
+!       REAL(KIND=RP)                :: t
+!       INTEGER                      :: k
+!       REAL(KIND=RP)                :: p(3), s
 
-      p = 0.0_RP
-      k = findInterval(self % cuts, t)
-      s = InvAffineMap(t0 = self % cuts(k-1),t1 = self % cuts(k),t = t)
+!       p = 0.0_RP
+!       k = findInterval(self % cuts, t)
+!       s = InvAffineMap(t0 = self % cuts(k-1),t1 = self % cuts(k),t = t)
 
-      p(1) = self % coefs(0,1,k)*P0Prime(s) + self % coefs(1,1,k)*P1Prime(s) + &
-             self % coefs(2,1,k)*P2Prime(s)
-      p(2) = self % coefs(0,2,k)*P0Prime(s) + self % coefs(1,2,k)*P1Prime(s) + &
-             self % coefs(2,2,k)*P2Prime(s)
+!       p(1) = self % coefs(0,1,k)*P0(s) + self % coefs(1,1,k)*P1(s) + self % coefs(2,1,k)*P2(s)
+!       p(2) = self % coefs(0,2,k)*P0(s) + self % coefs(1,2,k)*P1(s) + self % coefs(2,2,k)*P2(s)
 
-   END FUNCTION testPolynomialDerivAt
+!    END FUNCTION testPolynomialAt
+!
+!////////////////////////////////////////////////////////////////////////
+!
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!    FUNCTION testPolynomialDerivAt(self, t)  RESULT(p)
+!       IMPLICIT NONE
+!       TYPE(MultiSegmentModalCurve) :: self
+!       REAL(KIND=RP)                :: t
+!       INTEGER                      :: k
+!       REAL(KIND=RP)                :: p(3), s
+
+!       p = 0.0_RP
+!       k = findInterval(self % cuts, t)
+!       s = InvAffineMap(t0 = self % cuts(k-1),t1 = self % cuts(k),t = t)
+
+!       p(1) = self % coefs(0,1,k)*P0Prime(s) + self % coefs(1,1,k)*P1Prime(s) + &
+!              self % coefs(2,1,k)*P2Prime(s)
+!       p(2) = self % coefs(0,2,k)*P0Prime(s) + self % coefs(1,2,k)*P1Prime(s) + &
+!              self % coefs(2,2,k)*P2Prime(s)
+
+!    END FUNCTION testPolynomialDerivAt
 
    END Module MultiSegmentModalCurveClass

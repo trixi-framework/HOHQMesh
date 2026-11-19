@@ -1459,47 +1459,49 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE MarkFloaters( mesh )
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ------------------------------------------------------------------
-!        TODO: A floater is an element that is not attached to any other element,
-!        which happens occasionally during the marking process
-!        ------------------------------------------------------------------
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE (SMMesh), POINTER :: mesh
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
-!         TYPE (SMElement)           , POINTER :: e               => NULL()
-!         TYPE (SMNode)              , POINTER :: node            => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
-!         CLASS(FTObject)            , POINTER :: obj             => NULL()
-!         INTEGER                              :: k
-!
-         elements        => mesh % elements
-         elementIterator => mesh % elementsIterator
+!       SUBROUTINE MarkFloaters( mesh )
+! !
+! !        ------------------------------------------------------------------
+! !        TODO: A floater is an element that is not attached to any other element,
+! !        which happens occasionally during the marking process
+! !        ------------------------------------------------------------------
+! !
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          TYPE (SMMesh), POINTER :: mesh
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
+! !         TYPE (SMElement)           , POINTER :: e               => NULL()
+! !         TYPE (SMNode)              , POINTER :: node            => NULL()
+!          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+! !         CLASS(FTObject)            , POINTER :: obj             => NULL()
+! !         INTEGER                              :: k
+! !
+!          elements        => mesh % elements
+!          elementIterator => mesh % elementsIterator
 
-         CALL elementIterator % setToStart()
-         DO WHILE(.NOT.elementIterator % isAtEnd())
-!            obj => elementIterator % object()
-!            CALL cast(obj,e)
+!          CALL elementIterator % setToStart()
+!          DO WHILE(.NOT.elementIterator % isAtEnd())
+! !            obj => elementIterator % object()
+! !            CALL cast(obj,e)
 
-!            DO k = 1, 4
-!
-!            END DO
-            CALL elementIterator % moveToNext()
-         END DO
+! !            DO k = 1, 4
+! !
+! !            END DO
+!             CALL elementIterator % moveToNext()
+!          END DO
 
-      END SUBROUTINE MarkFloaters
+!       END SUBROUTINE MarkFloaters
 !
 !////////////////////////////////////////////////////////////////////////
 !

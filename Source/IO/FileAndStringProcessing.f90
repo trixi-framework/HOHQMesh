@@ -186,25 +186,27 @@
 !!     after an = sign in a inputLine
 !     ----------------------------------------------------------------
 !
-      LOGICAL FUNCTION GetLogicalValue( inputLine )
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-         CHARACTER ( LEN = * ) :: inputLine
-         LOGICAL               :: value
-         INTEGER               :: strLen, leq, k
-!
-         leq    = INDEX( inputLine, '=' )
-         strLen = LEN_TRIM( inputLine )
-         READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) value
-         GetLogicalValue = value
-         IF ( k /=0 )     THEN
-            WRITE(stderr,*)  "Bad logical value in input line:"
-            WRITE(stderr,*)  TRIM(inputLine)
-            ERROR STOP "Input file syntax error"
-         END IF
-!
-      END FUNCTION GetLogicalValue
+!       LOGICAL FUNCTION GetLogicalValue( inputLine )
+!          USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
+!          IMPLICIT NONE
+! !
+!          CHARACTER ( LEN = * ) :: inputLine
+!          LOGICAL               :: value
+!          INTEGER               :: strLen, leq, k
+! !
+!          leq    = INDEX( inputLine, '=' )
+!          strLen = LEN_TRIM( inputLine )
+!          READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) value
+!          GetLogicalValue = value
+!          IF ( k /=0 )     THEN
+!             WRITE(stderr,*)  "Bad logical value in input line:"
+!             WRITE(stderr,*)  TRIM(inputLine)
+!             ERROR STOP "Input file syntax error"
+!          END IF
+! !
+!       END FUNCTION GetLogicalValue
 !
 ! /////////////////////////////////////////////////////////////////////
 !
