@@ -709,8 +709,8 @@
          CHARACTER(LEN=DEBUG_LINE_LENGTH)                            :: rest
          TYPE (FTLinkedListIterator) :: nodeIterator, elementIterator
          CLASS(FTObject), POINTER    :: obj
-         CLASS(SMNode)  , POINTER    :: node
-         CLASS(SMElement), POINTER   :: e
+         TYPE (SMNode)   , POINTER   :: node ! castToSMNode and castToSMElement
+         TYPE (SMElement), POINTER   :: e    ! return non-polymorphic pointers
          INTEGER                     :: iUnit, nNodes, nEdges, nElements, k, m
          INTEGER                     :: id, refCount, chainID, activeStatus, nMismatches
          INTEGER                     :: nodesHeader, edgesHeader, elementsHeader
