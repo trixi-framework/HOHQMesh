@@ -2,6 +2,7 @@
 
 ## Changes in the v1.6 lifecycle
 
+- Remove unused `MESH_PARAMETERS` block (#197) as well as 3-Refinement templates and associated functions (#198)
 - Add cleanup for high valence nodes left due to quadtree transition templates. A new shape improvement
   step after smoothing repositions the nodes of poorly shaped elements, and preserves the symmetry of
   symmetric meshes (#194)
