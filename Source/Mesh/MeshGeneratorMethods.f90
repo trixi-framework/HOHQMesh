@@ -1034,10 +1034,10 @@
                  WRITE(stderr,*) " "
                  WRITE(stderr,*) "**************************************************************************"
                  WRITE(stderr,*) "An unknown row type has appeared in GenerateBoundaryElements"
-                 WRITE(stderr,*) "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                 WRITE(stderr,*) "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                  WRITE(stderr,*) "**************************************************************************"
                  WRITE(stderr,*) " "
-                  CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                  CALL WriteSkeletonToTecplot(mesh = mesh,fName = debugPlotFileName)
                   ERROR STOP "Meshing Terminated. See stderr"
             END SELECT
             k = k + 1

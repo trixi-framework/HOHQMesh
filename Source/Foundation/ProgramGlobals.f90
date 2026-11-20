@@ -125,6 +125,13 @@
 !
          LOGICAL :: printMessage = .FALSE.
 !
+!        ---------------------------------------------------------------
+!        Mesh plot written when meshing fails, for debugging. With -path
+!        it is written to that directory, like the other output files
+!        ---------------------------------------------------------------
+!
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: debugPlotFileName = "DebugPlot.tec"
+!
 !        ----------------------
 !        For close curve sizing
 !        ----------------------

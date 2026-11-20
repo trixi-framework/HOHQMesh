@@ -275,10 +275,10 @@
                      WRITE(stderr,*)  "**************************************************************************"
                      WRITE(stderr,*)  "Curve not found for boundary point"
                      WRITE(stderr,*)   edge % nodes(1) % node % x, edge % nodes(2) % node % x
-                     WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     WRITE(stderr,*)  "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                      WRITE(stderr,*)  "**************************************************************************"
                      WRITE(stderr,*)  " "
-                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = debugPlotFileName)
                   END IF
                   errorCode = CURVE_NOT_FOUND_ERROR_CODE
                   RETURN
@@ -301,10 +301,10 @@
                      WRITE(stderr,*)  "**************************************************************************"
                      WRITE(stderr,*)  "A boundary curve is too close to the background grid box near"
                      WRITE(stderr,*)   edge % nodes(1) % node % x(1:2), edge % nodes(2) % node % x(1:2)
-                     WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     WRITE(stderr,*)  "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                      WRITE(stderr,*)  "**************************************************************************"
                      WRITE(stderr,*)  " "
-                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = debugPlotFileName)
                   END IF
                   errorCode = BOUNDARY_TOUCHES_BOX_ERROR_CODE
                   RETURN
@@ -321,10 +321,10 @@
                         WRITE(stderr,*)  "**************************************************************************"
                         WRITE(stderr,*)  "Edge list not associated"
                         WRITE(stderr,*)  ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
-                        WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                        WRITE(stderr,*)  "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                         WRITE(stderr,*)  "**************************************************************************"
                         WRITE(stderr,*)  " "
-                        CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                        CALL WriteSkeletonToTecplot(mesh = mesh,fName = debugPlotFileName)
                      END IF
                      errorCode = UNASSOCIATED_POINTER_ERROR_CODE
                      RETURN
@@ -1469,10 +1469,11 @@
                   WRITE(stderr,*)  " "
                   WRITE(stderr,*)  "**************************************************************************"
                   WRITE(stderr,*)  "It appears that an edge is not connected"
-                  WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to see where additional resolution is needed"
+                  WRITE(stderr,*)  "Plot the file '" // TRIM(debugPlotFileName) // &
+                                   "' to see where additional resolution is needed"
                   WRITE(stderr,*)  "**************************************************************************"
                   WRITE(stderr,*)  " "
-                  CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
+                  CALL WriteSkeletonToTecplot( mesh, debugPlotFileName )
                   ERROR STOP "Meshing Terminated. See stderr"
                END IF
                edge => edgeArray(eId) % edge

@@ -96,6 +96,11 @@
          CALL initializeFTExceptions
          CALL ReadCommandLineArguments(version, test, generateTest, controlFileName, path)
 
+         IF(path /= "")     THEN
+            CALL ConvertToPath(path)
+            CALL JoinFilePath(path, "DebugPlot.tec", debugPlotFileName) ! (path, fileName, fullName)
+         END IF
+
          IF ( test )     THEN
 
             printMessage    = .FALSE.
@@ -110,7 +115,6 @@
             CALL HOHQMesh(projectDict, project, stats, didGenerate3DMesh, .FALSE.)
 
             IF(path /= "")     THEN
-               CALL ConvertToPath(path)
                CALL AddPathToProjectFiles(self = project,path = path)
             END IF
 
@@ -278,7 +282,8 @@
          WRITE(iUnit,*) "-test"
          WRITE(iUnit,*) "   Runs the test sequence"
          WRITE(iUnit,*) "-path <path>"
-         WRITE(iUnit,*) "   Use to specify location of the HOHQMesh directory for the test sequence."
+         WRITE(iUnit,*) "   Directory that the output file names, and DebugPlot.tec, are relative to."
+         WRITE(iUnit,*) "   With -test, the location of the HOHQMesh directory."
          WRITE(iUnit,*) "-sLimit n"
          WRITE(iUnit,*) "   Increase the number of subdivisions allowed to 2^n. Default is n = 8."
          WRITE(iUnit,*) "-generateTest"
