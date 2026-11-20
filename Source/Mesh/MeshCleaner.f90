@@ -1483,6 +1483,14 @@
                node => e % nodes(badNodeLocalID) % node
                badNodeID = node % id
 !
+!              ------------------------------------------------------------
+!              Only an interior node can be removed. A node on a boundary
+!              curve or on the outer box is in two elements as a matter of
+!              course, and removing it would take it off the boundary.
+!              ------------------------------------------------------------
+!
+               IF ( isOnBoundaryCurve(node) .OR. IsOnOuterBox(node) )     CYCLE
+!
 !              -------------------------------------------
 !              Check the topology - remove triangles only.
 !              -------------------------------------------
@@ -1496,6 +1504,7 @@
                      PRINT *, "Unassociated pointer for node ", badNodeID, " in element ", e % id
                      CYCLE
                   END IF
+                  IF ( eNbr % remove )     CYCLE ! Already merged into another chevron
 !
 !                 ---------------------------------------------
 !                 Replace the bad node in this element by
@@ -1503,21 +1512,29 @@
 !                 Find where in the neighbor this node is.
 !                 ---------------------------------------------
 !
-                  j = -1
+                  nbrNodeLocalID = 0
                   DO j = 1,4
-!                     obj => eNbr % nodes % objectAtIndex(j)
-!                     CALL cast(obj,node)
-                     node => eNbr % nodes(j) % node
-                     IF( node % id == badNodeID )     THEN
+                     IF( eNbr % nodes(j) % node % id == badNodeID )     THEN
                         nbrNodeLocalID = j
                         EXIT
                      END IF
                   END DO
 
-                  IF ( j < 0 )     THEN
+                  IF ( nbrNodeLocalID == 0 )     THEN
                      PRINT *, "Bad shared element connection, ignoring elements ", e % id, eNbr % id
                      CYCLE
                   END IF
+!
+!                 ---------------------------------------------------------
+!                 The two elements must share both edges at the bad node
+!                 (a doublet), so that their union is the quad made of the
+!                 other nodes of e and the opposite node of the neighbor
+!                 ---------------------------------------------------------
+!
+                  IF ( e % nodes(Loop(badNodeLocalID+1,4)) % node % id /=                  &
+                          eNbr % nodes(Loop(nbrNodeLocalID-1,4)) % node % id .OR.          &
+                       e % nodes(Loop(badNodeLocalID-1,4)) % node % id /=                  &
+                          eNbr % nodes(Loop(nbrNodeLocalID+1,4)) % node % id )     CYCLE
 !
 !                 ----------------------------------------------------
 !                 Get the opposite facing node in the neighbor element

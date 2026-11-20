@@ -988,7 +988,10 @@
 
             ALLOCATE(topog_data)
             CALL topog_data % initWithDataFile(topog_file, sizingIsON)
-            IF(ReturnOnFatalError())     RETURN
+            IF(ReturnOnFatalError())     THEN
+               DEALLOCATE(topog_data) ! Not retained by anything yet
+               RETURN
+            END IF
             self % topography => topog_data
 
          ELSE !TODO TOPOGRAPHY: ADD TEST AND CONSTRUCTION OF ALTERNATE TOPOGRAPHIES HERE
@@ -1064,7 +1067,10 @@
 
             ALLOCATE(cCurve)
             CALL cCurve % initWithDataFile( TRIM(curveFile), curveName, self % curveCount + 1 )
-            IF(ReturnOnFatalError()) RETURN
+            IF(ReturnOnFatalError())     THEN
+               DEALLOCATE(cCurve) ! Not retained by anything yet
+               RETURN
+            END IF
 
             curvePtr => cCurve
             CALL chain  % addCurve(curvePtr)
@@ -1107,7 +1113,10 @@
             CALL cCurve % initWithPointsNameAndID(decodedArray(1,:), decodedArray(2,:), &
                                                   decodedArray(3,:), decodedArray(4,:), &
                                                   curveName, self % curveCount + 1 )
-            IF(ReturnOnFatalError()) RETURN
+            IF(ReturnOnFatalError())     THEN
+               DEALLOCATE(cCurve) ! Not retained by anything yet
+               RETURN
+            END IF
             curvePtr => cCurve
             CALL chain  % addCurve(curvePtr)
             obj => cCurve

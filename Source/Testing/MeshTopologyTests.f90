@@ -30,7 +30,8 @@
 !      routine is meant to fix:
 !        1. RemoveDoubletNodes merges the two elements around an
 !           interior node of valence two
-!        2. CleanUpChevronElements removes a near 180 degree corner
+!        2. CleanUpChevronElements removes a near 180 degree corner,
+!           but not at a boundary node
 !        3. UntangleInvertedElements unfolds elements around a node
 !           that was moved out of its star
 !        4. SplitInterfaceElements splits an element whose interface
@@ -324,6 +325,38 @@
 
          CALL FTAssertEqual(expectedValue = 1, actualValue = numberOfChevrons, msg = "One chevron is removed")
          CALL CheckMergedDoublet(mesh, "Chevron removal")
+
+         CALL releaseFTMutableObjectArray(badElements)
+         DEALLOCATE(shapeMeasures)
+         CALL releaseMesh(mesh)
+!
+!        ---------------------------------------------------------
+!        The same chevron with v on a boundary curve: v must stay,
+!        so nothing is removed
+!        ---------------------------------------------------------
+!
+         CALL BuildDoubletMesh(mesh, nodes, 0.015625_RP)
+         CALL MarkAsBoundaryNode(nodes(5) % node)
+
+         badElements => BadElementsInMesh(mesh)
+         ALLOCATE( shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES, badElements % COUNT()) )
+         DO k = 1, badElements % COUNT()
+            obj => badElements % objectAtIndex(k)
+            CALL castToSMElement(obj, e)
+            CALL ComputeElementShapeMeasures2D(e, shapeMeasures(:,k))
+         END DO
+
+         CALL MakeNodeToElementConnections(mesh, errorCode)
+         CALL CleanUpChevronElements(badElements, shapeMeasures, numberOfChevrons)
+         CALL deallocateNodeToElementConnections()
+         CALL DoLazyDelete(mesh)
+
+         CALL FTAssertEqual(expectedValue = 0, actualValue = numberOfChevrons, &
+                            msg = "A chevron at a boundary node is not removed")
+         CALL FTAssertEqual(expectedValue = 2, actualValue = mesh % elements % COUNT(), &
+                            msg = "Chevron at a boundary node: both elements are kept")
+         CALL FTAssertEqual(expectedValue = 5, actualValue = mesh % nodes % COUNT(), &
+                            msg = "Chevron at a boundary node: the boundary node is kept")
 
          CALL releaseFTMutableObjectArray(badElements)
          CALL releaseMesh(mesh)

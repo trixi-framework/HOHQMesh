@@ -60,7 +60,7 @@
       TYPE, EXTENDS(SMTopography) :: SMTopographyFromFile
          CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: file_name
          TYPE(BiCubicInterpolation)            :: biCubic
-         TYPE(BiCubicInterpolation), POINTER   :: curvature
+         TYPE(BiCubicInterpolation), POINTER   :: curvature => NULL()
          REAL(KIND=RP)                         :: box(6) !TOP, LEFT, BOTTOM, RIGHT (2 unused in 2D)
 !
 !        ========
