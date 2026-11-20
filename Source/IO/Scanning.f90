@@ -73,7 +73,18 @@
          RETURN
       END IF
 
-      numberOfBreaks = nSegments - flagCount
+!
+!     -------------------------------------------------------------
+!     Count the joints that remain breaks. flagCount is not used:
+!     overlapping or repeated ranges flag a joint more than once,
+!     and ranges may flag the chain ends 0 and nSegments, which are
+!     always breaks
+!     -------------------------------------------------------------
+!
+      numberOfBreaks = nSegments
+      DO j = 1, nSegments-1
+         IF(flagged(j) == 1) numberOfBreaks = numberOfBreaks - 1
+      END DO
       ALLOCATE(breaks(0:numberOfBreaks))
       breaks(0)              = 0.0_RP
       breaks(numberOfBreaks) = 1.0_RP

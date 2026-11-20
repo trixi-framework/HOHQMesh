@@ -111,10 +111,13 @@
          REAL(KIND=RP) :: directionPenalty        = 1.0E-4_RP
          REAL(KIND=RP) :: boundingBoxOverlapTol   = 1.0E-5_RP
          REAL(KIND=RP) :: straightLineTol         = 1.0E-5_RP
-         LOGICAL       :: boundarySlipping        = .FALSE.
          INTEGER       :: maxLevelLimit           = 8       ! allow at most maxLevelLimit levels of subdivision
          INTEGER       :: numBoundarySmoothPasses = 10
          REAL(KIND=RP) :: anchorStrength          = 0.15_RP
+         INTEGER       :: numUntanglePasses       = 10       ! sweeps over the inverted elements
+         REAL(KIND=RP) :: maxAcceptedAngle        = 165.0_RP ! degrees, larger angles are opened up
+         INTEGER       :: numShapeSweeps          = 6        ! sweeps of the shape improvement
+         REAL(KIND=RP) :: minAcceptedScaledJacobian = 0.8_RP ! elements below this are improved
 !
 !        --------------------
 !        For printing history

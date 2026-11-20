@@ -42,6 +42,9 @@
       USE EquationEvaluatorTestsModule
       USE BoundaryIntersectionTestsModule
       USE DebugOutputTestsModule
+      USE MeshTopologyTestsModule
+      USE ControlInputTestsModule
+      USE GeometryUnitTestsModule
       IMPLICIT NONE
 !
 !---------------------------------------------------------------------
@@ -122,6 +125,16 @@
       CALL testSuite % addTestSubroutineWithName(EquationEvaluatorTests,"Equation Evaluator Tests")
       CALL testSuite % addTestSubroutineWithName(EquationFormatExceptionTests,"Equation Format Exception Tests")
       CALL testSuite % addTestSubroutineWithName(BoundaryIntersectionTests,"Boundary Intersection Tests")
+      CALL testSuite % addTestSubroutineWithName(DoubletRemovalTest,"Doublet Removal Tests")
+      CALL testSuite % addTestSubroutineWithName(ChevronRemovalTest,"Chevron Removal Tests")
+      CALL testSuite % addTestSubroutineWithName(UntangleTest,"Untangle Tests")
+      CALL testSuite % addTestSubroutineWithName(InterfaceSplitTest,"Interface Split Tests")
+      CALL testSuite % addTestSubroutineWithName(ControlFileReaderErrorTests,"Control File Reader Error Tests")
+      CALL testSuite % addTestSubroutineWithName(ChainOptimizationInputTests,"Chain Optimization Input Tests")
+      CALL testSuite % addTestSubroutineWithName(CurveInputErrorTests,"Curve Input Error Tests")
+      CALL testSuite % addTestSubroutineWithName(SymmetryInputTests,"Symmetry Input Tests")
+      CALL testSuite % addTestSubroutineWithName(EllipticArcTangentTest,"Elliptic Arc Tangent Tests")
+      CALL testSuite % addTestSubroutineWithName(WindingFunctionTest,"Winding Function Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...

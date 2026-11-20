@@ -86,7 +86,6 @@
 !         
          PROCEDURE :: initWithLocationAndID => initNodeWithLocationAndID
          PROCEDURE :: printDescription      => printNodeDescription
-         PROCEDURE :: typeCopy              => copyOfNodeClass
       END TYPE SMNode
       
       TYPE SMNodePtr
@@ -281,28 +280,6 @@
          self % bCurveSide      = UNDEFINED
          self % nodeType        = UNDEFINED
       END SUBROUTINE initNodeWithLocationAndID
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      FUNCTION copyOfNodeClass(self) RESULT(copy)  
-         IMPLICIT NONE  
-         CLASS(SMNode) :: self
-         TYPE (SMNode) :: copy
-         
-         CALL copy % FTObject % init()
-         
-         copy % x               = self % x              
-         copy % id              = self % id             
-         copy % level           = self % level          
-         copy % bCurveID        = self % bCurveID       
-         copy % activeStatus    = self % activeStatus   
-         copy % whereOnBoundary = self % whereOnBoundary
-         copy % distToBoundary  = self % distToBoundary 
-         copy % bCurveChainID   = self % bCurveChainID  
-         copy % bCurveSide      = self % bCurveSide     
-         copy % nodeType        = self % nodeType       
-         
-      END FUNCTION copyOfNodeClass
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

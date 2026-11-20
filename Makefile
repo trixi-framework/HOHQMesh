@@ -73,6 +73,9 @@ MeshCleaner.o \
 MeshGeneratorMethods.o \
 MeshingTests.o \
 MeshOperationsModule.o \
+MeshTopologyTests.o \
+ControlInputTests.o \
+GeometryUnitTests.o \
 MeshOutputMethods.o \
 MeshProject.o \
 MeshQualityAnalysis.o \
@@ -505,6 +508,9 @@ MeshOutputMethods.o
 
 MeshingTests.o :$(HOHQMESHPATH)/Source/Testing/MeshingTests.f90 \
 TestDataClass.o \
+MeshTopologyTests.o \
+ControlInputTests.o \
+GeometryUnitTests.o \
 DebugOutputTests.o \
 SegmentedChainTests.o \
 EquationEvaluatorTests.o \
@@ -722,6 +728,41 @@ FTLinkedListClass.o \
 FTValueDictionaryClass.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/DebugOutputTests.f90
+
+GeometryUnitTests.o :$(HOHQMESHPATH)/Source/Testing/GeometryUnitTests.f90 \
+SMConstants.o \
+SMEllipticArc.o \
+Geometry.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/GeometryUnitTests.f90
+
+ControlInputTests.o :$(HOHQMESHPATH)/Source/Testing/ControlInputTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+FTValueClass.o \
+FTValueDictionaryClass.o \
+FTDictionaryClass.o \
+FTExceptionClass.o \
+FatalErrorException.o \
+ControlFileReader.o \
+SMChainedCurveClass.o \
+SMModel.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ControlInputTests.f90
+
+MeshTopologyTests.o :$(HOHQMESHPATH)/Source/Testing/MeshTopologyTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+SMMeshObjects.o \
+SMMeshClass.o \
+Connections.o \
+MeshQualityAnalysis.o \
+MeshCleaner.o \
+InterfaceElementMethods.o \
+FTLinkedListClass.o \
+FTObjectArrayClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/MeshTopologyTests.f90
 
 BoundaryIntersectionTests.o :$(HOHQMESHPATH)/Source/Testing/BoundaryIntersectionTests.f90 \
 SMConstants.o \

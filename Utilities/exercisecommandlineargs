@@ -32,4 +32,19 @@ test -s "$outDir"/Benchmarks/BenchmarkData/NearbyInnerCircles.txt
 ./HOHQMesh -verbose -f Benchmarks/ControlFiles/HalfCircleExtrude.control -path "$outDir"
 test -s "$outDir"/Benchmarks/MeshFiles/Tests/HalfCircleExtrude.mesh
 test -s "$outDir"/Benchmarks/PlotFiles/Tests/HalfCircleExtrude.tec
+
+# Bad input: an inner boundary on the background grid box. Meshing is
+# tried again twice with a smaller background grid (printed with
+# -verbose) and must then stop with an error, not run away. Run it in
+# the temporary directory, since -verbose writes DebugPlot.tec to the
+# current directory. The control file is copied there to keep its name
+# short: file names are limited to 128 characters
+repoDir=$(pwd)
+cp Benchmarks/BadInputs/InnerBoundaryOnBox.control "$outDir"
+if (cd "$outDir" && "$repoDir"/HOHQMesh -verbose -f InnerBoundaryOnBox.control) > "$outDir"/onbox.log 2>&1; then
+   echo "InnerBoundaryOnBox.control should fail"
+   exit 1
+fi
+grep -q "Trying again with 1/2 size" "$outDir"/onbox.log
+grep -q "too close to the background grid box" "$outDir"/onbox.log
 rm -rf "$outDir"

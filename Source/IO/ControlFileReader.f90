@@ -448,7 +448,7 @@
          
          foundName = parseObjectName(line)
          IF(foundName /= blockStack(blockStackTop))     THEN
-            msg = "Block termination error. Expected: "//TRIM(objectName)//"; Found: "//TRIM(foundName)
+            msg = "Block termination error. Expected: "//TRIM(blockStack(blockStackTop))//"; Found: "//TRIM(foundName)
             PRINT *, msg
             ALLOCATE(exception)
             CALL exception % initFatalException(msg)
@@ -654,7 +654,7 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER                          :: j, k, N
+         INTEGER                          :: j, k, N, iStat
          CHARACTER(LEN=CFR_STRING_LENGTH) :: line
          REAL(KIND(1.0d0)), ALLOCATABLE   :: array(:,:)
          CHARACTER(LEN=1), ALLOCATABLE    :: enc(:)
@@ -671,7 +671,20 @@
          
             ALLOCATE(array(4,N))
             DO j = 1, N
-                READ(fileUnit, *) (array(k,j), k = 1,4)
+                READ(fileUnit, *, IOSTAT = iStat) (array(k,j), k = 1,4)
+                IF ( iStat /= 0 )     THEN
+!
+!                  ------------------------------------
+!                  The READ has consumed the end marker
+!                  or a row is not four numbers
+!                  ------------------------------------
+!
+                   ALLOCATE(exception)
+                   CALL exception % initFatalException( "Spline data has fewer than nKnots rows of four numbers" )
+                   CALL throw(exception)
+                   CALL releaseFTException(exception)
+                   RETURN
+                END IF
             END DO
             
             CALL encode(arrayIn = array, enc = enc)

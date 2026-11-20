@@ -1092,11 +1092,21 @@
                   innerInvScale = innerSegment % invScaleAtIndex(j)
                   nHatInner     = innerSegment % normalAtIndex(j)
 
-                  d = ABS( A(m)*y(1) + B(m)*y(2) + C(m) ) !/SQRT(A(m)**2 + B(m)**2)
-                  d = closeCurveFactor/d ! Inverse length - 3 cells
 !
+!                 ------------------------------------------------------------
+!                 Distance from the point to side m, which is the line
+!                 A*x + B*y = C. The points that face side m have normals
+!                 (into the domain) aligned with the outward normal of the
+!                 side, as in OuterToInnerBoundaryDistances. A point on the
+!                 box is skipped: it has no size, and the mesh generator
+!                 reports that the curve is too close to the box.
+!                 ------------------------------------------------------------
+!
+                  d = ABS( A(m)*y(1) + B(m)*y(2) - C(m) )
+                  IF ( d == 0.0_RP )     CYCLE
+                  d = closeCurveFactor/d ! Inverse length - 3 cells
                   dot = DOT_PRODUCT(nHatInner,nHatOuter)
-                  IF( dot < -closeCurveNormalAlignment )     THEN
+                  IF( dot > closeCurveNormalAlignment )     THEN
                      innerInvScale = MAX(d,innerInvScale)
                      CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,j)
                   END IF

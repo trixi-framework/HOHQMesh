@@ -2036,20 +2036,14 @@
                      obj => iterator % object()
                      CALL castToSMEdge(obj,currentEdge)
 
+!
+!                    ------------------------------------------
+!                    Nodes on a boundary curve are kept fixed
+!                    ------------------------------------------
+!
                      IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
-
-                        IF ( currentEdge % nodes(1) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
-                           currentEdge % nodes(1) % node % activeStatus = ACTIVE
-                        ELSE
-                           currentEdge % nodes(1) % node % activeStatus = INACTIVE
-                        END IF
-
-                        IF ( currentEdge%nodes(2) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
-                           currentEdge % nodes(2) % node % activeStatus = ACTIVE
-                        ELSE
-                           currentEdge % nodes(2) % node % activeStatus = INACTIVE
-                        END IF
-
+                        currentEdge % nodes(1) % node % activeStatus = INACTIVE
+                        currentEdge % nodes(2) % node % activeStatus = INACTIVE
                      END IF
 !
 !                 ----------------------------------------------------

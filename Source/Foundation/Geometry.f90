@@ -344,7 +344,13 @@
       y  = a(2) - p(2); yp = b(2) - p(2)
 
       IF( AlmostEqual(y,0.0_RP) .AND. AlmostEqual(yp,0.0_RP) )     THEN
-         IF( x <= 0.0_RP .AND. xp >= 0.0_RP )     onCurve = .TRUE. ! point is on this segment
+!
+!        --------------------------------------------------------
+!        The point is on this horizontal segment if it is between
+!        the end points, whichever way the segment is traversed
+!        --------------------------------------------------------
+!
+         IF( MIN(x,xp) <= 0.0_RP .AND. MAX(x,xp) >= 0.0_RP )     onCurve = .TRUE.
          RETURN
       END IF
 

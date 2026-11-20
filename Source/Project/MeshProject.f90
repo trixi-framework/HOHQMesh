@@ -501,7 +501,7 @@
 !        -------------------------------------------------------
 !
          CALL CheckForBoundaryIntersections(self % sizer) !Development in progress
-         IF(catch(FATAL_ERROR_EXCEPTION))     RETURN
+         IF(ReturnOnFatalError())     RETURN
 !
 !        --------------------------------------------------------------------------
 !        Before going further, check to see how many subdivisions will be necessary
@@ -1007,8 +1007,21 @@
 !
          INTEGER, PARAMETER :: MAX_RESIZE_PASSES = 3
          INTEGER            :: pass, numberOfNewPoints
+         REAL(KIND=RP)      :: meshRatio
+         CHARACTER(LEN=128) :: tightestCurveName
 
          DO pass = 1, MAX_RESIZE_PASSES
+!
+!           -------------------------------------------------------------
+!           Don't add points for sizes finer than the quadtree can reach.
+!           BuildProject stops with an error message for those, and the
+!           points needed can exhaust the memory before it gets there.
+!           -------------------------------------------------------------
+!
+            CALL self % sizer % sizeRatio(ratio             = meshRatio, &
+                                          worstOffenderName = tightestCurveName)
+            IF ( meshRatio > 2.0_RP**maxLevelLimit )     EXIT
+
             numberOfNewPoints = 0
 
             IF ( ASSOCIATED( self % sizer % outerBoundary) )     THEN
