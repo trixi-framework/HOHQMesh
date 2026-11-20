@@ -54,6 +54,17 @@
 !
       CHARACTER(LEN=64), DIMENSION(:), ALLOCATABLE :: controlFiles
 !
+!     ---------------------------------------------------------------
+!     Same as the (private) test interface of the TestSuiteManager.
+!     The tests written as module procedures must have this interface
+!     ---------------------------------------------------------------
+!
+      ABSTRACT INTERFACE
+         SUBROUTINE ModuleTestSubroutine(optData)
+            CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)
+         END SUBROUTINE ModuleTestSubroutine
+      END INTERFACE
+!
 !  ========
    CONTAINS
 !  ========
@@ -121,23 +132,29 @@
       CALL testSuite % addTestSubroutineWithName(MultiSegmentNodalCurveTest,"MultiSegment Nodal Curve Tests")
       CALL testSuite % addTestSubroutineWithName(NodalCircleTest,"MultiSegment Nodal Circle Tests")
       CALL testSuite % addTestSubroutineWithName(MultiSegmentModalCurveTest,"MultiSegment Modal Curve Tests")
-      CALL testSuite % addTestSubroutineWithName(SegmentedChainTests,"Segmented Chain Tests")
-      CALL testSuite % addTestSubroutineWithName(ChainedCurveJoinTests,"Chained Curve Join Tests")
-      CALL testSuite % addTestSubroutineWithName(EquationEvaluatorTests,"Equation Evaluator Tests")
-      CALL testSuite % addTestSubroutineWithName(EquationFormatExceptionTests,"Equation Format Exception Tests")
-      CALL testSuite % addTestSubroutineWithName(BoundaryIntersectionTests,"Boundary Intersection Tests")
-      CALL testSuite % addTestSubroutineWithName(DoubletRemovalTest,"Doublet Removal Tests")
-      CALL testSuite % addTestSubroutineWithName(ChevronRemovalTest,"Chevron Removal Tests")
-      CALL testSuite % addTestSubroutineWithName(UntangleTest,"Untangle Tests")
-      CALL testSuite % addTestSubroutineWithName(InterfaceSplitTest,"Interface Split Tests")
-      CALL testSuite % addTestSubroutineWithName(ControlFileReaderErrorTests,"Control File Reader Error Tests")
-      CALL testSuite % addTestSubroutineWithName(ChainOptimizationInputTests,"Chain Optimization Input Tests")
-      CALL testSuite % addTestSubroutineWithName(CurveInputErrorTests,"Curve Input Error Tests")
-      CALL testSuite % addTestSubroutineWithName(SymmetryInputTests,"Symmetry Input Tests")
-      CALL testSuite % addTestSubroutineWithName(ProjectInputErrorTests,"Project Input Error Tests")
-      CALL testSuite % addTestSubroutineWithName(MaterialNameTests,"Material Name Tests")
-      CALL testSuite % addTestSubroutineWithName(EllipticArcTangentTest,"Elliptic Arc Tangent Tests")
-      CALL testSuite % addTestSubroutineWithName(WindingFunctionTest,"Winding Function Tests")
+!
+!     ------------------------------------------------------------------
+!     Tests written as module procedures. See AddModuleTest for why they
+!     are not added with addTestSubroutineWithName directly
+!     ------------------------------------------------------------------
+!
+      CALL AddModuleTest(testSuite, SegmentedChainTests, "Segmented Chain Tests")
+      CALL AddModuleTest(testSuite, ChainedCurveJoinTests, "Chained Curve Join Tests")
+      CALL AddModuleTest(testSuite, EquationEvaluatorTests, "Equation Evaluator Tests")
+      CALL AddModuleTest(testSuite, EquationFormatExceptionTests, "Equation Format Exception Tests")
+      CALL AddModuleTest(testSuite, BoundaryIntersectionTests, "Boundary Intersection Tests")
+      CALL AddModuleTest(testSuite, DoubletRemovalTest, "Doublet Removal Tests")
+      CALL AddModuleTest(testSuite, ChevronRemovalTest, "Chevron Removal Tests")
+      CALL AddModuleTest(testSuite, UntangleTest, "Untangle Tests")
+      CALL AddModuleTest(testSuite, InterfaceSplitTest, "Interface Split Tests")
+      CALL AddModuleTest(testSuite, ControlFileReaderErrorTests, "Control File Reader Error Tests")
+      CALL AddModuleTest(testSuite, ChainOptimizationInputTests, "Chain Optimization Input Tests")
+      CALL AddModuleTest(testSuite, CurveInputErrorTests, "Curve Input Error Tests")
+      CALL AddModuleTest(testSuite, SymmetryInputTests, "Symmetry Input Tests")
+      CALL AddModuleTest(testSuite, ProjectInputErrorTests, "Project Input Error Tests")
+      CALL AddModuleTest(testSuite, MaterialNameTests, "Material Name Tests")
+      CALL AddModuleTest(testSuite, EllipticArcTangentTest, "Elliptic Arc Tangent Tests")
+      CALL AddModuleTest(testSuite, WindingFunctionTest, "Winding Function Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...
@@ -237,6 +254,33 @@
       DEALLOCATE(controlFiles)
 
    END SUBROUTINE RunTests
+!
+!////////////////////////////////////////////////////////////////////////
+!
+   SUBROUTINE AddModuleTest(testSuite, testSubroutine, testName)
+!
+!     ------------------------------------------------------------------
+!     Adds a test that is a module procedure, with a one character
+!     optData that the test ignores. The test suite calls a test added
+!     without optData with the optional argument absent, and gfortran
+!     (through at least 16.2) checks the string length of an absent
+!     CHARACTER dummy under -fcheck=bounds. That check reads a garbage
+!     length and stops the run with a false "Actual string length does
+!     not match". The old external tests have no dummy argument, so they
+!     are not affected. The test suite deallocates optData.
+!     ------------------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(TestSuiteManager)           :: testSuite
+      PROCEDURE(ModuleTestSubroutine)  :: testSubroutine
+      CHARACTER(LEN=*)                 :: testName
+      CHARACTER(LEN=1), POINTER        :: optData(:)
+
+      ALLOCATE(optData(1))
+      optData = " "
+      CALL testSuite % addTestSubroutineWithName(testSubroutine, testName, optData)
+
+   END SUBROUTINE AddModuleTest
 !
 !////////////////////////////////////////////////////////////////////////
 !

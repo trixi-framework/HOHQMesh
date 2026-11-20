@@ -1421,15 +1421,23 @@
                               segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
                               IF( segmentLength > 0.25_RP*hMin )     THEN
                                  mSteps = NINT(segmentLength/hMin)*5
-                                 dz = 1.0_RP/REAL(mSteps, RP)
-                                 DO m = 1, mSteps-1
-                                    z = x1 + m*dz*(x2 - x1)
-                                    IF ( PointInQuad( nodes, z ) )     THEN
-                                       e % remove    = .true.
-                                       removedHere   = .true.
-                                       EXIT
-                                    END IF
-                                 END DO
+!
+!                                ----------------------------------------------
+!                                Segments shorter than hMin/2 give mSteps = 0,
+!                                so there are no interior points to test
+!                                ----------------------------------------------
+!
+                                 IF ( mSteps > 1 )     THEN
+                                    dz = 1.0_RP/REAL(mSteps, RP)
+                                    DO m = 1, mSteps-1
+                                       z = x1 + m*dz*(x2 - x1)
+                                       IF ( PointInQuad( nodes, z ) )     THEN
+                                          e % remove    = .true.
+                                          removedHere   = .true.
+                                          EXIT
+                                       END IF
+                                    END DO
+                                 END IF
                                  IF( e % remove )     EXIT
                               END IF
                            END DO

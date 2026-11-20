@@ -80,9 +80,22 @@
       FUNCTION Curvature( xPrime, xDoublePrime ) RESULT(c)
          IMPLICIT NONE
          REAL(KIND=RP) :: xPrime(3), xDoublePrime(3), c
+         REAL(KIND=RP) :: speedSquared
+!
+!        ---------------------------------------------------------------
+!        A zero tangent has no defined curvature. This happens, e.g., for
+!        the first segment [0,1] of a closed curve, whose end points
+!        coincide. Return zero instead of 0/0 so that callers fall back
+!        to their other size limit
+!        ---------------------------------------------------------------
+!
+         speedSquared = xPrime(1)**2 + xPrime(2)**2
+         IF ( speedSquared == 0.0_RP )     THEN
+            c = 0.0_RP
+            RETURN
+         END IF
 
-         c = ABS( xPrime(1)*xDoublePrime(2) - xPrime(2)*xDoublePrime(1) ) &
-                          /(xPrime(1)**2 + xPrime(2)**2)**1.5_RP
+         c = ABS( xPrime(1)*xDoublePrime(2) - xPrime(2)*xDoublePrime(1) )/speedSquared**1.5_RP
 
       END FUNCTION Curvature
 !

@@ -253,7 +253,7 @@
          targetDotEndLine   = vLine(1)*vEndTarget(1) + vLine(2)*vEndTarget(2)
          
          IF( targetDotStartLine >= 0.0_RP .AND. targetDotEndLine <= 0.0_RP )     THEN         
-            d = SQRT(lTarget**2 - (targetDotStartLine/lLine)**2)
+            d = SQRT(MAX(0.0_RP, lTarget**2 - (targetDotStartLine/lLine)**2)) ! Roundoff can make it < 0 on the line
             IF( self % lineControlType == CENTER_SMOOTH )      THEN
                arg = LOG(3.0_RP)*d/self % width
                IF ( arg < 34.5_RP )     THEN

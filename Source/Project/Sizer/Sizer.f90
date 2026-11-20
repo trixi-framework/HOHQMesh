@@ -389,6 +389,7 @@
          REAL(KIND=RP)                    :: x(3), boundingBox(6)
          REAL(KIND=RP)                    :: cSize, aSize
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
+         REAL(KIND=RP)                    :: kappa
          INTEGER                          :: i,j, nX(3) = [10,10,0]
          REAL(KIND=RP), PARAMETER         :: SIZE_FACTOR = 0.9_RP
          INTEGER, DIMENSION(:), ALLOCATABLE :: nearCenters
@@ -407,7 +408,8 @@
          IF ( ASSOCIATED(sizer % controlsList) )     THEN
             CALL EnsureControlEntries( sizer )
             CALL CentersNearBox( sizer, xMin, xMax, nearCenters, nNear )
-            dX = (xMax - xMin)/nX
+            dX(1:2) = (xMax(1:2) - xMin(1:2))/nX(1:2)
+            dX(3)   = 0.0_RP ! The box is sampled in x and y only (nX(3) = 0)
             DO j = 0, nX(2)
                x(2) = xMin(2) + j*dx(2)
                DO i = 0, nX(1)
@@ -422,12 +424,14 @@
 !        -----------------------------------------
 !
          IF ( ASSOCIATED(sizer % topography) )     THEN
-            dX = (xMax - xMin)/nX
+            dX(1:2) = (xMax(1:2) - xMin(1:2))/nX(1:2)
+            dX(3)   = 0.0_RP ! The box is sampled in x and y only (nX(3) = 0)
             TLoop : DO j = 0, nX(2)
                x(2) = xMin(2) + j*dx(2)
                DO i = 0, nX(1)
                   x(1) = xMin(1) + i*dx(1)
-                  hMin = MIN( hMin, 1.0_RP/SQRT(sizer % topography % principalCurvatureAt(x)) )
+                  kappa = sizer % topography % principalCurvatureAt(x)
+                  IF ( kappa > 0.0_RP )     hMin = MIN( hMin, 1.0_RP/SQRT(kappa) ) ! No size limit where flat
                   IF(hMin < SIZE_FACTOR*dX(1)) EXIT TLoop
                END DO
             END DO TLoop
