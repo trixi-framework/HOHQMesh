@@ -37,8 +37,8 @@ test -s "$outDir"/Benchmarks/PlotFiles/Tests/HalfCircleExtrude.tec
 # tried again twice with a smaller background grid (printed with
 # -verbose) and must then stop with an error, not run away. Run it in
 # the temporary directory, since -verbose writes DebugPlot.tec to the
-# current directory. The control file is copied there to keep its name
-# short: file names are limited to 128 characters
+# current directory. The control file is copied there so that it can
+# be given by name
 repoDir=$(pwd)
 cp Benchmarks/BadInputs/InnerBoundaryOnBox.control "$outDir"
 if (cd "$outDir" && "$repoDir"/HOHQMesh -verbose -f InnerBoundaryOnBox.control) > "$outDir"/onbox.log 2>&1; then
@@ -47,4 +47,36 @@ if (cd "$outDir" && "$repoDir"/HOHQMesh -verbose -f InnerBoundaryOnBox.control) 
 fi
 grep -q "Trying again with 1/2 size" "$outDir"/onbox.log
 grep -q "too close to the background grid box" "$outDir"/onbox.log
+
+# Long paths. File names and paths may have up to 512 characters. Build
+# a directory whose path is longer than the old limit of 128 characters
+# (in several components, since a single one is limited to 255) and use
+# it for both -f and -path
+longDir="$outDir"
+for i in 1 2 3; do
+   longDir="$longDir"/$(printf 'd%.0s' {1..100})
+done
+mkdir -p "$longDir"/Benchmarks/ControlFiles "$longDir"/Benchmarks/MeshFiles/Tests \
+         "$longDir"/Benchmarks/PlotFiles/Tests "$longDir"/Benchmarks/StatsFiles/Tests
+cp Benchmarks/ControlFiles/Pill.control "$longDir"/Benchmarks/ControlFiles
+./HOHQMesh -f "$longDir"/Benchmarks/ControlFiles/Pill.control -path "$longDir"
+test -s "$longDir"/Benchmarks/MeshFiles/Tests/Pill.mesh
+test -s "$longDir"/Benchmarks/PlotFiles/Tests/Pill.tec
+test -s "$longDir"/Benchmarks/StatsFiles/Tests/Pill.txt
+
+# A path that is too long must stop with an error, not be truncated:
+# first a -path argument longer than 512 characters, then a -path that
+# fits but is too long once the output file name is added to it
+tooLong=$(printf 'p%.0s' {1..600})
+if ./HOHQMesh -f Benchmarks/ControlFiles/Pill.control -path "$tooLong" > "$outDir"/long.log 2>&1; then
+   echo "A -path longer than 512 characters should fail"
+   exit 1
+fi
+grep -q "is longer than" "$outDir"/long.log
+almostTooLong=$(printf 'p%.0s' {1..500})
+if ./HOHQMesh -f Benchmarks/ControlFiles/Pill.control -path "$almostTooLong" > "$outDir"/long.log 2>&1; then
+   echo "A -path that is too long with the file name added should fail"
+   exit 1
+fi
+grep -q "is longer than" "$outDir"/long.log
 rm -rf "$outDir"

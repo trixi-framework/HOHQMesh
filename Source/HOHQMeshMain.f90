@@ -71,7 +71,7 @@
 !        File
 !        ----
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName, path, testResultsName
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: controlFileName, path, testResultsName
          INTEGER                                 :: fUnit
          INTEGER, EXTERNAL                       :: UnusedUnit
 !
@@ -87,7 +87,7 @@
          TYPE(testData)              :: tData
          INTEGER                     :: numberOfFailedTests = 0
 
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
 !
 !        ***********************************************
 !                             Start
@@ -130,9 +130,12 @@
                obj             => controlDict % objectForKey(key = RUN_PARAMETERS_KEY)
                paramsDict      => valueDictionaryFromObject(obj)
                testResultsName = paramsDict % stringValueForKey(key = "test file name", &
-                                               requestedLength = DEFAULT_CHARACTER_LENGTH)
+                                               requestedLength = DEFAULT_FILE_PATH_LENGTH)
 
-               IF(path /= "")  testResultsName = TRIM(path) // testResultsName
+               IF(path /= "")  THEN
+                  str = testResultsName
+                  CALL JoinFilePath(path, str, testResultsName) ! (path, fileName, fullName)
+               END IF
 
                CALL GatherTestFileData( tData, project, stats)
 
@@ -174,7 +177,7 @@
 !        Arguments
 !        ---------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)     :: controlFileName, path
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH)     :: controlFileName, path
          CHARACTER(LEN=*)                            :: version
          LOGICAL                                     :: test, generateTest
          INTEGER                                     :: argCount

@@ -265,6 +265,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE ConvertToPath(str)
+         USE, INTRINSIC :: ISO_FORTRAN_ENV, ONLY : ERROR_UNIT
          IMPLICIT NONE
          CHARACTER(LEN=*) :: str
          INTEGER          :: lc
@@ -273,10 +274,39 @@
          IF ( str(lc:lc) == "/" )     THEN
             str = str(1:lc)
          ELSE
+            IF ( lc == LEN(str) )     THEN ! No room for the "/"
+               WRITE(ERROR_UNIT,'(3A,I0,A)') " The path ", TRIM(str), " is longer than ", LEN(str)-1, " characters"
+               ERROR STOP "Path too long"
+            END IF
             str = str(1:lc) // "/"
          END IF
 
       END SUBROUTINE ConvertToPath
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE JoinFilePath(path, fileName, fullName)
+!
+!     ----------------------------------------------------------------
+!     Sets fullName = TRIM(path) // TRIM(fileName). Stops with an
+!     error if the result does not fit, rather than silently writing
+!     to or reading from a truncated file name. fullName must not be
+!     the same variable as path or fileName.
+!     ----------------------------------------------------------------
+!
+         USE, INTRINSIC :: ISO_FORTRAN_ENV, ONLY : ERROR_UNIT
+         IMPLICIT NONE
+         CHARACTER(LEN=*), INTENT(IN)  :: path, fileName
+         CHARACTER(LEN=*), INTENT(OUT) :: fullName
+
+         IF ( LEN_TRIM(path) + LEN_TRIM(fileName) > LEN(fullName) )     THEN
+            WRITE(ERROR_UNIT,'(3A,I0,A)') " The file name ", TRIM(path) // TRIM(fileName), &
+                                          " is longer than ", LEN(fullName), " characters"
+            ERROR STOP "File name too long"
+         END IF
+         fullName = TRIM(path) // TRIM(fileName)
+
+      END SUBROUTINE JoinFilePath
 !
 !////////////////////////////////////////////////////////////////////////
 !

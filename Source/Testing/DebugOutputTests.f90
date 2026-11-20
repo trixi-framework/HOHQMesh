@@ -85,7 +85,7 @@
          IMPLICIT NONE
          CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)
 
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlDirectory
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: controlDirectory
          TYPE (FTValueDictionary), POINTER       :: projectDict => NULL()
          CLASS(MeshProject)      , POINTER       :: project     => NULL()
          INTEGER                                 :: errorCode
@@ -147,10 +147,8 @@
          CHARACTER(LEN=*)                  :: controlFileName
          TYPE (FTValueDictionary), POINTER :: projectDict
          CLASS(MeshProject)      , POINTER :: project
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fileName ! The length ReadControlFile expects
 
-         fileName = controlFileName
-         CALL ReadControlFile(fileName, projectDict)
+         CALL ReadControlFile(controlFileName, projectDict)
          ALLOCATE(project)
          CALL project % initWithDictionary( projectDict )
 

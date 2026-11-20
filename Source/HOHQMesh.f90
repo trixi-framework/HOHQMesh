@@ -266,8 +266,8 @@
 !        Arguments
 !        ---------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH), INTENT(IN)  :: controlFileName ! Input
-         TYPE(FTValueDictionary), POINTER                     :: projectDict     ! Output, retained
+         CHARACTER(LEN=*)       , INTENT(IN)  :: controlFileName ! Input
+         TYPE(FTValueDictionary), POINTER     :: projectDict     ! Output, retained
 !
 !        ---------------
 !        Local variables
@@ -277,7 +277,7 @@
          INTEGER, EXTERNAL                       :: StdInFileUnitCopy, UnusedUnit
          TYPE(ControlFileReader)                 :: cfReader
 
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
 
          CALL cfReader % init()
 !
@@ -322,7 +322,7 @@
 !        Local variables
 !        ---------------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
 
          str = project % runParams % plotFileName
          CALL toLower(str)
@@ -373,7 +373,7 @@
 !        Local variables
 !        ---------------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
 
          str = project % runParams % MeshFileName
          CALL toLower(str)

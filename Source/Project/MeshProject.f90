@@ -94,9 +94,9 @@
 !     ------------------
 !
       TYPE RunParameters
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: MeshFileName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: plotFileName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: MeshFileName
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: plotFileName
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: statsFileName
          INTEGER                                 :: meshFileFormat
          INTEGER                                 :: polynomialOrder
          INTEGER                                 :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
@@ -974,7 +974,7 @@
          END DO
 
          IF ( printMessage )     THEN
-            PRINT *, "Minimum size for for accurate approximation of the curve ", &
+            PRINT *, "Minimum size for accurate approximation of the curve ", &
             TRIM(curve % curveName()), " is ", minSegment
          END IF
 
@@ -2052,26 +2052,29 @@
          IMPLICIT NONE
          CLASS(MeshProject)                      :: self
          CHARACTER(LEN=*)                        :: path
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
 
          IF ( path /= "" )     THEN
 
             str = self % runParams % MeshFileName
             CALL toLower(str)
             IF(str /= "none")      THEN
-               self % runParams % MeshFileName = TRIM(path) // self % runParams % MeshFileName
+               str = self % runParams % MeshFileName
+               CALL JoinFilePath(path, str, self % runParams % MeshFileName) ! (path, fileName, fullName)
             END IF
 
             str = self % runParams % plotFileName
             CALL toLower(str)
             IF(str /= "none")      THEN
-               self % runParams % plotFileName = TRIM(path) // self % runParams % plotFileName
+               str = self % runParams % plotFileName
+               CALL JoinFilePath(path, str, self % runParams % plotFileName) ! (path, fileName, fullName)
             END IF
 
             str = self % runParams % statsFileName
             CALL toLower(str)
             IF(str /= "none")      THEN
-               self % runParams % statsFileName = TRIM(path) // self % runParams % statsFileName
+               str = self % runParams % statsFileName
+               CALL JoinFilePath(path, str, self % runParams % statsFileName) ! (path, fileName, fullName)
             END IF
          END IF
 

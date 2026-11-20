@@ -1029,7 +1029,7 @@
          CLASS(FTObject) , POINTER                  :: obj
          CLASS(FTData)   , POINTER                  :: splineData
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveFile
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH)    :: curveFile
          CHARACTER(LEN=1), POINTER                  :: encodedData(:)
          REAL(KIND=RP), ALLOCATABLE                 :: decodedArray(:,:)
          CLASS(SMSplineCurve)             , POINTER :: cCurve      => NULL()
@@ -1054,7 +1054,7 @@
          IF( splineDict % containsKey(SPLINE_FILE_KEY) )THEN
 
             curveFile = splineDict % stringValueforKey( key = SPLINE_FILE_KEY, &
-                                                        requestedLength = DEFAULT_CHARACTER_LENGTH )
+                                                        requestedLength = DEFAULT_FILE_PATH_LENGTH )
 
             INQUIRE( FILE=TRIM(curveFile), EXIST=curveFileFound )
 

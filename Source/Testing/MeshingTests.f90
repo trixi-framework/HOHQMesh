@@ -78,7 +78,7 @@
       TYPE(TestSuiteManager)                  :: testSuite
       CHARACTER(LEN=1), POINTER               :: optData(:)
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:)
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath, path, str
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: fullPath, path, str
       INTEGER                                 :: k, fUnit, nControlFiles
       LOGICAL                                 :: exst
       CHARACTER(LEN=ERROR_MESSAGE_LENGTH)     :: msg
@@ -149,7 +149,7 @@
          fullPath =  "Benchmarks/BenchmarkFiles.txt"
       ELSE
          CALL ConvertToPath(path)
-         fullPath = TRIM(path) // "Benchmarks/BenchmarkFiles.txt"
+         CALL JoinFilePath(path, "Benchmarks/BenchmarkFiles.txt", fullPath) ! (path, fileName, fullName)
       END IF
 
       INQUIRE( FILE = fullPath, EXIST = exst )
@@ -197,7 +197,7 @@
             fullPath =  controlFiles(k)
          ELSE
             CALL ConvertToPath(pathToTestFiles)
-            fullPath = TRIM(pathToTestFiles) // controlFiles(k)
+            CALL JoinFilePath(pathToTestFiles, controlFiles(k), fullPath) ! (path, fileName, fullName)
          END IF
 
          optData => NULL()
@@ -223,7 +223,7 @@
          fullPath = "Benchmarks/ControlFiles/"
       ELSE
          CALL ConvertToPath(pathToTestFiles)
-         fullPath = TRIM(pathToTestFiles) // "Benchmarks/ControlFiles/"
+         CALL JoinFilePath(pathToTestFiles, "Benchmarks/ControlFiles/", fullPath) ! (path, fileName, fullName)
       END IF
       optData => NULL()
       CALL encode(str = TRIM(fullPath),enc = optDataA)
@@ -253,10 +253,10 @@
 !     Local variables
 !     ---------------
 !
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: testResultsLocation
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: path
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: controlFileName
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: testResultsLocation
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: path
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
       CLASS( MeshProject )    , POINTER       :: project     => NULL()
       TYPE (FTValueDictionary), POINTER       :: controlDict => NULL()
       TYPE (FTValueDictionary), POINTER       :: projectDict => NULL()
@@ -288,7 +288,7 @@
       obj                 => controlDict % objectForKey(key = RUN_PARAMETERS_KEY)
       paramsDict          => valueDictionaryFromObject(obj)
       testResultsLocation =  paramsDict % stringValueForKey(key = "test file name", &
-                                                            requestedLength = DEFAULT_CHARACTER_LENGTH)
+                                                            requestedLength = DEFAULT_FILE_PATH_LENGTH)
 !
 !     ------------------
 !     Generate the Mesh
@@ -330,7 +330,8 @@
 !     ------------------------------------------------------------------------------------
 !
       IF ( testResultsLocation /= "" )     THEN
-         testResultsLocation = TRIM(path) // testResultsLocation
+         str = testResultsLocation
+         CALL JoinFilePath(path, str, testResultsLocation) ! (path, fileName, fullName)
 !
 !        ---------------------------------------------------
 !        Test current results against saved benchmark values
