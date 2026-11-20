@@ -145,7 +145,7 @@
          TYPE(BackgroundGridParameters)      :: backgroundParams
          TYPE(RotationTransform)             :: rotationTransformer
          TYPE(ScaleTransform)                :: scaleTransformer
-         CHARACTER(LEN=32)                   :: backgroundMaterialName
+         CHARACTER(LEN=32)                   :: backgroundMaterialName = "base" ! Set from the MATERIALS block for ISM-MM
          INTEGER                             :: numberOfLevelsUsed
          REAL(KIND=RP)         , ALLOCATABLE :: L2ErrorMax(:), H1ErrorMax(:)
          TYPE(JaggedRealArray) , ALLOCATABLE :: L2BoundaryError(:), H1BoundaryError(:)

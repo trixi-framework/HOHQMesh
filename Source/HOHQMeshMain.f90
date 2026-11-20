@@ -106,6 +106,7 @@
             ALLOCATE(project)
 
             CALL ReadControlFile(controlFileName, projectDict)
+            CALL trapExceptions ! Abort on errors in the control file before using it
             CALL HOHQMesh(projectDict, project, stats, didGenerate3DMesh, .FALSE.)
 
             IF(path /= "")     THEN

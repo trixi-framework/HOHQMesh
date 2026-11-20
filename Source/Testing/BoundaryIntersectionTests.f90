@@ -32,13 +32,18 @@
 !        2. Parallel curves with overlapping boxes do not cross
 !        3. A curve with no points in the overlap of the boxes does not
 !           cross
+!        4. Densely sampled curves that cross between their points are
+!           found (two circles), and close ones that do not cross are not
+!        5. The segment from the last point back to the first is tested
+!        6. SegmentsIntersect: crossing, touching, collinear and
+!           parallel segments
 !      All coordinates are exact binary fractions so that the inclusive
 !      box tests do not depend on round off.
 !////////////////////////////////////////////////////////////////////////
       Module BoundaryIntersectionTestsModule
       USE SMConstants
       USE ProgramGlobals, ONLY : BBOX_TOP, BBOX_LEFT, BBOX_BOTTOM, BBOX_RIGHT
-      USE Geometry      , ONLY : IntersectionOfBBoxes
+      USE Geometry      , ONLY : IntersectionOfBBoxes, SegmentsIntersect
       USE MeshBoundaryMethodsModule, ONLY : TwoCurvesAsPointsIntersect
       USE FTAssertions
       IMPLICIT NONE
@@ -56,6 +61,8 @@
 !        Local variables
          REAL(KIND=RP) :: shallow(3,0:16), steep(3,0:8), shifted(3,0:16)
          REAL(KIND=RP) :: lShape(3,0:16), short(3,0:4)
+         REAL(KIND=RP) :: circle(3,0:255), smallCircle(3,0:255), square(3,0:3), across(3,0:1)
+         REAL(KIND=RP) :: t
          INTEGER       :: k
 !
 !        ---------------------------------------------------------------
@@ -102,6 +109,63 @@
          END DO
          CALL FTAssert(test = .NOT.curvesCross(lShape, short), &
                        msg  = "Segment inside an L-shaped curve's box should not intersect it")
+!
+!        -----------------------------------------------------------------
+!        The unit circle and a circle of radius 1/2 centered at (c,c), 256
+!        points each. For c = 0.9 they cross, but no point of one curve
+!        is on the other. For c = 1.07 the gap between them is about 0.013.
+!        -----------------------------------------------------------------
+!
+         DO k = 0, 255
+            t = 2.0_RP*PI*k/256.0_RP
+            circle(:,k)      = [COS(t), SIN(t), 0.0_RP]
+            smallCircle(:,k) = [0.9_RP + 0.5_RP*COS(t), 0.9_RP + 0.5_RP*SIN(t), 0.0_RP]
+         END DO
+         CALL FTAssert(test = curvesCross(circle, smallCircle), &
+                       msg  = "Circles that cross between their points should intersect")
+         CALL FTAssert(test = curvesCross(smallCircle, circle), &
+                       msg  = "Circles that cross between their points should intersect (swapped order)")
+         smallCircle(1:2,:) = smallCircle(1:2,:) + 0.17_RP
+         CALL FTAssert(test = .NOT.curvesCross(circle, smallCircle), &
+                       msg  = "Circles 0.013 apart should not intersect")
+!
+!        ----------------------------------------------------------------
+!        The unit square given by its corners only. The segment across
+!        its left side crosses only the side from the last corner back to
+!        the first.
+!        ----------------------------------------------------------------
+!
+         square(:,0) = [0.0_RP, 0.0_RP, 0.0_RP]
+         square(:,1) = [1.0_RP, 0.0_RP, 0.0_RP]
+         square(:,2) = [1.0_RP, 1.0_RP, 0.0_RP]
+         square(:,3) = [0.0_RP, 1.0_RP, 0.0_RP]
+         across(:,0) = [-0.5_RP, 0.5_RP, 0.0_RP]
+         across(:,1) = [ 0.5_RP, 0.5_RP, 0.0_RP]
+         CALL FTAssert(test = curvesCross(square, across), &
+                       msg  = "A crossing of the closing segment should be found")
+!
+!        -----------------
+!        SegmentsIntersect
+!        -----------------
+!
+         CALL FTAssert(test = SegmentsIntersect([0.0_RP,0.0_RP,0.0_RP], [1.0_RP,1.0_RP,0.0_RP], &
+                                                [0.0_RP,1.0_RP,0.0_RP], [1.0_RP,0.0_RP,0.0_RP]), &
+                       msg  = "Diagonals of a square intersect")
+         CALL FTAssert(test = SegmentsIntersect([0.0_RP,0.0_RP,0.0_RP], [1.0_RP,0.0_RP,0.0_RP], &
+                                                [0.5_RP,0.0_RP,0.0_RP], [0.5_RP,1.0_RP,0.0_RP]), &
+                       msg  = "A segment that ends on another intersects it")
+         CALL FTAssert(test = SegmentsIntersect([0.0_RP,0.0_RP,0.0_RP], [1.0_RP,0.0_RP,0.0_RP], &
+                                                [0.5_RP,0.0_RP,0.0_RP], [2.0_RP,0.0_RP,0.0_RP]), &
+                       msg  = "Overlapping collinear segments intersect")
+         CALL FTAssert(test = .NOT.SegmentsIntersect([0.0_RP,0.0_RP,0.0_RP], [1.0_RP,0.0_RP,0.0_RP], &
+                                                     [1.5_RP,0.0_RP,0.0_RP], [2.0_RP,0.0_RP,0.0_RP]), &
+                       msg  = "Separate collinear segments do not intersect")
+         CALL FTAssert(test = .NOT.SegmentsIntersect([0.0_RP,0.0_RP,0.0_RP], [1.0_RP,0.0_RP,0.0_RP], &
+                                                     [0.0_RP,0.5_RP,0.0_RP], [1.0_RP,0.5_RP,0.0_RP]), &
+                       msg  = "Parallel segments do not intersect")
+         CALL FTAssert(test = .NOT.SegmentsIntersect([0.0_RP,0.0_RP,0.0_RP], [1.0_RP,0.0_RP,0.0_RP], &
+                                                     [0.5_RP,0.25_RP,0.0_RP], [0.5_RP,1.0_RP,0.0_RP]), &
+                       msg  = "A segment that stops short of another does not intersect it")
 
       END SUBROUTINE BoundaryIntersectionTests
 !////////////////////////////////////////////////////////////////////////

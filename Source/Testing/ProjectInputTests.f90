@@ -214,6 +214,28 @@
                              chainText("right", circleText("right", "[0.5,0.0,0.0]" , "1.0"))],     &
                             none, none)],                                                           &
                  FATAL_ERROR_EXCEPTION, "Interior curves")
+         CALL CheckProjectInput("Inner curves cross between their points",                         &
+                 [controlInputText([runParametersText("ISM"), backgroundGridText()]),               &
+                  modelText([chainText("big"  , circleText("big"  , "[0.0,0.0,0.0]", "1.0")),       &
+                             chainText("small", circleText("small", "[0.9,0.9,0.0]", "0.5"))],      &
+                            none, none)],                                                           &
+                 FATAL_ERROR_EXCEPTION, "Interior curves")
+         CALL CheckProjectInput("Inner curve inside another",                                       &
+                 [controlInputText([runParametersText("ISM"), backgroundGridText()]),               &
+                  modelText([chainText("big"  , circleText("big"  , "[0.0,0.0,0.0]", "1.5")),       &
+                             chainText("small", circleText("small", "[0.2,0.0,0.0]", "0.5"))],      &
+                            none, none)],                                                           &
+                 FATAL_ERROR_EXCEPTION, "is inside of interior curve")
+         CALL CheckProjectInput("Inner curve crosses the outer boundary inside its box",            &
+                 [controlInputText([runParametersText("ISM"), backgroundGridText()]),               &
+                  modelText([chainText("corner", circleText("corner", "[2.9,2.9,0.0]", "0.5"))],     &
+                            none, none)],                                                           &
+                 FATAL_ERROR_EXCEPTION, "overlaps with exterior curve")
+         CALL CheckProjectInput("Inner curve outside the outer boundary",                           &
+                 [controlInputText([runParametersText("ISM"), backgroundGridText()]),               &
+                  modelText([chainText("away", circleText("away", "[3.6,3.6,0.0]", "0.5"))],         &
+                            none, none)],                                                           &
+                 FATAL_ERROR_EXCEPTION, "is outside of the exterior curve")
          CALL CheckProjectInput("Inner curve overlaps the outer boundary",                          &
                  [controlInputText([runParametersText("ISM"), backgroundGridText()]),               &
                   modelText([chainText("crossing", circleText("crossing", "[3.5,0.0,0.0]", "1.0"))], &
@@ -359,6 +381,21 @@
          CALL FTAssert(test = .NOT.otherIDs, msg = "Elements are steel or water")
          CALL FTAssert(test = elementCount(0) > 0 .AND. elementCount(1) > 0, msg = "Both materials have elements")
 
+         CALL releaseMeshProject(project)
+         CALL releaseFTValueDictionary(controlDict)
+!
+!        ---------------------------------------------------------------
+!        Interfaces without ISM-MM output: the background material is
+!        still named, "base", since interfaces are matched against it
+!        ---------------------------------------------------------------
+!
+         CALL ClearExceptions
+         CALL BuildProjectFromText(                                                                &
+                 [controlInputText([runParametersText("ISM"), backgroundGridText()]),              &
+                  modelText(none, [chainText("left", circleText("left", "[-2.0,0.0,0.0]", "0.75"))], none)], &
+                 controlDict, project)
+         CALL FTAssert(test = project % backgroundMaterialName == "base", &
+                       msg  = "Background material without ISM-MM")
          CALL releaseMeshProject(project)
          CALL releaseFTValueDictionary(controlDict)
 !

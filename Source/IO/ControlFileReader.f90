@@ -308,8 +308,14 @@
          CHARACTER(LEN=CFR_STRING_LENGTH)  :: line
          INTEGER                           :: iStat
          TYPE (FTException)      , POINTER :: exception
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError ! Does not remove the exception
 
-         IF(catch(FATAL_ERROR_EXCEPTION)) RETURN  
+         IF(ReturnOnFatalError()) RETURN  
          
          DO
            READ(fileUnit,"(A)", IOSTAT = iStat, END = 1000) line
@@ -329,7 +335,7 @@
 !
             IF ( INDEX(STRING = line, SUBSTRING = "begin{") > 0)     THEN !Start reading a block
                CALL startNewCollectionInCollection(fileUnit,line,collection)
-               IF(catch(FATAL_ERROR_EXCEPTION)) EXIT 
+               IF(ReturnOnFatalError()) EXIT 
                
             ELSE IF (INDEX(STRING = line, SUBSTRING = "end{") > 0)     THEN
                IF(INDEX(STRING = line, SUBSTRING = "end{FILE}") > 0)   RETURN 
@@ -350,7 +356,7 @@
                               blockDict = dict, &
                               firstLine = line,    &
                               blockName = objectName)
-               IF(catch(FATAL_ERROR_EXCEPTION)) EXIT 
+               IF(ReturnOnFatalError()) EXIT 
                RETURN 
             END IF
          END DO
@@ -527,6 +533,12 @@
          INTEGER                          :: s, e
          CHARACTER(LEN=CFR_STRING_LENGTH) :: line
          TYPE (FTException)     , POINTER :: exception
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError ! Does not remove the exception
          
          errMsg = ""
          CALL addKeyAndValueFromLineToDict(blockDict = blockDict, &
@@ -564,6 +576,7 @@
             s = INDEX(STRING = line, SUBSTRING = "\begin{SPLINE_DATA}")
             IF ( s > 0 )     THEN
                CALL readSplineData(fileUnit, blockDict)
+               IF(ReturnOnFatalError()) RETURN 
                CYCLE 
             END IF 
 !

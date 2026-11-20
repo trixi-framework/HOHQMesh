@@ -157,6 +157,8 @@
 
          CALL ClearExceptions
          CALL ImportControlText(text, controlDict)
+         CALL FTAssertEqual(expectedValue = 1, actualValue = errorCount(), &
+                            msg = label // ": reading stops at the first error")
          CALL FTAssert(test = raised(FTFatalErrorException, expectedMessage), &
                        msg  = label // ": fatal '" // expectedMessage // "'")
          CALL releaseFTValueDictionary(controlDict)
@@ -183,6 +185,20 @@
                  [CHARACTER(LEN=LL) :: "\Begin{CONTROL_INPUT}",                    &
                                        "\end{FILE}"],                              &
                  "Syntax error in control file line: \Begin{CONTROL_INPUT}")
+
+         CALL CheckReaderError("Upper case command in a block",                     &
+                 [CHARACTER(LEN=LL) :: "\begin{CONTROL_INPUT}",                    &
+                                       "   \begin{RUN_PARAMETERS}",                &
+                                       "      polynomial order = 4",               &
+                                       "   \end{RUN_PARAMETERS}",                  &
+                                       "   \Begin{BACKGROUND_GRID}",               &
+                                       "      background grid size = [1.0,1.0,0.0]", &
+                                       "   \end{BACKGROUND_GRID}",                 &
+                                       "\end{CONTROL_INPUT}",                      &
+                                       "\begin{MODEL}",                            &
+                                       "\end{MODEL}",                              &
+                                       "\end{FILE}"],                              &
+                 "Syntax error in control file line: \Begin{BACKGROUND_GRID}")
 
          CALL CheckReaderError("Wrong collection end",                              &
                  [CHARACTER(LEN=LL) :: "\begin{MODEL}",                            &

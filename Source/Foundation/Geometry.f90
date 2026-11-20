@@ -260,6 +260,51 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
+      PURE LOGICAL FUNCTION SegmentsIntersect( a1, a2, b1, b2 )
+!
+!     -----------------------------------------------------------------
+!     Test if the segments a1-a2 and b1-b2 in the x-y plane share a
+!     point. Segments that only touch, and collinear segments that
+!     overlap, count as intersecting. Each endpoint of one segment must
+!     be on the line of the other, or the two endpoints must be on
+!     opposite sides of it. For collinear segments, which are on each
+!     other's lines, the bounding boxes must also overlap.
+!     -----------------------------------------------------------------
+!
+         IMPLICIT NONE
+         REAL(KIND=RP), INTENT(IN) :: a1(3), a2(3), b1(3), b2(3)
+         REAL(KIND=RP)             :: dA1, dA2, dB1, dB2
+
+         SegmentsIntersect = .FALSE.
+         IF ( MAX(a1(1),a2(1)) < MIN(b1(1),b2(1)) .OR. MAX(b1(1),b2(1)) < MIN(a1(1),a2(1)) .OR. &
+              MAX(a1(2),a2(2)) < MIN(b1(2),b2(2)) .OR. MAX(b1(2),b2(2)) < MIN(a1(2),a2(2)) )     RETURN
+
+         dA1 = cross2D(b2 - b1, a1 - b1)
+         dA2 = cross2D(b2 - b1, a2 - b1)
+         dB1 = cross2D(a2 - a1, b1 - a1)
+         dB2 = cross2D(a2 - a1, b2 - a1)
+
+         SegmentsIntersect = notOnSameSide(dA1, dA2) .AND. notOnSameSide(dB1, dB2)
+
+      END FUNCTION SegmentsIntersect
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      PURE REAL(KIND=RP) FUNCTION cross2D( u, v )
+         IMPLICIT NONE
+         REAL(KIND=RP), INTENT(IN) :: u(3), v(3)
+         cross2D = u(1)*v(2) - u(2)*v(1)
+      END FUNCTION cross2D
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      PURE LOGICAL FUNCTION notOnSameSide( d1, d2 )
+         IMPLICIT NONE
+         REAL(KIND=RP), INTENT(IN) :: d1, d2
+         notOnSameSide = (d1 <= 0.0_RP .AND. d2 >= 0.0_RP) .OR. (d1 >= 0.0_RP .AND. d2 <= 0.0_RP)
+      END FUNCTION notOnSameSide!
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION IntersectionOfBBoxes(boxA, boxB) RESULT(newBox)
       IMPLICIT NONE
           REAL(KIND=RP) :: boxA(6), boxB(6), newBox(6)
