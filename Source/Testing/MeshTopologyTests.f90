@@ -299,7 +299,7 @@
          CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)
          TYPE (SMMesh)  , POINTER                   :: mesh
          TYPE(SMNodePtr), DIMENSION(:), ALLOCATABLE :: nodes
-         CLASS(FTMutableObjectArray), POINTER       :: badElements
+         TYPE (FTMutableObjectArray), POINTER       :: badElements
          CLASS(FTObject)            , POINTER       :: obj
          TYPE (SMElement)           , POINTER       :: e
          REAL(KIND=RP)              , ALLOCATABLE   :: shapeMeasures(:,:)

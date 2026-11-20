@@ -64,7 +64,7 @@
 !
          IMPLICIT NONE
          CHARACTER(LEN=*)                  :: text(:)
-         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE (FTValueDictionary), POINTER :: controlDict
 
          TYPE(ControlFileReader) :: reader
          INTEGER                 :: fUnit, k
@@ -153,7 +153,7 @@
          CHARACTER(LEN=*) :: label, expectedMessage
          CHARACTER(LEN=*) :: text(:)
 
-         CLASS(FTValueDictionary), POINTER :: controlDict
+         TYPE (FTValueDictionary), POINTER :: controlDict
 
          CALL ClearExceptions
          CALL ImportControlText(text, controlDict)
@@ -250,9 +250,10 @@
 !
          IMPLICIT NONE
          CHARACTER(LEN=*)                  :: text(:)
-         CLASS(SMModel)          , POINTER :: model
+         TYPE (SMModel)          , POINTER :: model
 
-         CLASS(FTValueDictionary), POINTER :: controlDict, modelDict
+         TYPE (FTValueDictionary), POINTER :: controlDict
+         CLASS(FTValueDictionary), POINTER :: modelDict ! valueDictionaryFromObject returns CLASS
 
          CALL ImportControlText(text, controlDict)
          modelDict => valueDictionaryFromObject(controlDict % objectForKey("MODEL"))
@@ -325,7 +326,7 @@
          IMPLICIT NONE
          CHARACTER(LEN=*) :: label, exceptionName, expectedMessage
          CHARACTER(LEN=*) :: text(:)
-         CLASS(SMModel), POINTER :: model
+         TYPE (SMModel), POINTER :: model
 
          CALL ClearExceptions
          CALL BuildModelFromText(text, model)
@@ -343,7 +344,7 @@
          IMPLICIT NONE
          CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)  ! Required by the test suite interface; unused
 
-         CLASS(SMModel)       , POINTER :: model
+         TYPE (SMModel)       , POINTER :: model
          CLASS(SMChainedCurve), POINTER :: chain
          LOGICAL                        :: found
 !
@@ -400,7 +401,7 @@
 !
       FUNCTION firstInnerChain( model ) RESULT(chain)
          IMPLICIT NONE
-         CLASS(SMModel)       , POINTER :: model
+         TYPE (SMModel)       , POINTER :: model
          CLASS(SMChainedCurve), POINTER :: chain
          CLASS(FTObject)      , POINTER :: obj
          CALL model % innerBoundariesIterator % setToStart()
@@ -587,7 +588,7 @@
          IMPLICIT NONE
          CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)  ! Required by the test suite interface; unused
          CHARACTER(LEN=LL), PARAMETER :: none(0) = [CHARACTER(LEN=LL) ::]
-         CLASS(SMModel), POINTER :: model
+         TYPE (SMModel), POINTER :: model
 !
 !        -----------------------------------------------------
 !        Square [-1,1]x[0,2] with the bottom side split in two:
