@@ -44,6 +44,7 @@
       USE DebugOutputTestsModule
       USE MeshTopologyTestsModule
       USE ControlInputTestsModule
+      USE ProjectInputTestsModule
       USE GeometryUnitTestsModule
       IMPLICIT NONE
 !
@@ -133,6 +134,8 @@
       CALL testSuite % addTestSubroutineWithName(ChainOptimizationInputTests,"Chain Optimization Input Tests")
       CALL testSuite % addTestSubroutineWithName(CurveInputErrorTests,"Curve Input Error Tests")
       CALL testSuite % addTestSubroutineWithName(SymmetryInputTests,"Symmetry Input Tests")
+      CALL testSuite % addTestSubroutineWithName(ProjectInputErrorTests,"Project Input Error Tests")
+      CALL testSuite % addTestSubroutineWithName(MaterialNameTests,"Material Name Tests")
       CALL testSuite % addTestSubroutineWithName(EllipticArcTangentTest,"Elliptic Arc Tangent Tests")
       CALL testSuite % addTestSubroutineWithName(WindingFunctionTest,"Winding Function Tests")
 !

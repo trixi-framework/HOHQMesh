@@ -31,3 +31,5 @@ Benchmarks/ControlFiles/DefaultSweep.control
 Benchmarks/ControlFiles/NearbyInnerCircles.control
 Benchmarks/ControlFiles/BlobRemesh.control
 Benchmarks/ControlFiles/OffsetBoxNearbyCircle.control
+Benchmarks/ControlFiles/EastCoastUS.control
+Benchmarks/ControlFiles/BlobRemeshInner.control

@@ -75,6 +75,7 @@ MeshingTests.o \
 MeshOperationsModule.o \
 MeshTopologyTests.o \
 ControlInputTests.o \
+ProjectInputTests.o \
 GeometryUnitTests.o \
 MeshOutputMethods.o \
 MeshProject.o \
@@ -510,6 +511,7 @@ MeshingTests.o :$(HOHQMESHPATH)/Source/Testing/MeshingTests.f90 \
 TestDataClass.o \
 MeshTopologyTests.o \
 ControlInputTests.o \
+ProjectInputTests.o \
 GeometryUnitTests.o \
 DebugOutputTests.o \
 SegmentedChainTests.o \
@@ -749,6 +751,21 @@ SMChainedCurveClass.o \
 SMModel.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ControlInputTests.f90
+
+ProjectInputTests.o :$(HOHQMESHPATH)/Source/Testing/ProjectInputTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+FTValueDictionaryClass.o \
+FTLinkedListClass.o \
+FTExceptionClass.o \
+FatalErrorException.o \
+ControlInputTests.o \
+SMChainedCurveClass.o \
+SMMeshObjects.o \
+MeshProject.o \
+MeshGeneratorMethods.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ProjectInputTests.f90
 
 MeshTopologyTests.o :$(HOHQMESHPATH)/Source/Testing/MeshTopologyTests.f90 \
 SMConstants.o \
