@@ -83,14 +83,24 @@
          REAL(KIND=RP)            :: rotationPoint(3)
          REAL(KIND=RP)            :: startDirection(3)
          REAL(KIND=RP)            :: newDirection(3)
+         REAL(KIND=RP)            :: u(3), v(3), norm
 
          self % rotationPoint = rotationPoint
 
          CALL RotationMatrixWithTwoVectors(old = startDirection, &
                                            new = newDirection,   &
                                            R   = self % rotMatrix)
-         !TODO The following doesn't work when the vectors are in the opposite direction
-         IF(MAXVAL(ABS(startDirection-newDirection)) < vectorDifferenceTolerance)     THEN
+!
+!        ----------------------------------------------------------
+!        Compare unit vectors so that only the directions matter,
+!        e.g. [0,0,2] is the same direction as [0,0,1]
+!        ----------------------------------------------------------
+!
+         CALL Norm3D(startDirection, norm)
+         u = startDirection/norm
+         CALL Norm3D(newDirection, norm)
+         v = newDirection/norm
+         IF(MAXVAL(ABS(u-v)) < vectorDifferenceTolerance)     THEN
             self % isIdentityRotation = .TRUE.
          ELSE
             self % isIdentityRotation = .FALSE.
@@ -167,15 +177,40 @@
 !
          REAL(KIND=RP) :: u(3) , v(3)
          REAL(KIND=RP) :: norm, cosTheta, sinTheta
-         REAL(KIND=RP) :: rotVec(3), cross(3)
+         REAL(KIND=RP) :: rotVec(3), cross(3), axis(3)
 !
-!        -----------------------
-!        Do nothing if old = new
-!        -----------------------
+!        -------------------------------------------------
+!        Do nothing if old and new have the same direction
+!        -------------------------------------------------
 !
-         IF(MAXVAL(ABS(old-new)) < vectorDifferenceTolerance)     THEN
+         CALL Norm3D(old, norm)
+         u = old/norm
+         CALL Norm3D(new, norm)
+         v = new/norm
+
+         IF(MAXVAL(ABS(u-v)) < vectorDifferenceTolerance)     THEN
             R = 0.0_RP
             R(1,1) = 1.0_RP; R(2,2) = 1.0_RP; R(3,3) = 1.0_RP
+            RETURN
+         END IF
+!
+!        ---------------------------------------------------------------
+!        If old and new point in opposite directions, their cross product
+!        vanishes and does not define a rotation axis. Instead, make a
+!        half turn about an axis normal to old: the cross product of old
+!        with the coordinate axis it is least aligned with
+!        ---------------------------------------------------------------
+!
+         IF(MAXVAL(ABS(u+v)) < vectorDifferenceTolerance)     THEN
+            axis = 0.0_RP
+            axis(MINLOC(ABS(u), 1)) = 1.0_RP
+            CALL Cross3D(u, axis, rotVec)
+            CALL Norm3D(rotVec, norm)
+            rotVec = rotVec/norm
+            CALL RotationMatrixWithNormalAndAngle(nHat     = rotVec,  &
+                                                  cosTheta = -1.0_RP, &
+                                                  SinTheta = 0.0_RP,  &
+                                                  R        = R)
             RETURN
          END IF
          R = 0.0_RP

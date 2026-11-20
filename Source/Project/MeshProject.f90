@@ -2039,6 +2039,14 @@
                                               poster     = "SetRotationTransformBlock")
          IF(ReturnOnFatalError()) RETURN
 
+         IF ( MAXVAL(ABS(d)) == 0.0_RP )     THEN
+            msg = "Rotation transform " // TRIM(ROTATION_TRANSFORM_DIRECTION_KEY) // " must not be the zero vector"
+            CALL ThrowErrorExceptionOfType(poster = "SetRotationTransformBlock", &
+                                           msg    = msg,                         &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN
+         END IF
+
          CALL ConstructRotationTransform(self           = rotationTransformer,        &
                                          rotationPoint  = t,                          &
                                          startDirection = [0.0_RP,0.0_RP,1.0_RP],     &
