@@ -419,8 +419,8 @@
          IMPLICIT NONE
 !
 !        -------------------------------------------------------------
-!        GenerateQuadMesh retries with smaller background grids before
-!        giving up. If it still returns an error, post a fatal error
+!        GenerateQuadMesh retries once with a smaller background grid
+!        before giving up. If it still returns an error, post a fatal error
 !        (attempting) to explain what went wrong instead of continuing
 !        with a mesh that is not valid.
 !        -------------------------------------------------------------

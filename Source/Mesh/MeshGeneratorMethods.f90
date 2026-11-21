@@ -64,7 +64,6 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER :: k
          LOGICAL :: needsRemesh
          INTEGER :: numberOfTries = 3
          INTEGER :: j
@@ -107,30 +106,27 @@
 !
 !        ------------------------------------------------------------------------
 !        If there is a problem, usually it is because the initial background grid
-!        is too large. Try again with a smaller background grid, just in case.
+!        is too large. Try again once with a background grid of half the size.
+!        The retry makes the mesh finer than requested, so always tell the user,
+!        not only with -verbose.
 !        ------------------------------------------------------------------------
 !
-         IF ( errorCode > A_OK_ERROR_CODE )     THEN ! Try again at most two times
-            DO k = 1, 2
+         IF ( errorCode > A_OK_ERROR_CODE )     THEN
 
-               errorCode = A_OK_ERROR_CODE
-               IF(printMessage)     THEN
-                  PRINT *, "Background grid is too large. Trying again with 1/2 size" ! Throw exception here
-               END IF
+            errorCode = A_OK_ERROR_CODE
+            PRINT *, "Background grid is too large. Trying again with 1/2 size"
 
-               project % backgroundParams % dx           =   project % backgroundParams % dx/2.0_RP
-               project % backgroundParams % N            = 2*project % backgroundParams % N
-               project % sizer % baseSize                = 0.5_RP*project % sizer % baseSize
-               project % backgroundParams % backgroundGridSize = 0.5_RP*project % backgroundParams % backgroundGridSize
+            project % backgroundParams % dx           =   project % backgroundParams % dx/2.0_RP
+            project % backgroundParams % N            = 2*project % backgroundParams % N
+            project % sizer % baseSize                = 0.5_RP*project % sizer % baseSize
+            project % backgroundParams % backgroundGridSize = 0.5_RP*project % backgroundParams % backgroundGridSize
 
-               CALL ResetProject(project)
-               CALL clearBoundaryCurves(project % sizer)
-               CALL BuildSizerBoundaryCurves(project)
+            CALL ResetProject(project)
+            CALL clearBoundaryCurves(project % sizer)
+            CALL BuildSizerBoundaryCurves(project)
 
-               CALL GenerateAQuadMesh(project,errorCode)
+            CALL GenerateAQuadMesh(project,errorCode)
 
-               IF( errorCode == A_OK_ERROR_CODE)     EXIT
-            END DO
         END IF
 !
 !       ------------------------------------------------------
