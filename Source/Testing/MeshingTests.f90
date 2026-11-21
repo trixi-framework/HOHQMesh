@@ -42,6 +42,7 @@
       USE EquationEvaluatorTestsModule
       USE BoundaryIntersectionTestsModule
       USE DebugOutputTestsModule
+      USE ExtrusionTestsModule
       USE MeshTopologyTestsModule
       USE ControlInputTestsModule
       USE ProjectInputTestsModule
@@ -231,10 +232,10 @@
 !     -------------
 !
 !
-!     ---------------------------------------------------------------
-!     The debug output tests read benchmark control files, so they get
-!     the control file directory
-!     ---------------------------------------------------------------
+!     -----------------------------------------------------
+!     The debug output and extrusion tests read benchmark
+!     control files, so they get the control file directory
+!     -----------------------------------------------------
 !
       IF ( TRIM(pathToTestFiles) == "" )     THEN
          fullPath = "Benchmarks/ControlFiles/"
@@ -247,6 +248,14 @@
       ALLOCATE(optData(SIZE(optDataA)))
       optData = optDataA
       CALL testSuite % addTestSubroutineWithName(DebugOutputTests,"Debug Output Tests", optData)
+!
+!     The test suite deallocates the optData of each test, so the
+!     extrusion tests need their own copy
+!
+      optData => NULL()
+      ALLOCATE(optData(SIZE(optDataA)))
+      optData = optDataA
+      CALL testSuite % addTestSubroutineWithName(SimpleExtrusionTests,"Simple Extrusion Tests", optData)
       DEALLOCATE(optDataA)
 
       CALL testSuite % performTests(numberOfFailedTests)

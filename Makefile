@@ -35,6 +35,7 @@ ElementOperations.o \
 Encoder.o \
 EquationEvaluatorClass.o \
 EquationEvaluatorTests.o \
+ExtrusionTests.o \
 FatalErrorException.o \
 FileAndStringProcessing.o \
 Frenet.o \
@@ -514,6 +515,7 @@ ControlInputTests.o \
 ProjectInputTests.o \
 GeometryUnitTests.o \
 DebugOutputTests.o \
+ExtrusionTests.o \
 SegmentedChainTests.o \
 EquationEvaluatorTests.o \
 BoundaryIntersectionTests.o \
@@ -730,6 +732,16 @@ FTLinkedListClass.o \
 FTValueDictionaryClass.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/DebugOutputTests.f90
+
+ExtrusionTests.o :$(HOHQMESHPATH)/Source/Testing/ExtrusionTests.f90 \
+SMConstants.o \
+Encoder.o \
+HOHQMesh.o \
+MeshProject.o \
+MeshQualityAnalysis.o \
+FTValueDictionaryClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ExtrusionTests.f90
 
 GeometryUnitTests.o :$(HOHQMESHPATH)/Source/Testing/GeometryUnitTests.f90 \
 SMConstants.o \
