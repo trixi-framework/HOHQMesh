@@ -163,6 +163,32 @@
       CALL AddModuleTest(testSuite, SharpSizerControlTest, "Sharp Sizer Control Tests")
       CALL AddModuleTest(testSuite, BoxAndEncoderTest, "Bounding Box and Encoder Tests")
 !
+!     -----------------------------------------------------
+!     The debug output and extrusion tests read benchmark
+!     control files, so they get the control file directory
+!     -----------------------------------------------------
+!
+      IF ( TRIM(pathToTestFiles) == "" )     THEN
+         fullPath = "Benchmarks/ControlFiles/"
+      ELSE
+         CALL ConvertToPath(pathToTestFiles)
+         CALL JoinFilePath(pathToTestFiles, "Benchmarks/ControlFiles/", fullPath) ! (path, fileName, fullName)
+      END IF
+      optData => NULL()
+      CALL encode(str = TRIM(fullPath),enc = optDataA)
+      ALLOCATE(optData(SIZE(optDataA)))
+      optData = optDataA
+      CALL testSuite % addTestSubroutineWithName(DebugOutputTests,"Debug Output Tests", optData)
+!
+!     The test suite deallocates the optData of each test, so the
+!     extrusion tests need their own copy
+!
+      optData => NULL()
+      ALLOCATE(optData(SIZE(optDataA)))
+      optData = optDataA
+      CALL testSuite % addTestSubroutineWithName(SimpleExtrusionTests,"Simple Extrusion Tests", optData)
+      DEALLOCATE(optDataA)
+!
 !     --------------------------------
 !     Get the list of meshing tests...
 !     --------------------------------
@@ -237,33 +263,6 @@
 !     Run the tests
 !     -------------
 !
-!
-!     -----------------------------------------------------
-!     The debug output and extrusion tests read benchmark
-!     control files, so they get the control file directory
-!     -----------------------------------------------------
-!
-      IF ( TRIM(pathToTestFiles) == "" )     THEN
-         fullPath = "Benchmarks/ControlFiles/"
-      ELSE
-         CALL ConvertToPath(pathToTestFiles)
-         CALL JoinFilePath(pathToTestFiles, "Benchmarks/ControlFiles/", fullPath) ! (path, fileName, fullName)
-      END IF
-      optData => NULL()
-      CALL encode(str = TRIM(fullPath),enc = optDataA)
-      ALLOCATE(optData(SIZE(optDataA)))
-      optData = optDataA
-      CALL testSuite % addTestSubroutineWithName(DebugOutputTests,"Debug Output Tests", optData)
-!
-!     The test suite deallocates the optData of each test, so the
-!     extrusion tests need their own copy
-!
-      optData => NULL()
-      ALLOCATE(optData(SIZE(optDataA)))
-      optData = optDataA
-      CALL testSuite % addTestSubroutineWithName(SimpleExtrusionTests,"Simple Extrusion Tests", optData)
-      DEALLOCATE(optDataA)
-
       CALL testSuite % performTests(numberOfFailedTests)
       CALL finalizeSharedAssertionsManager
       DEALLOCATE(controlFiles)
