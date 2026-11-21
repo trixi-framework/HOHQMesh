@@ -821,7 +821,6 @@
 !
          CHARACTER(LEN=32)          :: str
          REAL(KIND=RP), EXTERNAL    :: GetRealValue
-         INTEGER      , EXTERNAL    :: GetIntValue
 !
 !        -------------------
 !        Smoothing On or OFF

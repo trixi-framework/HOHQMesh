@@ -112,25 +112,27 @@
 !!     after an = sign in a inputLine
 !     ----------------------------------------------------------------
 !
-      INTEGER FUNCTION GetIntValue( inputLine )
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-21): no callers on any branch. Kept for reference.
 !
-         CHARACTER ( LEN = * ) :: inputLine
-         INTEGER               :: value
-         INTEGER               :: strLen, leq, k
-!
-         leq    = INDEX( inputLine, '=' )
-         strLen = LEN_TRIM( inputLine )
-         READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) VALUE
-         IF ( k /=0 )     THEN
-            WRITE(stderr,*) "Bad integer value in input line:"
-            WRITE(stderr,*) TRIM(inputLine)
-            ERROR STOP "Input file syntax error"
-         END IF
-         GetIntValue = VALUE
-!
-      END FUNCTION GetIntValue
+!       INTEGER FUNCTION GetIntValue( inputLine )
+!          USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
+!          IMPLICIT NONE
+! !
+!          CHARACTER ( LEN = * ) :: inputLine
+!          INTEGER               :: value
+!          INTEGER               :: strLen, leq, k
+! !
+!          leq    = INDEX( inputLine, '=' )
+!          strLen = LEN_TRIM( inputLine )
+!          READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) VALUE
+!          IF ( k /=0 )     THEN
+!             WRITE(stderr,*) "Bad integer value in input line:"
+!             WRITE(stderr,*) TRIM(inputLine)
+!             ERROR STOP "Input file syntax error"
+!          END IF
+!          GetIntValue = VALUE
+! !
+!       END FUNCTION GetIntValue
 !
 !///////////////////////////////////////////////////////////////////////
 !
@@ -166,18 +168,20 @@
 !>    Extracts the string within the quotes in an input file
 !     ----------------------------------------------------------------
 !
-      CHARACTER( LEN=LINE_LENGTH ) FUNCTION GetStringValue( inputLine )
-         USE ProgramGlobals
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-21): no callers on any branch. Kept for reference.
 !
-         CHARACTER ( LEN = * ) :: inputLine
-         INTEGER               :: cStart, cEnd
-!
-         cStart = INDEX(inputLine,'"')
-         cEnd   = INDEX(inputLine, '"', .true. )
-         GetStringValue = inputLine( cStart+1: cEnd-1 )
-!
-      END FUNCTION GetStringValue
+!       CHARACTER( LEN=LINE_LENGTH ) FUNCTION GetStringValue( inputLine )
+!          USE ProgramGlobals
+!          IMPLICIT NONE
+! !
+!          CHARACTER ( LEN = * ) :: inputLine
+!          INTEGER               :: cStart, cEnd
+! !
+!          cStart = INDEX(inputLine,'"')
+!          cEnd   = INDEX(inputLine, '"', .true. )
+!          GetStringValue = inputLine( cStart+1: cEnd-1 )
+! !
+!       END FUNCTION GetStringValue
 !
 !///////////////////////////////////////////////////////////////////////
 !

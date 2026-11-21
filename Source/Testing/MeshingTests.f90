@@ -154,8 +154,14 @@
       CALL AddModuleTest(testSuite, SymmetryInputTests, "Symmetry Input Tests")
       CALL AddModuleTest(testSuite, ProjectInputErrorTests, "Project Input Error Tests")
       CALL AddModuleTest(testSuite, MaterialNameTests, "Material Name Tests")
+      CALL AddModuleTest(testSuite, ProjectOptionTests, "Project Option Tests")
+      CALL AddModuleTest(testSuite, Generator3DInputTests, "3D Generator Input Tests")
+      CALL AddModuleTest(testSuite, TopographyFromFileTests, "Topography From File Tests")
       CALL AddModuleTest(testSuite, EllipticArcTangentTest, "Elliptic Arc Tangent Tests")
       CALL AddModuleTest(testSuite, WindingFunctionTest, "Winding Function Tests")
+      CALL AddModuleTest(testSuite, RotationTransformTest, "Rotation Transform Tests")
+      CALL AddModuleTest(testSuite, SharpSizerControlTest, "Sharp Sizer Control Tests")
+      CALL AddModuleTest(testSuite, BoxAndEncoderTest, "Bounding Box and Encoder Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...

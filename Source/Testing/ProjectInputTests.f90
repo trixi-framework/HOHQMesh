@@ -34,18 +34,21 @@
 !////////////////////////////////////////////////////////////////////////
       Module ProjectInputTestsModule
       USE SMConstants
-      USE ProgramGlobals           , ONLY : A_OK_ERROR_CODE
+      USE ProgramGlobals           , ONLY : A_OK_ERROR_CODE, BASIC_MESH_FORMAT, BASIC_PLUS_EDGES_FORMAT, ISM
       USE FTAssertions
       USE FTObjectClass
       USE FTValueDictionaryClass
       USE FTLinkedListIteratorClass
       USE SharedExceptionManagerModule
       USE ErrorTypesModule
-      USE ControlInputTestsModule  , ONLY : ImportControlText, raised, ClearExceptions, CheckModelInput
+      USE ControlInputTestsModule  , ONLY : ImportControlText, raised, raisedAll, ClearExceptions, CheckModelInput
       USE SMChainedCurveClass
       USE SMMeshObjectsModule
       USE MeshProjectClass
       USE MeshGenerationMethods    , ONLY : GenerateQuadMesh
+      USE MeshController3D         , ONLY : Check3DMeshParametersIntegrity
+      USE SMTopographyFromFileClass, ONLY : SMTopographyFromFile, releaseDFTopography
+      USE ProgramGlobals           , ONLY : BBOX_TOP, BBOX_LEFT, BBOX_BOTTOM, BBOX_RIGHT
       IMPLICIT NONE
 
       INTEGER, PARAMETER, PRIVATE :: LL = 80 ! Length of a control file line in these tests
@@ -262,8 +265,250 @@
                                         "data file = ProjectInputTestNoSuchFile.txt",              &
                                         "\end{TOPOGRAPHY}"]), "\end{FILE}"], &
                  FATAL_ERROR_EXCEPTION, "Unable to open the topography data file")
+         CALL CheckModelInput("Unknown curve type",                                                 &
+                 [CHARACTER(LEN=LL) :: modelText([chainText("odd", [CHARACTER(LEN=LL) ::            &
+                                        "\begin{NO_SUCH_CURVE}", "name = odd",                     &
+                                        "\end{NO_SUCH_CURVE}"])], none, none), "\end{FILE}"],     &
+                 FATAL_ERROR_EXCEPTION, "Unimplemented curve type NO_SUCH_CURVE")
+         CALL CheckModelInput("Parametric equation without an equation",                            &
+                 [CHARACTER(LEN=LL) :: modelText([chainText("p", [CHARACTER(LEN=LL) ::              &
+                                        "\begin{PARAMETRIC_EQUATION}", "name = p",                 &
+                                        "\end{PARAMETRIC_EQUATION}"])], none, none), "\end{FILE}"], &
+                 FATAL_ERROR_EXCEPTION, "PARAMETRIC_EQUATION has no eqn key")
+         CALL CheckModelInput("Missing spline file",                                                &
+                 [CHARACTER(LEN=LL) :: modelText([chainText("s", [CHARACTER(LEN=LL) ::              &
+                                        "\begin{SPLINE_CURVE}", "name = s",                        &
+                                        "file = ProjectInputTestNoSuchSpline.txt",                 &
+                                        "\end{SPLINE_CURVE}"])], none, none), "\end{FILE}"],      &
+                 FATAL_ERROR_EXCEPTION, "Spline curve file not found")
+         CALL CheckModelInput("Spline without data",                                                &
+                 [CHARACTER(LEN=LL) :: modelText([chainText("s", [CHARACTER(LEN=LL) ::              &
+                                        "\begin{SPLINE_CURVE}", "name = s", "nKnots = 4",          &
+                                        "\end{SPLINE_CURVE}"])], none, none), "\end{FILE}"],      &
+                 FATAL_ERROR_EXCEPTION, "Spline does not appear to contain any data")
+!
+!        ----------------------------------------------------------------
+!        The background grid can only be made from an outer boundary, and
+!        a rotation needs a direction
+!        ----------------------------------------------------------------
+!
+         CALL CheckProjectInput("Background grid size without an outer boundary",                   &
+                 [controlInputText([runParametersText("ISM"), backgroundGridText()]),               &
+                  [CHARACTER(LEN=LL) :: "\begin{MODEL}", "\begin{INNER_BOUNDARIES}",              &
+                                        chainText("hole", circleText("hole", "[0.0,0.0,0.0]", "1.0")), &
+                                        "\end{INNER_BOUNDARIES}", "\end{MODEL}"]],                &
+                 FATAL_ERROR_EXCEPTION, "To automatically create background grid, the model needs an outer boundary")
+         CALL CheckProjectInput("Rotation with a zero direction",                                   &
+                 [controlInputText([runParametersText("ISM"), backgroundGridText(),                 &
+                                    [CHARACTER(LEN=LL) :: "\begin{ROTATION_TRANSFORM}",           &
+                                                          "translation = [0.0,0.0,0.0]",           &
+                                                          "direction   = [0.0,0.0,0.0]",           &
+                                                          "\end{ROTATION_TRANSFORM}"]]),           &
+                  modelText(none, none, none)],                                                     &
+                 FATAL_ERROR_EXCEPTION, "must not be the zero vector")
 
       END SUBROUTINE ProjectInputErrorTests
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ProjectOptionTests(optData)
+!
+!     ---------------------------------------------------------------
+!     Options that are read without an error: the less common mesh
+!     and plot file formats, unknown formats (they fall back to the
+!     defaults ISM and sem), and sharp refinement regions
+!     ---------------------------------------------------------------
+!
+         IMPLICIT NONE
+         CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)  ! Required by the test suite interface; unused
+         CHARACTER(LEN=LL), PARAMETER :: none(0) = [CHARACTER(LEN=LL) ::]
+
+         TYPE (FTValueDictionary), POINTER :: controlDict
+         CLASS(MeshProject)      , POINTER :: project
+
+         CALL CheckFileFormats("Basic"         , "skeleton"    , BASIC_MESH_FORMAT      , SKELETON_FORMAT)
+         CALL CheckFileFormats("BasicWithEdges", "sem"         , BASIC_PLUS_EDGES_FORMAT, SEM_FORMAT)
+         CALL CheckFileFormats("NoSuchFormat"  , "NoSuchFormat", ISM                    , SEM_FORMAT)
+
+         CALL ClearExceptions
+         CALL BuildProjectFromText([controlInputText([runParametersText("ISM"), backgroundGridText(), &
+                                    [CHARACTER(LEN=LL) :: "\begin{REFINEMENT_REGIONS}",           &
+                                       "\begin{REFINEMENT_CENTER}", "type = sharp",                &
+                                       "x0 = [1.0,1.0,0.0]", "h = 0.2", "w = 0.5",                  &
+                                       "\end{REFINEMENT_CENTER}",                                  &
+                                       "\begin{REFINEMENT_LINE}", "type = sharp",                  &
+                                       "x0 = [-2.0,-1.0,0.0]", "x1 = [2.0,-1.0,0.0]",               &
+                                       "h = 0.2", "w = 0.3", "\end{REFINEMENT_LINE}",              &
+                                       "\end{REFINEMENT_REGIONS}"]]),                              &
+                                    modelText(none, none, none)], controlDict, project)
+         CALL FTAssert(test = .NOT.catch(FATAL_ERROR_EXCEPTION), msg = "Sharp refinement regions are accepted")
+         CALL releaseMeshProject(project)
+         CALL releaseFTValueDictionary(controlDict)
+         CALL ClearExceptions
+
+      END SUBROUTINE ProjectOptionTests
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE CheckFileFormats( meshFormat, plotFormat, expectedMeshFormat, expectedPlotFormat )
+         IMPLICIT NONE
+         CHARACTER(LEN=*) :: meshFormat, plotFormat
+         INTEGER          :: expectedMeshFormat, expectedPlotFormat
+
+         CHARACTER(LEN=LL), PARAMETER      :: none(0) = [CHARACTER(LEN=LL) ::]
+         CHARACTER(LEN=LL), ALLOCATABLE    :: runParameters(:)
+         TYPE (FTValueDictionary), POINTER :: controlDict
+         CLASS(MeshProject)      , POINTER :: project
+
+         runParameters    = runParametersText(meshFormat)
+         runParameters(7) = "plot file format = " // plotFormat
+         CALL ClearExceptions
+         CALL BuildProjectFromText([controlInputText([runParameters, backgroundGridText()]), &
+                                    modelText(none, none, none)], controlDict, project)
+         CALL FTAssertEqual(expectedValue = expectedMeshFormat, actualValue = project % runParams % meshFileFormat, &
+                            msg = "mesh file format = " // meshFormat)
+         CALL FTAssertEqual(expectedValue = expectedPlotFormat, actualValue = project % runParams % plotFileFormat, &
+                            msg = "plot file format = " // plotFormat)
+         CALL releaseMeshProject(project)
+         CALL releaseFTValueDictionary(controlDict)
+         CALL ClearExceptions
+
+      END SUBROUTINE CheckFileFormats
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE Generator3DInputTests(optData)
+!
+!     -------------------------------------------------------------
+!     The blocks that generate a hex mesh: missing keys, more than
+!     one generator, and a sweep without a model
+!     -------------------------------------------------------------
+!
+         IMPLICIT NONE
+         CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)  ! Required by the test suite interface; unused
+
+         CALL Check3DInput("Empty SIMPLE_EXTRUSION block",                                         &
+                           [CHARACTER(LEN=LL) :: "\begin{SIMPLE_EXTRUSION}", "\end{SIMPLE_EXTRUSION}"], &
+                           [CHARACTER(LEN=LL) :: "key direction not found in extrusion block",     &
+                                                 "key height not found in extrusion block",        &
+                                                 "key subdivisions not found in extrusion block",  &
+                                                 "key start surface name not found in extrusion block", &
+                                                 "key end surface name not found in extrusion block"])
+         CALL Check3DInput("Empty SIMPLE_ROTATION block",                                          &
+                           [CHARACTER(LEN=LL) :: "\begin{SIMPLE_ROTATION}", "\end{SIMPLE_ROTATION}"], &
+                           [CHARACTER(LEN=LL) :: "key direction not found in rotation block",      &
+                                                 "key rotation angle factor not found in rotation block", &
+                                                 "key subdivisions not found in rotation block",   &
+                                                 "key start surface name not found in rotation block", &
+                                                 "key end surface name not found in rotation block"])
+         CALL Check3DInput("Two 3D generators",                                                    &
+                           [CHARACTER(LEN=LL) :: "\begin{SIMPLE_EXTRUSION}", "\end{SIMPLE_EXTRUSION}", &
+                                                 "\begin{SIMPLE_ROTATION}" , "\end{SIMPLE_ROTATION}"],  &
+                           [CHARACTER(LEN=LL) :: "Too many 3D mesh generators specified in control file"])
+         CALL Check3DInput("Sweep without a model",                                                &
+                           [CHARACTER(LEN=LL) :: "\begin{SWEEP_ALONG_CURVE}", "\end{SWEEP_ALONG_CURVE}"], &
+                           [CHARACTER(LEN=LL) :: "A model block and sweep curve is required for sweeping"])
+
+      END SUBROUTINE Generator3DInputTests
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE Check3DInput( label, blocks, expectedMessages )
+         IMPLICIT NONE
+         CHARACTER(LEN=*) :: label
+         CHARACTER(LEN=*) :: blocks(:), expectedMessages(:)
+
+         TYPE (FTValueDictionary), POINTER :: projectDict, controlDict, modelDict
+         CLASS(FTObject)         , POINTER :: obj
+
+         CALL ClearExceptions
+         CALL ImportControlText([CHARACTER(LEN=LL) :: controlInputText(blocks), "\end{FILE}"], projectDict)
+         obj         => projectDict % objectForKey(key = "CONTROL_INPUT")
+         controlDict => valueDictionaryFromObject(obj)
+         modelDict   => NULL()
+         CALL Check3DMeshParametersIntegrity(controlDict, modelDict)
+         CALL FTAssert(test = raisedAll(FATAL_ERROR_EXCEPTION, expectedMessages), msg = label)
+         CALL releaseFTValueDictionary(projectDict)
+         CALL ClearExceptions
+
+      END SUBROUTINE Check3DInput
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE TopographyFromFileTests(optData)
+!
+!     ----------------------------------------------------------------
+!     A topography from a data file of the plane z = x + y. Its box is
+!     widened a little so rounding does not put points outside of it,
+!     also when a side of the data is at zero. Points outside of the
+!     box give a warning.
+!     ----------------------------------------------------------------
+!
+         IMPLICIT NONE
+         CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)  ! Required by the test suite interface; unused
+
+         TYPE(SMTopographyFromFile), POINTER :: topography
+         REAL(KIND=RP)                       :: x(3), kappa
+
+         CALL ClearExceptions
+         CALL MakeTopography(x0 = 0.0_RP, y0 = -1.0_RP, topography = topography)
+         CALL FTAssert(test = topography % box(BBOX_LEFT) < 0.0_RP .AND. topography % box(BBOX_TOP) > 0.0_RP, &
+                       msg  = "Data box sides at zero are widened")
+         x = topography % heightAt([0.5_RP, -0.25_RP])
+         CALL FTAssert(test = ABS(x(3) - 0.25_RP) <= 1.0E-10_RP, msg = "Height of the plane inside the data")
+         CALL FTAssert(test = .NOT.catch(), msg = "No warning inside the data")
+
+         x = topography % heightAt([2.0_RP, -0.5_RP])
+         CALL FTAssert(test = raised(WARNING_ERROR_EXCEPTION, "outside of"), msg = "Height outside of the data warns")
+         CALL ClearExceptions
+         kappa = topography % principalCurvatureAt([2.0_RP, -0.5_RP])
+         CALL FTAssert(test = kappa == 0.0_RP .AND. raised(WARNING_ERROR_EXCEPTION, "outside of data bounding box"), &
+                       msg  = "Curvature outside of the data is zero and warns")
+         CALL releaseDFTopography(topography)
+         CALL ClearExceptions
+
+         CALL MakeTopography(x0 = -1.0_RP, y0 = 0.0_RP, topography = topography)
+         CALL FTAssert(test = topography % box(BBOX_RIGHT) > 0.0_RP .AND. topography % box(BBOX_BOTTOM) < 0.0_RP, &
+                       msg  = "Data box sides at zero are widened, other sides")
+         CALL releaseDFTopography(topography)
+         CALL ClearExceptions
+
+      END SUBROUTINE TopographyFromFileTests
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE MakeTopography( x0, y0, topography )
+!
+!     --------------------------------------------------------------
+!     Write the plane z = x + y on [x0,x0+1]x[y0,y0+1] with 4x4 nodes
+!     to a data file and read it, with curvature sizing on
+!     --------------------------------------------------------------
+!
+         IMPLICIT NONE
+         REAL(KIND=RP)                       :: x0, y0
+         TYPE(SMTopographyFromFile), POINTER :: topography
+
+         CHARACTER(LEN=*), PARAMETER :: fileName = "ProjectInputTestTopography.txt"
+         INTEGER                     :: fUnit, j, k
+
+         OPEN(NEWUNIT = fUnit, FILE = fileName, STATUS = "REPLACE", ACTION = "WRITE")
+         WRITE(fUnit,'(A)') "! Number of nodes in each direction"
+         WRITE(fUnit,'(A)') "4 4"
+         WRITE(fUnit,'(A)') "! x node values"
+         WRITE(fUnit,'(ES24.16)') (x0 + j/3.0_RP, j = 0, 3)
+         WRITE(fUnit,'(A)') "! y node values"
+         WRITE(fUnit,'(ES24.16)') (y0 + k/3.0_RP, k = 0, 3)
+         WRITE(fUnit,'(A)') "! z values"
+         WRITE(fUnit,'(ES24.16)') ((x0 + j/3.0_RP + y0 + k/3.0_RP, j = 0, 3), k = 0, 3)
+         CLOSE(fUnit)
+
+         ALLOCATE(topography)
+         CALL topography % initWithDataFile(fileName, .TRUE.)
+
+         OPEN(NEWUNIT = fUnit, FILE = fileName)
+         CLOSE(fUnit, STATUS = "DELETE")
+
+      END SUBROUTINE MakeTopography
 !
 !////////////////////////////////////////////////////////////////////////
 !

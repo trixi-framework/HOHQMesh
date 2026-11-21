@@ -1036,7 +1036,6 @@
          CLASS(SMCurve)                   , POINTER :: curvePtr    => NULL()
          INTEGER                                    :: numKnots
 
-         INTEGER, EXTERNAL :: GetIntValue
          LOGICAL :: curveFileFound
 !
 !        ------------
@@ -1092,9 +1091,14 @@
 !           Get the spline points
 !           ---------------------
 !
+!           Without a SPLINE_DATA block there is no "data" object
+!
             obj         => splineDict % objectForKey(key = "data")
-            splineData  => dataFromObject(obj)
-            encodedData => splineData % storedData()
+            encodedData => NULL()
+            IF ( ASSOCIATED(obj) )     THEN
+               splineData  => dataFromObject(obj)
+               encodedData => splineData % storedData()
+            END IF
 
             IF(.NOT. ASSOCIATED(encodedData))     THEN
                CALL ThrowErrorExceptionOfType(poster = "ImportSplineBlock", &
@@ -1553,16 +1557,18 @@
 !!    Extracts the string within the parentheses  in an input file
 !     ----------------------------------------------------------------
 !
-      CHARACTER( LEN=LINE_LENGTH ) FUNCTION GetStringValue( inputLine )
+!  Unused (commented out 2026-11-21): no callers on any branch. Kept for reference.
 !
-      CHARACTER ( LEN = * ) :: inputLine
-      INTEGER               :: cStart, cEnd
-!
-      cStart = INDEX(inputLine,'"')
-      cEnd   = INDEX(inputLine, '"', .true. )
-      GetStringValue = inputLine( cStart+1: cEnd-1 )
-!
-      END FUNCTION GetStringValue
+!       CHARACTER( LEN=LINE_LENGTH ) FUNCTION GetStringValue( inputLine )
+! !
+!       CHARACTER ( LEN = * ) :: inputLine
+!       INTEGER               :: cStart, cEnd
+! !
+!       cStart = INDEX(inputLine,'"')
+!       cEnd   = INDEX(inputLine, '"', .true. )
+!       GetStringValue = inputLine( cStart+1: cEnd-1 )
+! !
+!       END FUNCTION GetStringValue
 !
 !////////////////////////////////////////////////////////////////////////
 !

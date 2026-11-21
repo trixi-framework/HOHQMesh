@@ -88,6 +88,7 @@
                             "Operator precedence")
          CALL CheckEquation("f(x) = -x + 2", [x], 1.5_EP, tol, "Unary minus")
          CALL CheckEquation("f(x) = 2^3^2", [x], 512.0_EP, tol, "Right associative power")
+         CALL CheckEquation("f(x) = 1.5e-1*x + 2.0E+1", [x], 0.075_EP + 20.0_EP, tol, "Numbers with an exponent")
 !
 !        -----------------------------
 !        Several independent variables

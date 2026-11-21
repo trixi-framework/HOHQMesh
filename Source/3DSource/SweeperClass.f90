@@ -128,9 +128,7 @@
 !              Local variables
 !              ---------------
 !
-               INTEGER      , EXTERNAL                :: GetIntValue
                REAL(KIND=RP), EXTERNAL                :: GetRealValue
-               CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
 !
 !              ----------------------------------------
 !              Make sure the model has a curve to sweep

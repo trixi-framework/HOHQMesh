@@ -747,6 +747,10 @@ GeometryUnitTests.o :$(HOHQMESHPATH)/Source/Testing/GeometryUnitTests.f90 \
 SMConstants.o \
 SMEllipticArc.o \
 Geometry.o \
+Geometry3D.o \
+SizerControls.o \
+ProgramGlobals.o \
+Encoder.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/GeometryUnitTests.f90
 
@@ -776,6 +780,8 @@ SMChainedCurveClass.o \
 SMMeshObjects.o \
 MeshProject.o \
 MeshGeneratorMethods.o \
+3DMeshController.o \
+DataFileTopographyClass.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ProjectInputTests.f90
 

@@ -118,9 +118,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER      , EXTERNAL                :: GetIntValue
          REAL(KIND=RP), EXTERNAL                :: GetRealValue
-         CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
 !
 !        ---------
 !        Direction
@@ -201,9 +199,7 @@
 !        ---------------
 !
          REAL(KIND=RP)                          :: angleFactor
-         INTEGER      , EXTERNAL                :: GetIntValue
          REAL(KIND=RP), EXTERNAL                :: GetRealValue
-         CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
 !
 !        ---------
 !        Direction
