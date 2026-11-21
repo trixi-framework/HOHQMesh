@@ -472,6 +472,7 @@
          CALL ConstructIdentityRotationTransform(self = self % rotationTransformer)
 !
          CALL BuildBackgroundGrid(self, controlDict )
+         IF(ReturnOnFatalError())     RETURN ! The background grid parameters are not set
          CALL BuildQuadtreeGrid(self)
 !
 !        -------------------------
