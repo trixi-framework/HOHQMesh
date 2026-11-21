@@ -1,0 +1,56 @@
+%
+% ---------------------------------------------------------------------
+% Bad input, not a benchmark: the right side of the square lies on the
+% right side of the background grid box. Meshing must stop with the
+% error that the boundary is too close to the box, after trying again
+% twice with a smaller background grid. Run by exercisecommandlineargs.
+% ---------------------------------------------------------------------
+%
+\begin{CONTROL_INPUT}
+   \begin{RUN_PARAMETERS}
+      mesh file name   = InnerBoundaryOnBox.mesh
+      plot file name   = InnerBoundaryOnBox.tec
+      stats file name  = none
+      mesh file format = ISM
+      polynomial order = 4
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+   \begin{BACKGROUND_GRID}
+      x0 = [-2.0, -2.0, 0.0]
+      dx = [0.5, 0.5, 0.0]
+      N  = [8, 8, 1]
+   \end{BACKGROUND_GRID}
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+\end{CONTROL_INPUT}
+\begin{MODEL}
+    \begin{INNER_BOUNDARIES}
+       \begin{CHAIN}
+          name = Square
+          \begin{END_POINTS_LINE}
+             name = s0
+             xStart = [-1,-1,0.0]
+             xEnd   = [2.0,-1,0.0]
+          \end{END_POINTS_LINE}
+          \begin{END_POINTS_LINE}
+             name = s1
+             xStart = [2.0,-1,0.0]
+             xEnd   = [2.0,1,0.0]
+          \end{END_POINTS_LINE}
+          \begin{END_POINTS_LINE}
+             name = s2
+             xStart = [2.0,1,0.0]
+             xEnd   = [-1,1,0.0]
+          \end{END_POINTS_LINE}
+          \begin{END_POINTS_LINE}
+             name = s3
+             xStart = [-1,1,0.0]
+             xEnd   = [-1,-1,0.0]
+          \end{END_POINTS_LINE}
+       \end{CHAIN}
+    \end{INNER_BOUNDARIES}
+\end{MODEL}
+\end{FILE}

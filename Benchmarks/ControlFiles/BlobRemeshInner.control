@@ -1,0 +1,96 @@
+%
+% ------------------------------------------------------------------
+% BlobRemesh with the blob as an inner boundary. The blob is
+% optimized in the H1 norm with a tolerance of 1.0e-5 and a circle
+% in the L2 norm. The first mesh is not accurate enough on the blob,
+% so the inner boundary scales are refined (ResetInverseScales) and
+% the mesh is generated again ("Remeshing for accuracy"). The
+% optimized interface curve exercises the optimized segmentation of
+% interface chains.
+% ------------------------------------------------------------------
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/BlobRemeshInner.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/BlobRemeshInner.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/BlobRemeshInner.txt
+      test file name   = Benchmarks/BenchmarkData/BlobRemeshInner.txt
+      mesh file format = ISM
+      polynomial order = 6
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [1.0,1.0,0.0]
+   \end{BACKGROUND_GRID}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 30
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+   \begin{OUTER_BOUNDARY}
+      \begin{CIRCULAR_ARC}
+         name        = outer
+         units       = degrees
+         center      = [0.0,0.0,0.0]
+         radius      = 10.0
+         start angle = 0.0
+         end angle   = 360.0
+      \end{CIRCULAR_ARC}
+   \end{OUTER_BOUNDARY}
+
+   \begin{INNER_BOUNDARIES}
+      \begin{CHAIN}
+         name       = blob
+         optimize   = H1Norm
+         continuity = 1
+         tolerance  = 1.0e-5
+         \begin{PARAMETRIC_EQUATION_CURVE}
+            name = blob
+            xEqn = x(t) = 4*cos(2*pi*t) - 3/5*cos(8*pi*t)^3
+            yEqn = y(t) = 4*sin(2*pi*t) - 0.5*sin(11*pi*t)^2
+            zEqn = z(t) = 0.0
+         \end{PARAMETRIC_EQUATION_CURVE}
+      \end{CHAIN}
+      \begin{CHAIN}
+         name       = pebble
+         optimize   = L2Norm
+         continuity = 1
+         tolerance  = 1.0e-4
+         \begin{CIRCULAR_ARC}
+            name        = pebble
+            units       = degrees
+            center      = [7.0,0.0,0.0]
+            radius      = 1.0
+            start angle = 0.0
+            end angle   = 360.0
+         \end{CIRCULAR_ARC}
+      \end{CHAIN}
+   \end{INNER_BOUNDARIES}
+
+   \begin{INTERFACE_BOUNDARIES}
+      \begin{CHAIN}
+         name       = stone
+         optimize   = H1Norm
+         continuity = 1
+         tolerance  = 1.0e-3
+         \begin{CIRCULAR_ARC}
+            name        = stone
+            units       = degrees
+            center      = [-7.0,0.0,0.0]
+            radius      = 1.0
+            start angle = 0.0
+            end angle   = 360.0
+         \end{CIRCULAR_ARC}
+      \end{CHAIN}
+   \end{INTERFACE_BOUNDARIES}
+
+\end{MODEL}
+\end{FILE}

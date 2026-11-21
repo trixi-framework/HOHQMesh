@@ -1,0 +1,49 @@
+%
+% ------------------------------------------------------------------
+% BlobAdapt with a tolerance of 1.0e-4 on the H1 error of the outer
+% boundary. The first mesh is not accurate enough, so the boundary
+% scales are refined (ResetInverseScales, RescaleFRSegmentedCurve)
+% and the mesh is generated again ("Remeshing for accuracy").
+% ------------------------------------------------------------------
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/BlobRemesh.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/BlobRemesh.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/BlobRemesh.txt
+      test file name   = Benchmarks/BenchmarkData/BlobRemesh.txt
+      mesh file format = ISM
+      polynomial order = 6
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.90,0.90,0.0]
+   \end{BACKGROUND_GRID}
+
+    \begin{SPRING_SMOOTHER}
+       smoothing            = ON
+       smoothing type       = LinearAndCrossBarSpring
+       number of iterations = 30
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+	\begin{OUTER_BOUNDARY}
+	   optimize   = H1Norm
+	   continuity = 1
+	   tolerance  = 1.0e-4
+	   \begin{PARAMETRIC_EQUATION_CURVE}
+		 name = blob
+		 xEqn = x(t) = 4*cos(2*pi*t) - 3/5*cos(8*pi*t)^3
+		 yEqn = y(t) = 4*sin(2*pi*t) - 0.5*sin(11*pi*t)^2
+		 zEqn = z(t) = 0.0
+	   \end{PARAMETRIC_EQUATION_CURVE}
+	\end{OUTER_BOUNDARY}
+
+\end{MODEL}
+\end{FILE}

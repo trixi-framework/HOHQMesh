@@ -373,7 +373,7 @@
 !     ROW_END,ROW_SIDE,ROW_CORNER,ROW_REVERSAL
 !     ----------------------------------------
 !
-         USE ProgramGlobals, ONLY: INNER, OUTER
+         USE ProgramGlobals, ONLY: INNER, OUTER, ROW_SIDE
          IMPLICIT NONE
 !
 !        ---------
@@ -388,7 +388,7 @@
 !        ---------------
 !
          REAL(KIND=RP)            :: a(3), b(3), p1(3), p2(3)
-         REAL(KIND=RP)            :: nrmA, nrmB, alpha, gamma, aCrossB, aDotB
+         REAL(KIND=RP)            :: nrmA, nrmB, alpha, gamma, aCrossB, aDotB, cosGamma
          REAL(KIND=RP), PARAMETER :: h = 0.001_RP
 
          p2    = thisCurve % positionAt(1.0_RP)
@@ -402,7 +402,26 @@
          nrmB  = SQRT(b(1)**2 + b(2)**2 + b(3)**2)
 
          aDotB = a(1)*b(1) + a(2)*b(2) + a(3)*b(3)
-         gamma = ACOS( aDotB/(nrmA*nrmB) )
+!
+!        ---------------------------------------------------------------
+!        A zero length curve (bad input) has no direction. Treat the
+!        joint as straight rather than divide by zero
+!        ---------------------------------------------------------------
+!
+         IF ( nrmA*nrmB == 0.0_RP )     THEN
+            JointClassification = ROW_SIDE
+            RETURN
+         END IF
+!
+!        ---------------------------------------------------------------
+!        For (nearly) collinear curves roundoff can put the cosine just
+!        outside [-1,1], where ACOS returns NaN. Every comparison with a
+!        NaN angle is false, which would classify a straight joint as a
+!        ROW_REVERSAL
+!        ---------------------------------------------------------------
+!
+         cosGamma = MAX(-1.0_RP, MIN(1.0_RP, aDotB/(nrmA*nrmB)))
+         gamma    = ACOS( cosGamma )
 
          alpha = PI - gamma
          aCrossB = a(1)*b(2) - b(1)*a(2)

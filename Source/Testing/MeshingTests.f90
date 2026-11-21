@@ -38,6 +38,15 @@
       USE TestSuiteManagerClass
       USE EncoderModule
       USE FTAssertions
+      USE SegmentedChainTestsModule
+      USE EquationEvaluatorTestsModule
+      USE BoundaryIntersectionTestsModule
+      USE DebugOutputTestsModule
+      USE ExtrusionTestsModule
+      USE MeshTopologyTestsModule
+      USE ControlInputTestsModule
+      USE ProjectInputTestsModule
+      USE GeometryUnitTestsModule
       IMPLICIT NONE
 !
 !---------------------------------------------------------------------
@@ -45,6 +54,17 @@
 !---------------------------------------------------------------------
 !
       CHARACTER(LEN=64), DIMENSION(:), ALLOCATABLE :: controlFiles
+!
+!     ---------------------------------------------------------------
+!     Same as the (private) test interface of the TestSuiteManager.
+!     The tests written as module procedures must have this interface
+!     ---------------------------------------------------------------
+!
+      ABSTRACT INTERFACE
+         SUBROUTINE ModuleTestSubroutine(optData)
+            CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)
+         END SUBROUTINE ModuleTestSubroutine
+      END INTERFACE
 !
 !  ========
    CONTAINS
@@ -70,7 +90,7 @@
       TYPE(TestSuiteManager)                  :: testSuite
       CHARACTER(LEN=1), POINTER               :: optData(:)
       CHARACTER(LEN=1), ALLOCATABLE           :: optDataA(:)
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: fullPath, path, str
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: fullPath, path, str
       INTEGER                                 :: k, fUnit, nControlFiles
       LOGICAL                                 :: exst
       CHARACTER(LEN=ERROR_MESSAGE_LENGTH)     :: msg
@@ -84,6 +104,7 @@
       EXTERNAL :: polynomialApproximationTest, BlobCurveTest
       EXTERNAL :: legendreApproximationTests, SmoothnessCheck, CircleTest, BlobBreaksTest
       EXTERNAL :: ScannerTests, SegmentedCurveCheck, MultiSegmentNodalCurveTest, NodalCircleTest
+      EXTERNAL :: MultiSegmentModalCurveTest
 !
 !     ------------------------------------------------------------------------------------
 !     The control files are located in a Benchmarks directory at the end of (if not empty)
@@ -111,6 +132,30 @@
       CALL testSuite % addTestSubroutineWithName(SegmentedCurveCheck,"Segmented Curve Tests")
       CALL testSuite % addTestSubroutineWithName(MultiSegmentNodalCurveTest,"MultiSegment Nodal Curve Tests")
       CALL testSuite % addTestSubroutineWithName(NodalCircleTest,"MultiSegment Nodal Circle Tests")
+      CALL testSuite % addTestSubroutineWithName(MultiSegmentModalCurveTest,"MultiSegment Modal Curve Tests")
+!
+!     ------------------------------------------------------------------
+!     Tests written as module procedures. See AddModuleTest for why they
+!     are not added with addTestSubroutineWithName directly
+!     ------------------------------------------------------------------
+!
+      CALL AddModuleTest(testSuite, SegmentedChainTests, "Segmented Chain Tests")
+      CALL AddModuleTest(testSuite, ChainedCurveJoinTests, "Chained Curve Join Tests")
+      CALL AddModuleTest(testSuite, EquationEvaluatorTests, "Equation Evaluator Tests")
+      CALL AddModuleTest(testSuite, EquationFormatExceptionTests, "Equation Format Exception Tests")
+      CALL AddModuleTest(testSuite, BoundaryIntersectionTests, "Boundary Intersection Tests")
+      CALL AddModuleTest(testSuite, DoubletRemovalTest, "Doublet Removal Tests")
+      CALL AddModuleTest(testSuite, ChevronRemovalTest, "Chevron Removal Tests")
+      CALL AddModuleTest(testSuite, UntangleTest, "Untangle Tests")
+      CALL AddModuleTest(testSuite, InterfaceSplitTest, "Interface Split Tests")
+      CALL AddModuleTest(testSuite, ControlFileReaderErrorTests, "Control File Reader Error Tests")
+      CALL AddModuleTest(testSuite, ChainOptimizationInputTests, "Chain Optimization Input Tests")
+      CALL AddModuleTest(testSuite, CurveInputErrorTests, "Curve Input Error Tests")
+      CALL AddModuleTest(testSuite, SymmetryInputTests, "Symmetry Input Tests")
+      CALL AddModuleTest(testSuite, ProjectInputErrorTests, "Project Input Error Tests")
+      CALL AddModuleTest(testSuite, MaterialNameTests, "Material Name Tests")
+      CALL AddModuleTest(testSuite, EllipticArcTangentTest, "Elliptic Arc Tangent Tests")
+      CALL AddModuleTest(testSuite, WindingFunctionTest, "Winding Function Tests")
 !
 !     --------------------------------
 !     Get the list of meshing tests...
@@ -122,7 +167,7 @@
          fullPath =  "Benchmarks/BenchmarkFiles.txt"
       ELSE
          CALL ConvertToPath(path)
-         fullPath = TRIM(path) // "Benchmarks/BenchmarkFiles.txt"
+         CALL JoinFilePath(path, "Benchmarks/BenchmarkFiles.txt", fullPath) ! (path, fileName, fullName)
       END IF
 
       INQUIRE( FILE = fullPath, EXIST = exst )
@@ -170,7 +215,7 @@
             fullPath =  controlFiles(k)
          ELSE
             CALL ConvertToPath(pathToTestFiles)
-            fullPath = TRIM(pathToTestFiles) // controlFiles(k)
+            CALL JoinFilePath(pathToTestFiles, controlFiles(k), fullPath) ! (path, fileName, fullName)
          END IF
 
          optData => NULL()
@@ -186,11 +231,65 @@
 !     Run the tests
 !     -------------
 !
+!
+!     -----------------------------------------------------
+!     The debug output and extrusion tests read benchmark
+!     control files, so they get the control file directory
+!     -----------------------------------------------------
+!
+      IF ( TRIM(pathToTestFiles) == "" )     THEN
+         fullPath = "Benchmarks/ControlFiles/"
+      ELSE
+         CALL ConvertToPath(pathToTestFiles)
+         CALL JoinFilePath(pathToTestFiles, "Benchmarks/ControlFiles/", fullPath) ! (path, fileName, fullName)
+      END IF
+      optData => NULL()
+      CALL encode(str = TRIM(fullPath),enc = optDataA)
+      ALLOCATE(optData(SIZE(optDataA)))
+      optData = optDataA
+      CALL testSuite % addTestSubroutineWithName(DebugOutputTests,"Debug Output Tests", optData)
+!
+!     The test suite deallocates the optData of each test, so the
+!     extrusion tests need their own copy
+!
+      optData => NULL()
+      ALLOCATE(optData(SIZE(optDataA)))
+      optData = optDataA
+      CALL testSuite % addTestSubroutineWithName(SimpleExtrusionTests,"Simple Extrusion Tests", optData)
+      DEALLOCATE(optDataA)
+
       CALL testSuite % performTests(numberOfFailedTests)
       CALL finalizeSharedAssertionsManager
       DEALLOCATE(controlFiles)
 
    END SUBROUTINE RunTests
+!
+!////////////////////////////////////////////////////////////////////////
+!
+   SUBROUTINE AddModuleTest(testSuite, testSubroutine, testName)
+!
+!     ------------------------------------------------------------------
+!     Adds a test that is a module procedure, with a one character
+!     optData that the test ignores. The test suite calls a test added
+!     without optData with the optional argument absent, and gfortran
+!     (through at least 16.2) checks the string length of an absent
+!     CHARACTER dummy under -fcheck=bounds. That check reads a garbage
+!     length and stops the run with a false "Actual string length does
+!     not match". The old external tests have no dummy argument, so they
+!     are not affected. The test suite deallocates optData.
+!     ------------------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(TestSuiteManager)           :: testSuite
+      PROCEDURE(ModuleTestSubroutine)  :: testSubroutine
+      CHARACTER(LEN=*)                 :: testName
+      CHARACTER(LEN=1), POINTER        :: optData(:)
+
+      ALLOCATE(optData(1))
+      optData = " "
+      CALL testSuite % addTestSubroutineWithName(testSubroutine, testName, optData)
+
+   END SUBROUTINE AddModuleTest
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -207,10 +306,10 @@
 !     Local variables
 !     ---------------
 !
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: testResultsLocation
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: path
-      CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: controlFileName
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: testResultsLocation
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: path
+      CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
       CLASS( MeshProject )    , POINTER       :: project     => NULL()
       TYPE (FTValueDictionary), POINTER       :: controlDict => NULL()
       TYPE (FTValueDictionary), POINTER       :: projectDict => NULL()
@@ -242,7 +341,7 @@
       obj                 => controlDict % objectForKey(key = RUN_PARAMETERS_KEY)
       paramsDict          => valueDictionaryFromObject(obj)
       testResultsLocation =  paramsDict % stringValueForKey(key = "test file name", &
-                                                            requestedLength = DEFAULT_CHARACTER_LENGTH)
+                                                            requestedLength = DEFAULT_FILE_PATH_LENGTH)
 !
 !     ------------------
 !     Generate the Mesh
@@ -284,7 +383,8 @@
 !     ------------------------------------------------------------------------------------
 !
       IF ( testResultsLocation /= "" )     THEN
-         testResultsLocation = TRIM(path) // testResultsLocation
+         str = testResultsLocation
+         CALL JoinFilePath(path, str, testResultsLocation) ! (path, fileName, fullName)
 !
 !        ---------------------------------------------------
 !        Test current results against saved benchmark values

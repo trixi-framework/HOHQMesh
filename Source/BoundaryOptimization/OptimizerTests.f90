@@ -556,6 +556,7 @@
             IF ( .NOT.ASSOCIATED(exception) )     EXIT
             CALL exception % printDescription(stderr)
             errorSeverity = MAX(errorSeverity, exception % severity())
+            CALL releaseFTException(exception) ! popLastException hands over ownership
          END DO
          WRITE(stderr,*)
          WRITE(stderr,*)  "------------------------------------------------------------------"

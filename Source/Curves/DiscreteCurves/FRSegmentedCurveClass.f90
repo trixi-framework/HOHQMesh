@@ -776,7 +776,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ResizeFRSegmentedCurve( self, curve)
+      SUBROUTINE ResizeFRSegmentedCurve( self, curve, numberOfNewPoints )
          IMPLICIT NONE
 !
 !     -----------------------------------------------------------------------
@@ -784,7 +784,15 @@
 !     spacing between points along the curve is small enough. This is
 !     needed if a curve bends closer to itself or neighboring curves are
 !     closer than the distance between two points along the FRSegmentedCurve.
-!     If so, add extra points along the FRSegmentedCurve.
+!     If so, add extra points along the FRSegmentedCurve. The new points
+!     interpolate the scale and normal of their neighbors. The caller must
+!     recompute the curve distance scales, since the new points can find
+!     smaller distances than the old ones did.
+!
+!     TODO: New points get placed by distance scale, not by curvature. 
+!           Okay near a gap but could matter on a jagged curved section.
+!     TODO: The thresholds are untuned. Original values of 1.1 trigger 
+!           and 0.5 target kept from initial implementation.
 !     -----------------------------------------------------------------------
 !
 !        ---------
@@ -793,6 +801,7 @@
 !
          TYPE( FRSegmentedCurve ) :: self
          CLASS(SMCurve), POINTER  :: curve
+         INTEGER                  :: numberOfNewPoints
 !
 !        ---------------
 !        Local Variables
@@ -803,34 +812,35 @@
          CLASS(FTObject)            , POINTER :: pObj
          CLASS(SMSegmentedCurveNode), POINTER :: pk, pkp1, newP
          LOGICAL                              :: needsRefinement
-         REAL(KIND=RP)                        :: d, dx(3), s, x(3)
-         REAL(KIND=RP)                        :: t, dt, deltaT, jdt
-         REAL(KIND=RP), PARAMETER             :: ALLOWED_SIZE_RATIO = 1.1_RP !A parameter to play with
-         REAL(KIND=RP), PARAMETER             :: DESIRED_SIZE_RATIO = 0.5_RP !A parameter to play with
+         REAL(KIND=RP)                        :: d, dx(3), s, x(3), w, nHat(3), nNorm
+         REAL(KIND=RP)                        :: t
+         REAL(KIND=RP), PARAMETER             :: ALLOWED_SIZE_RATIO = 1.1_RP ! Allowed spacing/local size
+         REAL(KIND=RP), PARAMETER             :: DESIRED_SIZE_RATIO = 0.5_RP ! Spacing/local size after refinement
+         INTEGER      , PARAMETER             :: MAX_SUBDIVISIONS   = 64     ! Per segment, for safety
 
-         N               = self % nodeArray % COUNT()
-         needsRefinement = .FALSE.
+         numberOfNewPoints = 0
+         N                 = self % nodeArray % COUNT()
+         needsRefinement   = .FALSE.
 !
 !        -----------------------------------
 !        Test to see if refinement is needed
 !        -----------------------------------
 !
          DO k = 1, N-1
-               pObj => self % nodeArray % objectAtIndex(k)
-               CALL cast(pObj,pk)
-               pObj => self % nodeArray % objectAtIndex(k+1)
-               CALL cast(pObj,pkp1)
+            pObj => self % nodeArray % objectAtIndex(k)
+            CALL cast(pObj,pk)
+            pObj => self % nodeArray % objectAtIndex(k+1)
+            CALL cast(pObj,pkp1)
 
-               dx = pkp1 % x - pk % x
-               d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
-               s  = 0.5_RP*(pk % invScale + pkp1 % invScale)
+            dx = pkp1 % x - pk % x
+            d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
+            s  = MAX(pk % invScale, pkp1 % invScale)
 
-               IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
-                  needsRefinement = .TRUE.
-                  EXIT
-               END IF
+            IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
+               needsRefinement = .TRUE.
+               EXIT
+            END IF
          END DO
-         PRINT *, "**********************************"
          IF(.NOT. needsRefinement)     RETURN
 !
 !        ---------------------------------------------------------------
@@ -842,45 +852,54 @@
          CALL newPointArray % setChunkSize(chunkSize = 100)   !
 
          DO k = 1, N-1
-               pObj => self % nodeArray % objectAtIndex(k+1)
-               CALL cast(pObj,pkp1)
-               pObj => self % nodeArray % objectAtIndex(k)
-               CALL cast(pObj,pk)
+            pObj => self % nodeArray % objectAtIndex(k+1)
+            CALL cast(pObj,pkp1)
+            pObj => self % nodeArray % objectAtIndex(k)
+            CALL cast(pObj,pk)
 
-               dx = pkp1 % x - pk % x
-               d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
-               s  = MAX(pk % invScale , pkp1 % invScale)
+            CALL newPointArray % addObject(pObj)
 
-               IF ( d*s > ALLOWED_SIZE_RATIO )     THEN ! Don't fret over small difference in sizes
+            dx = pkp1 % x - pk % x
+            d  = SQRT(dx(1)*dx(1) + dx(2)*dx(2))
+            s  = MAX(pk % invScale, pkp1 % invScale)
 
+            IF ( d*s > ALLOWED_SIZE_RATIO )     THEN
+               M = MIN(CEILING(d*s/DESIRED_SIZE_RATIO), MAX_SUBDIVISIONS)
+
+               DO j = 1, M-1
+                  w = REAL(j,RP)/REAL(M,RP)
+                  t = (1.0_RP - w)*pk % t + w*pkp1 % t
+                  x = curve % positionAt(t)
+
+                  ALLOCATE(newP)
+                  CALL newP % initSMSegmentedCurveNode(x,t)
+
+                  newP % invScale = (1.0_RP - w)*pk % invScale + w*pkp1 % invScale
+                  nHat            = (1.0_RP - w)*pk % nHat     + w*pkp1 % nHat
+                  nNorm           = SQRT(nHat(1)**2 + nHat(2)**2)
+                  IF ( nNorm > 0.0_RP )     THEN
+                     newP % nHat = nHat/nNorm
+                  ELSE
+                     newP % nHat = pk % nHat
+                  END IF
+
+                  pObj => newP
                   CALL newPointArray % addObject(pObj)
-
-                  deltaT = (pkp1 % t - pk % t)
-                  M = NINT(1.0_RP/(d*s*DESIRED_SIZE_RATIO))
-                  dt = deltaT/M
-
-                  DO j = 1, M-1
-                     jdt = j*dt
-                     t   = pk % t + jdt
-                     x   = curve % positionAt(t)
-
-                     ALLOCATE(newP)
-                     CALL newP % initSMSegmentedCurveNode(x,t)
-
-                     newP % invScale = pk % invScale*jdt + pkp1 % invScale*(1.0_RP - jdt)
-
-                     pObj => newP
-                     CALL newPointArray % addObject(pObj)
-                     CALL release(pObj)
-                  END DO
-               ELSE
-                  CALL newPointArray % addObject(pObj)
-               END IF
+                  CALL release(pObj)
+                  numberOfNewPoints = numberOfNewPoints + 1
+               END DO
+            END IF
          END DO
          pObj => self % nodeArray % objectAtIndex(N)
          CALL newPointArray % addObject(pObj)
-
-         CALL releaseFTMutableObjectArray(self = newPointArray) ! Do the swap still
+!
+!        --------------------------------------------------
+!        Swap in the new array. It retains the old nodes it
+!        shares with the old array.
+!        --------------------------------------------------
+!
+         CALL releaseFTMutableObjectArray(self % nodeArray)
+         self % nodeArray => newPointArray
 
       END SUBROUTINE ResizeFRSegmentedCurve
 !

@@ -572,7 +572,7 @@
          REAL(KIND=RP) :: P(3,4)         ! Location of the four corners
          REAL(KIND=RP) :: L(3,4)         ! Sequential edge vectors
          REAL(KIND=RP) :: LNorm(4)       ! lengths of the edge vectors
-         REAL(KIND=RP) :: theta
+         REAL(KIND=RP) :: theta, cosTheta
          REAL(KIND=RP) :: r              ! positive for right handed element
          REAL(KIND=RP) :: c              ! Cross product result
 
@@ -608,8 +608,8 @@
 !        ------------------
 !
          DO k = 1, 4
-            theta = ACOS( -(L(1,k)*L(1,loop(k+1)) + L(2,k)*L(2,loop(k+1)))/&
-                           (LNorm(k)*LNorm(loop(k+1))))*180.0_RP/PI
+            cosTheta = -(L(1,k)*L(1,loop(k+1)) + L(2,k)*L(2,loop(k+1)))/(LNorm(k)*LNorm(loop(k+1)))
+            theta    = ACOS( MAX(-1.0_RP, MIN(1.0_RP, cosTheta)) )*180.0_RP/PI ! Roundoff can put it outside [-1,1]
 !
 !           --------------------------
 !           Check if angle is external

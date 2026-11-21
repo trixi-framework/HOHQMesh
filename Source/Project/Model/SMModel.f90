@@ -988,7 +988,10 @@
 
             ALLOCATE(topog_data)
             CALL topog_data % initWithDataFile(topog_file, sizingIsON)
-            IF(ReturnOnFatalError())     RETURN
+            IF(ReturnOnFatalError())     THEN
+               DEALLOCATE(topog_data) ! Not retained by anything yet
+               RETURN
+            END IF
             self % topography => topog_data
 
          ELSE !TODO TOPOGRAPHY: ADD TEST AND CONSTRUCTION OF ALTERNATE TOPOGRAPHIES HERE
@@ -1026,7 +1029,7 @@
          CLASS(FTObject) , POINTER                  :: obj
          CLASS(FTData)   , POINTER                  :: splineData
          CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)    :: curveFile
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH)    :: curveFile
          CHARACTER(LEN=1), POINTER                  :: encodedData(:)
          REAL(KIND=RP), ALLOCATABLE                 :: decodedArray(:,:)
          CLASS(SMSplineCurve)             , POINTER :: cCurve      => NULL()
@@ -1051,7 +1054,7 @@
          IF( splineDict % containsKey(SPLINE_FILE_KEY) )THEN
 
             curveFile = splineDict % stringValueforKey( key = SPLINE_FILE_KEY, &
-                                                        requestedLength = DEFAULT_CHARACTER_LENGTH )
+                                                        requestedLength = DEFAULT_FILE_PATH_LENGTH )
 
             INQUIRE( FILE=TRIM(curveFile), EXIST=curveFileFound )
 
@@ -1064,7 +1067,10 @@
 
             ALLOCATE(cCurve)
             CALL cCurve % initWithDataFile( TRIM(curveFile), curveName, self % curveCount + 1 )
-            IF(ReturnOnFatalError()) RETURN
+            IF(ReturnOnFatalError())     THEN
+               DEALLOCATE(cCurve) ! Not retained by anything yet
+               RETURN
+            END IF
 
             curvePtr => cCurve
             CALL chain  % addCurve(curvePtr)
@@ -1107,7 +1113,10 @@
             CALL cCurve % initWithPointsNameAndID(decodedArray(1,:), decodedArray(2,:), &
                                                   decodedArray(3,:), decodedArray(4,:), &
                                                   curveName, self % curveCount + 1 )
-            IF(ReturnOnFatalError()) RETURN
+            IF(ReturnOnFatalError())     THEN
+               DEALLOCATE(cCurve) ! Not retained by anything yet
+               RETURN
+            END IF
             curvePtr => cCurve
             CALL chain  % addCurve(curvePtr)
             obj => cCurve
@@ -1692,68 +1701,70 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE ThrowModelReadException(objectName,msg)
-         USE FTValueClass
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ---------
-!        Arguments
-!        ---------
-!
-         CHARACTER(LEN=*)  :: msg
-         CHARACTER(LEN=*)  :: objectName
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         TYPE (FTException)   , POINTER :: exception => NULL()
-         CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
-         CLASS(FTObject)      , POINTER :: obj => NULL()
-         CLASS(FTValue)       , POINTER :: v => NULL()
-!
-!        -----------------------------------------------------
-!        The userDictionary for this exception contains the
-!        message to be delivered under the name "message"
-!        and the object being created by the name "objectName"
-!        -----------------------------------------------------
-!
-         ALLOCATE(userDictionary)
-         CALL userDictionary % initWithSize(4)
+!       SUBROUTINE ThrowModelReadException(objectName,msg)
+!          USE FTValueClass
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          CHARACTER(LEN=*)  :: msg
+!          CHARACTER(LEN=*)  :: objectName
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          TYPE (FTException)   , POINTER :: exception => NULL()
+!          CLASS(FTDictionary)  , POINTER :: userDictionary => NULL()
+!          CLASS(FTObject)      , POINTER :: obj => NULL()
+!          CLASS(FTValue)       , POINTER :: v => NULL()
+! !
+! !        -----------------------------------------------------
+! !        The userDictionary for this exception contains the
+! !        message to be delivered under the name "message"
+! !        and the object being created by the name "objectName"
+! !        -----------------------------------------------------
+! !
+!          ALLOCATE(userDictionary)
+!          CALL userDictionary % initWithSize(4)
 
-         ALLOCATE(v)
-         CALL v % initWithValue(objectName)
-         obj => v
-         CALL userDictionary % addObjectForKey(obj,"objectName")
-         CALL release(obj)
+!          ALLOCATE(v)
+!          CALL v % initWithValue(objectName)
+!          obj => v
+!          CALL userDictionary % addObjectForKey(obj,"objectName")
+!          CALL release(obj)
 
-         ALLOCATE(v)
-         CALL v % initWithValue(msg)
-         obj => v
-         CALL userDictionary % addObjectForKey(obj,"message")
-         CALL release(obj)
-!
-!        --------------------
-!        Create the exception
-!        --------------------
-!
-         ALLOCATE(exception)
+!          ALLOCATE(v)
+!          CALL v % initWithValue(msg)
+!          obj => v
+!          CALL userDictionary % addObjectForKey(obj,"message")
+!          CALL release(obj)
+! !
+! !        --------------------
+! !        Create the exception
+! !        --------------------
+! !
+!          ALLOCATE(exception)
 
-         CALL exception % initFTException(FT_ERROR_FATAL, &
-                              exceptionName   = MODEL_READ_EXCEPTION, &
-                              infoDictionary  = userDictionary)
-         obj => userDictionary
-         CALL release(obj)
-!
-!        -------------------
-!        Throw the exception
-!        -------------------
-!
-         CALL throw(exception)
-         obj => exception
-         CALL release(obj)
+!          CALL exception % initFTException(FT_ERROR_FATAL, &
+!                               exceptionName   = MODEL_READ_EXCEPTION, &
+!                               infoDictionary  = userDictionary)
+!          obj => userDictionary
+!          CALL release(obj)
+! !
+! !        -------------------
+! !        Throw the exception
+! !        -------------------
+! !
+!          CALL throw(exception)
+!          obj => exception
+!          CALL release(obj)
 
-      END SUBROUTINE ThrowModelReadException
+!       END SUBROUTINE ThrowModelReadException
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////

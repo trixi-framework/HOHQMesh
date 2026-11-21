@@ -41,8 +41,6 @@
 ! projection onto the model boundaries
 !-------------------------------------------------------------------
 !
-      INTEGER, PARAMETER, PRIVATE :: TEST_NESTING = 1, TEST_INTERSECTION = 2
-!
 !     ========
       CONTAINS
 !     ========
@@ -277,10 +275,10 @@
                      WRITE(stderr,*)  "**************************************************************************"
                      WRITE(stderr,*)  "Curve not found for boundary point"
                      WRITE(stderr,*)   edge % nodes(1) % node % x, edge % nodes(2) % node % x
-                     WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     WRITE(stderr,*)  "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                      WRITE(stderr,*)  "**************************************************************************"
                      WRITE(stderr,*)  " "
-                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = debugPlotFileName)
                   END IF
                   errorCode = CURVE_NOT_FOUND_ERROR_CODE
                   RETURN
@@ -303,10 +301,10 @@
                      WRITE(stderr,*)  "**************************************************************************"
                      WRITE(stderr,*)  "A boundary curve is too close to the background grid box near"
                      WRITE(stderr,*)   edge % nodes(1) % node % x(1:2), edge % nodes(2) % node % x(1:2)
-                     WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     WRITE(stderr,*)  "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                      WRITE(stderr,*)  "**************************************************************************"
                      WRITE(stderr,*)  " "
-                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                     CALL WriteSkeletonToTecplot(mesh = mesh,fName = debugPlotFileName)
                   END IF
                   errorCode = BOUNDARY_TOUCHES_BOX_ERROR_CODE
                   RETURN
@@ -323,10 +321,10 @@
                         WRITE(stderr,*)  "**************************************************************************"
                         WRITE(stderr,*)  "Edge list not associated"
                         WRITE(stderr,*)  ASSOCIATED(obj), ASSOCIATED(boundaryEdgesArray), "CurveID = ", curveID
-                        WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                        WRITE(stderr,*)  "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                         WRITE(stderr,*)  "**************************************************************************"
                         WRITE(stderr,*)  " "
-                        CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                        CALL WriteSkeletonToTecplot(mesh = mesh,fName = debugPlotFileName)
                      END IF
                      errorCode = UNASSOCIATED_POINTER_ERROR_CODE
                      RETURN
@@ -1471,10 +1469,11 @@
                   WRITE(stderr,*)  " "
                   WRITE(stderr,*)  "**************************************************************************"
                   WRITE(stderr,*)  "It appears that an edge is not connected"
-                  WRITE(stderr,*)  "Plot the file 'DebugPlot.tec' to see where additional resolution is needed"
+                  WRITE(stderr,*)  "Plot the file '" // TRIM(debugPlotFileName) // &
+                                   "' to see where additional resolution is needed"
                   WRITE(stderr,*)  "**************************************************************************"
                   WRITE(stderr,*)  " "
-                  CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
+                  CALL WriteSkeletonToTecplot( mesh, debugPlotFileName )
                   ERROR STOP "Meshing Terminated. See stderr"
                END IF
                edge => edgeArray(eId) % edge
@@ -2036,20 +2035,14 @@
                      obj => iterator % object()
                      CALL castToSMEdge(obj,currentEdge)
 
+!
+!                    ------------------------------------------
+!                    Nodes on a boundary curve are kept fixed
+!                    ------------------------------------------
+!
                      IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
-
-                        IF ( currentEdge % nodes(1) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
-                           currentEdge % nodes(1) % node % activeStatus = ACTIVE
-                        ELSE
-                           currentEdge % nodes(1) % node % activeStatus = INACTIVE
-                        END IF
-
-                        IF ( currentEdge%nodes(2) % node % nodeType == ROW_SIDE .AND. boundarySlipping )     THEN
-                           currentEdge % nodes(2) % node % activeStatus = ACTIVE
-                        ELSE
-                           currentEdge % nodes(2) % node % activeStatus = INACTIVE
-                        END IF
-
+                        currentEdge % nodes(1) % node % activeStatus = INACTIVE
+                        currentEdge % nodes(2) % node % activeStatus = INACTIVE
                      END IF
 !
 !                 ----------------------------------------------------
@@ -2155,6 +2148,14 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE CheckForBoundaryIntersections(sizer)
+!
+!     ---------------------------------------------------------------
+!     The inner boundary curves must lie inside the outer boundary
+!     curve, and outside of each other. Throw a fatal exception for
+!     the first pair of curves that cross, or where one curve lies
+!     inside of the other.
+!     ---------------------------------------------------------------
+!
          IMPLICIT NONE
 !
 !        ---------
@@ -2173,36 +2174,41 @@
 
          CALL generateTemporaryBoundaryArrays( sizer )
 !
-!        -------------------------------------------------
-!        See if exterior and any interior curves intersect
-!        -------------------------------------------------
+!        -----------------------------------------------------------------
+!        Each interior curve must not cross the exterior curve and must be
+!        inside of it
+!        -----------------------------------------------------------------
 !
          IF ( ASSOCIATED( outerBoundaryCurve ) )     THEN
             IF( ASSOCIATED( interiorCurves ) )    THEN
 
                DO k = 1, SIZE(interiorCurves)
+                  curveArrayB => interiorCurves(k) % curveArray
 
-                  IF (TwoCurvesIntersect(curveArrayA = outerBoundaryCurve,                    &
-                                         curveArrayB = interiorCurves(k) % curveArray ,       &
-                                         testType    = TEST_NESTING     ))                THEN
+                  msg = ""
+                  IF ( TwoCurvesIntersect(outerBoundaryCurve, curveArrayB) )     THEN
+                     WRITE(msg,'(A,I0,A)') "Interior curve ", k, " overlaps with exterior curve"
+                  ELSE IF ( .NOT.curveIsInside(curveArrayB, outerBoundaryCurve) )     THEN
+                     WRITE(msg,'(A,I0,A)') "Interior curve ", k, " is outside of the exterior curve"
+                  END IF
 
-                     WRITE(msg,*) "Interior curve ", k," overlaps with exterior curve"
+                  IF ( LEN_TRIM(msg) > 0 )     THEN
                      CALL ThrowErrorExceptionOfType(poster = "CheckForBoundaryIntersections", &
                                                     msg    = msg,                             &
                                                     typ    = FT_ERROR_FATAL)
                      CALL destroyTemporaryBoundaryArrays
                      RETURN
-
                   END IF
-!
+
                END DO
 
             END IF
          END IF
 !
-!        --------------------------------
-!        See if interior curves intersect
-!        --------------------------------
+!        -------------------------------------------------------------
+!        Interior curves must not cross and must not be inside of each
+!        other
+!        -------------------------------------------------------------
 !
          IF( ASSOCIATED( interiorCurves ) )    THEN
             DO k = 1, SIZE(interiorCurves)
@@ -2212,17 +2218,21 @@
 
                   curveArrayB => interiorCurves(j) % curveArray
 
-                  IF (TwoCurvesIntersect(curveArrayA = interiorCurves(k) % curveArray,        &
-                                         curveArrayB = interiorCurves(j) % curveArray,        &
-                                         testType    = TEST_INTERSECTION     ))        THEN
+                  msg = ""
+                  IF ( TwoCurvesIntersect(curveArrayA, curveArrayB) )     THEN
+                     WRITE(msg,'(A,I0,A,I0,A)') "Interior curves ", k, " and ", j, " overlap"
+                  ELSE IF ( curveIsInside(curveArrayB, curveArrayA) )     THEN
+                     WRITE(msg,'(A,I0,A,I0)') "Interior curve ", j, " is inside of interior curve ", k
+                  ELSE IF ( curveIsInside(curveArrayA, curveArrayB) )     THEN
+                     WRITE(msg,'(A,I0,A,I0)') "Interior curve ", k, " is inside of interior curve ", j
+                  END IF
 
-                     WRITE(msg,*) "Interior curves ", k," and ", j, "overlap"
+                  IF ( LEN_TRIM(msg) > 0 )     THEN
                      CALL ThrowErrorExceptionOfType(poster = "CheckForBoundaryIntersections", &
-                                                    msg    = msg,                       &
+                                                    msg    = msg,                             &
                                                     typ    = FT_ERROR_FATAL)
                      CALL destroyTemporaryBoundaryArrays
                      RETURN
-
                   END IF
 
                END DO
@@ -2235,7 +2245,31 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION TwoCurvesIntersect(curveArrayA, curveArrayB, testType)
+      LOGICAL FUNCTION curveIsInside( curveArrayA, curveArrayB )
+!
+!     --------------------------------------------------------------
+!     For two curves that do not cross: curve A is inside of curve B
+!     if its first point is
+!     --------------------------------------------------------------
+!
+         USE Geometry, ONLY : ACWindingFunction
+         IMPLICIT NONE
+         CLASS(SegmentedCurveArray), POINTER :: curveArrayA, curveArrayB
+
+         curveIsInside = ACWindingFunction(curveArrayA % x(:,0), curveArrayB % x, curveArrayB % nSegments) /= 0
+
+      END FUNCTION curveIsInside
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION TwoCurvesIntersect(curveArrayA, curveArrayB)
+!
+!     -----------------------------------------------------
+!     Test if two closed curves stored as points cross or
+!     touch. Only the parts inside the overlap of the
+!     curves' bounding boxes can meet.
+!     -----------------------------------------------------
+!
          IMPLICIT NONE
 !
 !        ---------
@@ -2243,58 +2277,48 @@
 !        ---------
 !
          CLASS(SegmentedCurveArray) , POINTER  :: curveArrayA, curveArrayB
-         INTEGER                               :: testType
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
-         LOGICAL                      :: intersectionFound
          REAL(KIND=RP)                :: intersection(6)
          REAL(KIND=RP), ALLOCATABLE   :: crv1(:,:), crv2(:,:)
 
          TwoCurvesIntersect = .FALSE.
+         IF ( .NOT.BBoxIntersects(BoxA = curveArrayA % boundingBox, &
+                                  BoxB = curveArrayB % boundingBox) )     RETURN
 
-         IF ( testType == TEST_NESTING )     THEN ! Easy Full curve BBox check
-            intersectionFound = .NOT.BBoxIsNested(BoxA = curveArrayA % boundingBox, &
-                                                  BoxB = curveArrayB % boundingBox)
-         ELSE
-            intersectionFound = BBoxIntersects(BoxA = curveArrayA % boundingBox, &
-                                               BoxB = curveArrayB % boundingBox)
-         END IF
+         ALLOCATE(crv1(3,0:curveArrayA % nSegments))
+         crv1 = curveArrayA % x
+         ALLOCATE(crv2(3,0:curveArrayB % nSegments))
+         crv2 = curveArrayB % x
 
-         IF ( intersectionFound )     THEN ! Check further
+         intersection = IntersectionOfBBoxes(boxA = curveArrayA % boundingBox, &
+                                             boxB = curveArrayB % boundingBox)
 
-            ALLOCATE(crv1(3,0:curveArrayA % nSegments))
-            crv1 = curveArrayA % x
-            ALLOCATE(crv2(3,0:curveArrayB % nSegments))
-            crv2 = curveArrayB % x
-
-            intersection = IntersectionOfBBoxes(boxA = curveArrayA % boundingBox, &
-                                                boxB = curveArrayB % boundingBox)
-
-            TwoCurvesIntersect = TwoCurvesAsPointsIntersect(testCurve1   = crv1,                      &
-                                                            nPts1        = curveArrayA % nSegments,   &
-                                                            testCurve2   = crv2,                      &
-                                                            nPts2        = curveArrayB % nSegments,   &
-                                                            intersection = intersection)
-
-            IF(TwoCurvesIntersect)     RETURN
-
-         END IF
+         TwoCurvesIntersect = TwoCurvesAsPointsIntersect(testCurve1   = crv1,                      &
+                                                         nPts1        = curveArrayA % nSegments,   &
+                                                         testCurve2   = crv2,                      &
+                                                         nPts2        = curveArrayB % nSegments,   &
+                                                         intersection = intersection)
 
       END FUNCTION TwoCurvesIntersect
 !
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION TwoCurvesAsPointsIntersect(testCurve1, nPts1, &
-                                                    testCurve2, nPts2, &
-                                                    intersection) RESULT(theyCross)
+                                          testCurve2, nPts2, &
+                                          intersection) RESULT(theyCross)
 !
-!     --------------------------------------------------------
-!     Call to see if two curves stored as point arrays overlap
-!     --------------------------------------------------------
+!     ---------------------------------------------------------------
+!     Test if two closed curves stored as points 0:nPts cross or
+!     touch, that is, if any segment of one meets a segment of the
+!     other. The last segment joins the last point to the first.
+!     Only segments that reach into the box "intersection" are tested.
+!     ---------------------------------------------------------------
 !
+         USE Geometry, ONLY : SegmentsIntersect
          IMPLICIT NONE
 !
 !        ---------
@@ -2303,153 +2327,46 @@
 !
          INTEGER        :: nPts1, nPts2
          REAL(KIND=RP)  :: testCurve1(3,0:nPts1), testCurve2(3,0:nPts2)
+         REAL(KIND=RP)  :: intersection(6)
          LOGICAL        :: theyCross
 !
 !        ---------------
 !        Local Variables
 !        ---------------
 !
-         REAL(KIND=RP)              :: intersection(6)
-         REAL(KIND=RP), ALLOCATABLE :: crv1inBox(:,:), crv2inBox(:,:)
-         INTEGER                    :: nptsC1, nptsC2
-         REAL(KIND=RP)              :: subBox1(6), subBox2(6)
+         LOGICAL :: segment2InBox(0:nPts2)
+         INTEGER :: i, j
 
-         theyCross = .TRUE.
+         theyCross = .FALSE.
 
-         ALLOCATE(crv1inBox(3,0:nPts1))
+         DO j = 0, nPts2
+            segment2InBox(j) = segmentReachesBox(testCurve2(:,j), testCurve2(:,MOD(j+1,nPts2+1)), intersection)
+         END DO
 
-         CALL CollectArrayPointsInBox(array        = testCurve1,    &
-                                      bBox         = intersection,  &
-                                      collected    = crv1inBox,     &
-                                      nCollected   = nPtsC1,        &
-                                      collectedBox = subBox1)
-
-         IF ( nPtsC1 == 0)     THEN ! No actual points in curve1 in the intersection box
-            theyCross = .FALSE.
-            RETURN
-         END IF
-
-         ALLOCATE(crv2inBox(3,0:nPts2))
-         CALL CollectArrayPointsInBox(array        = testCurve2,    &
-                                      bBox         = intersection,  &
-                                      collected    = crv2inBox,     &
-                                      nCollected   = nPtsC2,         &
-                                      collectedBox = subBox2)
-
-         IF ( nPtsC2 == 0 )     THEN ! No actual points in curve1 in the intersection box
-            theyCross = .FALSE.
-            RETURN
-         END IF
-!
-!        ---------------------------------------------------------------------------
-!        One last quick check: The boxes outlining the sets of points must intersect
-!        for there to be a crossing
-!        ---------------------------------------------------------------------------
-!
-         IF(.NOT.BBoxIntersects(BoxA = subBox1, BoxB = subBox2) )     THEN
-            theyCross = .FALSE.
-            RETURN
-         END IF
-!
-!        -------------------------------------------------
-!        Now we have to work... Go through the points and
-!        see if the curves actually cross
-!        -------------------------------------------------
-!
-         theyCross = TestPointsForCrossing( crv1inBox, nptsC1, crv2inBox, nptsC2 )
-         IF(theyCross)     RETURN
-         theyCross = TestPointsForCrossing( crv2inBox, nptsC2, crv1inBox, nptsC1 )
+         DO i = 0, nPts1
+            IF ( .NOT.segmentReachesBox(testCurve1(:,i), testCurve1(:,MOD(i+1,nPts1+1)), intersection) )     CYCLE
+            DO j = 0, nPts2
+               IF ( .NOT.segment2InBox(j) )     CYCLE
+               IF ( SegmentsIntersect(testCurve1(:,i), testCurve1(:,MOD(i+1,nPts1+1)), &
+                                      testCurve2(:,j), testCurve2(:,MOD(j+1,nPts2+1))) )     THEN
+                  theyCross = .TRUE.
+                  RETURN
+               END IF
+            END DO
+         END DO
 
       END FUNCTION TwoCurvesAsPointsIntersect
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE CollectArrayPointsInBox(array, bBox, collected, nCollected, collectedBox)
+      LOGICAL FUNCTION segmentReachesBox( a, b, bBox )
          IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         REAL(KIND=RP), INTENT(IN)  :: array(:,0:)
-         REAL(KIND=RP), INTENT(OUT) :: collected(:,0:)
-         REAL(KIND=RP), INTENT(IN)  :: bBox(6)
-         INTEGER      , INTENT(OUT) :: nCollected
-         REAL(KIND=RP), INTENT(OUT) :: collectedBox(6)
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER :: j
-         REAL(KIND=RP) :: xMin, xMax, yMin, yMax
-
-         xMin =  HUGE(xMin)
-         xMax = -HUGE(xMax)
-         yMin =  HUGE(xMin)
-         yMax = -HUGE(xMax)
-
-         nCollected = 0
-         collected  = 0.0_RP
-         DO j = 0, SIZE(array,2)-1
-            IF ( Point_IsInsideBox(p = array(:,j),bBox = bBox) )     THEN
-               collected(:,nCollected) = array(:,j)
-
-               xMax = MAX(collected(1,nCollected),xMax)
-               xMin = MIN(collected(1,nCollected),xMin)
-               yMax = MAX(collected(2,nCollected),yMax)
-               yMin = MIN(collected(2,nCollected),yMin)
-
-               nCollected = nCollected + 1
-            END IF
-         END DO
-         nCollected = MAX(nCollected - 1,0) ! Gives the upper bound on the array.
-
-         collectedBox(BBOX_TOP)    = yMax
-         collectedBox(BBOX_BOTTOM) = yMin
-         collectedBox(BBOX_LEFT)   = xMin
-         collectedBox(BBOX_RIGHT)  = xMax
-
-      END SUBROUTINE CollectArrayPointsInBox
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      LOGICAL FUNCTION TestPointsForCrossing(c1, n1, c2, n2)
-         IMPLICIT NONE
-!
-!        ----------
-!        Arguments
-!        ----------
-!
-         INTEGER       :: n1, n2
-         REAL(KIND=RP) :: c1(3,0:n1), c2(3,0:n2)
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER       :: i, j
-         REAL(KIND=RP) :: bBox(6)
-
-         bBox = 0.0_RP
-         TestPointsForCrossing = .FALSE.
-
-         DO i = 0, n1-1
-
-            bBox(BBOX_LEFT)   = MIN(c1(1,i),c1(1,i+1))
-            bBox(BBOX_BOTTOM) = MIN(c1(2,i),c1(2,i+1))
-            bBox(BBOX_RIGHT)  = MAX(c1(1,i),c1(1,i+1))
-            bBox(BBOX_TOP)    = MAX(c1(1,i),c1(1,i+1))
-
-            DO j = 0, n2
-              IF ( Point_IsInsideBox(p = c2(:,j),bBox = bBox) ) THEN
-                 TestPointsForCrossing = .TRUE.
-                 RETURN
-              END IF
-            END DO
-         END DO
-
-      END FUNCTION TestPointsForCrossing
+         REAL(KIND=RP) :: a(3), b(3), bBox(6)
+         segmentReachesBox = .NOT.( MAX(a(1),b(1)) < bBox(BBOX_LEFT)   .OR. &
+                                    MIN(a(1),b(1)) > bBox(BBOX_RIGHT)  .OR. &
+                                    MAX(a(2),b(2)) < bBox(BBOX_BOTTOM) .OR. &
+                                    MIN(a(2),b(2)) > bBox(BBOX_TOP) )
+      END FUNCTION segmentReachesBox
 !
 !////////////////////////////////////////////////////////////////////////
 !
