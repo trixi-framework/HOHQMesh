@@ -54,12 +54,17 @@ test ! -e "$runDir"/DebugPlot.tec
 
 # Long paths. File names and paths may have up to 512 characters. Build
 # a directory whose path is longer than the old limit of 128 characters
-# (in several components, since a single one is limited to 255) and use
-# it for both -f and -path
+# and use it for both -f and -path. Keep the full file paths below 260
+# characters, since Windows cannot open longer paths (MAX_PATH) unless
+# long path support is enabled, which is not the case on the CI runners
 longDir="$outDir"
-for i in 1 2 3; do
-   longDir="$longDir"/$(printf 'd%.0s' {1..100})
+for i in 1 2; do
+   longDir="$longDir"/$(printf 'd%.0s' {1..60})
 done
+if [ ${#longDir} -le 128 ]; then
+   echo "The long path test directory must be longer than 128 characters"
+   exit 1
+fi
 mkdir -p "$longDir"/Benchmarks/ControlFiles "$longDir"/Benchmarks/MeshFiles/Tests \
          "$longDir"/Benchmarks/PlotFiles/Tests "$longDir"/Benchmarks/StatsFiles/Tests
 cp Benchmarks/ControlFiles/Pill.control "$longDir"/Benchmarks/ControlFiles
