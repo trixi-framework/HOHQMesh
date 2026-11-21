@@ -458,8 +458,18 @@
          CALL FTAssert(test = ABS(x(3) - 0.25_RP) <= 1.0E-10_RP, msg = "Height of the plane inside the data")
          CALL FTAssert(test = .NOT.catch(), msg = "No warning inside the data")
 
+!
+!        The data are on [0,1]x[-1,0] and the box is [-0.01,1.01]x[-1.01,0.01]. Outside of
+!        the box the height is the one at the nearest point of the box, here (1.01,-0.5)
+!
          x = topography % heightAt([2.0_RP, -0.5_RP])
          CALL FTAssert(test = raised(WARNING_ERROR_EXCEPTION, "outside of"), msg = "Height outside of the data warns")
+         CALL FTAssert(test = MAXVAL(ABS(x - [2.0_RP, -0.5_RP, 0.51_RP])) <= 1.0E-10_RP, &
+                       msg  = "Height outside of the data is the height at the nearest point of the box")
+         CALL ClearExceptions
+         x = topography % heightAt([-1.0_RP, 3.0_RP])
+         CALL FTAssert(test = MAXVAL(ABS(x - [-1.0_RP, 3.0_RP, 0.0_RP])) <= 1.0E-10_RP, &
+                       msg  = "Height outside of the data, nearest point is a corner of the box")
          CALL ClearExceptions
          kappa = topography % principalCurvatureAt([2.0_RP, -0.5_RP])
          CALL FTAssert(test = kappa == 0.0_RP .AND. raised(WARNING_ERROR_EXCEPTION, "outside of data bounding box"), &
