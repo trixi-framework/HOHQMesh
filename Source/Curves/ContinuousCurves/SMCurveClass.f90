@@ -600,7 +600,7 @@
          END IF
 
          IF ( ABS(p) < ABS(0.5_RP*q*r) .AND. &
-              p < q*(a - x)            .AND. &
+              p > q*(a - x)            .AND. &
               p < q*(b - x) )                    THEN !Parabolic interpolation step
 
             d = p/q
