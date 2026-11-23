@@ -4,7 +4,7 @@
 
 - Increase test coverage to over 95% with many new unit and benchmark tests (#199), which uncovered and fixed several bugs:
   the parabolic step in Brent's method (`fMin`) was never taken, `SIMPLE_EXTRUSION` along x or y mishandled curved
-  boundaries, and several invalid inputs crashed instead of giving an error (#XXX). Also, the remesh retry now runs
+  boundaries, and several invalid inputs crashed instead of giving an error. Also, the remesh retry now runs
   at most once and always reports it, the 2D `ROTATION_TRANSFORM` is documented, and file paths may be up to 512
   characters long.
 - Remove unused `MESH_PARAMETERS` block (#197) as well as 3-Refinement templates and associated functions (#198)
