@@ -16,7 +16,7 @@
       plot file name   = Benchmarks/PlotFiles/Tests/BlobRemeshInner.tec
       stats file name  = Benchmarks/StatsFiles/Tests/BlobRemeshInner.txt
       test file name   = Benchmarks/BenchmarkData/BlobRemeshInner.txt
-      mesh file format = ISM
+      mesh file format = ISM-MM
       polynomial order = 6
       plot file format = sem
    \end{RUN_PARAMETERS}
