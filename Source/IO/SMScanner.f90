@@ -72,13 +72,13 @@
 !     ========
 !
       PROCEDURE :: initScannerWithString
-      PROCEDURE :: reset
+!       PROCEDURE :: reset   ! unused, commented out 2026-11-19
       PROCEDURE :: scanUpToString
       PROCEDURE :: scanInt
       PROCEDURE :: scanReal
       PROCEDURE :: isAtEnd
       PROCEDURE :: scanIntsToArray
-      PROCEDURE :: lastDelimiter
+!       PROCEDURE :: lastDelimiter   ! unused, commented out 2026-11-19
    END TYPE SMScanner
 
    INTEGER, PARAMETER :: NOT_AN_INTEGER = -HUGE(NOT_AN_INTEGER)
@@ -117,11 +117,13 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   SUBROUTINE reset(self)
-      IMPLICIT NONE
-      CLASS(SMScanner)  :: self
-      self % cursorPos  = 1
-   END SUBROUTINE reset
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!    SUBROUTINE reset(self)
+!       IMPLICIT NONE
+!       CLASS(SMScanner)  :: self
+!       self % cursorPos  = 1
+!    END SUBROUTINE reset
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -208,13 +210,15 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   CHARACTER(LEN=1) FUNCTION lastDelimiter(self)
-      IMPLICIT NONE
-      CLASS(SMScanner) :: self
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!    CHARACTER(LEN=1) FUNCTION lastDelimiter(self)
+!       IMPLICIT NONE
+!       CLASS(SMScanner) :: self
 
-      lastDelimiter = self % delm
+!       lastDelimiter = self % delm
 
-   END FUNCTION lastDelimiter
+!    END FUNCTION lastDelimiter
 !
 !////////////////////////////////////////////////////////////////////////
 !

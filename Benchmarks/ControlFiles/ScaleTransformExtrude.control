@@ -1,0 +1,58 @@
+%
+% Exercises the 2D SCALE_TRANSFORM block. The 2D mesh of the unit circle is
+% scaled by 2 about the origin before it is extruded, so the hex mesh fills a
+% cylinder of radius 2 and height 1. The 3D statistics are computed after the
+% transform, so the benchmark data checks the scaling (the average element
+% volume is 4 times that of the unscaled mesh).
+%
+\begin{CONTROL_INPUT}
+
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/ScaleTransformExtrude.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/ScaleTransformExtrude.tec
+      stats file name  = none
+      test file name   = Benchmarks/BenchmarkData/ScaleTransformExtrude.txt
+      mesh file format = ISM
+      polynomial order = 3
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.25, 0.25, 0.0]
+   \end{BACKGROUND_GRID}
+
+   \begin{SCALE_TRANSFORM}
+      origin       = [0.0, 0.0, 0.0]
+      scale factor = 2.0
+   \end{SCALE_TRANSFORM}
+
+   \begin{SIMPLE_EXTRUSION}
+      direction          = 3
+      height             = 1.0
+      subdivisions       = 2
+      start surface name = bottom
+      end surface name   = top
+   \end{SIMPLE_EXTRUSION}
+
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 15
+   \end{SPRING_SMOOTHER}
+
+\end{CONTROL_INPUT}
+
+\begin{MODEL}
+
+   \begin{OUTER_BOUNDARY}
+      \begin{PARAMETRIC_EQUATION_CURVE}
+         name = circle
+         xEqn = x(t) = cos(2*pi*t)
+         yEqn = y(t) = sin(2*pi*t)
+         zEqn = z(t) = 0.0
+      \end{PARAMETRIC_EQUATION_CURVE}
+   \end{OUTER_BOUNDARY}
+
+\end{MODEL}
+
+\end{FILE}

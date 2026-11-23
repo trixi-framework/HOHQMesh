@@ -30,209 +30,222 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      Module LaplaceMeshSmootherClass
-      USE MeshSmootherClass
-      USE SMMeshClass
-      USE SMModelClass
-      USE ConnectionsModule
-      IMPLICIT NONE
-      PRIVATE
+!////////////////////////////////////////////////////////////////////////
 !
-!     ---------------------
-!     Class type definition
-!     ---------------------
+!  Unused Laplace mesh smoother (commented out 2026-11-19)
 !
-      TYPE, EXTENDS(MeshSmoother) :: LaplaceMeshSmoother
-         INTEGER :: numSteps
-!
-!        ========
-         CONTAINS
-!        ========
-!
-         PROCEDURE, PUBLIC :: init       => initLaplaceSmoother
-         FINAL             :: destructLaplaceMeshSmoother
-         PROCEDURE, PUBLIC :: smoothMesh => laplaceSmoothMesh
-
-      END TYPE LaplaceMeshSmoother
-      PUBLIC ::LaplaceMeshSmoother
-!
-!     ----------------------
-!     Other type definitions
-!     ----------------------
-!
-      TYPE LaplaceSmootherParameters
-         LOGICAL :: smoothingOn
-         INTEGER :: numSteps
-      END TYPE LaplaceSmootherParameters
-      PUBLIC :: LaplaceSmootherParameters
-
-      PUBLIC :: ReadLaplaceSmootherBlock, release
-
-!      INTERFACE release
-!         MODULE PROCEDURE ::  releaseLaplaceSmoother
-!      END INTERFACE
-
-!
-!     ========
-      CONTAINS
-!     ========
-!
+!  MeshProject only ever allocates a SpringMeshSmoother (SPRING_SMOOTHER
+!  block), and no branch instantiates LaplaceMeshSmoother, so this whole
+!  module is unreachable. It is kept for reference. To restore:
+!    1. Uncomment this module
+!    2. Restore "USE LaplaceMeshSmootherClass" in BuildProject (MeshProject.f90)
+!    3. Add a control-file block/key that allocates it as self % smoother
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE initLaplaceSmoother(self,lpr)
-         IMPLICIT NONE
-         CLASS(LaplaceMeshSmoother)      :: self
-         TYPE(LaplaceSmootherParameters) :: lpr
-         self % numSteps = lpr % numSteps
-      END SUBROUTINE initLaplaceSmoother
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE destructLaplaceMeshSmoother(self)
-         IMPLICIT NONE
-         TYPE(LaplaceMeshSmoother) :: self
-      END SUBROUTINE destructLaplaceMeshSmoother
-!
-!////////////////////////////////////////////////////////////////////////
-!
-!      SUBROUTINE releaseLaplaceSmoother(self)
-!         IMPLICIT NONE
-!         TYPE (LaplaceMeshSmoother), POINTER :: self
-!         CLASS(FTObject)           , POINTER :: obj
-!
-!         IF(.NOT. ASSOCIATED(self)) RETURN
-!
-!         obj => self
-!         CALL releaseFTObject(self = obj)
-!         IF ( .NOT. ASSOCIATED(obj) )     THEN
-!            self => NULL()
-!         END IF
-!      END SUBROUTINE releaseLaplaceSmoother
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE laplaceSmoothMesh( self, mesh, model, errorCode )
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS (LaplaceMeshSmoother)   :: self
-         TYPE  (SMMesh)      , POINTER :: mesh
-         TYPE  (SMModel)     , POINTER :: model
-         INTEGER                       :: errorCode
-!
-!        ---------------
-!        local variables
-!        ---------------
-!
-         INTEGER :: iter
+!       Module LaplaceMeshSmootherClass
+!       USE MeshSmootherClass
+!       USE SMMeshClass
+!       USE SMModelClass
+!       USE ConnectionsModule
+!       IMPLICIT NONE
+!       PRIVATE
+! !
+! !     ---------------------
+! !     Class type definition
+! !     ---------------------
+! !
+!       TYPE, EXTENDS(MeshSmoother) :: LaplaceMeshSmoother
+!          INTEGER :: numSteps
+! !
+! !        ========
+!          CONTAINS
+! !        ========
+! !
+!          PROCEDURE, PUBLIC :: init       => initLaplaceSmoother
+!          FINAL             :: destructLaplaceMeshSmoother
+!          PROCEDURE, PUBLIC :: smoothMesh => laplaceSmoothMesh
 
-         CALL makeNodeToEdgeConnections( mesh )
+!       END TYPE LaplaceMeshSmoother
+!       PUBLIC ::LaplaceMeshSmoother
+! !
+! !     ----------------------
+! !     Other type definitions
+! !     ----------------------
+! !
+!       TYPE LaplaceSmootherParameters
+!          LOGICAL :: smoothingOn
+!          INTEGER :: numSteps
+!       END TYPE LaplaceSmootherParameters
+!       PUBLIC :: LaplaceSmootherParameters
 
-         DO iter = 1, self % numSteps
-            CALL relax( mesh )
-         END DO
+!       PUBLIC :: ReadLaplaceSmootherBlock, release
 
-         CALL deallocateNodeToEdgeConnections
+! !      INTERFACE release
+! !         MODULE PROCEDURE ::  releaseLaplaceSmoother
+! !      END INTERFACE
 
-      END SUBROUTINE laplaceSmoothMesh
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE relax( mesh )
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE  (SMMesh)             , POINTER :: mesh
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER                               :: k, id
-         CLASS(FTLinkedListIterator), POINTER  :: iterator => NULL()
-         CLASS(FTObject)            , POINTER  :: obj      => NULL()
-         TYPE (SMNode)              , POINTER  :: node     => NULL()
-         TYPE (SMEdge)              , POINTER  :: edge     => NULL()
-         REAL(KIND=RP)                         :: x(3)
+! !
+! !     ========
+!       CONTAINS
+! !     ========
+! !
+! !
+! !////////////////////////////////////////////////////////////////////////
+! !
+!       SUBROUTINE initLaplaceSmoother(self,lpr)
+!          IMPLICIT NONE
+!          CLASS(LaplaceMeshSmoother)      :: self
+!          TYPE(LaplaceSmootherParameters) :: lpr
+!          self % numSteps = lpr % numSteps
+!       END SUBROUTINE initLaplaceSmoother
+! !
+! !////////////////////////////////////////////////////////////////////////
+! !
+!       SUBROUTINE destructLaplaceMeshSmoother(self)
+!          IMPLICIT NONE
+!          TYPE(LaplaceMeshSmoother) :: self
+!       END SUBROUTINE destructLaplaceMeshSmoother
+! !
+! !////////////////////////////////////////////////////////////////////////
+! !
+! !      SUBROUTINE releaseLaplaceSmoother(self)
+! !         IMPLICIT NONE
+! !         TYPE (LaplaceMeshSmoother), POINTER :: self
+! !         CLASS(FTObject)           , POINTER :: obj
+! !
+! !         IF(.NOT. ASSOCIATED(self)) RETURN
+! !
+! !         obj => self
+! !         CALL releaseFTObject(self = obj)
+! !         IF ( .NOT. ASSOCIATED(obj) )     THEN
+! !            self => NULL()
+! !         END IF
+! !      END SUBROUTINE releaseLaplaceSmoother
+! !
+! !////////////////////////////////////////////////////////////////////////
+! !
+!       SUBROUTINE laplaceSmoothMesh( self, mesh, model, errorCode )
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          CLASS (LaplaceMeshSmoother)   :: self
+!          TYPE  (SMMesh)      , POINTER :: mesh
+!          TYPE  (SMModel)     , POINTER :: model
+!          INTEGER                       :: errorCode
+! !
+! !        ---------------
+! !        local variables
+! !        ---------------
+! !
+!          INTEGER :: iter
 
-         iterator => mesh % nodesIterator
+!          CALL makeNodeToEdgeConnections( mesh )
 
-         IF ( ASSOCIATED(iterator) )     THEN
-            CALL iterator % setToStart()
+!          DO iter = 1, self % numSteps
+!             CALL relax( mesh )
+!          END DO
 
-            DO WHILE(.NOT.iterator % isAtEnd())
-               obj  => iterator % object()
-               node => nodeFromSMMeshobject(obj)
+!          CALL deallocateNodeToEdgeConnections
 
-               IF ( ASSOCIATED(node) .AND. .NOT.hasFixedPosition(node) )     THEN
-                  id = node % id
-                  x  = 0.0_RP
-                  DO k = 1, numEdgesForNodes(id)
-                     edge => edgesForNodes(k,id) % edge
-                     IF ( edge % nodes(1) % node % id == id )     THEN
-                        x = x + edge % nodes(2) % node % x
-                     ELSE
-                        x = x + edge % nodes(1) % node % x
-                     END IF
-                  END DO
-                  node % x = x/numEdgesForNodes(id)
-               END IF
+!       END SUBROUTINE laplaceSmoothMesh
+! !
+! !////////////////////////////////////////////////////////////////////////
+! !
+!       SUBROUTINE relax( mesh )
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          TYPE  (SMMesh)             , POINTER :: mesh
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          INTEGER                               :: k, id
+!          CLASS(FTLinkedListIterator), POINTER  :: iterator => NULL()
+!          CLASS(FTObject)            , POINTER  :: obj      => NULL()
+!          TYPE (SMNode)              , POINTER  :: node     => NULL()
+!          TYPE (SMEdge)              , POINTER  :: edge     => NULL()
+!          REAL(KIND=RP)                         :: x(3)
 
-               CALL iterator % moveToNext()
-            END DO
-         END IF
+!          iterator => mesh % nodesIterator
 
-      END SUBROUTINE relax
-!
-!////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE ReadLaplaceSmootherBlock( fUnit, smp )
-!
-!        Example block is:
-!
-!         \begin{Smoother}
-!            smoothing            = "ON"
-!            number of iterations = 25
-!         \end{Smoother}
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         INTEGER                         :: fUnit
-         TYPE(LaplaceSmootherParameters) :: smp
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER                    :: ios
-         CHARACTER(LEN=LINE_LENGTH) :: str
-         CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
-         REAL(KIND=RP), EXTERNAL    :: GetRealValue
-         INTEGER      , EXTERNAL    :: GetIntValue
+!          IF ( ASSOCIATED(iterator) )     THEN
+!             CALL iterator % setToStart()
 
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         str = GetStringValue( inputLine )
+!             DO WHILE(.NOT.iterator % isAtEnd())
+!                obj  => iterator % object()
+!                node => nodeFromSMMeshobject(obj)
 
-         IF( TRIM(str) == "ON" )     THEN
-            smp % smoothingON = .true.
-         ELSE
-            smp % smoothingON = .false.
-         END IF
+!                IF ( ASSOCIATED(node) .AND. .NOT.hasFixedPosition(node) )     THEN
+!                   id = node % id
+!                   x  = 0.0_RP
+!                   DO k = 1, numEdgesForNodes(id)
+!                      edge => edgesForNodes(k,id) % edge
+!                      IF ( edge % nodes(1) % node % id == id )     THEN
+!                         x = x + edge % nodes(2) % node % x
+!                      ELSE
+!                         x = x + edge % nodes(1) % node % x
+!                      END IF
+!                   END DO
+!                   node % x = x/numEdgesForNodes(id)
+!                END IF
 
-         READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
-         smp % numSteps = GetIntValue( inputLine )
+!                CALL iterator % moveToNext()
+!             END DO
+!          END IF
 
-      END SUBROUTINE ReadLaplaceSmootherBlock
+!       END SUBROUTINE relax
+! !
+! !////////////////////////////////////////////////////////////////////////
+! !
+!       SUBROUTINE ReadLaplaceSmootherBlock( fUnit, smp )
+! !
+! !        Example block is:
+! !
+! !         \begin{Smoother}
+! !            smoothing            = "ON"
+! !            number of iterations = 25
+! !         \end{Smoother}
+! !
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          INTEGER                         :: fUnit
+!          TYPE(LaplaceSmootherParameters) :: smp
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          INTEGER                    :: ios
+!          CHARACTER(LEN=LINE_LENGTH) :: str
+!          CHARACTER(LEN=LINE_LENGTH) :: inputLine = " "
+!          REAL(KIND=RP), EXTERNAL    :: GetRealValue
+!          INTEGER      , EXTERNAL    :: GetIntValue
 
-      END MODULE LaplaceMeshSmootherClass
+!          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+!          str = GetStringValue( inputLine )
+
+!          IF( TRIM(str) == "ON" )     THEN
+!             smp % smoothingON = .true.
+!          ELSE
+!             smp % smoothingON = .false.
+!          END IF
+
+!          READ ( fUnit, FMT = '(a132)', IOSTAT = ios ) inputLine
+!          smp % numSteps = GetIntValue( inputLine )
+
+!       END SUBROUTINE ReadLaplaceSmootherBlock
+
+!       END MODULE LaplaceMeshSmootherClass

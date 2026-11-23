@@ -118,9 +118,7 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER      , EXTERNAL                :: GetIntValue
          REAL(KIND=RP), EXTERNAL                :: GetRealValue
-         CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
 !
 !        ---------
 !        Direction
@@ -201,9 +199,7 @@
 !        ---------------
 !
          REAL(KIND=RP)                          :: angleFactor
-         INTEGER      , EXTERNAL                :: GetIntValue
          REAL(KIND=RP), EXTERNAL                :: GetRealValue
-         CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
 !
 !        ---------
 !        Direction
@@ -461,9 +457,16 @@
                   eta = 0.5_RP*(1.0_RP - COS(k*PI/N))
                   DO j = 0, N
                      DO i = 0, N
-                        delta = (h - e % xPatch(pMutation,i,j))/nLev
-                        z     = xi*h + (1.0_RP - xi)*e % xPatch(pMutation,i,j) + delta*eta
+!
+!                       -----------------------------------------------------------
+!                       The element patch is not permuted (only the mesh nodes are,
+!                       in permuteMeshDirection), so permute it first and take the
+!                       starting height from the permuted position, as sweepNodes does
+!                       -----------------------------------------------------------
+!
                         x     = permutePosition(x = e % xPatch(:,i,j),pmutation = pMutation)
+                        delta = (h - x(pMutation))/nLev
+                        z     = xi*h + (1.0_RP - xi)*x(pMutation) + delta*eta
                         y     = extrudedNodeLocation(baseLocation = x, delta = z, pmutation = pMutation)
 
                         hex8Mesh % elements(l,m) % x(:,i,j,k) = y

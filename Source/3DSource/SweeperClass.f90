@@ -128,9 +128,7 @@
 !              Local variables
 !              ---------------
 !
-               INTEGER      , EXTERNAL                :: GetIntValue
                REAL(KIND=RP), EXTERNAL                :: GetRealValue
-               CHARACTER( LEN=LINE_LENGTH ), EXTERNAL :: GetStringValue
 !
 !              ----------------------------------------
 !              Make sure the model has a curve to sweep
@@ -359,8 +357,8 @@
 !              Local variables
 !              ---------------
 !
-               REAL(KIND=RP)     :: t, t0, f(3)
-               REAL(KIND=RP)     :: direction(3), r(3), p0(3), p1(3), refDirection(3)
+               REAL(KIND=RP)     :: t, t0
+               REAL(KIND=RP)     :: r(3), p0(3), p1(3), refDirection(3)
                INTEGER           :: l, m, k, j, i
                REAL(KIND=RP)     :: zero(3) = [0.0_RP, 0.0_RP, 0.0_RP]
                TYPE(FrenetFrame) :: refFrame, frame, prevFrame
@@ -427,25 +425,6 @@
 
                      mesh % nodes(m,l) % x = p1 + r
                   END DO
-!
-!                 -----------------------
-!                 Apply scaling transform
-!                 -----------------------
-!
-                  IF ( ASSOCIATED( self % scaleCurve) )     THEN
-                     f = self % scaleCurve % positionAt(t)
-                     CALL ConstructScaleTransform(self   = self % scaleTransformer, &
-                                                  origin = r,                       &
-                                                  normal = direction,               &
-                                                  factor = f(1))
-
-                     DO m = 1, SIZE(mesh % nodes,1)
-                        p0 = PerformScaleTransformation(x              = mesh % nodes(m,l) % x, &
-                                                        transformation = self % scaleTransformer)
-                        mesh % nodes(m,l) % x = p0
-                      END DO
-
-                  END IF
 
                END DO
 !
@@ -507,26 +486,6 @@
                               mesh % elements(m,l) % x(:,i,j,k) = p1 + r
                            END DO
                         END DO
-!
-!                       -------------
-!                       Apply scaling
-!                       -------------
-!
-                        IF ( ASSOCIATED( self % scaleCurve) )     THEN
-
-                          f = self % scaleCurve % positionAt(t)
-                          CALL ConstructScaleTransform(self   = self % scaleTransformer, &
-                                                       origin = r,                       &
-                                                       normal = direction,               &
-                                                       factor = f(1))
-                           DO j = 0, N
-                              DO i = 0, N
-                                 p0 = PerformScaleTransformation(x              = mesh % elements(m,l) % x(:,i,j,k), &
-                                                                 transformation = self % scaleTransformer)
-                                 mesh % elements(m,l) % x(:,i,j,k) = p0
-                              END DO
-                           END DO
-                        END IF
 
                      END DO
                   END DO

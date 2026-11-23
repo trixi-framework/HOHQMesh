@@ -537,6 +537,12 @@
 !              m4 --- C ----- m2
 !              |      |       |
 !              1 ---- m1 ---- 2
+!
+!        The interface touches the element only at corners 1 and 3
+!        and runs outside of it, through the neighbors whose edges
+!        are split, so that all four new elements lie in the same
+!        material. Were the interface to run along the diagonal 1-3
+!        instead, it would cut through the elements at 1 and 3.
 !        ------------------------------------------------------------
 !
 !        ---------

@@ -102,6 +102,7 @@
   
          READ(iUnit,*)N
          IF ( N < 4 )     THEN
+            CLOSE(iUnit)
             ALLOCATE(exception)
             CALL exception % initFatalException(msg = "A spline curve must have at least 4 points")
             CALL throw(exception)
@@ -113,6 +114,7 @@
          DO i = 1, N
             READ(iUnit,*) t(i), x(i), y(i), z(i)
          ENDDO
+         CLOSE(iUnit)
 
          CALL self % initWithPointsNameAndID( t, x, y, z, curveName, id)
 

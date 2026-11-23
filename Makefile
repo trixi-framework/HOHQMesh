@@ -26,12 +26,16 @@ ConstrainedMultiH1Optimizer.o \
 ControlFileReader.o \
 CurveConversions.o \
 CurveInterpolantClass.o \
+BoundaryIntersectionTests.o \
 CurveOptimization.o \
 CurveTests.o \
 DataFileTopographyClass.o \
+DebugOutputTests.o \
 ElementOperations.o \
 Encoder.o \
 EquationEvaluatorClass.o \
+EquationEvaluatorTests.o \
+ExtrusionTests.o \
 FatalErrorException.o \
 FileAndStringProcessing.o \
 Frenet.o \
@@ -70,6 +74,11 @@ MeshCleaner.o \
 MeshGeneratorMethods.o \
 MeshingTests.o \
 MeshOperationsModule.o \
+MeshTopologyTests.o \
+ControlInputTests.o \
+ProjectInputTests.o \
+SizerTests.o \
+GeometryUnitTests.o \
 MeshOutputMethods.o \
 MeshProject.o \
 MeshQualityAnalysis.o \
@@ -91,6 +100,7 @@ QuadTreeTemplateOperations.o \
 ReaderExceptions.o \
 ScannerTests.o \
 Scanning.o \
+SegmentedChainTests.o \
 SegmentedCurveArrayClass.o \
 Shortcuts.o \
 SimpleSweep.o \
@@ -501,6 +511,16 @@ MeshOutputMethods.o
 
 MeshingTests.o :$(HOHQMESHPATH)/Source/Testing/MeshingTests.f90 \
 TestDataClass.o \
+MeshTopologyTests.o \
+ControlInputTests.o \
+ProjectInputTests.o \
+SizerTests.o \
+GeometryUnitTests.o \
+DebugOutputTests.o \
+ExtrusionTests.o \
+SegmentedChainTests.o \
+EquationEvaluatorTests.o \
+BoundaryIntersectionTests.o \
 Encoder.o \
 MeshQualityAnalysis.o \
 HOHQMesh.o \
@@ -579,7 +599,8 @@ GaussQuadrature.o
 
 MultiSegmentModalCurve.o :$(HOHQMESHPATH)/Source/Curves/DiscreteCurves/MultiSegmentModalCurve.f90 \
 LegendreAlgorithms.o \
-MultiSegmentCurve.o
+MultiSegmentCurve.o \
+Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Curves/DiscreteCurves/MultiSegmentModalCurve.f90
 
 MultiSegmentNodalCurve.o :$(HOHQMESHPATH)/Source/Curves/DiscreteCurves/MultiSegmentNodalCurve.f90 \
@@ -662,6 +683,143 @@ ReaderExceptions.o :$(HOHQMESHPATH)/Source/3DSource/ReaderExceptions.f90 \
 FTExceptionClass.o \
 FTValueDictionaryClass.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/3DSource/ReaderExceptions.f90
+
+SegmentedChainTests.o :$(HOHQMESHPATH)/Source/Testing/SegmentedChainTests.f90 \
+SMConstants.o \
+SMLine.o \
+FRSegmentedCurveClass.o \
+ChainedSegmentedCurveClass.o \
+SMChainedCurveClass.o \
+ProgramGlobals.o \
+FTLinkedListClass.o \
+FTValueClass.o \
+FTExceptionClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/SegmentedChainTests.f90
+
+EquationEvaluatorTests.o :$(HOHQMESHPATH)/Source/Testing/EquationEvaluatorTests.f90 \
+SMConstants.o \
+EquationEvaluatorClass.o \
+ParametricEquationCurveClass.o \
+ParametricEquationTopographyClass.o \
+FTValueClass.o \
+FTExceptionClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/EquationEvaluatorTests.f90
+
+DebugOutputTests.o :$(HOHQMESHPATH)/Source/Testing/DebugOutputTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+Encoder.o \
+HOHQMesh.o \
+MeshProject.o \
+MeshGeneratorMethods.o \
+QuadTreeGridClass.o \
+QuadTreeGridGenerator.o \
+SMMeshObjects.o \
+SMCurveClass.o \
+SMChainedCurveClass.o \
+SMSplineCurveClass.o \
+ParametricEquationCurveClass.o \
+SMPolynomialInterpolantCurveClass.o \
+ChainedSegmentedCurveClass.o \
+FRSegmentedCurveClass.o \
+SegmentedCurveArrayClass.o \
+CurveConversions.o \
+SizerControls.o \
+SMTopographyClass.o \
+ParametricEquationTopographyClass.o \
+DataFileTopographyClass.o \
+FTLinkedListClass.o \
+FTValueDictionaryClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/DebugOutputTests.f90
+
+ExtrusionTests.o :$(HOHQMESHPATH)/Source/Testing/ExtrusionTests.f90 \
+SMConstants.o \
+Encoder.o \
+HOHQMesh.o \
+MeshProject.o \
+MeshQualityAnalysis.o \
+FTValueDictionaryClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ExtrusionTests.f90
+
+GeometryUnitTests.o :$(HOHQMESHPATH)/Source/Testing/GeometryUnitTests.f90 \
+SMConstants.o \
+SMEllipticArc.o \
+Geometry.o \
+Geometry3D.o \
+SizerControls.o \
+ProgramGlobals.o \
+Encoder.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/GeometryUnitTests.f90
+
+ControlInputTests.o :$(HOHQMESHPATH)/Source/Testing/ControlInputTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+FTValueClass.o \
+FTValueDictionaryClass.o \
+FTDictionaryClass.o \
+FTExceptionClass.o \
+FatalErrorException.o \
+ControlFileReader.o \
+SMChainedCurveClass.o \
+SMModel.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ControlInputTests.f90
+
+ProjectInputTests.o :$(HOHQMESHPATH)/Source/Testing/ProjectInputTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+FTValueDictionaryClass.o \
+FTLinkedListClass.o \
+FTExceptionClass.o \
+FatalErrorException.o \
+ControlInputTests.o \
+SMChainedCurveClass.o \
+SMMeshObjects.o \
+MeshProject.o \
+MeshGeneratorMethods.o \
+3DMeshController.o \
+DataFileTopographyClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ProjectInputTests.f90
+
+SizerTests.o :$(HOHQMESHPATH)/Source/Testing/SizerTests.f90 \
+SMConstants.o \
+FTValueDictionaryClass.o \
+FTExceptionClass.o \
+FatalErrorException.o \
+Sizer.o \
+MeshProject.o \
+ControlInputTests.o \
+ProjectInputTests.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/SizerTests.f90
+
+MeshTopologyTests.o :$(HOHQMESHPATH)/Source/Testing/MeshTopologyTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+SMMeshObjects.o \
+SMMeshClass.o \
+Connections.o \
+MeshQualityAnalysis.o \
+MeshCleaner.o \
+InterfaceElementMethods.o \
+FTLinkedListClass.o \
+FTObjectArrayClass.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/MeshTopologyTests.f90
+
+BoundaryIntersectionTests.o :$(HOHQMESHPATH)/Source/Testing/BoundaryIntersectionTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+Geometry.o \
+MeshBoundaryMethods.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/BoundaryIntersectionTests.f90
 
 ScannerTests.o :$(HOHQMESHPATH)/Source/Testing/ScannerTests.f90 \
 Assert.o \

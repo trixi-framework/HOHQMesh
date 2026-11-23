@@ -182,8 +182,16 @@
 
          self % nx = -1
          self % ny = -1
-         DEALLOCATE( self % x_values, self % y_values, self % z_values)
-         DEALLOCATE( self % dzdx, self % dzdy, self % d2zdxy)
+!
+!        The arrays are not allocated if the topography
+!        failed to read its data file
+!
+         IF ( ALLOCATED(self % x_values) )     DEALLOCATE( self % x_values )
+         IF ( ALLOCATED(self % y_values) )     DEALLOCATE( self % y_values )
+         IF ( ALLOCATED(self % z_values) )     DEALLOCATE( self % z_values )
+         IF ( ALLOCATED(self % dzdx) )         DEALLOCATE( self % dzdx )
+         IF ( ALLOCATED(self % dzdy) )         DEALLOCATE( self % dzdy )
+         IF ( ALLOCATED(self % d2zdxy) )       DEALLOCATE( self % d2zdxy )
 
       END SUBROUTINE destructBiCubicInterpolation
 !

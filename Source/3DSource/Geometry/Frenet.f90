@@ -146,26 +146,28 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      REAL(KIND=RP) FUNCTION FrameAngle(frame1, frame2)
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE(FrenetFrame) :: frame1, frame2
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         REAL(KIND=RP) :: cosTheta
+!       REAL(KIND=RP) FUNCTION FrameAngle(frame1, frame2)
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          TYPE(FrenetFrame) :: frame1, frame2
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          REAL(KIND=RP) :: cosTheta
 
-         CALL Dot3D(u = frame1 % normal ,v = frame2 % normal, dot = cosTheta)
-         cosTheta = MIN(cosTheta, 1.0_RP)
+!          CALL Dot3D(u = frame1 % normal ,v = frame2 % normal, dot = cosTheta)
+!          cosTheta = MIN(cosTheta, 1.0_RP)
 
-         FrameAngle = ACOS(cosTheta)
+!          FrameAngle = ACOS(cosTheta)
 
-      END FUNCTION FrameAngle
+!       END FUNCTION FrameAngle
 
       END Module Frenet

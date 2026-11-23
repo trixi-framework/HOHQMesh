@@ -98,7 +98,7 @@
          PROCEDURE :: setPoints
          PROCEDURE :: setBoundaryName
          PROCEDURE :: boundaryName
-         PROCEDURE :: PointIsInsideCurve
+!          PROCEDURE :: PointIsInsideCurve   ! unused, commented out 2026-11-19
          PROCEDURE :: windingNumber
          PROCEDURE :: nearestPoint
          PROCEDURE :: cellRangeForBox
@@ -264,28 +264,30 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION PointIsInsideCurve(self, p)
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS(SegmentedCurveArray) :: self
-         REAL(KIND=RP)              :: p(3)
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         REAL(KIND=RP) :: w
+!       LOGICAL FUNCTION PointIsInsideCurve(self, p)
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          CLASS(SegmentedCurveArray) :: self
+!          REAL(KIND=RP)              :: p(3)
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          REAL(KIND=RP) :: w
          
-         PointIsInsideCurve = .true.
-         w = ACWindingFunction( p, self % x, self % nSegments-1 )
-         IF ( abs(w) <= EPSILON(w) ) THEN
-            PointIsInsideCurve = .false.
-         END IF
-      END FUNCTION PointIsInsideCurve 
+!          PointIsInsideCurve = .true.
+!          w = ACWindingFunction( p, self % x, self % nSegments-1 )
+!          IF ( abs(w) <= EPSILON(w) ) THEN
+!             PointIsInsideCurve = .false.
+!          END IF
+!       END FUNCTION PointIsInsideCurve 
 !
 !////////////////////////////////////////////////////////////////////////
 !

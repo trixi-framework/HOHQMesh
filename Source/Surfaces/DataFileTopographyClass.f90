@@ -60,7 +60,7 @@
       TYPE, EXTENDS(SMTopography) :: SMTopographyFromFile
          CHARACTER(LEN=STRING_CONSTANT_LENGTH) :: file_name
          TYPE(BiCubicInterpolation)            :: biCubic
-         TYPE(BiCubicInterpolation), POINTER   :: curvature
+         TYPE(BiCubicInterpolation), POINTER   :: curvature => NULL()
          REAL(KIND=RP)                         :: box(6) !TOP, LEFT, BOTTOM, RIGHT (2 unused in 2D)
 !
 !        ========
@@ -286,21 +286,33 @@
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION positionOnDFTopographyAt(self, t)  RESULT(x)
+!
+!     -----------------------------------------------------------------
+!     The point on the topography above t. Outside of the box of the
+!     data, the height is the one at the nearest point of the box, so
+!     it is continuous at the box and does not follow the extrapolated
+!     interpolant away from the data. A warning is posted.
+!     -----------------------------------------------------------------
+!
          IMPLICIT NONE
          CLASS(SMTopographyFromFile)          :: self
          REAL(KIND=RP)                        :: t(2)
          REAL(KIND=RP)                        :: x(3)
          CHARACTER(LEN=ERROR_MESSAGE_LENGTH)  :: msg
+         REAL(KIND=RP)                        :: tBox(2)
 
+         tBox = t
          IF ( .NOT. Point_IsInsideBox([t(1),t(2),0.0_RP],self % box) )     THEN
-            WRITE(msg, *)"Interpolation point (", t(1), t(2) ,") outside of: ", self % box(1:4)
+            WRITE(msg, *)"Interpolation point (", t(1), t(2) ,") outside of: ", self % box(1:4), &
+                         ". Using the height at the nearest point of the box."
             CALL ThrowErrorExceptionOfType(poster = "positionOnDFTopographyAt", &
                                            msg    = msg, &
                                            typ    = FT_ERROR_WARNING)
-            RETURN
-         END IF 
-          
-         x(3) = self % biCubic % valueAt(t)
+            tBox(1) = MIN(MAX(t(1), self % box(BBOX_LEFT))  , self % box(BBOX_RIGHT))
+            tBox(2) = MIN(MAX(t(2), self % box(BBOX_BOTTOM)), self % box(BBOX_TOP))
+         END IF
+
+         x(3) = self % biCubic % valueAt(tBox)
          x(1) = t(1)
          x(2) = t(2)
          

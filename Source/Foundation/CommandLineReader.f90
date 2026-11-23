@@ -76,7 +76,7 @@
       Module CommandLineReader 
       IMPLICIT NONE
       
-      INTEGER, PARAMETER :: COMMAND_LINE_ARGUMENT_LENGTH = 128
+      INTEGER, PARAMETER :: COMMAND_LINE_ARGUMENT_LENGTH = 512 ! Long enough for file paths
       INTEGER, PRIVATE   :: lastArgumentID
       
       PUBLIC  :: CommandLineArgumentIsPresent, IntegerValueForArgument, &
@@ -308,6 +308,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       CHARACTER(LEN=COMMAND_LINE_ARGUMENT_LENGTH) FUNCTION StringValueForArgument(argument) 
+      USE, INTRINSIC :: ISO_FORTRAN_ENV, ONLY : ERROR_UNIT
       IMPLICIT NONE 
 !
 !       ---------
@@ -321,7 +322,7 @@
 !       ---------------
 !
         INTEGER                                     :: i
-        INTEGER                                     :: argumentLength
+        INTEGER                                     :: argumentLength, valueLength
         CHARACTER(LEN=COMMAND_LINE_ARGUMENT_LENGTH) :: arg
         
         StringValueForArgument = ""
@@ -334,7 +335,17 @@
           IF (argumentLength== 0) EXIT
           
           IF ( TRIM(arg) == TRIM(argument) )      THEN
-             CALL GET_COMMAND_ARGUMENT(i+1, StringValueForArgument)
+             CALL GET_COMMAND_ARGUMENT(i+1, StringValueForArgument, LENGTH = valueLength)
+!
+!            -----------------------------------------------
+!            Stop rather than use a silently truncated value
+!            -----------------------------------------------
+!
+             IF ( valueLength > LEN(StringValueForArgument) )     THEN
+                WRITE(ERROR_UNIT,'(3A,I0,A)') " The value of the command line argument ", TRIM(argument), &
+                                              " is longer than ", LEN(StringValueForArgument), " characters"
+                ERROR STOP "Command line argument too long"
+             END IF
              RETURN
           END IF          
           i = i+1
