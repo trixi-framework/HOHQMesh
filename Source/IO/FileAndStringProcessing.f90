@@ -112,25 +112,27 @@
 !!     after an = sign in a inputLine
 !     ----------------------------------------------------------------
 !
-      INTEGER FUNCTION GetIntValue( inputLine )
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-21): no callers on any branch. Kept for reference.
 !
-         CHARACTER ( LEN = * ) :: inputLine
-         INTEGER               :: value
-         INTEGER               :: strLen, leq, k
-!
-         leq    = INDEX( inputLine, '=' )
-         strLen = LEN_TRIM( inputLine )
-         READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) VALUE
-         IF ( k /=0 )     THEN
-            WRITE(stderr,*) "Bad integer value in input line:"
-            WRITE(stderr,*) TRIM(inputLine)
-            ERROR STOP "Input file syntax error"
-         END IF
-         GetIntValue = VALUE
-!
-      END FUNCTION GetIntValue
+!       INTEGER FUNCTION GetIntValue( inputLine )
+!          USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
+!          IMPLICIT NONE
+! !
+!          CHARACTER ( LEN = * ) :: inputLine
+!          INTEGER               :: value
+!          INTEGER               :: strLen, leq, k
+! !
+!          leq    = INDEX( inputLine, '=' )
+!          strLen = LEN_TRIM( inputLine )
+!          READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) VALUE
+!          IF ( k /=0 )     THEN
+!             WRITE(stderr,*) "Bad integer value in input line:"
+!             WRITE(stderr,*) TRIM(inputLine)
+!             ERROR STOP "Input file syntax error"
+!          END IF
+!          GetIntValue = VALUE
+! !
+!       END FUNCTION GetIntValue
 !
 !///////////////////////////////////////////////////////////////////////
 !
@@ -166,18 +168,20 @@
 !>    Extracts the string within the quotes in an input file
 !     ----------------------------------------------------------------
 !
-      CHARACTER( LEN=LINE_LENGTH ) FUNCTION GetStringValue( inputLine )
-         USE ProgramGlobals
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-21): no callers on any branch. Kept for reference.
 !
-         CHARACTER ( LEN = * ) :: inputLine
-         INTEGER               :: cStart, cEnd
-!
-         cStart = INDEX(inputLine,'"')
-         cEnd   = INDEX(inputLine, '"', .true. )
-         GetStringValue = inputLine( cStart+1: cEnd-1 )
-!
-      END FUNCTION GetStringValue
+!       CHARACTER( LEN=LINE_LENGTH ) FUNCTION GetStringValue( inputLine )
+!          USE ProgramGlobals
+!          IMPLICIT NONE
+! !
+!          CHARACTER ( LEN = * ) :: inputLine
+!          INTEGER               :: cStart, cEnd
+! !
+!          cStart = INDEX(inputLine,'"')
+!          cEnd   = INDEX(inputLine, '"', .true. )
+!          GetStringValue = inputLine( cStart+1: cEnd-1 )
+! !
+!       END FUNCTION GetStringValue
 !
 !///////////////////////////////////////////////////////////////////////
 !
@@ -186,25 +190,27 @@
 !!     after an = sign in a inputLine
 !     ----------------------------------------------------------------
 !
-      LOGICAL FUNCTION GetLogicalValue( inputLine )
-         USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-         CHARACTER ( LEN = * ) :: inputLine
-         LOGICAL               :: value
-         INTEGER               :: strLen, leq, k
-!
-         leq    = INDEX( inputLine, '=' )
-         strLen = LEN_TRIM( inputLine )
-         READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) value
-         GetLogicalValue = value
-         IF ( k /=0 )     THEN
-            WRITE(stderr,*)  "Bad logical value in input line:"
-            WRITE(stderr,*)  TRIM(inputLine)
-            ERROR STOP "Input file syntax error"
-         END IF
-!
-      END FUNCTION GetLogicalValue
+!       LOGICAL FUNCTION GetLogicalValue( inputLine )
+!          USE, INTRINSIC :: iso_fortran_env, only : stderr => ERROR_UNIT
+!          IMPLICIT NONE
+! !
+!          CHARACTER ( LEN = * ) :: inputLine
+!          LOGICAL               :: value
+!          INTEGER               :: strLen, leq, k
+! !
+!          leq    = INDEX( inputLine, '=' )
+!          strLen = LEN_TRIM( inputLine )
+!          READ( inputLine( leq+1:strLen ), *, IOSTAT = k ) value
+!          GetLogicalValue = value
+!          IF ( k /=0 )     THEN
+!             WRITE(stderr,*)  "Bad logical value in input line:"
+!             WRITE(stderr,*)  TRIM(inputLine)
+!             ERROR STOP "Input file syntax error"
+!          END IF
+! !
+!       END FUNCTION GetLogicalValue
 !
 ! /////////////////////////////////////////////////////////////////////
 !
@@ -263,6 +269,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE ConvertToPath(str)
+         USE, INTRINSIC :: ISO_FORTRAN_ENV, ONLY : ERROR_UNIT
          IMPLICIT NONE
          CHARACTER(LEN=*) :: str
          INTEGER          :: lc
@@ -271,10 +278,39 @@
          IF ( str(lc:lc) == "/" )     THEN
             str = str(1:lc)
          ELSE
+            IF ( lc == LEN(str) )     THEN ! No room for the "/"
+               WRITE(ERROR_UNIT,'(3A,I0,A)') " The path ", TRIM(str), " is longer than ", LEN(str)-1, " characters"
+               ERROR STOP "Path too long"
+            END IF
             str = str(1:lc) // "/"
          END IF
 
       END SUBROUTINE ConvertToPath
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE JoinFilePath(path, fileName, fullName)
+!
+!     ----------------------------------------------------------------
+!     Sets fullName = TRIM(path) // TRIM(fileName). Stops with an
+!     error if the result does not fit, rather than silently writing
+!     to or reading from a truncated file name. fullName must not be
+!     the same variable as path or fileName.
+!     ----------------------------------------------------------------
+!
+         USE, INTRINSIC :: ISO_FORTRAN_ENV, ONLY : ERROR_UNIT
+         IMPLICIT NONE
+         CHARACTER(LEN=*), INTENT(IN)  :: path, fileName
+         CHARACTER(LEN=*), INTENT(OUT) :: fullName
+
+         IF ( LEN_TRIM(path) + LEN_TRIM(fileName) > LEN(fullName) )     THEN
+            WRITE(ERROR_UNIT,'(3A,I0,A)') " The file name ", TRIM(path) // TRIM(fileName), &
+                                          " is longer than ", LEN(fullName), " characters"
+            ERROR STOP "File name too long"
+         END IF
+         fullName = TRIM(path) // TRIM(fileName)
+
+      END SUBROUTINE JoinFilePath
 !
 !////////////////////////////////////////////////////////////////////////
 !

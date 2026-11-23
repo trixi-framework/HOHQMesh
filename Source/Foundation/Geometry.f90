@@ -80,9 +80,22 @@
       FUNCTION Curvature( xPrime, xDoublePrime ) RESULT(c)
          IMPLICIT NONE
          REAL(KIND=RP) :: xPrime(3), xDoublePrime(3), c
+         REAL(KIND=RP) :: speedSquared
+!
+!        ---------------------------------------------------------------
+!        A zero tangent has no defined curvature. This happens, e.g., for
+!        the first segment [0,1] of a closed curve, whose end points
+!        coincide. Return zero instead of 0/0 so that callers fall back
+!        to their other size limit
+!        ---------------------------------------------------------------
+!
+         speedSquared = xPrime(1)**2 + xPrime(2)**2
+         IF ( speedSquared == 0.0_RP )     THEN
+            c = 0.0_RP
+            RETURN
+         END IF
 
-         c = ABS( xPrime(1)*xDoublePrime(2) - xPrime(2)*xDoublePrime(1) ) &
-                          /(xPrime(1)**2 + xPrime(2)**2)**1.5_RP
+         c = ABS( xPrime(1)*xDoublePrime(2) - xPrime(2)*xDoublePrime(1) )/speedSquared**1.5_RP
 
       END FUNCTION Curvature
 !
@@ -139,43 +152,45 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      LOGICAL FUNCTION Box_IsInsideBox(testBox,box)
-         IMPLICIT NONE
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ---------
-!        Arguments
-!        ---------
-!
-         REAL(KIND=RP) :: box(6), testBox(6)
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         REAL(KIND=RP) :: p(3)
+!       LOGICAL FUNCTION Box_IsInsideBox(testBox,box)
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          REAL(KIND=RP) :: box(6), testBox(6)
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          REAL(KIND=RP) :: p(3)
 
-         Box_IsInsideBox = .true.
-!
-!        -----------------------------------
-!        Check bottom left corner of testBox
-!        -----------------------------------
-!
-         p = [testBox(BBOX_LEFT), testBox(BBOX_BOTTOM), 0.0_RP]
-         IF ( .NOT.Point_IsInsideBox(p,box) )     THEN
-            Box_IsInsideBox = .false.
-            RETURN
-         END IF
-!
-!        -----------------------------------
-!        Check upper right corner of testBox
-!        -----------------------------------
-!
-         p = [testBox(BBOX_RIGHT), testBox(BBOX_TOP), 0.0_RP]
-         IF ( .NOT.Point_IsInsideBox(p,box) )     THEN
-            Box_IsInsideBox = .false.
-         END IF
+!          Box_IsInsideBox = .true.
+! !
+! !        -----------------------------------
+! !        Check bottom left corner of testBox
+! !        -----------------------------------
+! !
+!          p = [testBox(BBOX_LEFT), testBox(BBOX_BOTTOM), 0.0_RP]
+!          IF ( .NOT.Point_IsInsideBox(p,box) )     THEN
+!             Box_IsInsideBox = .false.
+!             RETURN
+!          END IF
+! !
+! !        -----------------------------------
+! !        Check upper right corner of testBox
+! !        -----------------------------------
+! !
+!          p = [testBox(BBOX_RIGHT), testBox(BBOX_TOP), 0.0_RP]
+!          IF ( .NOT.Point_IsInsideBox(p,box) )     THEN
+!             Box_IsInsideBox = .false.
+!          END IF
 
-      END FUNCTION Box_IsInsideBox
+!       END FUNCTION Box_IsInsideBox
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -210,12 +225,14 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      PURE REAL(KIND=RP) FUNCTION BoundingBoxArea(bBox)
-         IMPLICIT NONE
-         REAL(KIND=RP), INTENT(IN) :: bBox(6)
-         BoundingBoxArea = (bBox(BBOX_RIGHT) - bBox(BBOX_LEFT))*   &
-                           (bBox(BBOX_TOP)   - bBox(BBOX_BOTTOM))
-      END FUNCTION BoundingBoxArea
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       PURE REAL(KIND=RP) FUNCTION BoundingBoxArea(bBox)
+!          IMPLICIT NONE
+!          REAL(KIND=RP), INTENT(IN) :: bBox(6)
+!          BoundingBoxArea = (bBox(BBOX_RIGHT) - bBox(BBOX_LEFT))*   &
+!                            (bBox(BBOX_TOP)   - bBox(BBOX_BOTTOM))
+!       END FUNCTION BoundingBoxArea
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -254,6 +271,51 @@
 
       END FUNCTION BBoxIsNested
 !
+!////////////////////////////////////////////////////////////////////////
+!
+      PURE LOGICAL FUNCTION SegmentsIntersect( a1, a2, b1, b2 )
+!
+!     -----------------------------------------------------------------
+!     Test if the segments a1-a2 and b1-b2 in the x-y plane share a
+!     point. Segments that only touch, and collinear segments that
+!     overlap, count as intersecting. Each endpoint of one segment must
+!     be on the line of the other, or the two endpoints must be on
+!     opposite sides of it. For collinear segments, which are on each
+!     other's lines, the bounding boxes must also overlap.
+!     -----------------------------------------------------------------
+!
+         IMPLICIT NONE
+         REAL(KIND=RP), INTENT(IN) :: a1(3), a2(3), b1(3), b2(3)
+         REAL(KIND=RP)             :: dA1, dA2, dB1, dB2
+
+         SegmentsIntersect = .FALSE.
+         IF ( MAX(a1(1),a2(1)) < MIN(b1(1),b2(1)) .OR. MAX(b1(1),b2(1)) < MIN(a1(1),a2(1)) .OR. &
+              MAX(a1(2),a2(2)) < MIN(b1(2),b2(2)) .OR. MAX(b1(2),b2(2)) < MIN(a1(2),a2(2)) )     RETURN
+
+         dA1 = cross2D(b2 - b1, a1 - b1)
+         dA2 = cross2D(b2 - b1, a2 - b1)
+         dB1 = cross2D(a2 - a1, b1 - a1)
+         dB2 = cross2D(a2 - a1, b2 - a1)
+
+         SegmentsIntersect = notOnSameSide(dA1, dA2) .AND. notOnSameSide(dB1, dB2)
+
+      END FUNCTION SegmentsIntersect
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      PURE REAL(KIND=RP) FUNCTION cross2D( u, v )
+         IMPLICIT NONE
+         REAL(KIND=RP), INTENT(IN) :: u(3), v(3)
+         cross2D = u(1)*v(2) - u(2)*v(1)
+      END FUNCTION cross2D
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      PURE LOGICAL FUNCTION notOnSameSide( d1, d2 )
+         IMPLICIT NONE
+         REAL(KIND=RP), INTENT(IN) :: d1, d2
+         notOnSameSide = (d1 <= 0.0_RP .AND. d2 >= 0.0_RP) .OR. (d1 >= 0.0_RP .AND. d2 <= 0.0_RP)
+      END FUNCTION notOnSameSide!
 !////////////////////////////////////////////////////////////////////////
 !
       FUNCTION IntersectionOfBBoxes(boxA, boxB) RESULT(newBox)
@@ -340,7 +402,13 @@
       y  = a(2) - p(2); yp = b(2) - p(2)
 
       IF( AlmostEqual(y,0.0_RP) .AND. AlmostEqual(yp,0.0_RP) )     THEN
-         IF( x <= 0.0_RP .AND. xp >= 0.0_RP )     onCurve = .TRUE. ! point is on this segment
+!
+!        --------------------------------------------------------
+!        The point is on this horizontal segment if it is between
+!        the end points, whichever way the segment is traversed
+!        --------------------------------------------------------
+!
+         IF( MIN(x,xp) <= 0.0_RP .AND. MAX(x,xp) >= 0.0_RP )     onCurve = .TRUE.
          RETURN
       END IF
 

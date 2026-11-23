@@ -1297,13 +1297,10 @@
 !
          INTEGER                              :: numBoundaries
          INTEGER                              :: j, numberOfValenceChanges, numberOfDiamondsRemoved
-         CLASS(FTLinkedList)        , POINTER :: currentEdgeList => NULL()
          CLASS(FTLinkedList)        , POINTER :: interfaceElements => NULL()
-         TYPE (SMEdge)              , POINTER :: currentEdge => NULL()
          CLASS(SMElement)           , POINTER :: e => NULL()
          TYPE (SMNode)              , POINTER :: meshNode => NULL()
          CLASS(FTObject)            , POINTER :: obj => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: edgeListIterator
          CLASS(FTLinkedListIterator), POINTER :: nodesIterator => NULL()
 
          numBoundaries = model % numberOfInnerCurves &
@@ -1311,45 +1308,13 @@
                        + model % numberOfInterfaceCurves
          IF (numBoundaries == 0)     RETURN
 !
-!        ------------------------------------------------
-!        Gather boundary Edges, etc in the following call
-!        ------------------------------------------------
+!        ------------------------------------------------------------
+!        Gather the boundary edges (boundaryEdgesArray and
+!        boundaryEdgesType, used below) and fix the boundary nodes
+!        ------------------------------------------------------------
 !
          CALL SetNodeActiveStatus(mesh,model, errorCode)
-!
-!        -----------------------------------------------
-!        Run through physical boundary elements and make
-!        the boundary angles 90 degrees.
-!        -----------------------------------------------
-!
-         IF( errorCode == A_OK_ERROR_CODE)     THEN
-            CALL makeNodeToElementConnections(mesh, errorCode)
-            DO j = 1, numBoundaries
-               IF( boundaryEdgesType(j) == INTERFACE_EDGES ) CYCLE
-               ALLOCATE(edgeListIterator)
-
-               obj  => boundaryEdgesArray % objectAtIndex(j)
-               CALL cast(obj,currentEdgeList)
-
-               CALL edgeListIterator % initWithFTLinkedListClass(currentEdgeList)
-               CALL edgeListIterator % setToStart()
-
-               DO WHILE ( .NOT.EdgeListIterator % isAtEnd() )
-                  obj => EdgeListIterator % object()
-                  CALL castToSMEdge(obj,currentEdge)
-                  IF ( currentEdge % edgeType == ON_BOUNDARY )     THEN
-                     e   => currentEdge % elements(1) % element
-!               BUG: puts boundary points in the wrong place.
-                     CALL CleanUpBoundaryElement( e, model )
-                  END IF
-
-                  CALL EdgeListIterator % moveToNext()
-               END DO
-
-               CALL releaseFTLinkedListIteratorClass(edgeListIterator)
-            END DO
-            CALL deallocateNodeToEdgeConnections
-         ELSE
+         IF( errorCode > A_OK_ERROR_CODE)     THEN
             CALL mesh % destroyEdgeArrays()
             CALL deallocateNodeToElementConnections
             RETURN
@@ -1518,6 +1483,14 @@
                node => e % nodes(badNodeLocalID) % node
                badNodeID = node % id
 !
+!              ------------------------------------------------------------
+!              Only an interior node can be removed. A node on a boundary
+!              curve or on the outer box is in two elements as a matter of
+!              course, and removing it would take it off the boundary.
+!              ------------------------------------------------------------
+!
+               IF ( isOnBoundaryCurve(node) .OR. IsOnOuterBox(node) )     CYCLE
+!
 !              -------------------------------------------
 !              Check the topology - remove triangles only.
 !              -------------------------------------------
@@ -1531,6 +1504,7 @@
                      PRINT *, "Unassociated pointer for node ", badNodeID, " in element ", e % id
                      CYCLE
                   END IF
+                  IF ( eNbr % remove )     CYCLE ! Already merged into another chevron
 !
 !                 ---------------------------------------------
 !                 Replace the bad node in this element by
@@ -1538,21 +1512,29 @@
 !                 Find where in the neighbor this node is.
 !                 ---------------------------------------------
 !
-                  j = -1
+                  nbrNodeLocalID = 0
                   DO j = 1,4
-!                     obj => eNbr % nodes % objectAtIndex(j)
-!                     CALL cast(obj,node)
-                     node => eNbr % nodes(j) % node
-                     IF( node % id == badNodeID )     THEN
+                     IF( eNbr % nodes(j) % node % id == badNodeID )     THEN
                         nbrNodeLocalID = j
                         EXIT
                      END IF
                   END DO
 
-                  IF ( j < 0 )     THEN
+                  IF ( nbrNodeLocalID == 0 )     THEN
                      PRINT *, "Bad shared element connection, ignoring elements ", e % id, eNbr % id
                      CYCLE
                   END IF
+!
+!                 ---------------------------------------------------------
+!                 The two elements must share both edges at the bad node
+!                 (a doublet), so that their union is the quad made of the
+!                 other nodes of e and the opposite node of the neighbor
+!                 ---------------------------------------------------------
+!
+                  IF ( e % nodes(Loop(badNodeLocalID+1,4)) % node % id /=                  &
+                          eNbr % nodes(Loop(nbrNodeLocalID-1,4)) % node % id .OR.          &
+                       e % nodes(Loop(badNodeLocalID-1,4)) % node % id /=                  &
+                          eNbr % nodes(Loop(nbrNodeLocalID+1,4)) % node % id )     CYCLE
 !
 !                 ----------------------------------------------------
 !                 Get the opposite facing node in the neighbor element
@@ -1591,172 +1573,6 @@
          IF(numberOfChevrons > 0) PRINT *, numberOfChevrons, " chevron elements removed from mesh."
 
       END SUBROUTINE CleanUpChevronElements
-!
-!///////////////////////////////////////////////////////////////////////////////////////////////////////
-!
-      SUBROUTINE CleanUpBoundaryElement( e, model )
-         USE SMModelClass
-         USE ErrorTypesModule
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         CLASS (SMElement), POINTER :: e
-         TYPE (SMModel)  , POINTER :: model
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER, PARAMETER               :: CBE_ON_BOUNDARY = 1, CBE_OFF_BOUNDARY = 0
-         CLASS (SMNode)  , POINTER         :: sourceNode => NULL(), node => NULL()
-         TYPE(SMNodePtr)                  :: elementNodes(4)  !Temp container for this procedure
-         INTEGER                          :: boundaryNodeCount
-         INTEGER                          :: k, m, j
-         INTEGER                          :: mark(4)
-
-         REAL(KIND=RP)  , DIMENSION(3)    :: p
-         REAL(KIND=RP)                    :: t, tSave
-
-         CLASS(SMCurve)       , POINTER   :: c => NULL()
-         CLASS(SMChainedCurve), POINTER   :: chain  => NULL()      ! Returned also so that it, too can be used.
-         TYPE(SMNode)                     :: nodeCopy(4) ! Two extra but not a big deal.
-         TYPE (SMElement)     , POINTER   :: eTest => NULL()
-         LOGICAL                          :: badArrayOriginal(6)      ! Node valence <= 6
-         INTEGER                          :: nodeID
-
-         CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
-!
-!        -------------------------------------------------------
-!        A boundary element has at least two nodes on a boundary
-!        -------------------------------------------------------
-!
-         boundaryNodeCount = 0
-         mark              = CBE_OFF_BOUNDARY
-         DO k = 1, 4
-            elementNodes(k) % node => e % nodes(k) % node
-            IF ( e % nodes(k) % node % bCurveID > UNDEFINED .AND. &
-                 e % nodes(k) % node % distToBoundary == 0.0_RP )     THEN
-               boundaryNodeCount = boundaryNodeCount + 1
-               mark(k) = CBE_ON_BOUNDARY
-            END IF
-         END DO
-!
-!        ---------------------------------------------------
-!        We check to make sure that this was called properly
-!        ---------------------------------------------------
-!
-         IF( boundaryNodeCount < 2 )   RETURN
-!
-!        --------------------------------
-!        See what we are starting with
-!        i.e., see if any of the elements
-!        are bad.
-!        --------------------------------
-!
-         badArrayOriginal = .false.
-         DO k = 1,4
-            IF( mark(k) == CBE_ON_BOUNDARY )     THEN
-!
-!              --------------------------------------------
-!              Find the quality of the neighboring elements
-!              --------------------------------------------
-!
-               nodeID = elementNodes(k) % node % id
-
-               DO j = 1, numElementsForNode(nodeID)
-                  eTest => elementsForNodes(j,nodeID) % element
-                  IF(.NOT.ASSOCIATED(etest))     THEN
-                     WRITE(msg,*) "Neighbors to node ", node % x, "Not associated. Aborting cleanup."
-                     CALL ThrowErrorExceptionOfType("CleanUpBoundaryElement",msg,FT_ERROR_WARNING)
-                     RETURN
-                  END IF
-                  badArrayOriginal(j) = elementIsBad(eTest)
-               END DO
-            END IF
-         END DO
-!
-!        ---------------------
-!        Adjust boundary nodes
-!        ---------------------
-!
-         DO k = 1, 4
-            IF( mark(k) == CBE_OFF_BOUNDARY            )              CYCLE
-            IF(elementNodes(k) % node % activeStatus == INACTIVE) CYCLE
-            IF(elementNodes(k) % node % nodeType /= ROW_SIDE)     CYCLE
-!
-!           -----------------------------------
-!           Find which node is off the boundary
-!           -----------------------------------
-!
-            IF ( mark(sourceNodeLocalID(1,k)) == CBE_OFF_BOUNDARY )          THEN
-               m = sourceNodeLocalID(1,k)
-            ELSE IF ( mark(sourceNodeLocalID(2,k)) == CBE_OFF_BOUNDARY )     THEN
-               m = sourceNodeLocalID(2,k)
-            ELSE
-               node => elementNodes(k) % node
-               WRITE(msg,*) "Something wrong with node at ", node % x, ". Aborting cleanup."
-               CALL ThrowErrorExceptionOfType("CleanUpBoundaryElement",msg,FT_ERROR_WARNING)
-               RETURN
-            END IF
-
-            sourceNode  => elementNodes(m) % node
-            node        => elementNodes(k) % node
-            nodeCopy(k) =  node % typeCopy()
-
-            p      = sourceNode % x
-            t      = node % whereOnBoundary
-            tSave  = t
-!
-            c => model % curveWithID(node % bCurveID, chain)
-            t = ParametrizationAtPointNear(c,p,t)
-!            tStart = t - 0.49_RP
-!            tEnd   = t + 0.49_RP
-!            tStart = MAX(tStart, 0.0_RP)
-!            tEnd   = MIN(tEnd, 1.0_RP)
-!!
-!            t = fmin(tStart, tEnd, c, p, (/0.0_RP, 0.0_RP, 0.0_RP/), minimizationTolerance )
-
-            node % whereOnBoundary  = t
-            node % distToBoundary   = 0.0_RP !This is a boundary node
-            node % gWhereOnBoundary = chain % ChainTForCurveTInCurve(t,c)
-
-            node % x                = c % positionAt(t)
-         END DO
-!
-!        --------------------------------------------------------------
-!        This element has been adjusted. See if the new element and the
-!        neighbors of the nodes have been messed up. If so, go back to
-!        the original.
-!        --------------------------------------------------------------
-!
-!         badArrayNew = .false.
-!         DO k = 1, 4
-!            IF( mark(k) == CBE_OFF_BOUNDARY )     CYCLE
-!            IF(elementNodes(k) % node % activeStatus == INACTIVE) CYCLE
-!            IF(elementNodes(k) % node % nodeType /= ROW_SIDE)     CYCLE
-!!
-!!           -----------------------------------
-!!           Check the elements around this node
-!!           -----------------------------------
-!!
-!            nodeID   = elementNodes(k) % node % id
-!            failed = .false.
-!            DO j = 1, numElementsForNode(nodeID)
-!               eTest          => elementsForNodes(j,nodeID) % element
-!               badArrayNew(j) = elementIsBad(eTest)
-!               IF(badArrayNew(j) .AND. (.NOT.badArrayOriginal(j))) failed = .true.
-!            END DO
-!            IF(failed) THEN
-!               nodeCopy(k) % activeStatus = INACTIVE
-!               obj => e % nodes % objectAtIndex(k) !Supersceeded with new data structure
-!               CALL cast(obj,node)
-!               CALL copyOfNodeType(nodeCopy(k),node)
-!            END IF
-!         END DO
-      END SUBROUTINE CleanUpBoundaryElement
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1926,18 +1742,6 @@
          INTEGER                              :: sweep, k, numInverted, numInvertedAtStart
          INTEGER                              :: numOpened
          REAL(KIND=RP), ALLOCATABLE           :: xAtStart(:,:)
-!
-!        ----------------------------------------------------------------------
-!        Note, these two parameters are kept here rather than in ProgramGlobals
-!        because placing them there gives a spurious warning in gfortran 15
-!        that copyOfNodeClass (SMMeshObjects.f90) may call itself recursively
-!        while compiling MeshOutputMethods. Adding any two variables to
-!        ProgramGlobals does the same, so the warning seems to depend on the
-!        layout of the module symbols, not on the code.
-!        ----------------------------------------------------------------------
-!
-         INTEGER      , PARAMETER :: numUntanglePasses = 10       ! sweeps over the inverted elements
-         REAL(KIND=RP), PARAMETER :: maxAcceptedAngle  = 165.0_RP ! degrees, larger angles are opened up
 
          iterator => mesh % elementsIterator
          CALL MakeNodeToElementConnections( mesh, errorCode )
@@ -2301,15 +2105,6 @@
          REAL(KIND=RP)                            :: shapeMeasures(NUMBER_OF_2D_SHAPE_MEASURES), x(3)
          INTEGER                                  :: sweep, k, numMoves, numElementsTreated
          LOGICAL                                  :: isSymmetric, moved
-!
-!        ---------------------------------------------------------------------
-!        Note, these parameters are kept here rather than in ProgramGlobals to
-!        avoid the same spurious warning in gfortran 15 the same reason as
-!        described in UntangleInvertedElements
-!        ---------------------------------------------------------------------
-!
-         INTEGER      , PARAMETER :: numShapeSweeps            = 6
-         REAL(KIND=RP), PARAMETER :: minAcceptedScaledJacobian = 0.8_RP
 
          isSymmetric = PRESENT(symmetryLine)
          iterator => mesh % elementsIterator
@@ -2388,7 +2183,7 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE MoveNodeToImproveShapes( node, areaAtStart, minAcceptedScaledJacobian, moved )
+      SUBROUTINE MoveNodeToImproveShapes( node, areaAtStart, targetScaledJacobian, moved )
          IMPLICIT NONE
 !
 !        -----------------------------------------------------------------
@@ -2398,7 +2193,7 @@
 !        that improves is taken, otherwise the step is halved. A step is
 !        only taken if the smallest scaled Jacobian of the elements around
 !        the node does not fall below its value at the start, or below
-!        minAcceptedScaledJacobian if that is smaller, so that the angles
+!        targetScaledJacobian if that is smaller, so that the angles
 !        are not traded for sizes.
 !        -----------------------------------------------------------------
 !
@@ -2408,7 +2203,7 @@
 !
          TYPE (SMNode), POINTER :: node
          REAL(KIND=RP)          :: areaAtStart(:)
-         REAL(KIND=RP)          :: minAcceptedScaledJacobian
+         REAL(KIND=RP)          :: targetScaledJacobian
          LOGICAL                :: moved
 !
 !        ---------------
@@ -2443,7 +2238,7 @@
          minStepSize = 1.0e-3_RP * edgeLength
 
          CALL StarQualities( node, areaAtStart, best, scaledJacobianFloor )
-         scaledJacobianFloor = MIN(scaledJacobianFloor, minAcceptedScaledJacobian)
+         scaledJacobianFloor = MIN(scaledJacobianFloor, targetScaledJacobian)
          xBest               = x0(1:2)
          numIterations       = 0
          DO WHILE ( stepSize > minStepSize .AND. numIterations < maxSearchIterations )

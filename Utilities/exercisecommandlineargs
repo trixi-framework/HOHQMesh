@@ -9,3 +9,83 @@ set -eox pipefail
 ./HOHQMesh -verbose -f Examples/2D/GingerbreadMan/GingerbreadMan.control -sLimit 8
 ./HOHQMesh || true # will fail
 ./HOHQMesh -this-does-not-exist || true # will fail
+
+# Read the control file from standard input: "-f none" (case insensitive)
+# makes ReadControlFile read stdin instead of a file
+./HOHQMesh -f none < Benchmarks/ControlFiles/Pill.control
+
+# Write the output files and a regenerated test file under a temporary
+# directory with -path, so that no tracked file is overwritten. The
+# inner circles are so close that the boundary curves are resized,
+# and -verbose prints the resizing messages
+outDir=$(mktemp -d)
+mkdir -p "$outDir"/Benchmarks/MeshFiles/Tests "$outDir"/Benchmarks/PlotFiles/Tests \
+         "$outDir"/Benchmarks/StatsFiles/Tests "$outDir"/Benchmarks/BenchmarkData
+./HOHQMesh -verbose -generateTest -f Benchmarks/ControlFiles/NearbyInnerCircles.control -path "$outDir"
+test -s "$outDir"/Benchmarks/MeshFiles/Tests/NearbyInnerCircles.mesh
+test -s "$outDir"/Benchmarks/PlotFiles/Tests/NearbyInnerCircles.tec
+test -s "$outDir"/Benchmarks/StatsFiles/Tests/NearbyInnerCircles.txt
+test -s "$outDir"/Benchmarks/BenchmarkData/NearbyInnerCircles.txt
+
+# Print the verbose messages of a 3D run. All extrusion and sweep
+# algorithms print the same messages, so one case is enough
+./HOHQMesh -verbose -f Benchmarks/ControlFiles/HalfCircleExtrude.control -path "$outDir"
+test -s "$outDir"/Benchmarks/MeshFiles/Tests/HalfCircleExtrude.mesh
+test -s "$outDir"/Benchmarks/PlotFiles/Tests/HalfCircleExtrude.tec
+
+# Bad input: an inner boundary on the background grid box. Meshing is
+# tried again twice with a smaller background grid (printed with
+# -verbose) and must then stop with an error, not run away. With
+# -verbose the failed mesh is plotted to DebugPlot.tec, which must be
+# written to the -path directory and not to the current directory, so
+# run it from an empty directory
+repoDir=$(pwd)
+runDir="$outDir"/run
+mkdir "$runDir"
+if (cd "$runDir" && "$repoDir"/HOHQMesh -verbose -f "$repoDir"/Benchmarks/BadInputs/InnerBoundaryOnBox.control \
+                                          -path "$outDir") > "$outDir"/onbox.log 2>&1; then
+   echo "InnerBoundaryOnBox.control should fail"
+   exit 1
+fi
+grep -q "Trying again with 1/2 size" "$outDir"/onbox.log
+grep -q "too close to the background grid box" "$outDir"/onbox.log
+test -s "$outDir"/DebugPlot.tec
+test ! -e "$runDir"/DebugPlot.tec
+
+# Long paths. File names and paths may have up to 512 characters. Build
+# a directory whose path is longer than the old limit of 128 characters
+# and use it for both -f and -path. Keep the full file paths below 260
+# characters, since Windows cannot open longer paths (MAX_PATH) unless
+# long path support is enabled, which is not the case on the CI runners
+longDir="$outDir"
+for i in 1 2; do
+   longDir="$longDir"/$(printf 'd%.0s' {1..60})
+done
+if [ ${#longDir} -le 128 ]; then
+   echo "The long path test directory must be longer than 128 characters"
+   exit 1
+fi
+mkdir -p "$longDir"/Benchmarks/ControlFiles "$longDir"/Benchmarks/MeshFiles/Tests \
+         "$longDir"/Benchmarks/PlotFiles/Tests "$longDir"/Benchmarks/StatsFiles/Tests
+cp Benchmarks/ControlFiles/Pill.control "$longDir"/Benchmarks/ControlFiles
+./HOHQMesh -f "$longDir"/Benchmarks/ControlFiles/Pill.control -path "$longDir"
+test -s "$longDir"/Benchmarks/MeshFiles/Tests/Pill.mesh
+test -s "$longDir"/Benchmarks/PlotFiles/Tests/Pill.tec
+test -s "$longDir"/Benchmarks/StatsFiles/Tests/Pill.txt
+
+# A path that is too long must stop with an error, not be truncated:
+# first a -path argument longer than 512 characters, then a -path that
+# fits but is too long once the output file name is added to it
+tooLong=$(printf 'p%.0s' {1..600})
+if ./HOHQMesh -f Benchmarks/ControlFiles/Pill.control -path "$tooLong" > "$outDir"/long.log 2>&1; then
+   echo "A -path longer than 512 characters should fail"
+   exit 1
+fi
+grep -q "is longer than" "$outDir"/long.log
+almostTooLong=$(printf 'p%.0s' {1..500})
+if ./HOHQMesh -f Benchmarks/ControlFiles/Pill.control -path "$almostTooLong" > "$outDir"/long.log 2>&1; then
+   echo "A -path that is too long with the file name added should fail"
+   exit 1
+fi
+grep -q "is longer than" "$outDir"/long.log
+rm -rf "$outDir"

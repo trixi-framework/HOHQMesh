@@ -43,15 +43,17 @@
 !
 !////////////////////////////////////////////////////////////////////////
 ! 
-      INTEGER FUNCTION offsetForIandJ(i,j,N)
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!     --------------------------------
-!     Computes the function 
-!     id = i + j*(N+1)
-!     for two dimensional array access
-!     --------------------------------
-!
-         IMPLICIT NONE  
-         INTEGER :: N, i, j
-         offsetForIandJ = i + j*(N+1)
-      END FUNCTION offsetForIandJ
+!       INTEGER FUNCTION offsetForIandJ(i,j,N)
+! !
+! !     --------------------------------
+! !     Computes the function 
+! !     id = i + j*(N+1)
+! !     for two dimensional array access
+! !     --------------------------------
+! !
+!          IMPLICIT NONE  
+!          INTEGER :: N, i, j
+!          offsetForIandJ = i + j*(N+1)
+!       END FUNCTION offsetForIandJ

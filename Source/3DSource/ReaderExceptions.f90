@@ -43,40 +43,42 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      FUNCTION ReaderException(exceptionName,message,variableName,whereInCode)
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!     ---------------------------------------------------------
-!     Convenience method to create an exception with a message,
-!     value and location
-!     ---------------------------------------------------------
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE(FTException), POINTER  :: ReaderException
-         CHARACTER(LEN=*)            :: exceptionName, variableName, whereInCode, message
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         TYPE (FTValueDictionary), POINTER :: userDictionary
-         CLASS(FTDictionary)     , POINTER :: ptr
+!       FUNCTION ReaderException(exceptionName,message,variableName,whereInCode)
+! !
+! !     ---------------------------------------------------------
+! !     Convenience method to create an exception with a message,
+! !     value and location
+! !     ---------------------------------------------------------
+! !
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          TYPE(FTException), POINTER  :: ReaderException
+!          CHARACTER(LEN=*)            :: exceptionName, variableName, whereInCode, message
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          TYPE (FTValueDictionary), POINTER :: userDictionary
+!          CLASS(FTDictionary)     , POINTER :: ptr
          
-         ALLOCATE(userDictionary)
-         CALL userDictionary % initWithSize(8)
-         CALL userDictionary % addValueForKey(message,"message")
-         CALL userDictionary % addValueForKey(variableName,"value")
-         CALL userDictionary % addValueForKey(whereInCode,"Calling routine")
+!          ALLOCATE(userDictionary)
+!          CALL userDictionary % initWithSize(8)
+!          CALL userDictionary % addValueForKey(message,"message")
+!          CALL userDictionary % addValueForKey(variableName,"value")
+!          CALL userDictionary % addValueForKey(whereInCode,"Calling routine")
          
-         ALLOCATE(ReaderException)
-         ptr => userDictionary
-         CALL ReaderException % initFTException(FT_ERROR_FATAL,exceptionName,ptr)
-         CALL releaseFTValueDictionary(userDictionary)
+!          ALLOCATE(ReaderException)
+!          ptr => userDictionary
+!          CALL ReaderException % initFTException(FT_ERROR_FATAL,exceptionName,ptr)
+!          CALL releaseFTValueDictionary(userDictionary)
 
-      END FUNCTION ReaderException
+!       END FUNCTION ReaderException
  
       END Module ReaderExceptions 

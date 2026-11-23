@@ -6,7 +6,7 @@ The meshing of the model is controlled by the `CONTROL_INPUT` block of the input
 	...
 	\end{CONTROL_INPUT}
 
-Inside the control input block the `RUN_PARAMETERS`, `BACKGROUND_GRID`, `SMOOTHER`, and any number of `REFINEMENT_CENTER`s and `REFINEMENT_LINE`s  are defined.
+Inside the control input block the `RUN_PARAMETERS`, `BACKGROUND_GRID`, `SMOOTHER`, and any number of `REFINEMENT_CENTER`s and `REFINEMENT_LINE`s  are defined. Optionally, the finished 2D mesh can be [rotated and scaled](#Transformations).
 
 ## The Run Parameters<a name="RunParameters"></a>
 
@@ -128,3 +128,46 @@ Refinement regions are defined within a `REFINEMENT_REGIONS` block, e.g.
 	\end{REFINEMENT_REGIONS}
 
 The ordering of the blocks within the `REFINEMENT_REGIONS` block is arbitrary.
+
+## Transforming the Mesh<a name="Transformations"></a>
+
+After the 2D mesh is generated, it can be rotated and scaled before it is written out or used to generate a 3D mesh.
+The transformations are applied to the mesh nodes, the interior nodes of the elements and the curved boundary data, so the high order boundaries are transformed too.
+They do not change how the mesh is generated, which always happens in the *x-y* plane.
+
+### Rotation<a name="RotationTransform"></a>
+
+A `ROTATION_TRANSFORM` block applies a rigid rotation in three dimensions,
+
+	\begin{ROTATION_TRANSFORM}
+		translation = [0.0, 0.0, 0.0]
+		direction   = [0.0, 0.70710678118654752, 0.70710678118654752]
+	\end{ROTATION_TRANSFORM}
+
+The rotation turns the *z* axis, which is the normal of the 2D mesh, onto *direction*. Only the direction of the vector matters, not its
+length, and it must not be zero. In spite of its name, *translation* does not move the mesh.
+Instead, it is the point about which the rotation is done.
+
+This rotation tilts the mesh out of the *x-y* plane, so the nodes of the "2D" mesh get *z* coordinates. In the example above, the mesh is tilted by 45 degrees about the *x* axis. A *direction* of [0.0, 0.0, 1.0] leaves the mesh unchanged. A *direction* of [0.0, 0.0, -1.0] flips the mesh over by a half turn about the *y* axis.
+
+The rotation is not a way to rotate the mesh within its own plane, and it does not choose the direction of a 3D extrusion.
+To extrude in another direction, use the *direction* of the [simple extrusion](three-dimensional-hexahedral-meshes.md#Extrusion) instead.
+If a 3D mesh is requested, it is generated from the rotated mesh. With a simple extrusion along *z*, for example, the hex elements are then sheared.
+
+### Scaling<a name="ScaleTransform"></a>
+
+A `SCALE_TRANSFORM` block scales the mesh about a point,
+
+	\begin{SCALE_TRANSFORM}
+		origin       = [0.0, 0.0, 0.0]
+		scale factor = 2.0
+	\end{SCALE_TRANSFORM}
+
+Distances from *origin* are multiplied by *scale factor* in the *x* and *y* directions. The *z* coordinates are not changed.
+
+### Order of the Transformations
+
+If both blocks are present, the rotation is done first and the scaling second.
+Since the scaling always acts in the *x* and *y* directions, a rotated mesh is not scaled uniformly.
+Both transformations are done before any 3D mesh is generated.
+

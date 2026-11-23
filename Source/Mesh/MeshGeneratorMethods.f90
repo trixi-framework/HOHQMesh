@@ -88,7 +88,6 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER :: k
          LOGICAL :: needsRemesh
          INTEGER :: numberOfTries = 3
          INTEGER :: j
@@ -131,30 +130,27 @@
 !
 !        ------------------------------------------------------------------------
 !        If there is a problem, usually it is because the initial background grid
-!        is too large. Try again with a smaller background grid, just in case.
+!        is too large. Try again once with a background grid of half the size.
+!        The retry makes the mesh finer than requested, so always tell the user,
+!        not only with -verbose.
 !        ------------------------------------------------------------------------
 !
-         IF ( errorCode > A_OK_ERROR_CODE )     THEN ! Try again at most two times
-            DO k = 1, 2
+         IF ( errorCode > A_OK_ERROR_CODE )     THEN
 
-               errorCode = A_OK_ERROR_CODE
-               IF(printMessage)     THEN
-                  PRINT *, "Background grid is too large. Trying again with 1/2 size" ! Throw exception here
-               END IF
+            errorCode = A_OK_ERROR_CODE
+            PRINT *, "Background grid is too large. Trying again with 1/2 size"
 
-               project % backgroundParams % dx           =   project % backgroundParams % dx/2.0_RP
-               project % backgroundParams % N            = 2*project % backgroundParams % N
-               project % sizer % baseSize                = 0.5_RP*project % sizer % baseSize
-               project % backgroundParams % backgroundGridSize = 0.5_RP*project % backgroundParams % backgroundGridSize
+            project % backgroundParams % dx           =   project % backgroundParams % dx/2.0_RP
+            project % backgroundParams % N            = 2*project % backgroundParams % N
+            project % sizer % baseSize                = 0.5_RP*project % sizer % baseSize
+            project % backgroundParams % backgroundGridSize = 0.5_RP*project % backgroundParams % backgroundGridSize
 
-               CALL ResetProject(project)
-               CALL clearBoundaryCurves(project % sizer)
-               CALL BuildSizerBoundaryCurves(project)
+            CALL ResetProject(project)
+            CALL clearBoundaryCurves(project % sizer)
+            CALL BuildSizerBoundaryCurves(project)
 
-               CALL GenerateAQuadMesh(project,errorCode)
+            CALL GenerateAQuadMesh(project,errorCode)
 
-               IF( errorCode == A_OK_ERROR_CODE)     EXIT
-            END DO
         END IF
 !
 !       ------------------------------------------------------
@@ -1070,10 +1066,10 @@
                  WRITE(stderr,*) " "
                  WRITE(stderr,*) "**************************************************************************"
                  WRITE(stderr,*) "An unknown row type has appeared in GenerateBoundaryElements"
-                 WRITE(stderr,*) "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                 WRITE(stderr,*) "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                  WRITE(stderr,*) "**************************************************************************"
                  WRITE(stderr,*) " "
-                  CALL WriteSkeletonToTecplot(mesh = mesh,fName = "DebugPlot.tec")
+                  CALL WriteSkeletonToTecplot(mesh = mesh,fName = debugPlotFileName)
                   ERROR STOP "Meshing Terminated. See stderr"
             END SELECT
             k = k + 1
@@ -1457,15 +1453,23 @@
                               segmentLength = SQRT( (x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
                               IF( segmentLength > 0.25_RP*hMin )     THEN
                                  mSteps = NINT(segmentLength/hMin)*5
-                                 dz = 1.0_RP/REAL(mSteps, RP)
-                                 DO m = 1, mSteps-1
-                                    z = x1 + m*dz*(x2 - x1)
-                                    IF ( PointInQuad( nodes, z ) )     THEN
-                                       e % remove    = .true.
-                                       removedHere   = .true.
-                                       EXIT
-                                    END IF
-                                 END DO
+!
+!                                ----------------------------------------------
+!                                Segments shorter than hMin/2 give mSteps = 0,
+!                                so there are no interior points to test
+!                                ----------------------------------------------
+!
+                                 IF ( mSteps > 1 )     THEN
+                                    dz = 1.0_RP/REAL(mSteps, RP)
+                                    DO m = 1, mSteps-1
+                                       z = x1 + m*dz*(x2 - x1)
+                                       IF ( PointInQuad( nodes, z ) )     THEN
+                                          e % remove    = .true.
+                                          removedHere   = .true.
+                                          EXIT
+                                       END IF
+                                    END DO
+                                 END IF
                                  IF( e % remove )     EXIT
                               END IF
                            END DO
@@ -1495,47 +1499,49 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE MarkFloaters( mesh )
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        ------------------------------------------------------------------
-!        TODO: A floater is an element that is not attached to any other element,
-!        which happens occasionally during the marking process
-!        ------------------------------------------------------------------
-!
-         IMPLICIT NONE
-!
-!        ---------
-!        Arguments
-!        ---------
-!
-         TYPE (SMMesh), POINTER :: mesh
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
-!         TYPE (SMElement)           , POINTER :: e               => NULL()
-!         TYPE (SMNode)              , POINTER :: node            => NULL()
-         CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
-!         CLASS(FTObject)            , POINTER :: obj             => NULL()
-!         INTEGER                              :: k
-!
-         elements        => mesh % elements
-         elementIterator => mesh % elementsIterator
+!       SUBROUTINE MarkFloaters( mesh )
+! !
+! !        ------------------------------------------------------------------
+! !        TODO: A floater is an element that is not attached to any other element,
+! !        which happens occasionally during the marking process
+! !        ------------------------------------------------------------------
+! !
+!          IMPLICIT NONE
+! !
+! !        ---------
+! !        Arguments
+! !        ---------
+! !
+!          TYPE (SMMesh), POINTER :: mesh
+! !
+! !        ---------------
+! !        Local variables
+! !        ---------------
+! !
+!          CLASS(FTLinkedList)        , POINTER :: elements        => NULL()
+! !         TYPE (SMElement)           , POINTER :: e               => NULL()
+! !         TYPE (SMNode)              , POINTER :: node            => NULL()
+!          CLASS(FTLinkedListIterator), POINTER :: elementIterator => NULL()
+! !         CLASS(FTObject)            , POINTER :: obj             => NULL()
+! !         INTEGER                              :: k
+! !
+!          elements        => mesh % elements
+!          elementIterator => mesh % elementsIterator
 
-         CALL elementIterator % setToStart()
-         DO WHILE(.NOT.elementIterator % isAtEnd())
-!            obj => elementIterator % object()
-!            CALL cast(obj,e)
+!          CALL elementIterator % setToStart()
+!          DO WHILE(.NOT.elementIterator % isAtEnd())
+! !            obj => elementIterator % object()
+! !            CALL cast(obj,e)
 
-!            DO k = 1, 4
-!
-!            END DO
-            CALL elementIterator % moveToNext()
-         END DO
+! !            DO k = 1, 4
+! !
+! !            END DO
+!             CALL elementIterator % moveToNext()
+!          END DO
 
-      END SUBROUTINE MarkFloaters
+!       END SUBROUTINE MarkFloaters
 !
 !////////////////////////////////////////////////////////////////////////
 !

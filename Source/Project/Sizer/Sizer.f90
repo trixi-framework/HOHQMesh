@@ -56,7 +56,50 @@
          REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE :: x, nHat
          REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: invScale
          INTEGER      , DIMENSION(:)  , ALLOCATABLE :: segmentIndex, pointIndex
+         REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: arcLength   ! Along the chain from its first point
+         REAL(KIND=RP)                              :: totalLength ! Of the closed chain
+         REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE :: kinkArcLength ! Of the sharp corners (see cornerKinkDot)
+         REAL(KIND=RP), DIMENSION(:,:,:), ALLOCATABLE :: kinkNormals ! (:,1:2,k): of the sides before and after kink k
       END TYPE ChainPoints
+!
+!     ------------------------------------------------------------------
+!     Sharp corners and the self-distance size
+!
+!     The self-distance test (nearestFacingPoint with selfIndex)
+!     looks for two points of the same curve that face each other across
+!     a narrow gap, and sets the local mesh size from their distance. At
+!     a corner sharper than about 46 degrees, the points on the two sides
+!     next to the apex also face each other, but there is no gap.
+!     Their distance is proportional to the point spacing along the
+!     curve. ResizeSegmentedCurves (MeshProject.f90) refines the curve points
+!     to fit that size, which halves the distance again, so the predicted
+!     size never converges. So a facing pair that sits on the two
+!     sides of a sharp corner is skipped (isAcrossCorner); the corner is
+!     then sized by the other criteria, such as curvature and nearby curves.
+!
+!     A facing pair i, j counts as across a corner, not across a gap,
+!     when all three of the following hold:
+!       1. The shorter way along the curve from i to j is at most
+!          cornerPathRatio (6) times their straight distance. Across a
+!          real gap the curve goes a long way round between them.
+!       2. That shorter way passes a kink: a point where the normal turns
+!          by more than ACOS(cornerKinkDot) (≈110 degrees) from the point
+!          before. Where two segments of a chain meet, each has its own
+!          point with its own normal, so a corner's whole turn is between
+!          those two points. Rounded notches and channels turn gradually,
+!          and the 90 degree corners at the ends of a square slot are
+!          below the limit, so they remain gaps.
+!       3. The normals at i and j are within ACOS(cornerSideDot)
+!          (≈20 degrees) of the normals of the two sides that meet at that
+!          kink, one point on each side. This keeps a curved cove next to
+!          a sharp edge (for example the slat cove of an airfoil) a gap.
+!     Without conditions 2 and 3 rounded notches could be treated as
+!     corners, and so lost their gap sizing.
+!     ------------------------------------------------------------------
+!
+      REAL(KIND=RP), PARAMETER, PRIVATE :: cornerPathRatio = 6.0_RP
+      REAL(KIND=RP), PARAMETER, PRIVATE :: cornerKinkDot   = -0.342_RP
+      REAL(KIND=RP), PARAMETER, PRIVATE :: cornerSideDot   = 0.94_RP
 !
 !     ------------------------------------------------------------------
 !     A binary tree over runs of consecutive points of a ChainPoints, to
@@ -389,6 +432,7 @@
          REAL(KIND=RP)                    :: x(3), boundingBox(6)
          REAL(KIND=RP)                    :: cSize, aSize
          REAL(KIND=RP)                    :: cHeight, cWidth, cDim
+         REAL(KIND=RP)                    :: kappa
          INTEGER                          :: i,j, nX(3) = [10,10,0]
          REAL(KIND=RP), PARAMETER         :: SIZE_FACTOR = 0.9_RP
          INTEGER, DIMENSION(:), ALLOCATABLE :: nearCenters
@@ -407,7 +451,8 @@
          IF ( ASSOCIATED(sizer % controlsList) )     THEN
             CALL EnsureControlEntries( sizer )
             CALL CentersNearBox( sizer, xMin, xMax, nearCenters, nNear )
-            dX = (xMax - xMin)/nX
+            dX(1:2) = (xMax(1:2) - xMin(1:2))/nX(1:2)
+            dX(3)   = 0.0_RP ! The box is sampled in x and y only (nX(3) = 0)
             DO j = 0, nX(2)
                x(2) = xMin(2) + j*dx(2)
                DO i = 0, nX(1)
@@ -422,12 +467,14 @@
 !        -----------------------------------------
 !
          IF ( ASSOCIATED(sizer % topography) )     THEN
-            dX = (xMax - xMin)/nX
+            dX(1:2) = (xMax(1:2) - xMin(1:2))/nX(1:2)
+            dX(3)   = 0.0_RP ! The box is sampled in x and y only (nX(3) = 0)
             TLoop : DO j = 0, nX(2)
                x(2) = xMin(2) + j*dx(2)
                DO i = 0, nX(1)
                   x(1) = xMin(1) + i*dx(1)
-                  hMin = MIN( hMin, 1.0_RP/SQRT(sizer % topography % principalCurvatureAt(x)) )
+                  kappa = sizer % topography % principalCurvatureAt(x)
+                  IF ( kappa > 0.0_RP )     hMin = MIN( hMin, 1.0_RP/SQRT(kappa) ) ! No size limit where flat
                   IF(hMin < SIZE_FACTOR*dX(1)) EXIT TLoop
                END DO
             END DO TLoop
@@ -1092,11 +1139,21 @@
                   innerInvScale = innerSegment % invScaleAtIndex(j)
                   nHatInner     = innerSegment % normalAtIndex(j)
 
-                  d = ABS( A(m)*y(1) + B(m)*y(2) + C(m) ) !/SQRT(A(m)**2 + B(m)**2)
-                  d = closeCurveFactor/d ! Inverse length - 3 cells
 !
+!                 ------------------------------------------------------------
+!                 Distance from the point to side m, which is the line
+!                 A*x + B*y = C. The points that face side m have normals
+!                 (into the domain) aligned with the outward normal of the
+!                 side, as in OuterToInnerBoundaryDistances. A point on the
+!                 box is skipped: it has no size, and the mesh generator
+!                 reports that the curve is too close to the box.
+!                 ------------------------------------------------------------
+!
+                  d = ABS( A(m)*y(1) + B(m)*y(2) - C(m) )
+                  IF ( d == 0.0_RP )     CYCLE
+                  d = closeCurveFactor/d ! Inverse length - 3 cells
                   dot = DOT_PRODUCT(nHatInner,nHatOuter)
-                  IF( dot < -closeCurveNormalAlignment )     THEN
+                  IF( dot > closeCurveNormalAlignment )     THEN
                      innerInvScale = MAX(d,innerInvScale)
                      CALL innerSegment % setCurveInvScaleForIndex(innerInvScale,j)
                   END IF
@@ -1295,6 +1352,8 @@
                   IF ( m == selfIndex )     CYCLE
                   faces = isFacingPoint(other, m, selfIndex, isOuterBoundary, isInterface) .OR. &
                           isFacingPoint(other, selfIndex, m, isOuterBoundary, isInterface)
+!                 The two sides of a sharp corner face each other, but are not a gap
+                  IF ( faces )     faces = .NOT. isAcrossCorner(other, m, selfIndex)
                ELSE
                   dot = DOT_PRODUCT(other % nHat(:,m), nHat)
                   IF ( normalsAligned )     THEN
@@ -1466,6 +1525,109 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
+      SUBROUTINE SetChainCorners( points )
+!
+!     ---------------------------------------------------------------
+!     From the positions and normals of the points of a closed curve,
+!     set the arc length of each point and of the curve, and find the
+!     kinks. The points where the normal turns by more than
+!     ACOS(cornerKinkDot) from the point before. Used by isAcrossCorner.
+!     ---------------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(ChainPoints) :: points
+
+      REAL(KIND=RP) :: arcs(points % count), sides(3,2,points % count)
+      INTEGER       :: n, nPrev, nKinks
+
+      IF ( ALLOCATED(points % arcLength) )     DEALLOCATE(points % arcLength)
+      IF ( ALLOCATED(points % kinkArcLength) ) DEALLOCATE(points % kinkArcLength)
+      IF ( ALLOCATED(points % kinkNormals) )   DEALLOCATE(points % kinkNormals)
+
+      ALLOCATE( points % arcLength(points % count) )
+      points % totalLength = 0.0_RP
+      IF ( points % count > 0 )     THEN
+         points % arcLength(1) = 0.0_RP
+         DO n = 2, points % count
+            points % arcLength(n) = points % arcLength(n-1) + NORM2(points % x(1:2,n) - points % x(1:2,n-1))
+         END DO
+         points % totalLength = points % arcLength(points % count) + &
+                                NORM2(points % x(1:2,1) - points % x(1:2,points % count))
+      END IF
+
+      nKinks = 0
+      IF ( points % count >= 3 )     THEN
+         DO n = 1, points % count
+            nPrev = MODULO(n - 2, points % count) + 1
+            IF ( DOT_PRODUCT(points % nHat(:,nPrev), points % nHat(:,n)) < cornerKinkDot )     THEN
+               nKinks            = nKinks + 1
+               arcs(nKinks)      = points % arcLength(n)
+               sides(:,1,nKinks) = points % nHat(:,nPrev)
+               sides(:,2,nKinks) = points % nHat(:,n)
+            END IF
+         END DO
+      END IF
+      ALLOCATE( points % kinkArcLength(nKinks), points % kinkNormals(3,2,nKinks) )
+      points % kinkArcLength = arcs(1:nKinks)
+      points % kinkNormals   = sides(:,:,1:nKinks)
+
+      END SUBROUTINE SetChainCorners
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION isAcrossCorner( points, i, j )
+!
+!     ---------------------------------------------------------------
+!     Whether points i and j of a closed curve are on the two sides of
+!     a sharp corner rather than across a gap. True when the shorter way
+!     along the curve between them is at most cornerPathRatio times
+!     their distance, passes a kink, and i and j lie on the two sides
+!     that meet at that kink. The reasons are in the comment block above
+!     cornerPathRatio at the top of this module.
+!     ---------------------------------------------------------------
+!
+      IMPLICIT NONE
+      TYPE(ChainPoints) :: points
+      INTEGER           :: i, j
+
+      REAL(KIND=RP) :: lo, hi, path, distance, di1, di2, dj1, dj2
+      LOGICAL       :: inside, shortPath, onKink, onSides
+      INTEGER       :: k
+
+      isAcrossCorner = .FALSE.
+      IF ( .NOT. ALLOCATED(points % kinkArcLength) )     RETURN
+      IF ( SIZE(points % kinkArcLength) == 0 )     RETURN
+
+      lo       = MIN(points % arcLength(i), points % arcLength(j))
+      hi       = MAX(points % arcLength(i), points % arcLength(j))
+      inside   = hi - lo <= 0.5_RP*points % totalLength ! The shorter way is from lo to hi
+      path     = MIN(hi - lo, points % totalLength - (hi - lo))
+      distance = NORM2(points % x(1:2,i) - points % x(1:2,j))
+      shortPath = path <= cornerPathRatio*distance
+      IF ( .NOT. shortPath )     RETURN
+
+      DO k = 1, SIZE(points % kinkArcLength)
+         IF ( inside )     THEN
+            onKink = points % kinkArcLength(k) >= lo .AND. points % kinkArcLength(k) <= hi
+         ELSE
+            onKink = points % kinkArcLength(k) <= lo .OR.  points % kinkArcLength(k) >= hi
+         END IF
+         IF ( .NOT. onKink )     CYCLE
+
+         di1     = DOT_PRODUCT(points % nHat(:,i), points % kinkNormals(:,1,k))
+         di2     = DOT_PRODUCT(points % nHat(:,i), points % kinkNormals(:,2,k))
+         dj1     = DOT_PRODUCT(points % nHat(:,j), points % kinkNormals(:,1,k))
+         dj2     = DOT_PRODUCT(points % nHat(:,j), points % kinkNormals(:,2,k))
+         onSides = (di1 > cornerSideDot .AND. dj2 > cornerSideDot) .OR. &
+                   (di2 > cornerSideDot .AND. dj1 > cornerSideDot)
+         isAcrossCorner = onSides
+         IF ( isAcrossCorner )     RETURN
+      END DO
+
+      END FUNCTION isAcrossCorner
+!
+!////////////////////////////////////////////////////////////////////////
+!
       LOGICAL FUNCTION isFacingPoint( points, i, j, isOuterBoundary, isInterface )
 !
 !     ---------------------------------------------------------------
@@ -1532,6 +1694,8 @@
             points % pointIndex(n)   = j
          END DO
       END DO
+
+      CALL SetChainCorners(points)
 
       points % chain => chain
       IF ( n > 0 )     THEN

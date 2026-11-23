@@ -594,6 +594,10 @@
 !     Examine each component
 !     ----------------------
 !
+!     A component that is not recognized below keeps TYPE_NONE, so that
+!     FinalSyntaxCheckOK reports it as an unknown variable or function
+!
+      classification(1:tCount) = TYPE_NONE
       DO l = 1, tCount
          IF ( components(l) == "pi" .OR. components(l) == "PI" )     THEN
             classification(l) = TYPE_NUMBER
