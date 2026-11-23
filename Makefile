@@ -77,6 +77,7 @@ MeshOperationsModule.o \
 MeshTopologyTests.o \
 ControlInputTests.o \
 ProjectInputTests.o \
+SizerTests.o \
 GeometryUnitTests.o \
 MeshOutputMethods.o \
 MeshProject.o \
@@ -513,6 +514,7 @@ TestDataClass.o \
 MeshTopologyTests.o \
 ControlInputTests.o \
 ProjectInputTests.o \
+SizerTests.o \
 GeometryUnitTests.o \
 DebugOutputTests.o \
 ExtrusionTests.o \
@@ -784,6 +786,18 @@ MeshGeneratorMethods.o \
 DataFileTopographyClass.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/ProjectInputTests.f90
+
+SizerTests.o :$(HOHQMESHPATH)/Source/Testing/SizerTests.f90 \
+SMConstants.o \
+FTValueDictionaryClass.o \
+FTExceptionClass.o \
+FatalErrorException.o \
+Sizer.o \
+MeshProject.o \
+ControlInputTests.o \
+ProjectInputTests.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/SizerTests.f90
 
 MeshTopologyTests.o :$(HOHQMESHPATH)/Source/Testing/MeshTopologyTests.f90 \
 SMConstants.o \

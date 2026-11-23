@@ -46,6 +46,7 @@
       USE MeshTopologyTestsModule
       USE ControlInputTestsModule
       USE ProjectInputTestsModule
+      USE SizerTestsModule
       USE GeometryUnitTestsModule
       IMPLICIT NONE
 !
@@ -155,6 +156,8 @@
       CALL AddModuleTest(testSuite, ProjectInputErrorTests, "Project Input Error Tests")
       CALL AddModuleTest(testSuite, MaterialNameTests, "Material Name Tests")
       CALL AddModuleTest(testSuite, ProjectOptionTests, "Project Option Tests")
+      CALL AddModuleTest(testSuite, SharpCornerRuleTests, "Sharp Corner Rule Tests")
+      CALL AddModuleTest(testSuite, SharpInterfaceSizingTests, "Sharp Interface Sizing Tests")
       CALL AddModuleTest(testSuite, Generator3DInputTests, "3D Generator Input Tests")
       CALL AddModuleTest(testSuite, TopographyFromFileTests, "Topography From File Tests")
       CALL AddModuleTest(testSuite, EllipticArcTangentTest, "Elliptic Arc Tangent Tests")
