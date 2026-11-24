@@ -1,5 +1,7 @@
 # ChangeLog
 
+## Changes in the v1.7 lifecycle
+
 ## Changes in the v1.6 lifecycle
 
 - Fix and speed up boundary curve optimization (#196). A new bracketed root finder gives the same results on every
