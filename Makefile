@@ -809,6 +809,7 @@ Connections.o \
 MeshQualityAnalysis.o \
 MeshCleaner.o \
 InterfaceElementMethods.o \
+MeshGeneratorMethods.o \
 FTLinkedListClass.o \
 FTObjectArrayClass.o \
 Assert.o

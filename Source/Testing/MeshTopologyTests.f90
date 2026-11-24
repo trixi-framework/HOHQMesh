@@ -51,6 +51,7 @@
       USE MeshQualityAnalysisClass
       USE MeshCleaner
       USE InterfaceElementMethods, ONLY : SplitInterfaceElements
+      USE MeshGenerationMethods  , ONLY : smallestCornerSine, cyclicSum, RemoveDoublets
       USE ProgramGlobals         , ONLY : printMessage, QUAD, A_OK_ERROR_CODE, UNDEFINED
       IMPLICIT NONE
 
@@ -588,5 +589,69 @@
          CALL releaseMesh(mesh)
 
       END SUBROUTINE InterfaceSplitTest
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE PavingHelperTests(optData)
+!
+!     ------------------------------------------------------------------
+!     Small functions used by the interface paving. The smallest corner
+!     sine of a quad (also for a quad with a side of zero length), the
+!     sum over a range of a closed sequence that wraps past its end, and
+!     RemoveDoublets, which must merge the two quads at a doublet only
+!     if the merged quad has no flat corner. The flat corner is put off
+!     the straight line by roundoff, so its sine is positive but tiny.
+!     ------------------------------------------------------------------
+!
+         IMPLICIT NONE
+         CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)  ! Required by the test suite interface; unused
+
+         REAL(KIND=RP) :: corners(2,4), sumBefore(0:5), x(2,5)
+         INTEGER       :: quads(4,2), nQ, k
+
+         corners = RESHAPE([0.0_RP,0.0_RP, 1.0_RP,0.0_RP, 1.0_RP,1.0_RP, 0.0_RP,1.0_RP], [2,4])
+         CALL FTAssertEqual(expectedValue = 1.0_RP, actualValue = smallestCornerSine(corners), &
+                            relTol = 1.0e-14_RP, absTol = 1.0e-14_RP, msg = "Corner sine of the unit square")
+         corners(:,2) = corners(:,1)
+         CALL FTAssertEqual(expectedValue = 0.0_RP, actualValue = smallestCornerSine(corners), &
+                            relTol = 1.0e-14_RP, absTol = 1.0e-14_RP, msg = "Corner sine of a quad with a side of zero length")
+
+         sumBefore(0) = 0.0_RP
+         DO k = 1, 5
+            sumBefore(k) = sumBefore(k-1) + k
+         END DO
+         CALL FTAssertEqual(expectedValue = 9.0_RP, actualValue = cyclicSum(sumBefore, 5, 2, 3), &
+                            relTol = 1.0e-14_RP, absTol = 1.0e-14_RP, msg = "Cyclic sum of values 2 to 4")
+         CALL FTAssertEqual(expectedValue = 10.0_RP, actualValue = cyclicSum(sumBefore, 5, 4, 3), &
+                            relTol = 1.0e-14_RP, absTol = 1.0e-14_RP, msg = "Cyclic sum of values 4, 5 and 1, past the end")
+!
+!        -----------------------------------------------------------------
+!        Nodes a, p, b, q (fixed) and the doublet node v. The quads
+!        (v,a,p,b) and (v,b,q,a) merge into (a,p,b,q), a square around v.
+!        -----------------------------------------------------------------
+!
+         x = RESHAPE([-1.0_RP,0.0_RP, 0.0_RP,-1.0_RP, 1.0_RP,0.0_RP, 0.0_RP,1.0_RP, 0.0_RP,0.0_RP], [2,5])
+         quads(:,1) = [5, 1, 2, 3]
+         quads(:,2) = [5, 3, 4, 1]
+         nQ = 2
+         CALL RemoveDoublets( x, 4, 5, quads, nQ )
+         CALL FTAssertEqual(expectedValue = 1, actualValue = nQ, msg = "A doublet is merged into one quad")
+         CALL FTAssert(test = ALL(quads(:,1) == [1, 2, 3, 4]), msg = "The merged quad is (a,p,b,q)")
+!
+!        --------------------------------------------------------------
+!        With p on the line from a to b, up to roundoff, the merged quad
+!        has a flat corner at p and the doublet is kept
+!        --------------------------------------------------------------
+!
+         x(:,2) = [0.0_RP, -1.0e-15_RP]
+         x(:,5) = [0.0_RP, -0.5_RP]
+         quads(:,1) = [5, 1, 2, 3]
+         quads(:,2) = [5, 3, 4, 1]
+         nQ = 2
+         CALL RemoveDoublets( x, 4, 5, quads, nQ )
+         CALL FTAssertEqual(expectedValue = 2, actualValue = nQ, &
+                            msg = "A doublet whose merged quad has a flat corner is kept")
+
+      END SUBROUTINE PavingHelperTests
 
       END Module MeshTopologyTestsModule

@@ -149,6 +149,7 @@
       CALL AddModuleTest(testSuite, ChevronRemovalTest, "Chevron Removal Tests")
       CALL AddModuleTest(testSuite, UntangleTest, "Untangle Tests")
       CALL AddModuleTest(testSuite, InterfaceSplitTest, "Interface Split Tests")
+      CALL AddModuleTest(testSuite, PavingHelperTests, "Paving Helper Tests")
       CALL AddModuleTest(testSuite, ControlFileReaderErrorTests, "Control File Reader Error Tests")
       CALL AddModuleTest(testSuite, ChainOptimizationInputTests, "Chain Optimization Input Tests")
       CALL AddModuleTest(testSuite, CurveInputErrorTests, "Curve Input Error Tests")

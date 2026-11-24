@@ -1,0 +1,99 @@
+%
+% ------------------------------------------------------------------
+% A paved interface whose band cuts the inside of the curve into two
+% parts. The interface is a block with a round bottom and a narrow,
+% deep slot from the top (like a thick letter U). The band of paved
+% elements along the curve covers the material between the round
+% bottom and the end of the slot, so the elements left inside fall
+% into the two arms. PaveInterfaceWithBand then keeps the larger of
+% the two and paves over the other (the "islands" pass). The geometry
+% is shifted off the background grid lines, so that the mesh does not
+% depend on roundoff (see adding-a-new-test.md).
+% ------------------------------------------------------------------
+%
+\begin{CONTROL_INPUT}
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/SlottedInterface.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/SlottedInterface.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/SlottedInterface.txt
+      test file name   = Benchmarks/BenchmarkData/SlottedInterface.txt
+      mesh file format = ISM-MM
+      polynomial order = 4
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+   \begin{BACKGROUND_GRID}
+      background grid size = [0.3,0.3,0.0]
+   \end{BACKGROUND_GRID}
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+\end{CONTROL_INPUT}
+\begin{MODEL}
+   \begin{MATERIALS}
+      background material name = background
+   \end{MATERIALS}
+   \begin{OUTER_BOUNDARY}
+      \begin{CIRCULAR_ARC}
+         name        = outer
+         units       = degrees
+         center      = [2.137,2.071,0.0]
+         radius      = 4.5
+         start angle = 0.0
+         end angle   = 360.0
+      \end{CIRCULAR_ARC}
+   \end{OUTER_BOUNDARY}
+   \begin{INTERFACE_BOUNDARIES}
+      \begin{CHAIN}
+         name = slottedBlock
+         \begin{END_POINTS_LINE}
+            name   = LeftSide
+            xStart = [0.137,4.071,0.0]
+            xEnd   = [0.137,2.071,0.0]
+         \end{END_POINTS_LINE}
+         \begin{CIRCULAR_ARC}
+            name        = Bottom
+            units       = degrees
+            center      = [2.137,2.071,0.0]
+            radius      = 2.0
+            start angle = 180.0
+            end angle   = 360.0
+         \end{CIRCULAR_ARC}
+         \begin{END_POINTS_LINE}
+            name   = RightSide
+            xStart = [4.137,2.071,0.0]
+            xEnd   = [4.137,4.071,0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = RightTop
+            xStart = [4.137,4.071,0.0]
+            xEnd   = [2.387,4.071,0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = SlotRight
+            xStart = [2.387,4.071,0.0]
+            xEnd   = [2.387,1.071,0.0]
+         \end{END_POINTS_LINE}
+         \begin{CIRCULAR_ARC}
+            name        = SlotEnd
+            units       = degrees
+            center      = [2.137,1.071,0.0]
+            radius      = 0.25
+            start angle = 0.0
+            end angle   = -180.0
+         \end{CIRCULAR_ARC}
+         \begin{END_POINTS_LINE}
+            name   = SlotLeft
+            xStart = [1.887,1.071,0.0]
+            xEnd   = [1.887,4.071,0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = LeftTop
+            xStart = [1.887,4.071,0.0]
+            xEnd   = [0.137,4.071,0.0]
+         \end{END_POINTS_LINE}
+      \end{CHAIN}
+   \end{INTERFACE_BOUNDARIES}
+\end{MODEL}
+\end{FILE}

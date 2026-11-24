@@ -34,3 +34,4 @@ Benchmarks/ControlFiles/BlobRemesh.control
 Benchmarks/ControlFiles/OffsetBoxNearbyCircle.control
 Benchmarks/ControlFiles/EastCoastUS.control
 Benchmarks/ControlFiles/BlobRemeshInner.control
+Benchmarks/ControlFiles/SlottedInterface.control
