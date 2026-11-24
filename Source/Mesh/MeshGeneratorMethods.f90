@@ -3595,28 +3595,22 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE AddQuad4( mesh, quadNodes, reverse )
+      SUBROUTINE AddQuad4( mesh, quadNodes )
          IMPLICIT NONE
 !
 !        ----------------------------------------------------------
-!        Add an element with these nodes, in reverse order if asked.
+!        Add an element with these nodes.
 !        The order comes from the topology, not the node locations.
 !        ----------------------------------------------------------
 !
          TYPE (SMMesh), POINTER    :: mesh
          TYPE(SMNodePtr)           :: quadNodes(4)
-         LOGICAL                   :: reverse
-         TYPE(SMNodePtr)           :: ordered(4)
+
          TYPE (SMElement), POINTER :: e
          CLASS(FTObject) , POINTER :: obj
 
-         IF ( reverse )     THEN
-            ordered = [quadNodes(1), quadNodes(4), quadNodes(3), quadNodes(2)]
-         ELSE
-            ordered = quadNodes
-         END IF
          ALLOCATE(e)
-         CALL e % initWithNodesIDAndType(ordered, mesh % newElementID(), QUAD)
+         CALL e % initWithNodesIDAndType(quadNodes, mesh % newElementID(), QUAD)
          obj => e
          CALL mesh % elements % add(obj)
          CALL releaseSMElement(e)
@@ -4581,7 +4575,7 @@
                DO k = 1, 4
                   q(k) % node => sideNodes(plan % quads(k,j,side)) % node
                END DO
-               CALL AddQuad4( mesh, q, .FALSE. )
+               CALL AddQuad4( mesh, q )
             END DO
          END DO
 
