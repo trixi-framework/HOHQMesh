@@ -75,6 +75,10 @@
       \end{CHAIN}
    \end{INNER_BOUNDARIES}
 
+   \begin{MATERIALS}
+      background material name = sand
+   \end{MATERIALS}
+
    \begin{INTERFACE_BOUNDARIES}
       \begin{CHAIN}
          name       = stone
@@ -84,7 +88,7 @@
          \begin{CIRCULAR_ARC}
             name        = stone
             units       = degrees
-            center      = [-7.0,0.0,0.0]
+            center      = [-7.1,0.13,0.0]
             radius      = 1.0
             start angle = 0.0
             end angle   = 360.0
