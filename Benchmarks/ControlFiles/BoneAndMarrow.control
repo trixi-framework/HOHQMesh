@@ -69,6 +69,8 @@
 %
     \begin{INTERFACE_BOUNDARIES}
 
+       paving = ON
+
        \begin{CHAIN}
           name = Bone
           \begin{PARAMETRIC_EQUATION_CURVE}
