@@ -1836,15 +1836,22 @@
 !        -------------------------------------------------------------
 !        Some corner Jacobian is not positive. An element with all four
 !        negative is turned over completely, and is tangled as well.
+!        A flat corner, whose Jacobian is zero up to roundoff, counts
+!        as not positive (see FLAT_CORNER_SINE), so that the answer does
+!        not depend on the sign of the roundoff.
 !        -------------------------------------------------------------
 !
          TYPE (SMElement), POINTER :: e
          INTEGER                   :: k
-         REAL(KIND=RP)             :: cornerJacobians(4)
+         REAL(KIND=RP)             :: sideLengths
+         INTEGER, EXTERNAL         :: Loop
+
+         elementIsTangled = .FALSE.
          DO k = 1, 4
-            cornerJacobians(k) = elementCornerJacobian(e, k)
+            sideLengths = NORM2(e % nodes(Loop(k+1,4)) % node % x(1:2) - e % nodes(k) % node % x(1:2)) &
+                        * NORM2(e % nodes(Loop(k-1,4)) % node % x(1:2) - e % nodes(k) % node % x(1:2))
+            IF ( elementCornerJacobian(e, k) <= FLAT_CORNER_SINE*sideLengths )     elementIsTangled = .TRUE.
          END DO
-         elementIsTangled = MINVAL(cornerJacobians) <= 0.0_RP
       END FUNCTION elementIsTangled
 !
 !////////////////////////////////////////////////////////////////////////

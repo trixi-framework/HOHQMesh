@@ -5626,6 +5626,7 @@
 !////////////////////////////////////////////////////////////////////////
 !
       SUBROUTINE RemoveDoublets( x, nFixed, nAll, quads, nQ )
+         USE Geometry, ONLY: FLAT_CORNER_SINE
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
@@ -5633,7 +5634,9 @@
 !        on a fill chord that neither side used again, has an angle near
 !        180 degrees in both, which smoothing cannot fix. Merge the two
 !        quads, (v,a,p,b) and (v,b,q,a), into (a,p,b,q) when that is a
-!        valid quad, which leaves v unused.
+!        valid quad, which leaves v unused. A merged quad with a flat
+!        corner, e.g. at another node of the same straight chord, is not
+!        valid (see FLAT_CORNER_SINE).
 !        ---------------------------------------------------------------
 !
          REAL(KIND=RP) :: x(:,:)
@@ -5672,7 +5675,7 @@
                   corners(:,c) = x(:,merged(c))
                END DO
                IF ( polygonArea(corners, 4) <= 0.0_RP )     CYCLE
-               IF ( minQuadSine(corners) <= 0.0_RP )     CYCLE
+               IF ( minQuadSine(corners) <= FLAT_CORNER_SINE )     CYCLE
                quads(:,at(1)) = merged
                quads(:,at(2)) = quads(:,nQ)
                nQ      = nQ - 1
