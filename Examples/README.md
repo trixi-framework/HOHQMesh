@@ -1,6 +1,6 @@
 # HOHQMesh Examples
 
-There are nineteen two-dimensional and ten three-dimensional examples included in the repository
+There are twenty-one two-dimensional and ten three-dimensional examples included in the repository
 both for the user to run and to visualize models and meshes that use the features of HOHQMesh,
 and for developers to compare changes as algorithms are added or changed.
 
@@ -23,7 +23,6 @@ For this reason, we have reduced the storage requirements in the following ways:
    - HalfCircleArc
    - HalfCircleExtruded
    - HalfCircleRotated
-   - Malpasset
    - NACA0012
    - PacMan
    - Pill
