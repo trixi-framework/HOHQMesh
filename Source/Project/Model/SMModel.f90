@@ -63,6 +63,7 @@
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: INTERFACE_BOUNDARIES_BLOCK_KEY = "INTERFACE_BOUNDARIES"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: TOPOGRAPHY_BLOCK_KEY           = "TOPOGRAPHY"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: MATERIAL_NAME_KEY              = "material name"
+      CHARACTER(LEN=LINE_LENGTH), PARAMETER, PRIVATE  :: PAVING_KEY                     = "paving"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: H1NORM_KEY                     = "H1Norm"
       CHARACTER(LEN=LINE_LENGTH), PARAMETER           :: L2NORM_KEY                     = "L2Norm"
 
@@ -103,6 +104,7 @@
          INTEGER                    , ALLOCATABLE :: boundaryCurveMap(:) ! Tells which chain a curve is in
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
          TYPE(CurveAndChain)        , ALLOCATABLE :: curveForID(:)       ! Built on the first curveWithID
+         LOGICAL                                  :: interfacePaving     ! paving = ON/OFF in INTERFACE_BOUNDARIES
 !
 !        ========
          CONTAINS
@@ -140,6 +142,7 @@
          self % numberOfOuterCurves         =  0
          self % numberOfInnerCurves         =  0
          self % numberOfInterfaceCurves     =  0
+         self % interfacePaving             = .TRUE.
 
          IF( .NOT.ASSOCIATED(modelDict)) RETURN
          CALL constructModelFromDictionary( self, modelDict )
@@ -303,12 +306,17 @@
 !        Import interface boundaries, if any
 !        -----------------------------------
 !
+!        Paving is ON (set in initWithContentsOfDictionary) unless the
+!        INTERFACE_BOUNDARIES block switches it off.
+!
          IF ( modelDict% containsKey(key = INTERFACE_BOUNDARIES_BLOCK_KEY) )     THEN
             ALLOCATE( self % interfaceBoundaries )
             CALL self % interfaceBoundaries % init()
 
             obj                 => modelDict % objectForKey(key = INTERFACE_BOUNDARIES_BLOCK_KEY)
             innerBoundariesDict => valueDictionaryFromObject(obj)
+            CALL SetInterfacePaving( self, innerBoundariesDict )
+
             obj                 => innerBoundariesDict % objectForKey(key = "LIST")
             innerBoundariesList => linkedListFromObject(obj)
 
@@ -382,6 +390,54 @@
          CALL GatherAllChains(self)
 
       END SUBROUTINE constructModelFromDictionary
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE SetInterfacePaving( self, interfaceBoundariesDict )
+!
+!        Reads the optional paving switch, which must come before the
+!        first chain or curve in the block:
+!
+!         \begin{INTERFACE_BOUNDARIES}
+!            paving = ON OR OFF (optional, default ON)
+!            \begin{CHAIN}
+!            ...
+!         \end{INTERFACE_BOUNDARIES}
+!
+!        The switch applies to all interface chains of the model.
+!
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMModel)                    :: self
+         CLASS(FTValueDictionary), POINTER :: interfaceBoundariesDict
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CHARACTER(LEN=LINE_LENGTH) :: str
+
+         IF ( .NOT. interfaceBoundariesDict % containsKey(key = PAVING_KEY) )     RETURN
+
+         str = interfaceBoundariesDict % stringValueForKey(key             = PAVING_KEY, &
+                                                           requestedLength = LINE_LENGTH)
+         SELECT CASE ( TRIM(ADJUSTL(str)) )
+            CASE ( "ON" )
+               self % interfacePaving = .TRUE.
+            CASE ( "OFF" )
+               self % interfacePaving = .FALSE.
+            CASE DEFAULT
+               CALL ThrowErrorExceptionOfType(poster = "SetInterfacePaving",                                 &
+                                              msg    = "Unknown value for paving in INTERFACE_BOUNDARIES: " &
+                                                       // TRIM(str) // ". Use ON or OFF. Using ON.",        &
+                                              typ    = FT_ERROR_WARNING)
+         END SELECT
+
+      END SUBROUTINE SetInterfacePaving
 !
 !////////////////////////////////////////////////////////////////////////
 !

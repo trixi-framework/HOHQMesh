@@ -43,6 +43,17 @@
       INTEGER, PARAMETER :: CLOCKWISE = 1, COUNTERCLOCKWISE = -1, NO_DIRECTION  = 0
 !
 !     ----------------------------------------------------------------
+!     A corner whose angle has a sine below FLAT_CORNER_SINE is
+!     treated as flat (180 degrees). Nodes put on a straight chord are
+!     collinear, so the sine at such a corner is zero up to roundoff,
+!     and its sign depends on the compiler and on the last bits of the
+!     input. Comparing against this small threshold rather than zero
+!     makes every such test give the same answer.
+!     ----------------------------------------------------------------
+!
+      REAL(KIND=RP), PARAMETER :: FLAT_CORNER_SINE = 1.0e-10_RP
+!
+!     ----------------------------------------------------------------
 !     Points sorted into the cells of a uniform grid over their
 !     bounding box, about one cell per point, so that the points near a
 !     location can be found quickly. The points of cell c are

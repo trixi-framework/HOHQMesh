@@ -1,20 +1,20 @@
 \begin{CONTROL_INPUT}
     \begin{RUN_PARAMETERS}
-        mesh file name   = Benchmarks/MeshFiles/Tests/interface_star5_83deg.mesh
-        plot file name   = Benchmarks/PlotFiles/Tests/interface_star5_83deg.tec
-        stats file name  = Benchmarks/StatsFiles/Tests/interface_star5_83deg.txt
-        test file name   = Benchmarks/BenchmarkData/interface_star5_83deg.txt
+        mesh file name   = Benchmarks/MeshFiles/Tests/interface_star5_sharp.mesh
+        plot file name   = Benchmarks/PlotFiles/Tests/interface_star5_sharp.tec
+        stats file name  = Benchmarks/StatsFiles/Tests/interface_star5_sharp.txt
+        test file name   = Benchmarks/BenchmarkData/interface_star5_sharp.txt
         mesh file format = ISM-MM
-        polynomial order = 3
-        plot file format = sem
+        polynomial order = 1
+        plot file format = skeleton
     \end{RUN_PARAMETERS}
     \begin{BACKGROUND_GRID}
-        background grid size = [54.0, 54.0, 0.0]
+        background grid size = [13.0, 13.0, 0.0]
     \end{BACKGROUND_GRID}
     \begin{SPRING_SMOOTHER}
         smoothing            = ON
         smoothing type       = LinearAndCrossBarSpring
-        number of iterations = 100
+        number of iterations = 25
     \end{SPRING_SMOOTHER}
 \end{CONTROL_INPUT}
 \begin{MODEL}
@@ -71,56 +71,55 @@
 \begin{INTERFACE_BOUNDARIES}
     \begin{CHAIN}
         name = InnerChain1
-        material name = Star
         \begin{END_POINTS_LINE}
             name   = Side1
-            xStart = [389.647739039490, 288.636554295633, 0.0]
-            xEnd   = [314.652390578550, 327.118311776921, 0.0]
+            xStart = [399.336863256597, 291.110593888178, 0.0]
+            xEnd   = [285.922310830816, 292.483321987853, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side2
-            xStart = [314.652390578550, 327.118311776921, 0.0]
-            xEnd   = [262.976135946868, 393.711950038153, 0.0]
+            xStart = [285.922310830816, 292.483321987853, 0.0]
+            xEnd   = [263.617288514501, 403.691375040878, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side3
-            xStart = [262.976135946868, 393.711950038153, 0.0]
-            xEnd   = [203.202972562298, 334.278652227684, 0.0]
+            xStart = [263.617288514501, 403.691375040878, 0.0]
+            xEnd   = [227.264722401210, 296.251922225097, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side4
-            xStart = [203.202972562298, 334.278652227684, 0.0]
-            xEnd   = [123.899818063314, 305.710179462473, 0.0]
+            xStart = [227.264722401210, 296.251922225097, 0.0]
+            xEnd   = [114.606947924979, 309.403763709792, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side5
-            xStart = [123.899818063314, 305.710179462473, 0.0]
-            xEnd   = [161.953319937489, 230.496623870820, 0.0]
+            xStart = [114.606947924979, 309.403763709792, 0.0]
+            xEnd   = [205.554378914468, 241.629802037274, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side6
-            xStart = [161.953319937489, 230.496623870820, 0.0]
-            xEnd   = [164.617529673715, 146.246698434012, 0.0]
+            xStart = [205.554378914468, 241.629802037274, 0.0]
+            xEnd   = [158.233067507552, 138.550034036441, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side7
-            xStart = [164.617529673715, 146.246698434012, 0.0]
-            xEnd   = [247.909050607483, 159.195462474110, 0.0]
+            xStart = [158.233067507552, 138.550034036441, 0.0]
+            xEnd   = [250.794237161833, 204.102874986374, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side8
-            xStart = [247.909050607483, 159.195462474110, 0.0]
-            xEnd   = [328.858777276613, 135.694617769730, 0.0]
+            xStart = [250.794237161833, 204.102874986374, 0.0]
+            xEnd   = [334.205832796371, 127.244233324710, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side9
-            xStart = [328.858777276613, 135.694617769730, 0.0]
-            xEnd   = [342.282266314180, 218.910949650465, 0.0]
+            xStart = [334.205832796371, 127.244233324710, 0.0]
+            xEnd   = [300.464350691674, 235.532078763403, 0.0]
         \end{END_POINTS_LINE}
         \begin{END_POINTS_LINE}
             name   = Side10
-            xStart = [342.282266314180, 218.910949650465, 0.0]
-            xEnd   = [389.647739039490, 288.636554295633, 0.0]
+            xStart = [300.464350691674, 235.532078763403, 0.0]
+            xEnd   = [399.336863256597, 291.110593888178, 0.0]
         \end{END_POINTS_LINE}
     \end{CHAIN}
 \end{INTERFACE_BOUNDARIES}

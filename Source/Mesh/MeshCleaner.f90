@@ -1348,7 +1348,7 @@
                   obj => nodesIterator % object()
                   CALL castToSMNode(obj,meshNode)
 
-                  IF ( isOnInterfaceCurve(meshNode) )     THEN
+                  IF ( isOnInterfaceCurve(meshNode) .AND. .NOT.pavedChainNode(meshNode) )     THEN
                      DO j = 1, numElementsForNode( meshNode % id )
                         e   => elementsForNodes(j,meshNode % id) % element
                         obj => e
@@ -1630,15 +1630,17 @@
 
          IF(.NOT.isDiamond) RETURN
 !
-!        --------------------------------------
-!        Do not remove a diamond if one node is
-!        attached to a boundary
-!        --------------------------------------
+!        -------------------------------------------------------------
+!        Do not remove a diamond if one of its nodes is attached to a
+!        boundary or interface curve. Collapsing it merges the two
+!        3-valence nodes, so the other two nodes each lose an element.
+!        On a curve that undoes the corner templates, e.g. the fan at
+!        a joint of a paved interface chain.
+!        -------------------------------------------------------------
 !
-         IF ( elementNodes(localIDs(1)) % node % bCurveID /= UNDEFINED .OR. &
-              elementNodes(localIDs(2)) % node % bCurveID /= UNDEFINED )     THEN
-            RETURN
-         END IF
+         DO k = 1, 4
+            IF ( elementNodes(k) % node % bCurveID /= UNDEFINED )     RETURN
+         END DO
 
          e % remove = .true.
 !
@@ -1685,6 +1687,26 @@
          END DO
 
       END SUBROUTINE DeleteElementIfDiamond
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION pavedChainNode( node )
+         USE ProgramGlobals, ONLY: chainWasPaved, MAX_PAVED_CHAIN_ID
+         IMPLICIT NONE
+!
+!        --------------------------------------------------------------
+!        True if the node is on an interface chain whose band was paved
+!        (model % interfacePaving). Those elements are not split.
+!        --------------------------------------------------------------
+!
+         TYPE (SMNode), POINTER :: node
+         INTEGER                :: k
+
+         pavedChainNode = .FALSE.
+         k = node % bCurveChainID
+         IF ( k < 0 .OR. k > MAX_PAVED_CHAIN_ID )     RETURN
+         pavedChainNode = chainWasPaved(k)
+      END FUNCTION pavedChainNode
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1814,15 +1836,22 @@
 !        -------------------------------------------------------------
 !        Some corner Jacobian is not positive. An element with all four
 !        negative is turned over completely, and is tangled as well.
+!        A flat corner, whose Jacobian is zero up to roundoff, counts
+!        as not positive (see FLAT_CORNER_SINE), so that the answer does
+!        not depend on the sign of the roundoff.
 !        -------------------------------------------------------------
 !
          TYPE (SMElement), POINTER :: e
          INTEGER                   :: k
-         REAL(KIND=RP)             :: cornerJacobians(4)
+         REAL(KIND=RP)             :: sideLengths
+         INTEGER, EXTERNAL         :: Loop
+
+         elementIsTangled = .FALSE.
          DO k = 1, 4
-            cornerJacobians(k) = elementCornerJacobian(e, k)
+            sideLengths = NORM2(e % nodes(Loop(k+1,4)) % node % x(1:2) - e % nodes(k) % node % x(1:2)) &
+                        * NORM2(e % nodes(Loop(k-1,4)) % node % x(1:2) - e % nodes(k) % node % x(1:2))
+            IF ( elementCornerJacobian(e, k) <= FLAT_CORNER_SINE*sideLengths )     elementIsTangled = .TRUE.
          END DO
-         elementIsTangled = MINVAL(cornerJacobians) <= 0.0_RP
       END FUNCTION elementIsTangled
 !
 !////////////////////////////////////////////////////////////////////////

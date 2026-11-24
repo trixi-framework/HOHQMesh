@@ -66,6 +66,12 @@
 %   one curve in the chain.
 %
     \begin{INTERFACE_BOUNDARIES}
+%
+%      Optional. Pave the band around every interface curve (default)
+%      or move background grid nodes onto the curves (OFF).
+%      It must come before the first chain or curve in the block.
+%
+       paving = ON
 
        \begin{CHAIN}
           name = Bone

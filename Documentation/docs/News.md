@@ -2,6 +2,8 @@
 
 ## Changes in the v1.6 lifecycle
 
+- Implement paving strategy for the interior/exterior meshing (#190) with the existing strategy as a fallback.
+  Paving is ON by default and is switched off with `paving = OFF` in the `INTERFACE_BOUNDARIES` block
 - Increase test coverage to over 95% with many new unit and benchmark tests (#199), which uncovered and fixed several bugs:
   the parabolic step in Brent's method (`fMin`) was never taken, `SIMPLE_EXTRUSION` along x or y mishandled curved
   boundaries, and several invalid inputs crashed instead of giving an error. Also, the remesh retry now runs
