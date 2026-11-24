@@ -33,7 +33,7 @@ The options are:
 
 1. **optimize:** Specifies the norm to be minimized. For convenience, `none` can be used to turn it off.
 2. **tolerance:** The accuracy to which the boundaries are to be approximated.
-3. **continuity:** The derivatives to which the approximation will be constrained. For example, if second derivative continuity is to be enforced, choose `continuity = 2`. If zero, then the approximation is simply continuous.
+3. **continuity:** The derivatives to which the approximation will be constrained. For example, if second derivative continuity is to be enforced, choose `continuity = 2`. If zero, then the approximation is simply continuous. The continuity must be less than the `polynomial order` set in the `RUN_PARAMETERS` block, otherwise HOHQMesh stops with an error.
 4. **connect:** This *optional* parameter allows one to optimize across segments of a chain. By default, optimization is done curve by curve within the chain, since usually there will be discontinuities (e.g. corners) between the curves. If it is desired to define a more global approximation across multiple curves, include the `connect` key.
 
  The syntax is the following:

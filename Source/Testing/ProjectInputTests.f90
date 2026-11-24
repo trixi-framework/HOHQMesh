@@ -306,6 +306,18 @@
                                                           "\end{ROTATION_TRANSFORM}"]]),           &
                   modelText(none, none, none)],                                                     &
                  FATAL_ERROR_EXCEPTION, "must not be the zero vector")
+!
+!        ---------------------------------------------------------------
+!        An optimized chain needs fewer continuity constraints than the
+!        polynomial order (runParametersText sets polynomial order 4)
+!        ---------------------------------------------------------------
+!
+         CALL CheckProjectInput("Continuity not less than the polynomial order",                    &
+                 [controlInputText([runParametersText("ISM"), backgroundGridText()]),               &
+                  modelText([chainText("smooth", [CHARACTER(LEN=LL) :: "optimize = H1Norm",        &
+                                       "continuity = 4", "tolerance = 1.0e-3",                     &
+                                       circleText("smooth", "[0.0,0.0,0.0]", "1.0")])], none, none)], &
+                 FATAL_ERROR_EXCEPTION, "Continuity = 4 of chain smooth must be from 0 to 3")
 
       END SUBROUTINE ProjectInputErrorTests
 !

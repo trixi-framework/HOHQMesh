@@ -428,15 +428,15 @@
 !        local variables
 !        ---------------
 !
-         REAL(KIND=RP)                    :: dX(3)
-         REAL(KIND=RP)                    :: x(3), boundingBox(6)
-         REAL(KIND=RP)                    :: cSize, aSize
-         REAL(KIND=RP)                    :: cHeight, cWidth, cDim
-         REAL(KIND=RP)                    :: kappa
-         INTEGER                          :: i,j, nX(3) = [10,10,0]
-         REAL(KIND=RP), PARAMETER         :: SIZE_FACTOR = 0.9_RP
+         REAL(KIND=RP)                      :: dX(3)
+         REAL(KIND=RP)                      :: x(3), boundingBox(6)
+         REAL(KIND=RP)                      :: cSize, aSize
+         REAL(KIND=RP)                      :: cHeight, cWidth, cDim
+         REAL(KIND=RP)                      :: kappa
+         INTEGER                            :: i,j, nX(3) = [10,10,0]
+         REAL(KIND=RP), PARAMETER           :: SIZE_FACTOR = 0.9_RP
          INTEGER, DIMENSION(:), ALLOCATABLE :: nearCenters
-         INTEGER                          :: nNear
+         INTEGER                            :: nNear
 
          TYPE (FTLinkedListIterator) , POINTER :: iterator            => NULL()
          CLASS(FTObject)             , POINTER :: obj                 => NULL()
@@ -447,6 +447,7 @@
 !        -----------------------------------------
 !
          hMin = HUGE(hMin)
+         x(3) = 0.0_RP ! The sample points below set only x(1:2)
 
          IF ( ASSOCIATED(sizer % controlsList) )     THEN
             CALL EnsureControlEntries( sizer )
