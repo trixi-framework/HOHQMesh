@@ -71,7 +71,7 @@
 !        File
 !        ----
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: controlFileName, path, testResultsName
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: controlFileName, path, testResultsName
          INTEGER                                 :: fUnit
          INTEGER, EXTERNAL                       :: UnusedUnit
 !
@@ -87,7 +87,7 @@
          TYPE(testData)              :: tData
          INTEGER                     :: numberOfFailedTests = 0
 
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
 !
 !        ***********************************************
 !                             Start
@@ -95,6 +95,11 @@
 !
          CALL initializeFTExceptions
          CALL ReadCommandLineArguments(version, test, generateTest, controlFileName, path)
+
+         IF(path /= "")     THEN
+            CALL ConvertToPath(path)
+            CALL JoinFilePath(path, "DebugPlot.tec", debugPlotFileName) ! (path, fileName, fullName)
+         END IF
 
          IF ( test )     THEN
 
@@ -106,10 +111,10 @@
             ALLOCATE(project)
 
             CALL ReadControlFile(controlFileName, projectDict)
+            CALL trapExceptions ! Abort on errors in the control file before using it
             CALL HOHQMesh(projectDict, project, stats, didGenerate3DMesh, .FALSE.)
 
             IF(path /= "")     THEN
-               CALL ConvertToPath(path)
                CALL AddPathToProjectFiles(self = project,path = path)
             END IF
 
@@ -129,9 +134,12 @@
                obj             => controlDict % objectForKey(key = RUN_PARAMETERS_KEY)
                paramsDict      => valueDictionaryFromObject(obj)
                testResultsName = paramsDict % stringValueForKey(key = "test file name", &
-                                               requestedLength = DEFAULT_CHARACTER_LENGTH)
+                                               requestedLength = DEFAULT_FILE_PATH_LENGTH)
 
-               IF(path /= "")  testResultsName = TRIM(path) // testResultsName
+               IF(path /= "")  THEN
+                  str = testResultsName
+                  CALL JoinFilePath(path, str, testResultsName) ! (path, fileName, fullName)
+               END IF
 
                CALL GatherTestFileData( tData, project, stats)
 
@@ -173,7 +181,7 @@
 !        Arguments
 !        ---------
 !
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH)     :: controlFileName, path
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH)     :: controlFileName, path
          CHARACTER(LEN=*)                            :: version
          LOGICAL                                     :: test, generateTest
          INTEGER                                     :: argCount
@@ -274,7 +282,8 @@
          WRITE(iUnit,*) "-test"
          WRITE(iUnit,*) "   Runs the test sequence"
          WRITE(iUnit,*) "-path <path>"
-         WRITE(iUnit,*) "   Use to specify location of the HOHQMesh directory for the test sequence."
+         WRITE(iUnit,*) "   Directory that the output file names, and DebugPlot.tec, are relative to."
+         WRITE(iUnit,*) "   With -test, the location of the HOHQMesh directory."
          WRITE(iUnit,*) "-sLimit n"
          WRITE(iUnit,*) "   Increase the number of subdivisions allowed to 2^n. Default is n = 8."
          WRITE(iUnit,*) "-generateTest"

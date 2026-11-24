@@ -299,36 +299,38 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE Reconstruct(self, cuts)
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
 !
-!        --------------------------------------------------------------
-!        For a previously constructed self, readjust matrices for a new
-!        cuts distribution. Nothing else can change.
-!        --------------------------------------------------------------
-!
-         IMPLICIT NONE
-         CLASS(MultiH1Optimizer) :: self
-         REAL(KIND=RP)           :: cuts(0:self % nSegments)
-         INTEGER                 :: k
-!
-!        ------
-!        Sizing
-!        ------
-!
-         DO k = 1, self % nSegments
-            self % dsdt(k) = 2.0_RP/(cuts(k) - cuts(k-1)) ! = 2/h
-         END DO
-!
-!        --------------------
-!        Reconstruct matrices
-!        --------------------
-!
-         CALL ConstructConstraintMatrix(self)
-         CALL ConstructGlobalMatrix(self)
-!
-         CALL LUFactorization(A = self % SMatrix, pivots = self % iPvt,n = self % globalStateLength)
+!       SUBROUTINE Reconstruct(self, cuts)
+! !
+! !        --------------------------------------------------------------
+! !        For a previously constructed self, readjust matrices for a new
+! !        cuts distribution. Nothing else can change.
+! !        --------------------------------------------------------------
+! !
+!          IMPLICIT NONE
+!          CLASS(MultiH1Optimizer) :: self
+!          REAL(KIND=RP)           :: cuts(0:self % nSegments)
+!          INTEGER                 :: k
+! !
+! !        ------
+! !        Sizing
+! !        ------
+! !
+!          DO k = 1, self % nSegments
+!             self % dsdt(k) = 2.0_RP/(cuts(k) - cuts(k-1)) ! = 2/h
+!          END DO
+! !
+! !        --------------------
+! !        Reconstruct matrices
+! !        --------------------
+! !
+!          CALL ConstructConstraintMatrix(self)
+!          CALL ConstructGlobalMatrix(self)
+! !
+!          CALL LUFactorization(A = self % SMatrix, pivots = self % iPvt,n = self % globalStateLength)
 
-      END SUBROUTINE Reconstruct
+!       END SUBROUTINE Reconstruct
 !
 !////////////////////////////////////////////////////////////////////////
 !

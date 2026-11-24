@@ -242,7 +242,7 @@
       CLASS(SMChainedCurve)         , POINTER  :: modelChain
       CLASS(MultiSegmentCurve)      , POINTER  :: boundaryPolynomial
 
-      CHARACTER(DEFAULT_CHARACTER_LENGTH)      :: str
+      CHARACTER(DEFAULT_FILE_PATH_LENGTH)      :: str
       REAL(KIND=RP)                            :: gTStart, gTEnd
       REAL(KIND=RP)                            :: xs(3), xe(3)
       REAL(KIND=RP)                            :: eL2Norm, eH1Norm

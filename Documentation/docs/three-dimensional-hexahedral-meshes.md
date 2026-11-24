@@ -26,7 +26,14 @@ The first hex-meshing algorithm is the `SIMPLE_EXTRUSION` algorithm.
 		 end surface name   = top
 	 \end{SIMPLE_EXTRUSION}
 
-The direction (where *x* = 1, *y* = 2, z = *3*) says which direction the extrusion is done. Note that even though the initial 2D mesh is in the x-y plane, the quad mesh is rotated to give a hex mesh extruded in the requested direction. The height tells how far to extrude. A name is given to the bottom and top faces created by the extrusion so that boundary conditions can be attached. Otherwise, the names of the faces are given by the 2D curve names.
+The direction (where *x* = 1, *y* = 2, z = *3*) says which direction the extrusion is done.
+Note that even though the initial 2D mesh is in the x-y plane, the coordinates of the quad mesh are permuted to give a hex mesh extruded in the requested direction.
+For *direction* = 1, the 2D *x* and *y* coordinates become *y* and *z*.
+For *direction* = 2, they become *z* and *x*.
+To tilt the 2D mesh out of its plane instead, see the [rotation transformation](the-control-input.md#RotationTransform).
+The height tells how far to extrude.
+A name is given to the bottom and top faces created by the extrusion so that boundary conditions can be attached.
+Otherwise, the names of the faces are given by the 2D curve names.
 
 ## Simple Rotation<a name="Rotation"></a>
 
@@ -106,7 +113,7 @@ The bottom of a three dimensional mesh can vary in height according to a bottom 
 * By supplying a functional form, f(x,y)
 * By supplying gridded data in a file
 
-See the [`MODEL`](the-model.md) section for details. Fig. 24 above shows an example of a bottom topography set with a bottom function, while Figs. 25 and 26 use data to describe Mt. St. Helens. 
+See the [`MODEL`](the-model.md) section for details. Fig. 24 above shows an example of a bottom topography set with a bottom function, while Figs. 25 and 26 use data to describe Mt. St. Helens.
 
 ![MtStHelens](https://user-images.githubusercontent.com/25242486/157440694-b8f1d9d5-adbf-4f5b-9de0-f89f675c584f.png)
 <p align = "center"> Fig. 25. Simple Extrusion of a rectangular mesh with a mountain bottom topography read in from a file</p>

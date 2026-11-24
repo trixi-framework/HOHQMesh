@@ -86,7 +86,6 @@
 !         
          PROCEDURE :: initWithLocationAndID => initNodeWithLocationAndID
          PROCEDURE :: printDescription      => printNodeDescription
-         PROCEDURE :: typeCopy              => copyOfNodeClass
       END TYPE SMNode
       
       TYPE SMNodePtr
@@ -172,7 +171,7 @@
          INTEGER                       :: domainMark ! = INSIDE, OUTSIDE OR ON_BOUNDARY
          TYPE(SMNodePtr), DIMENSION(4) :: nodes
          CONTAINS 
-         PROCEDURE :: initWithNodes => initQuadWithNodes
+!          PROCEDURE :: initWithNodes => initQuadWithNodes   ! unused, commented out 2026-11-19
          PROCEDURE :: init          => initQuad
          FINAL     :: destructQuad
          PROCEDURE :: printDescription => printQuadDescription
@@ -281,28 +280,6 @@
          self % bCurveSide      = UNDEFINED
          self % nodeType        = UNDEFINED
       END SUBROUTINE initNodeWithLocationAndID
-!
-!//////////////////////////////////////////////////////////////////////// 
-! 
-      FUNCTION copyOfNodeClass(self) RESULT(copy)  
-         IMPLICIT NONE  
-         CLASS(SMNode) :: self
-         TYPE (SMNode) :: copy
-         
-         CALL copy % FTObject % init()
-         
-         copy % x               = self % x              
-         copy % id              = self % id             
-         copy % level           = self % level          
-         copy % bCurveID        = self % bCurveID       
-         copy % activeStatus    = self % activeStatus   
-         copy % whereOnBoundary = self % whereOnBoundary
-         copy % distToBoundary  = self % distToBoundary 
-         copy % bCurveChainID   = self % bCurveChainID  
-         copy % bCurveSide      = self % bCurveSide     
-         copy % nodeType        = self % nodeType       
-         
-      END FUNCTION copyOfNodeClass
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
@@ -782,20 +759,22 @@
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 
-      SUBROUTINE initQuadWithNodes(self,nodes)  
-         IMPLICIT NONE
-         CLASS(SMQuad)   :: self
-         TYPE(SMNodePtr) :: nodes(4)
-         INTEGER         :: k
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!       SUBROUTINE initQuadWithNodes(self,nodes)  
+!          IMPLICIT NONE
+!          CLASS(SMQuad)   :: self
+!          TYPE(SMNodePtr) :: nodes(4)
+!          INTEGER         :: k
          
-         CALL self % FTObject % init()
+!          CALL self % FTObject % init()
          
-         DO k = 1, 4
-            self % nodes(k) % node => nodes(k) % node
-            CALL self % nodes(k) % node % retain()
-         END DO
+!          DO k = 1, 4
+!             self % nodes(k) % node => nodes(k) % node
+!             CALL self % nodes(k) % node % retain()
+!          END DO
          
-      END SUBROUTINE initQuadWithNodes
+!       END SUBROUTINE initQuadWithNodes
 !
 !//////////////////////////////////////////////////////////////////////// 
 ! 

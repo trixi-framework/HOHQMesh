@@ -11,14 +11,36 @@
 #   2. copies the plot and stats files from Benchmarks/PlotFiles/Tests and
 #      Benchmarks/StatsFiles/Tests to Benchmarks/PlotFiles/Benchmarks and
 #      Benchmarks/StatsFiles/Benchmarks
+#   3. restores the rewritten files of the control file to their committed
+#      versions if all of them differ from those only by roundoff, see below
+#
+# Roundoff: a different compiler, compiler version, optimization level or
+# machine changes the last digits of many results, even if the meshing
+# algorithms are unchanged. Such files are put back to their committed
+# version so that only real changes show up. A file counts as roundoff only
+# if it has the same number of lines, the same words, and every number
+# agrees with its committed value within the tolerance of the test suite
+# (Source/Testing/MeshingTests.f90),
+#     |x - y| <= absTol + relTol*max(|x|,|y|),  relTol = 1e-4, absTol = 1e-5
+# (|x - y| <= relTol if the committed value x is zero).
+# The decision is made for each control file as a whole: if any of its
+# committed files has a real change, all of its files are kept, so that its
+# benchmark data, plot and stats files stay consistent with each other.
+# New, untracked files are always kept.
 #
 # Usage, from the HOHQMesh directory after building:
 #   ./Utilities/updatebenchmarks                     # all benchmarks
 #   ./Utilities/updatebenchmarks Benchmarks/ControlFiles/Pill.control ...
+#   ./Utilities/updatebenchmarks --keep-roundoff ... # keep roundoff changes,
+#                                                    # e.g. to re-baseline
+#                                                    # after a compiler update
 #
 # Review the result with "git diff --stat Benchmarks" before committing.
 
 set -eo pipefail
+
+REL_TOL=1e-4
+ABS_TOL=1e-5
 
 if [ ! -x ./HOHQMesh ] || [ ! -f Benchmarks/BenchmarkFiles.txt ]; then
    echo "Run this from the HOHQMesh directory after building ./HOHQMesh" >&2
@@ -49,29 +71,109 @@ copyToBenchmarks() {
    fi
    local target=${fileName/\/Tests\//\/Benchmarks\/}
    cp "$fileName" "$target"
+   caseFiles+=("$target")
    echo "   copied $fileName -> $target"
 }
 
-if [ $# -gt 0 ]; then
-   controlFiles=("$@")
-else
-   controlFiles=()
+# Succeeds if the two files differ only by numbers within the tolerance
+roundoffOnly() {
+   awk -v committed="$1" -v current="$2" -v relTol="$REL_TOL" -v absTol="$ABS_TOL" '
+      function isNumber(s) {
+         return s ~ /^[-+]?([0-9]+\.?[0-9]*|\.[0-9]+)([eEdD][-+]?[0-9]+)?$/
+      }
+      function toNumber(s) {
+         gsub(/[dD]/, "e", s)
+         return s + 0
+      }
+      function abs(x) { return x < 0 ? -x : x }
+      BEGIN {
+         while (1) {
+            more1 = (getline a < committed) > 0
+            more2 = (getline b < current)   > 0
+            if (!more1 && !more2) exit 0
+            if (more1 != more2)   exit 1          # different number of lines
+            if (a == b)           continue
+            n = split(a, wa); m = split(b, wb)
+            if (n != m)           exit 1
+            for (i = 1; i <= n; i++) {
+               if (wa[i] == wb[i]) continue
+               if (!isNumber(wa[i]) || !isNumber(wb[i])) exit 1
+               x = toNumber(wa[i]); y = toNumber(wb[i])
+               tol = (x == 0) ? relTol : absTol + relTol*(abs(x) > abs(y) ? abs(x) : abs(y))
+               if (abs(x - y) > tol) exit 1
+            }
+         }
+      }'
+}
+
+keepRoundoff=0
+controlFiles=()
+for argument in "$@"; do
+   case "$argument" in
+      --keep-roundoff) keepRoundoff=1 ;;
+      -*) echo "Unknown option $argument" >&2; exit 1 ;;
+      *)  controlFiles+=("$argument") ;;
+   esac
+done
+
+if [ ${#controlFiles[@]} -eq 0 ]; then
    while read -r line; do
       line=${line%"${line##*[![:space:]]}"}   # trailing blanks and Windows line endings
       if [ -n "$line" ]; then controlFiles+=("$line"); fi
    done < Benchmarks/BenchmarkFiles.txt
 fi
 
+# Put back the files of the current control file if all of the committed
+# ones among them changed only by roundoff. Keep all of them otherwise.
+restoreIfRoundoff() {
+   local fileName
+   local changedFiles=()
+   for fileName in "${caseFiles[@]}"; do
+      git ls-files --error-unmatch -- "$fileName" > /dev/null 2>&1 || continue   # new file
+      git diff --quiet -- "$fileName" && continue                                # unchanged
+      changedFiles+=("$fileName")
+   done
+   if [ ${#changedFiles[@]} -eq 0 ]; then
+      return
+   fi
+   for fileName in "${changedFiles[@]}"; do
+      git show ":$fileName" > "$committedCopy"
+      if ! roundoffOnly "$committedCopy" "$fileName"; then
+         echo "   real change in $fileName, keeping all ${#changedFiles[@]} changed file(s)"
+         return
+      fi
+   done
+   for fileName in "${changedFiles[@]}"; do
+      git checkout -- "$fileName"
+      restored+=("$fileName")
+   done
+   echo "   roundoff only, restored ${#changedFiles[@]} file(s)"
+}
+
+committedCopy=$(mktemp)
+trap 'rm -f "$committedCopy"' EXIT
+
+restored=()
 for controlFile in "${controlFiles[@]}"; do
    echo "$controlFile"
-   if [ -z "$(controlValue "$controlFile" "test file name")" ]; then
+   testFile=$(controlValue "$controlFile" "test file name")
+   if [ -z "$testFile" ]; then
       echo "   ERROR: no \"test file name\" in $controlFile" >&2
       exit 1
    fi
    ./HOHQMesh -generateTest -f "$controlFile" > /dev/null
+   caseFiles=("$testFile")
    copyToBenchmarks "$(controlValue "$controlFile" "plot file name")"
    copyToBenchmarks "$(controlValue "$controlFile" "stats file name")"
+   if [ $keepRoundoff -eq 0 ]; then
+      restoreIfRoundoff
+   fi
 done
+
+if [ ${#restored[@]} -gt 0 ]; then
+   echo
+   echo "Restored ${#restored[@]} file(s) that changed only by roundoff (use --keep-roundoff to keep them)."
+fi
 
 echo
 echo "Updated benchmark files:"

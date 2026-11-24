@@ -111,16 +111,26 @@
          REAL(KIND=RP) :: directionPenalty        = 1.0E-4_RP
          REAL(KIND=RP) :: boundingBoxOverlapTol   = 1.0E-5_RP
          REAL(KIND=RP) :: straightLineTol         = 1.0E-5_RP
-         LOGICAL       :: boundarySlipping        = .FALSE.
          INTEGER       :: maxLevelLimit           = 8       ! allow at most maxLevelLimit levels of subdivision
          INTEGER       :: numBoundarySmoothPasses = 10
          REAL(KIND=RP) :: anchorStrength          = 0.15_RP
+         INTEGER       :: numUntanglePasses       = 10       ! sweeps over the inverted elements
+         REAL(KIND=RP) :: maxAcceptedAngle        = 165.0_RP ! degrees, larger angles are opened up
+         INTEGER       :: numShapeSweeps          = 6        ! sweeps of the shape improvement
+         REAL(KIND=RP) :: minAcceptedScaledJacobian = 0.8_RP ! elements below this are improved
 !
 !        --------------------
 !        For printing history
 !        --------------------
 !
          LOGICAL :: printMessage = .FALSE.
+!
+!        ---------------------------------------------------------------
+!        Mesh plot written when meshing fails, for debugging. With -path
+!        it is written to that directory, like the other output files
+!        ---------------------------------------------------------------
+!
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: debugPlotFileName = "DebugPlot.tec"
 !
 !        ----------------------
 !        For close curve sizing
@@ -131,7 +141,22 @@
          REAL(KIND=RP) :: normalTangentMin          = 0.01_RP  ! Dot of normal and tangent should be zero. Use this instead.
 
          INTEGER       :: refinementType          = 2
-         INTEGER       :: boundarySmoothingPasses = 1
+!
+!        -----------------------------------------------------
+!        Interface paving parameters. See interface-meshing.md
+!        in the Documentation for a description. The ON/OFF
+!        switch is SMModel % interfacePaving, read from the
+!        control file.
+!        -----------------------------------------------------
+!
+         REAL(KIND=RP)      :: paveBandWidth       = 1.5_RP
+         REAL(KIND=RP)      :: paveWedgeAngle      = 120.0_RP
+         REAL(KIND=RP)      :: paveFanAngle        = 240.0_RP
+         REAL(KIND=RP)      :: paveMaxTurn         = 30.0_RP
+         INTEGER            :: paveSamplesPerCurve = 0
+         INTEGER, PARAMETER :: MAX_PAVED_CHAIN_ID  = 9999
+         LOGICAL            :: chainWasPaved(0:MAX_PAVED_CHAIN_ID) = .FALSE.
+         INTEGER            :: boundarySmoothingPasses = 1
 !
 !        -----------
 !        Error Codes

@@ -1,6 +1,7 @@
 %
 % ------------------------------------------------------------------
-% Control file for two materials embedded in a background material.
+% Control file for two materials embedded in a background material
+% using paving.
 % ------------------------------------------------------------------
 %
 % -------------
@@ -67,6 +68,8 @@
 %   one curve in the chain.
 %
     \begin{INTERFACE_BOUNDARIES}
+
+       paving = ON
 
        \begin{CHAIN}
           name = Bone

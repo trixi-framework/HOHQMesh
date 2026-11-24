@@ -863,13 +863,15 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-   SUBROUTINE AppendRealArray(base, arrayToAdd)
-      IMPLICIT NONE
-      REAL(KIND=RP), ALLOCATABLE :: base(:)
-      REAL(KIND=RP)              :: arrayToAdd(:)
-      base = [base,arrayToAdd]
+!  Unused (commented out 2026-11-19): no callers on any branch. Kept for reference.
+!
+!    SUBROUTINE AppendRealArray(base, arrayToAdd)
+!       IMPLICIT NONE
+!       REAL(KIND=RP), ALLOCATABLE :: base(:)
+!       REAL(KIND=RP)              :: arrayToAdd(:)
+!       base = [base,arrayToAdd]
 
-   END SUBROUTINE AppendRealArray
+!    END SUBROUTINE AppendRealArray
 !
 !////////////////////////////////////////////////////////////////////////
 !

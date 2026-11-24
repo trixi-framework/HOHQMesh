@@ -94,9 +94,9 @@
 !     ------------------
 !
       TYPE RunParameters
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: MeshFileName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: plotFileName
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: statsFileName
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: MeshFileName
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: plotFileName
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: statsFileName
          INTEGER                                 :: meshFileFormat
          INTEGER                                 :: polynomialOrder
          INTEGER                                 :: plotFileFormat ! = SKELETON_FORMAT OR = SEM_FORMAT
@@ -145,7 +145,7 @@
          TYPE(BackgroundGridParameters)      :: backgroundParams
          TYPE(RotationTransform)             :: rotationTransformer
          TYPE(ScaleTransform)                :: scaleTransformer
-         CHARACTER(LEN=32)                   :: backgroundMaterialName
+         CHARACTER(LEN=32)                   :: backgroundMaterialName = "base" ! Set from the MATERIALS block for ISM-MM
          INTEGER                             :: numberOfLevelsUsed
          REAL(KIND=RP)         , ALLOCATABLE :: L2ErrorMax(:), H1ErrorMax(:)
          TYPE(JaggedRealArray) , ALLOCATABLE :: L2BoundaryError(:), H1BoundaryError(:)
@@ -432,7 +432,7 @@
          USE SMChainedCurveClass
          USE CurveConversionsModule
          USE SpringMeshSmootherClass
-         USE LaplaceMeshSmootherClass
+!         USE LaplaceMeshSmootherClass   ! unused smoother, commented out 2026-11-19
          IMPLICIT NONE
 !
 !        ---------
@@ -472,6 +472,7 @@
          CALL ConstructIdentityRotationTransform(self = self % rotationTransformer)
 !
          CALL BuildBackgroundGrid(self, controlDict )
+         IF(ReturnOnFatalError())     RETURN ! The background grid parameters are not set
          CALL BuildQuadtreeGrid(self)
 !
 !        -------------------------
@@ -501,7 +502,7 @@
 !        -------------------------------------------------------
 !
          CALL CheckForBoundaryIntersections(self % sizer) !Development in progress
-         IF(catch(FATAL_ERROR_EXCEPTION))     RETURN
+         IF(ReturnOnFatalError())     RETURN
 !
 !        --------------------------------------------------------------------------
 !        Before going further, check to see how many subdivisions will be necessary
@@ -902,19 +903,15 @@
             CALL ComputeInterfaceCurveScales( self % sizer )
          END IF
 !
-!        TODO: ResizeSegmentedCurves is introduced to solve the dilemma that
-!              in order to determine the distances curves are from eachother,
-!              they must be discretized, but once the distances are found, it
-!              may be true that the spacing between the points is large in
-!              comparison. ResizeSegmentedCurves goes back and compares the
-!              spacing between the points in the segmented curves to the
-!              computed spacing between the curves. This appears to be an
-!              iterative process, but is only done once.
-!              The procedure compiles and runs, but until a case arises where
-!              it is necessary, the procedure has not been debugged. Hence,
-!              it is skipped until then.
+!        -----------------------------------------------------------
+!        The distances between curves are found from the discretized
+!        curves, but the points of a discretized curve can then be
+!        too far apart compared to those distances. Then the quadtree
+!        boxes along the curve can miss the size request. Add points
+!        where needed and compute the distance scales again.
+!        -----------------------------------------------------------
 !
-!         CALL ResizeSegmentedCurves(self)
+         CALL ResizeSegmentedCurves(self)
 
       END SUBROUTINE BuildSizerBoundaryCurves
 !
@@ -990,7 +987,9 @@
 !     After the spacing between a curve and itself, and a curve
 !     with other curves is computed, the distance between points
 !     on the segmented curves might be too large in comparison.
-!     If so, subdivide the segmented curves further.
+!     If so, subdivide the segmented curves further and compute
+!     the curve distance scales again with the new points. Repeat
+!     a few times, since the new points can find smaller distances.
 !     -----------------------------------------------------------
 !
          IMPLICIT NONE
@@ -1005,63 +1004,144 @@
 !        Local variables
 !        ---------------
 !
-         CLASS(MeshSizer)            , POINTER :: sizer
-         CLASS(FRSegmentedCurve)     , POINTER :: frsCurve
-         CLASS(SMChainedCurve)       , POINTER :: outerBoundary
-         CLASS(SMCurve)              , POINTER :: cCurve
-         CLASS(FTLinkedListIterator) , POINTER :: curveIterator, segmentedIterator
-         CLASS(FTObject)             , POINTER :: obj
-         CLASS(SMChainedCurve)       , POINTER :: innerCurveChain
-         CLASS(ChainedSegmentedCurve), POINTER :: innerSegmentedCurveChain
-         INTEGER                              :: j
+         INTEGER, PARAMETER :: MAX_RESIZE_PASSES = 3
+         INTEGER            :: pass, numberOfNewPoints
+         REAL(KIND=RP)      :: meshRatio
+         CHARACTER(LEN=128) :: tightestCurveName
 
-         sizer => self % sizer
+         DO pass = 1, MAX_RESIZE_PASSES
 !
-!        --------------
-!        Outer boundary
-!        --------------
+!           -------------------------------------------------------------
+!           Don't add points for sizes finer than the quadtree can reach.
+!           BuildProject stops with an error message for those, and the
+!           points needed can exhaust the memory before it gets there.
+!           -------------------------------------------------------------
 !
-         IF ( ASSOCIATED( sizer % outerBoundary) )     THEN
-            outerBoundary => self % model % outerBoundary
-            DO j = 1, sizer % outerBoundary % curveCount()
-               cCurve   => outerBoundary % curveAtIndex(j)
-               frsCurve => sizer % outerBoundary % segmentedCurveAtIndex(j)
-               CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve)
-            END DO
-         END IF
-!
-!        ----------------
-!        Inner boundaries
-!        ----------------
-!
-         IF( ASSOCIATED( self % model % innerBoundaries ) )     THEN
-            curveIterator => self % model % innerBoundariesIterator
-            ALLOCATE(segmentedIterator)
-            CALL segmentedIterator % initWithFTLinkedListClass(sizer % innerBoundariesList)
+            CALL self % sizer % sizeRatio(ratio             = meshRatio, &
+                                          worstOffenderName = tightestCurveName)
+            IF ( meshRatio > 2.0_RP**maxLevelLimit )     EXIT
 
-            CALL curveIterator % setToStart()
-            CALL segmentedIterator % setToStart()
+            numberOfNewPoints = 0
 
-            DO WHILE (.NOT.curveIterator % isAtEnd())
-               obj     => curveIterator % object()
-               CALL castToSMChainedCurve(obj,innerCurveChain)
+            IF ( ASSOCIATED( self % sizer % outerBoundary) )     THEN
+               numberOfNewPoints = numberOfNewPoints + &
+                    resizedChainPointCount(self % model % outerBoundary, self % sizer % outerBoundary)
+            END IF
+            IF ( ASSOCIATED( self % model % innerBoundaries ) )     THEN
+               numberOfNewPoints = numberOfNewPoints + &
+                    resizedListPointCount(self % model % innerBoundaries, self % sizer % innerBoundariesList)
+            END IF
+            IF ( ASSOCIATED( self % model % interfaceBoundaries ) )     THEN
+               numberOfNewPoints = numberOfNewPoints + &
+                    resizedListPointCount(self % model % interfaceBoundaries, self % sizer % interfaceBoundariesList)
+            END IF
 
-               obj     => segmentedIterator % object()
-               CALL castToChainedSegmentedCurve(obj,innerSegmentedCurveChain)
+            IF ( printMessage )     THEN
+               PRINT *, "   Resizing pass ", pass, " added ", numberOfNewPoints, " curve points"
+            END IF
+            IF ( numberOfNewPoints == 0 )     EXIT
 
-               DO j = 1, innerSegmentedCurveChain % curveCount()
-                  cCurve   => innerCurveChain % curveAtIndex(j)
-                  frsCurve => innerSegmentedCurveChain % segmentedCurveAtIndex(j)
-                  CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve)
-               END DO
-
-               CALL curveIterator % moveToNext()
-               CALL segmentedIterator % moveToNext()
-            END DO
-            CALL releaseFTLinkedListIteratorClass(segmentedIterator)
-         END IF
+            CALL ComputeCurveDistanceScales( self % sizer )
+            IF ( ASSOCIATED( self % model % interfaceBoundaries ) ) THEN
+               CALL ComputeInterfaceCurveScales( self % sizer )
+            END IF
+         END DO
 
       END SUBROUTINE ResizeSegmentedCurves
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION resizedListPointCount( curveList, segmentedList )  RESULT(n)
+         USE ChainedSegmentedCurveClass
+         USE SMChainedCurveClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         TYPE(FTLinkedList) , POINTER :: curveList
+         CLASS(FTLinkedList), POINTER :: segmentedList
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(FTLinkedListIterator) , POINTER :: curveIterator, segmentedIterator
+         CLASS(FTObject)             , POINTER :: obj
+         CLASS(SMChainedCurve)       , POINTER :: curveChain
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedChain
+
+         n = 0
+         IF ( .NOT. ASSOCIATED(segmentedList) )     RETURN
+
+         ALLOCATE(curveIterator, segmentedIterator)
+         CALL curveIterator % initWithFTLinkedList(curveList)
+         CALL segmentedIterator % initWithFTLinkedListClass(segmentedList)
+         CALL curveIterator % setToStart()
+         CALL segmentedIterator % setToStart()
+
+         DO WHILE (.NOT.curveIterator % isAtEnd())
+            obj => curveIterator % object()
+            CALL castToSMChainedCurve(obj,curveChain)
+            obj => segmentedIterator % object()
+            CALL castToChainedSegmentedCurve(obj,segmentedChain)
+
+            n = n + resizedChainPointCount(curveChain, segmentedChain)
+
+            CALL curveIterator % moveToNext()
+            CALL segmentedIterator % moveToNext()
+         END DO
+
+         CALL releaseFTLinkedListIteratorClass(curveIterator)
+         CALL releaseFTLinkedListIteratorClass(segmentedIterator)
+
+      END FUNCTION resizedListPointCount
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION resizedChainPointCount( curveChain, segmentedChain )  RESULT(n)
+         USE ChainedSegmentedCurveClass
+         USE SMChainedCurveClass
+         USE FRSegmentedCurveClass
+         IMPLICIT NONE
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         CLASS(SMChainedCurve)       , POINTER :: curveChain
+         CLASS(ChainedSegmentedCurve), POINTER :: segmentedChain
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         CLASS(SMCurve)         , POINTER :: cCurve
+         CLASS(FRSegmentedCurve), POINTER :: frsCurve
+         INTEGER                          :: j, numberOfNewPoints
+
+         n = 0
+         DO j = 1, segmentedChain % curveCount()
+            cCurve   => curveChain % curveAtIndex(j)
+            frsCurve => segmentedChain % segmentedCurveAtIndex(j)
+            CALL ResizeFRSegmentedCurve(self = frsCurve, curve = cCurve, &
+                                        numberOfNewPoints = numberOfNewPoints)
+            n = n + numberOfNewPoints
+         END DO
+!
+!        -------------------------------------------------
+!        The chain caches where each curve starts, so redo
+!        that bookkeeping when points were added
+!        -------------------------------------------------
+!
+         IF ( n > 0 )     THEN
+            DEALLOCATE(segmentedChain % curveStartIndices)
+            segmentedChain % numberOfPointsInChain = segmentedChain % nodeCount()
+            CALL segmentedChain % complete()
+         END IF
+
+      END FUNCTION resizedChainPointCount
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -1958,6 +2038,14 @@
                                               poster     = "SetRotationTransformBlock")
          IF(ReturnOnFatalError()) RETURN
 
+         IF ( MAXVAL(ABS(d)) == 0.0_RP )     THEN
+            msg = "Rotation transform " // TRIM(ROTATION_TRANSFORM_DIRECTION_KEY) // " must not be the zero vector"
+            CALL ThrowErrorExceptionOfType(poster = "SetRotationTransformBlock", &
+                                           msg    = msg,                         &
+                                           typ    = FT_ERROR_FATAL)
+            RETURN
+         END IF
+
          CALL ConstructRotationTransform(self           = rotationTransformer,        &
                                          rotationPoint  = t,                          &
                                          startDirection = [0.0_RP,0.0_RP,1.0_RP],     &
@@ -1971,26 +2059,29 @@
          IMPLICIT NONE
          CLASS(MeshProject)                      :: self
          CHARACTER(LEN=*)                        :: path
-         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: str
+         CHARACTER(LEN=DEFAULT_FILE_PATH_LENGTH) :: str
 
          IF ( path /= "" )     THEN
 
             str = self % runParams % MeshFileName
             CALL toLower(str)
             IF(str /= "none")      THEN
-               self % runParams % MeshFileName = TRIM(path) // self % runParams % MeshFileName
+               str = self % runParams % MeshFileName
+               CALL JoinFilePath(path, str, self % runParams % MeshFileName) ! (path, fileName, fullName)
             END IF
 
             str = self % runParams % plotFileName
             CALL toLower(str)
             IF(str /= "none")      THEN
-               self % runParams % plotFileName = TRIM(path) // self % runParams % plotFileName
+               str = self % runParams % plotFileName
+               CALL JoinFilePath(path, str, self % runParams % plotFileName) ! (path, fileName, fullName)
             END IF
 
             str = self % runParams % statsFileName
             CALL toLower(str)
             IF(str /= "none")      THEN
-               self % runParams % statsFileName = TRIM(path) // self % runParams % statsFileName
+               str = self % runParams % statsFileName
+               CALL JoinFilePath(path, str, self % runParams % statsFileName) ! (path, fileName, fullName)
             END IF
          END IF
 

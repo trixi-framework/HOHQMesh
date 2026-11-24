@@ -180,10 +180,10 @@
                      PRINT *, " "
                      PRINT *, "**************************************************************************"
                      PRINT *, "Valence ",numElementsForNode(id), " too high for node ",id, " x = ",node % x
-                     PRINT *, "Plot the file 'DebugPlot.tec' to check on the mesh topology"
+                     PRINT *, "Plot the file '" // TRIM(debugPlotFileName) // "' to check on the mesh topology"
                      PRINT *, "**************************************************************************"
                      PRINT *, " "
-                     CALL WriteSkeletonToTecplot( mesh, "DebugPlot.tec" )
+                     CALL WriteSkeletonToTecplot( mesh, debugPlotFileName )
                   END IF
                   errorCode = VALENCE_TOO_HIGH_ERROR_CODE
                   CALL deallocateNodeToElementConnections

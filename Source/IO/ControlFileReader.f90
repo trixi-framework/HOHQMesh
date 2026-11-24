@@ -308,8 +308,14 @@
          CHARACTER(LEN=CFR_STRING_LENGTH)  :: line
          INTEGER                           :: iStat
          TYPE (FTException)      , POINTER :: exception
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError ! Does not remove the exception
 
-         IF(catch(FATAL_ERROR_EXCEPTION)) RETURN  
+         IF(ReturnOnFatalError()) RETURN  
          
          DO
            READ(fileUnit,"(A)", IOSTAT = iStat, END = 1000) line
@@ -329,7 +335,7 @@
 !
             IF ( INDEX(STRING = line, SUBSTRING = "begin{") > 0)     THEN !Start reading a block
                CALL startNewCollectionInCollection(fileUnit,line,collection)
-               IF(catch(FATAL_ERROR_EXCEPTION)) EXIT 
+               IF(ReturnOnFatalError()) EXIT 
                
             ELSE IF (INDEX(STRING = line, SUBSTRING = "end{") > 0)     THEN
                IF(INDEX(STRING = line, SUBSTRING = "end{FILE}") > 0)   RETURN 
@@ -346,11 +352,26 @@
                RETURN 
             ELSE 
                dict => valueDictionaryFromObject(collection)
+!
+!              ------------------------------------------------------
+!              A key line between the objects of a list block, e.g. a
+!              key after the first CHAIN in INTERFACE_BOUNDARIES
+!              ------------------------------------------------------
+!
+               IF ( .NOT. ASSOCIATED(dict) )     THEN
+                  ALLOCATE(exception)
+                  CALL exception % initFatalException( "Unexpected line in the " // TRIM(objectName) // &
+                                                       " block: " // TRIM(ADJUSTL(line)) //             &
+                                                       ". Keys must come before the first block in it.")
+                  CALL throw(exception)
+                  CALL releaseFTException(exception)
+                  RETURN
+               END IF
                CALL readBlock(fileUnit  = fileUnit, &
                               blockDict = dict, &
                               firstLine = line,    &
                               blockName = objectName)
-               IF(catch(FATAL_ERROR_EXCEPTION)) EXIT 
+               IF(ReturnOnFatalError()) EXIT 
                RETURN 
             END IF
          END DO
@@ -406,7 +427,9 @@
               CALL newDict % addObjectForKey(obj,"LIST")
               CALL releaseFTLinkedListClass(self = newList)
               
-              IF(objectName == "CHAIN" .OR. objectName == "OUTER_BOUNDARY")     THEN ! Read (possible) chain parameters
+              IF( objectName == "CHAIN"          .OR. &
+                  objectName == "OUTER_BOUNDARY" .OR. &
+                  objectName == "INTERFACE_BOUNDARIES" )     THEN ! Read (possible) block parameters
                  DO 
                     READ(fileUnit,"(A)", END = 1000) line
                     CALL replaceTabs(line)
@@ -415,6 +438,7 @@
                        BACKSPACE(fileUnit)
                        EXIT
                     END IF 
+                    IF (TRIM(line) == "" .OR. line(1:1) == "%") CYCLE
                     CALL addKeyAndValueFromLineToDict(blockDict = newDict,line = line)
                  END DO 
               END IF
@@ -448,7 +472,7 @@
          
          foundName = parseObjectName(line)
          IF(foundName /= blockStack(blockStackTop))     THEN
-            msg = "Block termination error. Expected: "//TRIM(objectName)//"; Found: "//TRIM(foundName)
+            msg = "Block termination error. Expected: "//TRIM(blockStack(blockStackTop))//"; Found: "//TRIM(foundName)
             PRINT *, msg
             ALLOCATE(exception)
             CALL exception % initFatalException(msg)
@@ -527,6 +551,12 @@
          INTEGER                          :: s, e
          CHARACTER(LEN=CFR_STRING_LENGTH) :: line
          TYPE (FTException)     , POINTER :: exception
+!
+!        ----------
+!        Interfaces
+!        ----------
+!
+         LOGICAL, EXTERNAL :: ReturnOnFatalError ! Does not remove the exception
          
          errMsg = ""
          CALL addKeyAndValueFromLineToDict(blockDict = blockDict, &
@@ -564,6 +594,7 @@
             s = INDEX(STRING = line, SUBSTRING = "\begin{SPLINE_DATA}")
             IF ( s > 0 )     THEN
                CALL readSplineData(fileUnit, blockDict)
+               IF(ReturnOnFatalError()) RETURN 
                CYCLE 
             END IF 
 !
@@ -654,7 +685,7 @@
 !        Local Variables
 !        ---------------
 !
-         INTEGER                          :: j, k, N
+         INTEGER                          :: j, k, N, iStat
          CHARACTER(LEN=CFR_STRING_LENGTH) :: line
          REAL(KIND(1.0d0)), ALLOCATABLE   :: array(:,:)
          CHARACTER(LEN=1), ALLOCATABLE    :: enc(:)
@@ -671,7 +702,20 @@
          
             ALLOCATE(array(4,N))
             DO j = 1, N
-                READ(fileUnit, *) (array(k,j), k = 1,4)
+                READ(fileUnit, *, IOSTAT = iStat) (array(k,j), k = 1,4)
+                IF ( iStat /= 0 )     THEN
+!
+!                  ------------------------------------
+!                  The READ has consumed the end marker
+!                  or a row is not four numbers
+!                  ------------------------------------
+!
+                   ALLOCATE(exception)
+                   CALL exception % initFatalException( "Spline data has fewer than nKnots rows of four numbers" )
+                   CALL throw(exception)
+                   CALL releaseFTException(exception)
+                   RETURN
+                END IF
             END DO
             
             CALL encode(arrayIn = array, enc = enc)

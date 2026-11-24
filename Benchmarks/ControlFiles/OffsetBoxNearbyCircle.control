@@ -1,0 +1,43 @@
+%
+% ---------------------------------------------------------------------
+% A circle 0.1 from the right side of a background grid box that is not
+% centered at the origin, [8,12]x[-2,2]. The sizer must refine the mesh
+% between the circle and the box side it faces. The mesh is the same as
+% for the box [-2,2]x[-2,2] with the circle moved by -10.
+% ---------------------------------------------------------------------
+%
+\begin{CONTROL_INPUT}
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/OffsetBoxNearbyCircle.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/OffsetBoxNearbyCircle.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/OffsetBoxNearbyCircle.txt
+      test file name   = Benchmarks/BenchmarkData/OffsetBoxNearbyCircle.txt
+      mesh file format = ISM
+      polynomial order = 4
+      plot file format = skeleton
+   \end{RUN_PARAMETERS}
+   \begin{BACKGROUND_GRID}
+      x0 = [8.0, -2.0, 0.0]
+      dx = [0.5, 0.5, 0.0]
+      N  = [8, 8, 1]
+   \end{BACKGROUND_GRID}
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossBarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+\end{CONTROL_INPUT}
+\begin{MODEL}
+    \begin{INNER_BOUNDARIES}
+       \begin{CHAIN}
+          name = Circle
+          \begin{PARAMETRIC_EQUATION_CURVE}
+             name = Circle
+             xEqn = x(t) = 10.9 + cos(2*pi*t)
+             yEqn = y(t) = sin(2*pi*t)
+             zEqn = z(t) = 0.0
+          \end{PARAMETRIC_EQUATION_CURVE}
+       \end{CHAIN}
+    \end{INNER_BOUNDARIES}
+\end{MODEL}
+\end{FILE}
