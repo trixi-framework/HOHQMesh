@@ -2,6 +2,9 @@
 
 ## Changes in the v1.6 lifecycle
 
+- Fix and speed up boundary curve optimization (#196). A new bracketed root finder gives the same results on every
+  platform and stops `connect` from running out of memory, and the requested `continuity` and `tolerance` are now
+  applied to the curved boundaries written to the mesh.
 - Implement paving strategy for the interior/exterior meshing (#190) with the existing strategy as a fallback.
   Paving is ON by default and is switched off with `paving = OFF` in the `INTERFACE_BOUNDARIES` block
 - Increase test coverage to over 95% with many new unit and benchmark tests (#199), which uncovered and fixed several bugs:

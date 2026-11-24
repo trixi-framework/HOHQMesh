@@ -243,6 +243,9 @@
          ALLOCATE(self % model)
          CALL self % model % initWithContentsOfDictionary( modelDict )
          IF(ReturnOnFatalError())     RETURN
+
+         CALL CheckChainContinuity( self )
+         IF(ReturnOnFatalError())     RETURN
 !
 !        -----------------------------------------------------------------
 !        If this is a multiple material mesh, as given by the ISM-MM flag,
@@ -422,6 +425,46 @@
          END IF
 
       END SUBROUTINE ResetProjectBoundaryObjects
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE CheckChainContinuity( self )
+!
+!     -----------------------------------------------------------------
+!     The continuity constraints of an optimized chain use up modal
+!     coefficients of each boundary polynomial segment, so the number
+!     of smoothness constraints must be smaller than the polynomial
+!     order. With polynomial order 2 and continuity = 2, for instance,
+!     the constraints leave no freedom to fit the curve, and the remesh
+!     for accuracy refines until the subdivision limit is hit.
+!     -----------------------------------------------------------------
+!
+         USE SMChainedCurveClass
+         IMPLICIT NONE
+         CLASS(MeshProject) :: self
+
+         CLASS(FTObject)      , POINTER       :: obj
+         CLASS(SMChainedCurve), POINTER       :: chain
+         CHARACTER(LEN=DEFAULT_CHARACTER_LENGTH) :: msg
+         INTEGER                                 :: k, polynomialOrder
+
+         polynomialOrder = self % runParams % polynomialOrder
+         DO k = 1, self % model % numberOfChains()
+            obj => self % model % allChains(k) % object
+            CALL castToSMChainedCurve(obj, chain)
+            IF ( chain % optimization == NONE )     CYCLE
+
+            IF ( chain % continuity < 0 .OR. chain % continuity >= polynomialOrder )     THEN
+               WRITE(msg,'(A,I0,A,A,A,I0,A,I0)') "Continuity = ", chain % continuity, " of chain ",  &
+                    TRIM(chain % curveName()), " must be from 0 to ", polynomialOrder - 1,        &
+                    ", less than the polynomial order ", polynomialOrder
+               CALL ThrowErrorExceptionOfType(poster = "CheckChainContinuity", &
+                                              msg    = msg,                    &
+                                              typ    = FT_ERROR_FATAL)
+            END IF
+         END DO
+
+      END SUBROUTINE CheckChainContinuity
 !@mark -
 !
 !////////////////////////////////////////////////////////////////////////
@@ -935,7 +978,6 @@
 !        ---------------
 !
          INTEGER      , ALLOCATABLE :: breakIndices(:)    ! index in optimizedCuts where break boundaries occur
-         REAL(KIND=RP), ALLOCATABLE :: arcLengths(:)
          TYPE(OptimizerOptions)     :: options
          CLASS(SMCurve), POINTER    :: crv
          REAL(KIND=RP)              :: minSegment
@@ -953,7 +995,6 @@
          crv => curve
          CALL FindOptimizedCuts(crv, polyOrder, breaks, options, gQuad, &
                                 cuts, breakIndices)
-         CALL curveSegmentLengths(crv, polyOrder, cuts, options, gQuad, arcLengths)
 
          nSegments = UBOUND(cuts,1)
          ALLOCATE(segmentsSizes(nSegments))
@@ -964,10 +1005,10 @@
          DO j = 1, nSegments
             x2 = curve % positionAt(cuts(j))
 !
-!           ------------------------------------------------------------------
-!           Choose the segment size to be the largest of the x or y projection
-!           of the vector between the two segment points
-!           ------------------------------------------------------------------
+!           ------------------------------------------------------------
+!           Choose the segment size to be the distance between the two
+!           segment points
+!           ------------------------------------------------------------
 !
             segmentsSizes(j) = sqrt((x2(1) - x1(1))**2 + (x2(2) - x1(2))**2)
             minSegment = MIN(minSegment, segmentsSizes(j))

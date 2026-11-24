@@ -78,6 +78,7 @@ MeshTopologyTests.o \
 ControlInputTests.o \
 ProjectInputTests.o \
 SizerTests.o \
+RemeshTests.o \
 GeometryUnitTests.o \
 MeshOutputMethods.o \
 MeshProject.o \
@@ -228,6 +229,7 @@ InterpolationAndDerivatives.o
 
 CurveOptimization.o :$(HOHQMESHPATH)/Source/BoundaryOptimization/CurveOptimization.f90 \
 SMCurveClass.o \
+FatalErrorException.o \
 ConstrainedMultiH1Optimizer.o \
 MultiSegmentModalCurve.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/BoundaryOptimization/CurveOptimization.f90
@@ -516,6 +518,7 @@ MeshTopologyTests.o \
 ControlInputTests.o \
 ProjectInputTests.o \
 SizerTests.o \
+RemeshTests.o \
 GeometryUnitTests.o \
 DebugOutputTests.o \
 ExtrusionTests.o \
@@ -799,6 +802,21 @@ ControlInputTests.o \
 ProjectInputTests.o \
 Assert.o
 	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/SizerTests.f90
+
+RemeshTests.o :$(HOHQMESHPATH)/Source/Testing/RemeshTests.f90 \
+SMConstants.o \
+ProgramGlobals.o \
+FTValueDictionaryClass.o \
+FTExceptionClass.o \
+FatalErrorException.o \
+SMChainedCurveClass.o \
+MeshProject.o \
+MeshGeneratorMethods.o \
+BoundaryErrors.o \
+ControlInputTests.o \
+ProjectInputTests.o \
+Assert.o
+	$(FC) -c $(FFLAGS) $(INCLUDES) -o $@ $(HOHQMESHPATH)/Source/Testing/RemeshTests.f90
 
 MeshTopologyTests.o :$(HOHQMESHPATH)/Source/Testing/MeshTopologyTests.f90 \
 SMConstants.o \
