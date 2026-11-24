@@ -1,21 +1,20 @@
 %
 % ------------------------------------------------------------------
-% BlobRemesh with the blob as an inner boundary. The blob is
-% optimized in the H1 norm with a tolerance of 1.0e-5 and a circle
-% in the L2 norm. The first mesh is not accurate enough on the blob,
-% so the inner boundary scales are refined (ResetInverseScales) and
-% the mesh is generated again ("Remeshing for accuracy"). The
-% optimized interface curve exercises the optimized segmentation of
-% interface chains.
+% Boundary curve optimization on inner and interface chains. The
+% blob inner boundary is optimized in the H1 norm (tolerance 1.0e-5),
+% the pebble inner boundary in the L2 norm, and the stone interface
+% curve in the H1 norm, which exercises the optimized segmentation
+% of interface chains. The stone is placed off the background grid
+% lines so that the mesh is not sensitive to rounding.
 % ------------------------------------------------------------------
 %
 \begin{CONTROL_INPUT}
 
    \begin{RUN_PARAMETERS}
-      mesh file name   = Benchmarks/MeshFiles/Tests/BlobRemeshInner.mesh
-      plot file name   = Benchmarks/PlotFiles/Tests/BlobRemeshInner.tec
-      stats file name  = Benchmarks/StatsFiles/Tests/BlobRemeshInner.txt
-      test file name   = Benchmarks/BenchmarkData/BlobRemeshInner.txt
+      mesh file name   = Benchmarks/MeshFiles/Tests/OptimizedInnerAndInterface.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/OptimizedInnerAndInterface.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/OptimizedInnerAndInterface.txt
+      test file name   = Benchmarks/BenchmarkData/OptimizedInnerAndInterface.txt
       mesh file format = ISM-MM
       polynomial order = 6
       plot file format = sem
