@@ -3724,17 +3724,21 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE SplitFill( x, nAll, ids, nIds, h, quads, nQuads, ok, nChords )
+      RECURSIVE SUBROUTINE SplitFill( x, nAll, ids, nIds, quads, nQuads, ok, nChords )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
 !        Fill a counterclockwise polygon with an even number of nodes
 !        with quads by cutting it along the chord that best splits the
-!        corner angles at its ends. The chord gets new nodes about h apart,
-!        as many as make both halves even. New nodes are appended to x.
+!        corner angles at its ends. The chord gets new nodes spaced like
+!        the polygon edges at its ends (the mean of the lengths of the
+!        edges there), as many as make both halves even. A spacing from
+!        the whole front would put fine nodes into large regions, e.g.,
+!        regions paved over, where the polygon edges are coarse.
+!        New nodes are appended to x.
 !        ---------------------------------------------------------------
 !
-         REAL(KIND=RP) :: x(:,:), h
+         REAL(KIND=RP) :: x(:,:)
          INTEGER       :: nAll, nIds, nQuads
          INTEGER       :: ids(nIds), quads(:,:), nChords(:)
          LOGICAL       :: ok
@@ -3742,6 +3746,7 @@
          INTEGER       :: i, j, d, k, kBest, iBest, jBest, n1, n2, c
          INTEGER       :: half1(nIds+2*nIds), half2(nIds+2*nIds)
          REAL(KIND=RP) :: len, score, best, bound, angI(2), angJ(2), interior(nIds), dirNext(nIds)
+         REAL(KIND=RP) :: hLocal(nIds), hc
          REAL(KIND=RP), PARAMETER :: valencePenalty = 15.0_RP
          REAL(KIND=RP), PARAMETER :: BOUND_SLACK    = 1.0d-6
          INTEGER, EXTERNAL :: Loop
@@ -3758,15 +3763,18 @@
          DO i = 1, nIds
             interior(i) = cornerAngle( x(:,ids(Loop(i-1,nIds))), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) )
             dirNext(i)  = ATAN2(x(2,ids(Loop(i+1,nIds))) - x(2,ids(i)), x(1,ids(Loop(i+1,nIds))) - x(1,ids(i)))
+            hLocal(i)   = 0.5_RP*( NORM2(x(:,ids(Loop(i+1,nIds))) - x(:,ids(i))) &
+                                 + NORM2(x(:,ids(i)) - x(:,ids(Loop(i-1,nIds)))) )
          END DO
          best = -HUGE(best)
          DO i = 1, nIds
             DO d = 2, MIN(nIds - 2, nIds - i)
                j   = i + d
                len = NORM2(x(:,ids(j)) - x(:,ids(i)))
-               k   = MAX(0, NINT(len/h) - 1)
+               hc  = 0.5_RP*(hLocal(i) + hLocal(j))
+               k   = MAX(0, NINT(len/hc) - 1)
                IF ( MODULO(d + 1 + k, 2) /= 0 )     THEN
-                  IF ( len/h - 1.0_RP > k .OR. k == 0 )     THEN
+                  IF ( len/hc - 1.0_RP > k .OR. k == 0 )     THEN
                      k = k + 1
                   ELSE
                      k = k - 1
@@ -3794,14 +3802,14 @@
 !              --------------------------------------------------------
 !
                bound = 0.5_RP*MIN(interior(i), interior(j)) - 0.1_RP*MAX(interior(i), interior(j)) &
-                     - 10.0_RP*ABS(len/h - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
+                     - 10.0_RP*ABS(len/hc - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
                IF ( bound + BOUND_SLACK <= best )     CYCLE
                angI(1) = angleFromDirection( x(:,ids(j)), x(:,ids(i)), dirNext(i) )
                angI(2) = interior(i) - angI(1)
                angJ(1) = angleFromDirection( x(:,ids(i)), x(:,ids(j)), dirNext(j) )
                angJ(2) = interior(j) - angJ(1)
                score = MIN(MINVAL(angI), MINVAL(angJ)) - 0.2_RP*MAX(MAXVAL(angI), MAXVAL(angJ)) &
-                     - 10.0_RP*ABS(len/h - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
+                     - 10.0_RP*ABS(len/hc - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
                IF ( .NOT.(score > best) )     CYCLE
                IF ( .NOT.chordInside( x, ids, nIds, i, j ) )     CYCLE
                best  = score
@@ -3843,9 +3851,9 @@
             n2 = n2 + 1
             half2(n2) = nAll - k + c
          END DO
-         CALL SplitFill( x, nAll, half1(1:n1), n1, h, quads, nQuads, ok, nChords )
+         CALL SplitFill( x, nAll, half1(1:n1), n1, quads, nQuads, ok, nChords )
          IF ( .NOT.ok )     RETURN
-         CALL SplitFill( x, nAll, half2(1:n2), n2, h, quads, nQuads, ok, nChords )
+         CALL SplitFill( x, nAll, half2(1:n2), n2, quads, nQuads, ok, nChords )
 
       END SUBROUTINE SplitFill
 !
@@ -5224,19 +5232,14 @@
          INTEGER       :: nShort, nSorted
          INTEGER       :: brI(nFront*nB), brJ(nFront*nB), order(nFront*nB), bridgeState(nFront*nB)
          INTEGER, ALLOCATABLE :: shortPairs(:)
-         REAL(KIND=RP) :: h, shortLen, brLen(nFront*nB)
+         REAL(KIND=RP) :: shortLen, brLen(nFront*nB)
          INTEGER       :: nChords(SIZE(x,2))
          INTEGER, EXTERNAL :: Loop
 
          ok      = .FALSE.
          nChords = 0
-         h  = 0.0_RP
-         DO i = 1, nFront
-            h = h + NORM2(x(:,front(Loop(i+1,nFront))) - x(:,front(i)))
-         END DO
-         h = h/nFront
          IF ( nB == 0 )     THEN
-            CALL SplitFill( x, nAll, front(1:nFront), nFront, h, quads, nQ, ok, nChords )
+            CALL SplitFill( x, nAll, front(1:nFront), nFront, quads, nQ, ok, nChords )
             RETURN
          END IF
 !
@@ -5312,7 +5315,7 @@
                nAll    = nAll0
                nQ      = nQ0
                nChords = 0
-               CALL FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, h, quads, nQ, ok, nChords )
+               CALL FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, quads, nQ, ok, nChords )
                IF ( ok )     RETURN
                nTried = nTried + 1
                IF ( nTried >= MAX_TRIES )     EXIT
@@ -5439,20 +5442,20 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, h, quads, nQ, ok, nChords )
+      SUBROUTINE FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, quads, nQ, ok, nChords )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
 !        Cut the region between the front and the loop along the chords
-!        front(i1)-loop(j1) and front(i2)-loop(j2), with nodes about h
-!        apart and the parity that makes both polygons even, and split
-!        both polygons into quads.
+!        front(i1)-loop(j1) and front(i2)-loop(j2), with nodes spaced like
+!        the front and loop edges at the chord ends and the parity that
+!        makes both polygons even, and split both polygons into quads.
 !        Polygon 1: front i1 -> i2, chord 2, loop j2 -> j1, chord 1.
 !        Polygon 2: front i2 -> i1, chord 1 back, loop j1 -> j2, chord 2
 !        back.
 !        ---------------------------------------------------------------
 !
-         REAL(KIND=RP) :: x(:,:), h
+         REAL(KIND=RP) :: x(:,:)
          INTEGER       :: nAll, nFront, b0, nB, i1, j1, i2, j2, nQ
          INTEGER       :: front(:), quads(:,:), nChords(:)
          LOGICAL       :: ok
@@ -5463,16 +5466,30 @@
 !
          INTEGER       :: k1, k2, c, n1, n2, kChord1, kChord2
          INTEGER       :: poly1(2*(nFront + nB) + 200), poly2(2*(nFront + nB) + 200)
-         REAL(KIND=RP) :: len1, len2
+         REAL(KIND=RP) :: len1, len2, h1, h2
          INTEGER, EXTERNAL :: Loop
 
          len1 = NORM2(x(:,b0+j1) - x(:,front(i1)))
          len2 = NORM2(x(:,b0+j2) - x(:,front(i2)))
-         k1 = MAX(0, NINT(len1/h) - 1)
-         k2 = MAX(0, NINT(len2/h) - 1)
+!
+!        -------------------------------------------------------------
+!        Node spacing on each chord: the mean length of the front and
+!        loop edges at its ends
+!        -------------------------------------------------------------
+!
+         h1 = 0.25_RP*( NORM2(x(:,front(Loop(i1+1,nFront))) - x(:,front(i1)))      &
+                      + NORM2(x(:,front(i1)) - x(:,front(Loop(i1-1,nFront))))      &
+                      + NORM2(x(:,b0+Loop(j1+1,nB)) - x(:,b0+j1))                  &
+                      + NORM2(x(:,b0+j1) - x(:,b0+Loop(j1-1,nB))) )
+         h2 = 0.25_RP*( NORM2(x(:,front(Loop(i2+1,nFront))) - x(:,front(i2)))      &
+                      + NORM2(x(:,front(i2)) - x(:,front(Loop(i2-1,nFront))))      &
+                      + NORM2(x(:,b0+Loop(j2+1,nB)) - x(:,b0+j2))                  &
+                      + NORM2(x(:,b0+j2) - x(:,b0+Loop(j2-1,nB))) )
+         k1 = MAX(0, NINT(len1/h1) - 1)
+         k2 = MAX(0, NINT(len2/h2) - 1)
          n1 = MODULO(i2 - i1, nFront) + 1 + MODULO(j1 - j2, nB) + 1 + k1 + k2
          IF ( MODULO(n1, 2) /= 0 )     THEN
-            IF ( len2/h - 1.0_RP > k2 .OR. k2 == 0 )     THEN
+            IF ( len2/h2 - 1.0_RP > k2 .OR. k2 == 0 )     THEN
                k2 = k2 + 1
             ELSE
                k2 = k2 - 1
@@ -5525,9 +5542,9 @@
             poly2(n2) = kChord2 + c
          END DO
 
-         CALL SplitFill( x, nAll, poly1(1:n1), n1, h, quads, nQ, ok, nChords )
+         CALL SplitFill( x, nAll, poly1(1:n1), n1, quads, nQ, ok, nChords )
          IF ( .NOT.ok )     RETURN
-         CALL SplitFill( x, nAll, poly2(1:n2), n2, h, quads, nQ, ok, nChords )
+         CALL SplitFill( x, nAll, poly2(1:n2), n2, quads, nQ, ok, nChords )
 
       END SUBROUTINE FillWithTwoChords
 !
@@ -5546,9 +5563,12 @@
 !            limited so that minNumberOfElementsInsideArea fit across,
 !          - the size with turnMax turning per element, where the turning
 !            is measured between features so a corner does not shrink it,
-!          - the distance, over closeCurveFactor, to a part of the curve
-!            that is near in space but far along the curve, with no
-!            feature between, or to a node on another curve, xOther.
+!          - the distance, over SELF_CLOSE_FACTOR, to a part of the
+!            curve that is near in space but far along the curve, unless
+!            the two are the legs of one corner. Such a strip or slot
+!            needs elements that fit across, but not several,
+!          - the distance, over closeCurveFactor, to a node on another
+!            curve, xOther.
 !        hBand is that size, graded. hs is also at most the length of the
 !        piece between two features, so that each piece gets an edge,
 !        then graded.
@@ -5564,6 +5584,7 @@
 !        ---------------
 !
          REAL(KIND=RP), PARAMETER :: GROWTH = 0.5_RP, NEAR_RATIO = 3.0_RP
+         REAL(KIND=RP), PARAMETER :: SELF_CLOSE_FACTOR = 2.0_RP
          INTEGER, PARAMETER       :: MAX_COARSE = 2000, CURVATURE_ITERATIONS = 6, CORNER_SAMPLES = 2
          REAL(KIND=RP) :: arc(nS+1), absTurn(nS), hBase(nS), hCurv(nS), hProx(nS), hNew(nS)
          REAL(KIND=RP) :: reach, xMin(2), xMax(2), perimeter, aSize, x3(3), u(2), v(2), d, dArc, turnSum, covered, dFwd, dBack
@@ -5653,10 +5674,15 @@
             hCurv = hNew
          END DO
 !
-!        ----------------------------------------------------------
+!        --------------------------------------------------------------
 !        Proximity, on a coarser set of samples: parts of the curve
-!        near in space but far along it, not separated by a feature
-!        ----------------------------------------------------------
+!        near in space but far along it. Parts with exactly one feature
+!        between them are the two legs of a corner like near the tip of
+!        a sharp corner they are arbitrarily close, so they are left
+!        out. With no feature or with two or more between them, they are
+!        the sides of a narrow strip, channel or slot of the chain, e.g.,
+!        of a polyline trace, which need elements that fit across.
+!        --------------------------------------------------------------
 !
          featureCount(0) = 0
          DO i = 1, nS
@@ -5676,9 +5702,9 @@
                   dArc = perimeter - dArc
                   k = nFeatures - featureCount(j) + featureCount(i-1)
                END IF
-               IF ( dArc > NEAR_RATIO*d .AND. k == 0 )     THEN
-                  hProx(i) = MIN(hProx(i), d/closeCurveFactor)
-                  hProx(j) = MIN(hProx(j), d/closeCurveFactor)
+               IF ( dArc > NEAR_RATIO*d .AND. k /= 1 )     THEN
+                  hProx(i) = MIN(hProx(i), d/SELF_CLOSE_FACTOR)
+                  hProx(j) = MIN(hProx(j), d/SELF_CLOSE_FACTOR)
                END IF
             END DO
          END DO
