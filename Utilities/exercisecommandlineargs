@@ -25,6 +25,7 @@ mkdir -p "$outDir"/Benchmarks/MeshFiles/Tests "$outDir"/Benchmarks/PlotFiles/Tes
 test -s "$outDir"/Benchmarks/MeshFiles/Tests/NearbyInnerCircles.mesh
 test -s "$outDir"/Benchmarks/PlotFiles/Tests/NearbyInnerCircles.tec
 test -s "$outDir"/Benchmarks/StatsFiles/Tests/NearbyInnerCircles.txt
+test -s "$outDir"/Benchmarks/StatsFiles/Tests/NearbyInnerCircles_ErrorNorms.txt
 test -s "$outDir"/Benchmarks/BenchmarkData/NearbyInnerCircles.txt
 
 # Print the verbose messages of a 3D run. All extrusion and sweep
@@ -32,6 +33,15 @@ test -s "$outDir"/Benchmarks/BenchmarkData/NearbyInnerCircles.txt
 ./HOHQMesh -verbose -f Benchmarks/ControlFiles/HalfCircleExtrude.control -path "$outDir"
 test -s "$outDir"/Benchmarks/MeshFiles/Tests/HalfCircleExtrude.mesh
 test -s "$outDir"/Benchmarks/PlotFiles/Tests/HalfCircleExtrude.tec
+
+# Interface paving fails for the chain Square, which is too close to
+# the edge of the background grid, and falls back to moving its nodes
+# onto the curve. -verbose must name the chain, since the fallback
+# otherwise goes unnoticed
+./HOHQMesh -verbose -f Benchmarks/ControlFiles/PavingFallback.control -path "$outDir" > "$outDir"/fallback.log 2>&1
+grep -q "Interface paving failed for Square" "$outDir"/fallback.log
+test -s "$outDir"/Benchmarks/MeshFiles/Tests/PavingFallback.mesh
+test -s "$outDir"/Benchmarks/PlotFiles/Tests/PavingFallback.tec
 
 # Bad input: an inner boundary on the background grid box. Meshing is
 # tried again twice with a smaller background grid (printed with

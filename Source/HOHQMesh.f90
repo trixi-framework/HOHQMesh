@@ -179,11 +179,13 @@
 
          END IF
 !
-!        -------------------------
-!        Write out boundary errors
-!        -------------------------
+!        ------------------------------------------------------------
+!        Report the boundary errors computed with the approximations.
+!        The file of errors (WriteBoundaryErrors) is written by the
+!        caller with the other output files, after any -path has been
+!        added to their names
+!        ------------------------------------------------------------
 !
-         CALL WriteBoundaryErrors(project)
          IF ( .NOT.test )     THEN
             IF ( ALLOCATED(project % L2ErrorMax) )     THEN
                PRINT *, "Boundary Error Quality:"

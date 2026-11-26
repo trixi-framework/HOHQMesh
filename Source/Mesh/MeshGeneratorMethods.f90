@@ -65,6 +65,10 @@
 !     Whether a pair of nodes can be joined by a chord (see isBridge)
 !
       INTEGER, PARAMETER, PRIVATE :: BRIDGE_UNCHECKED = 0, BRIDGE_VALID = 1, BRIDGE_INVALID = -1
+!
+!     How a front node of a paving row is meshed (see PaveRowOnce)
+!
+      INTEGER, PARAMETER, PRIVATE :: SIDE_NODE = 0, WEDGE = 1, FAN3 = 2, IN_WEDGE = 3
 
 !
 !     ========
@@ -591,7 +595,10 @@
 !           ------------------------------------------------------
 !
             paved = .FALSE.
-            IF ( model % interfacePaving )     CALL PaveInterface( mesh, model, sizer, list, paved )
+            IF ( model % interfacePaving )     THEN
+               CALL PaveInterface( mesh, model, sizer, list, paved )
+               IF ( .NOT.paved .AND. printMessage )     CALL ReportPavingFallback( model, list )
+            END IF
             IF ( .NOT.paved )     CALL MoveInterfaceNodesToImages( list, model )
          END IF
       END DO
@@ -3586,6 +3593,82 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
+      SUBROUTINE BridgeIsland( island, target, comp, removed, atCurve, elems, nodeEl, nodeElCount, nE, bridge, nBridge )
+         IMPLICIT NONE
+!
+!        --------------------------------------------------------------
+!        The shortest path of band elements (removed) from the elements
+!        of the group island (comp = island) to those of the group
+!        target, through element sides, without the elements at the
+!        nodes of the curve being paved (atCurve). bridge(1:nBridge)
+!        are the band elements on the path, nBridge = 0 if there is no
+!        path.
+!        --------------------------------------------------------------
+!
+         INTEGER              :: island, target, nE
+         INTEGER              :: comp(nE), nodeEl(:,:), nodeElCount(:)
+         LOGICAL              :: removed(nE), atCurve(nE)
+         TYPE(SMElementPtr)   :: elems(:)
+         INTEGER, INTENT(OUT) :: bridge(nE), nBridge
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER, ALLOCATABLE      :: parent(:), queue(:)
+         INTEGER                   :: head, tail, f, g, k, last
+         TYPE (SMElement), POINTER :: e
+         INTEGER, EXTERNAL         :: Loop
+
+         nBridge = 0
+         IF ( target == 0 )     RETURN
+         ALLOCATE( parent(nE), queue(nE) )
+         parent = 0
+         head   = 1
+         tail   = 0
+         DO f = 1, nE
+            IF ( removed(f) )     CYCLE
+            IF ( comp(f) /= island )     CYCLE
+            tail        = tail + 1
+            queue(tail) = f
+            parent(f)   = -1
+         END DO
+
+         last = 0
+         DO WHILE ( head <= tail .AND. last == 0 )
+            f    = queue(head)
+            head = head + 1
+            e => elems(f) % element
+            DO k = 1, 4
+               g = elementWithDirectedEdge( e % nodes(Loop(k+1,4)) % node % id, e % nodes(k) % node % id, &
+                                            elems, nodeEl, nodeElCount )
+               IF ( g == 0 )     CYCLE
+               IF ( parent(g) /= 0 )     CYCLE
+               IF ( .NOT.removed(g) )     THEN
+                  IF ( comp(g) == target .AND. removed(f) )     THEN
+                     last = f
+                     EXIT
+                  END IF
+                  CYCLE
+               END IF
+               IF ( atCurve(g) )     CYCLE
+               parent(g)   = f
+               tail        = tail + 1
+               queue(tail) = g
+            END DO
+         END DO
+
+         f = last
+         DO WHILE ( f > 0 )
+            nBridge         = nBridge + 1
+            bridge(nBridge) = f
+            f               = parent(f)
+         END DO
+
+      END SUBROUTINE BridgeIsland
+!
+!////////////////////////////////////////////////////////////////////////
+!
       FUNCTION newInteriorNode( mesh, x2 ) RESULT(node)
          IMPLICIT NONE
          TYPE (SMMesh), POINTER :: mesh
@@ -3864,6 +3947,11 @@
          TYPE (MeshSizer)   , POINTER :: sizer
          CLASS(FTLinkedList), POINTER :: list
          LOGICAL                      :: paved
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          INTEGER, PARAMETER           :: NUMBER_OF_WIDTHS = 3
          REAL(KIND=RP), PARAMETER     :: BAND_SCALES(NUMBER_OF_WIDTHS) = [1.0_RP, 4.0_RP/3.0_RP, 1.5_RP]
          TYPE(PavePlan)               :: plan, bestPlan
@@ -3884,6 +3972,32 @@
          paved = bestPlan % ok
          IF ( paved )     CALL CommitPavePlan( mesh, model, bestPlan )
       END SUBROUTINE PaveInterface
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ReportPavingFallback( model, list )
+         IMPLICIT NONE
+!
+!        --------------------------------------------------------------
+!        With -verbose, name the interface chain whose nodes are in list
+!        when paving it failed and its nodes are moved onto the curve
+!        instead. The fallback otherwise goes unnoticed.
+!        --------------------------------------------------------------
+!
+         TYPE (SMModel)               , POINTER :: model
+         CLASS(FTLinkedList)          , POINTER :: list
+
+         TYPE(SMNodePtr), DIMENSION(:), POINTER :: seq
+         CLASS(SMChainedCurve)        , POINTER :: chain
+         INTEGER                                :: chainID
+
+         seq => GatheredNodes(list)
+         chainID = seq(1) % node % bCurveChainID
+         DEALLOCATE(seq)
+         chain => model % chainWithID(chainID)
+         PRINT*, "      Interface paving failed for ", TRIM(chain % curveName()), &
+                 ". Its nodes are moved onto the curve instead"
+      END SUBROUTINE ReportPavingFallback
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -4034,8 +4148,9 @@
 !        Mesh the band around an interface curve from the curve outward,
 !        as boundary-first meshers do:
 !          1. Remove the elements within bandScale*paveBandWidth local
-!             element sizes of the curve, on both sides. Where the band
-!             cuts parts of the mesh off, pave over them.
+!             element sizes of the curve, on both sides, except those
+!             with a node on another curve. Where the band cuts parts
+!             of the mesh off, pave over them.
 !          2. Put new nodes on the curve, spaced by the size hs taken
 !             from the curve geometry (SampleInterfaceChain), with a node
 !             at each joint and corner. Both sides share them.
@@ -4066,7 +4181,9 @@
          TYPE(SMElementPtr), ALLOCATABLE :: elems(:)
          TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:)
          INTEGER           , ALLOCATABLE :: nodeElCount(:), nodeEl(:,:), nOut(:), cnt(:)
-         LOGICAL           , ALLOCATABLE :: removed(:), used(:)
+         LOGICAL           , ALLOCATABLE :: removed(:), used(:), onOtherCurve(:), atCurve(:)
+         INTEGER           , ALLOCATABLE :: bridge(:)
+         INTEGER                         :: nBridge
          REAL(KIND=RP)     , ALLOCATABLE :: cx(:,:), cg(:), sx(:,:,:), wSeg(:)
          INTEGER           , ALLOCATABLE :: featureIdx(:), nSeg(:)
          INTEGER           , ALLOCATABLE :: eFrom(:), eTo(:), loopNodes(:), quads(:,:,:), newFront(:,:)
@@ -4153,8 +4270,9 @@
 !           than bandFactor local sizes
 !        -----------------------------------------------------
 !
-         ALLOCATE( removed(nE), cnt(nE) )
+         ALLOCATE( removed(nE), cnt(nE), atCurve(nE) )
          removed   = .FALSE.
+         atCurve   = .FALSE.
          bandReach = bandFactor*MAXVAL(hBand)
          xMin = MINVAL(xs, DIM = 2) - bandReach
          xMax = MAXVAL(xs, DIM = 2) + bandReach
@@ -4173,8 +4291,38 @@
             nid = seq(i) % node % id
             DO k = 1, nodeElCount(nid)
                removed(nodeEl(k,nid)) = .TRUE.
+               atCurve(nodeEl(k,nid)) = .TRUE.
             END DO
          END DO
+!
+!        --------------------------------------------------------------
+!        Elements with a node on another curve stay out of the band.
+!        Paving would take those nodes from their curve, whose boundary
+!        edges were gathered before this chain was paved, and the
+!        nodes would be left with that curve's labels in the wrong
+!        place. A band wider than the default must not reach another
+!        curve at all. Between curves close together, the paved regions
+!        would meet in the gap and squeeze the elements there. The
+!        elements at the nodes of this curve are always in the band,
+!        even where another curve is closer than an element.
+!        --------------------------------------------------------------
+!
+         ALLOCATE( onOtherCurve(nE) )
+         onOtherCurve = .FALSE.
+         DO f = 1, nE
+            DO k = 1, 4
+               node => elems(f) % element % nodes(k) % node
+               IF ( node % bCurveChainID > 0 .AND. node % bCurveChainID /= seq(1) % node % bCurveChainID )     THEN
+                  IF ( node % distToBoundary == 0.0_RP )     onOtherCurve(f) = .TRUE.
+               END IF
+            END DO
+         END DO
+         IF ( bandScale > 1.0_RP .AND. ANY(removed .AND. onOtherCurve) )     THEN
+            DEALLOCATE(seq)
+            RETURN
+         END IF
+         onOtherCurve = onOtherCurve .AND. .NOT.atCurve
+         removed      = removed .AND. .NOT.onOtherCurve
 !
 !        -----------------------------------------------------
 !        Keep the elements with a side on the edge of the mesh
@@ -4221,14 +4369,20 @@
             changed = .FALSE.
             DO f = 1, nE
                IF ( .NOT.removed(f) .AND. cnt(f) >= 3 )     THEN
-                  removed(f) = .TRUE.
-                  changed    = .TRUE.
+                  IF ( .NOT.onOtherCurve(f) )     THEN
+                     removed(f) = .TRUE.
+                     changed    = .TRUE.
+                  END IF
                END IF
             END DO
             DO i = 1, nF
                IF ( nOut(eFrom(i)) > 1 )     THEN
                   DO k = 1, nodeElCount(eFrom(i))
                      IF ( .NOT.removed(nodeEl(k,eFrom(i))) )     THEN
+                        IF ( onOtherCurve(nodeEl(k,eFrom(i))) )     THEN
+                           DEALLOCATE(seq)
+                           RETURN
+                        END IF
                         removed(nodeEl(k,eFrom(i))) = .TRUE.
                         changed = .TRUE.
                      END IF
@@ -4296,7 +4450,11 @@
 !        -------------------------------------------------------------
 !        Islands of elements cut off by the band: keep the largest
 !        group of connected elements on each side of the curve and
-!        pave over the others.
+!        pave over the others. An island with an element on another
+!        curve stays if a bridge of band elements can join it to the
+!        group kept on its side (BridgeIsland), so that the band edge
+!        goes around both. Otherwise it is paved over too. The other
+!        curve is paved later from its geometry.
 !        -------------------------------------------------------------
 !
          comp = 0
@@ -4339,6 +4497,19 @@
                keep(side) = i
             END IF
          END DO
+         ALLOCATE( bridge(nE) )
+         DO i = 1, nComp
+            IF ( i == keep(1) .OR. i == keep(2) )     CYCLE
+            IF ( .NOT.ANY(onOtherCurve .AND. comp == i) )     CYCLE
+            side = MERGE(1, 2, compInside(i))
+            CALL BridgeIsland( i, keep(side), comp, removed, atCurve, elems, nodeEl, nodeElCount, nE, bridge, nBridge )
+            IF ( nBridge == 0 )     CYCLE
+            removed(bridge(1:nBridge))      = .FALSE.
+            onOtherCurve(bridge(1:nBridge)) = .TRUE.
+            comp(bridge(1:nBridge))         = keep(side)
+            WHERE ( comp == i )     comp = keep(side)
+         END DO
+         DEALLOCATE( bridge )
          DO f = 1, nE
             IF ( removed(f) )     CYCLE
             IF ( comp(f) /= keep(1) .AND. comp(f) /= keep(2) )     removed(f) = .TRUE.
@@ -4464,27 +4635,6 @@
             END IF
          END DO
 !
-!        -----------------------------------------------------------
-!        A band wider than the default must not reach another curve:
-!        between curves close together the paved regions would meet
-!        in the gap and squeeze the elements there
-!        -----------------------------------------------------------
-!
-         IF ( bandScale > 1.0_RP )     THEN
-            DO f = 1, nE
-               IF ( .NOT.removed(f) )     CYCLE
-               DO k = 1, 4
-                  node => elems(f) % element % nodes(k) % node
-                  IF ( node % bCurveChainID > 0 .AND. node % bCurveChainID /= seq(1) % node % bCurveChainID )     THEN
-                     IF ( node % distToBoundary == 0.0_RP )     THEN
-                        DEALLOCATE(seq)
-                        RETURN
-                     END IF
-                  END IF
-               END DO
-            END DO
-         END IF
-!
 !        ----
 !        Plan
 !        ----
@@ -4548,6 +4698,14 @@
             NULLIFY(curveNodes(m) % node)
             IF ( ABS(gNode - NINT(gNode)) <= 1.0e-12_RP )     THEN
                DO i = 1, SIZE(plan % seq)
+!
+!                 ---------------------------------------------------------
+!                 Where another curve is closer than an element, the edges
+!                 gathered for this chain can have nodes of that curve.
+!                 Their parameter is on the other curve: never reuse them
+!                 ---------------------------------------------------------
+!
+                  IF ( plan % seq(i) % node % bCurveChainID /= plan % chainID )     CYCLE
                   d = plan % seq(i) % node % gWhereOnBoundary*plan % nCurves
                   IF ( ABS(MODULO(d - gNode + 0.5_RP*plan % nCurves, REAL(plan % nCurves,RP)) &
                        - 0.5_RP*plan % nCurves) <= 1.0e-12_RP )     THEN
@@ -4596,13 +4754,14 @@
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
-!        One row of quads along the closed front x(:,1:nf), which has the
-!        region to mesh on its left. x(:,nf+1:nf+nfr) is the closed edge
-!        of the remaining mesh, which the row must not cross. A front node
-!        with an angle below wedgeAngle is the corner of one wedge quad
-!        (and the row nodes of its neighbors merge), one above fanAngle
-!        gets three quads, the others two. New nodes are appended to x;
-!        newFront lists the nodes of the new front, region on its left.
+!        One row of quads along the closed front x(:,1:nf) (PaveRowOnce).
+!        A wedge puts its row node where the front would be if it went on
+!        straight past both neighbors of the corner. When the front turns
+!        sharply again at a neighbor, e.g. a 90 degree corner followed one
+!        short edge later by a second sharp corner, the quad next to the
+!        wedge folds, whatever the row height. Then pave the row again
+!        without a wedge at that corner, so that the neighbor, if it is
+!        sharp enough, gets the wedge instead.
 !        ---------------------------------------------------------------
 !
          REAL(KIND=RP) :: x(:,:), wedgeAngle, fanAngle, rowScale
@@ -4614,20 +4773,64 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER, PARAMETER       :: SIDE_NODE = 0, WEDGE = 1, FAN3 = 2, IN_WEDGE = 3
+         INTEGER, PARAMETER :: MAX_ATTEMPTS = 3
+         LOGICAL            :: noWedge(nf)
+         INTEGER            :: attempt, nAllStart, foldedWedge
+
+         nAllStart = nAll
+         noWedge   = .FALSE.
+         DO attempt = 1, MAX_ATTEMPTS
+            nAll = nAllStart
+            CALL PaveRowOnce( x, nf, nfr, wedgeAngle, fanAngle, rowScale, noWedge, nAll, quads, nQ, &
+                              newFront, nNew, ok, foldedWedge )
+            IF ( ok .OR. foldedWedge == 0 )     RETURN
+            noWedge(foldedWedge) = .TRUE.
+         END DO
+
+      END SUBROUTINE PaveRow
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE PaveRowOnce( x, nf, nfr, wedgeAngle, fanAngle, rowScale, noWedge, nAll, quads, nQ, &
+                              newFront, nNew, ok, foldedWedge )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        One row of quads along the closed front x(:,1:nf), which has the
+!        region to mesh on its left. x(:,nf+1:nf+nfr) is the closed edge
+!        of the remaining mesh, which the row must not cross. A front node
+!        with an angle below wedgeAngle is the corner of one wedge quad
+!        (and the row nodes of its neighbors merge), unless noWedge is set
+!        for it, one above fanAngle gets three quads, the others two. New
+!        nodes are appended to x; newFront lists the nodes of the new
+!        front, region on its left. If the row fails because a quad folds
+!        next to a wedge, foldedWedge is the corner of that wedge, else 0.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:), wedgeAngle, fanAngle, rowScale
+         INTEGER       :: nf, nfr, nAll, nQ, nNew, foldedWedge
+         INTEGER       :: quads(:,:), newFront(:)
+         LOGICAL       :: noWedge(nf), ok
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          REAL(KIND=RP), PARAMETER :: DEG = 180.0_RP/PI
          INTEGER       :: typ(nf), rowIdx(nf), s1(nf), s2(nf), jn(nf)
          INTEGER       :: j, k, jp, jq, left, right, a1, a2, b1, b2
          REAL(KIND=RP) :: theta(nf), un(2), h, sp, dmin, phi, corners(2,4)
          INTEGER, EXTERNAL :: Loop
-         ok  = .FALSE.
-         nQ  = 0
-         nNew = 0
+         ok          = .FALSE.
+         foldedWedge = 0
+         nQ          = 0
+         nNew        = 0
          DO j = 1, nf
             theta(j) = cornerAngle( x(:,Loop(j-1,nf)), x(:,j), x(:,Loop(j+1,nf)) )
          END DO
          typ = SIDE_NODE
          DO j = 1, nf
+            IF ( noWedge(j) )     CYCLE
             jp = Loop(j-1,nf)
             jq = Loop(j+1,nf)
             IF ( theta(j) < wedgeAngle .AND. typ(j) == SIDE_NODE .AND. typ(jp) == SIDE_NODE .AND. typ(jq) == SIDE_NODE )     THEN
@@ -4738,8 +4941,10 @@
             DO j = 1, 4
                corners(:,j) = x(:,quads(j,k))
             END DO
-            IF ( smallestCornerSine(corners) < -0.5_RP )     RETURN
-            IF ( polygonArea(corners, 4) <= 0.0_RP )     RETURN
+            IF ( smallestCornerSine(corners) < -0.5_RP .OR. polygonArea(corners, 4) <= 0.0_RP )     THEN
+               foldedWedge = wedgeNextToQuad( quads(:,k), nf, typ )
+               RETURN
+            END IF
          END DO
          DO j = 1, nNew
             a1 = newFront(j)
@@ -4758,7 +4963,36 @@
          END DO
          ok = .TRUE.
 
-      END SUBROUTINE PaveRow
+      END SUBROUTINE PaveRowOnce
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION wedgeNextToQuad( quad, nf, typ )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        The wedge corner (typ WEDGE) among the front nodes of quad
+!        and their neighbors on the front, 0 if there is none. Nodes
+!        of quad above nf are row nodes, not on the front.
+!        ------------------------------------------------------------
+!
+         INTEGER :: quad(4), nf, typ(nf)
+         INTEGER :: m, d, w
+         INTEGER, EXTERNAL :: Loop
+
+         wedgeNextToQuad = 0
+         DO m = 1, 4
+            IF ( quad(m) > nf )     CYCLE
+            DO d = -1, 1
+               w = Loop(quad(m) + d, nf)
+               IF ( typ(w) == WEDGE )     THEN
+                  wedgeNextToQuad = w
+                  RETURN
+               END IF
+            END DO
+         END DO
+
+      END FUNCTION wedgeNextToQuad
 !
 !////////////////////////////////////////////////////////////////////////
 !

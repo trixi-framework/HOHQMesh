@@ -1,0 +1,88 @@
+%
+% ------------------------------------------------------------------
+% A paved interface with a wedge next to a second sharp corner. The
+% corner piece is taken from a circuit board trace: a 90 degree
+% corner (Up to Left), a short edge, and a second sharp corner where
+% the arc Ring starts. The first paving row makes a wedge at the
+% first corner, and the quad next to it folds because the front
+% turns again at the second. PaveRow then tries the row again
+% without that wedge, and the chain is paved. (Before, the whole
+% chain fell back to moving its nodes onto the curve.) The background
+% grid is shifted off the geometry, so that the mesh does not depend
+% on roundoff (see adding-a-new-test.md).
+% ------------------------------------------------------------------
+%
+\begin{CONTROL_INPUT}
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/PavingWedgeCorner.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/PavingWedgeCorner.tec
+      stats file name  = Benchmarks/StatsFiles/Tests/PavingWedgeCorner.txt
+      test file name   = Benchmarks/BenchmarkData/PavingWedgeCorner.txt
+      mesh file format = ISM-MM
+      polynomial order = 3
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+   \begin{BACKGROUND_GRID}
+      x0 = [-0.1037, -0.0521, 0.0]
+      dx = [0.025, 0.025, 0.0]
+      N  = [10, 10, 1]
+   \end{BACKGROUND_GRID}
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossbarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+\end{CONTROL_INPUT}
+\begin{MODEL}
+   \begin{MATERIALS}
+      background material name = Base
+   \end{MATERIALS}
+   \begin{INTERFACE_BOUNDARIES}
+      \begin{CHAIN}
+         name = Trace
+         \begin{END_POINTS_LINE}
+            name   = Diagonal
+            xStart = [0.0, 0.0, 0.0]
+            xEnd   = [0.0796292979628201, 0.079629297962824, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = Up
+            xStart = [0.0796292979628201, 0.079629297962824, 0.0]
+            xEnd   = [0.0796292979628201, 0.087157646695252, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = Left
+            xStart = [0.0796292979628201, 0.087157646695252, 0.0]
+            xEnd   = [0.0755863771566601, 0.087157646695252, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{CIRCULAR_ARC}
+            name        = Ring
+            center      = [0.0623808765387965, 0.0879363699173351, 0.0]
+            radius      = 0.0132284411940714
+            start angle = -0.0589013983899872
+            end angle   = -5.51789396783885
+         \end{CIRCULAR_ARC}
+         \begin{END_POINTS_LINE}
+            name   = Away
+            xStart = [0.0719209712140501, 0.097100334671316, 0.0]
+            xEnd   = [0.0599209712140501, 0.147100334671316, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = Top
+            xStart = [0.0599209712140501, 0.147100334671316, 0.0]
+            xEnd   = [-0.05, 0.147100334671316, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = Side
+            xStart = [-0.05, 0.147100334671316, 0.0]
+            xEnd   = [-0.05, 0.0, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = Bottom
+            xStart = [-0.05, 0.0, 0.0]
+            xEnd   = [0.0, 0.0, 0.0]
+         \end{END_POINTS_LINE}
+      \end{CHAIN}
+   \end{INTERFACE_BOUNDARIES}
+\end{MODEL}
+\end{FILE}
