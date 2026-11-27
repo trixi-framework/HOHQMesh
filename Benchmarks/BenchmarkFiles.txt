@@ -34,3 +34,4 @@ Benchmarks/ControlFiles/OffsetBoxNearbyCircle.control
 Benchmarks/ControlFiles/EastCoastUS.control
 Benchmarks/ControlFiles/OptimizedInnerAndInterface.control
 Benchmarks/ControlFiles/SlottedInterface.control
+Benchmarks/ControlFiles/PavingWedgeCorner.control

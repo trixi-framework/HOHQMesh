@@ -45,6 +45,7 @@
 !              CALL setElementBoundaryInfo(project)
 !         CALL WritePlotFile(project, didGenerate3DMesh)
 !         CALL WriteMeshFile(project, didGenerate3DMesh)
+!         CALL WriteBoundaryErrors(project)
 !
 !
 !////////////////////////////////////////////////////////////////////////
@@ -120,6 +121,7 @@
 
             CALL WritePlotFile(project, didGenerate3DMesh)
             CALL WriteMeshFile(project, didGenerate3DMesh)
+            CALL WriteBoundaryErrors(project)
 
             str = project % runParams % statsFileName
             CALL toLower(str)

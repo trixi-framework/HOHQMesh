@@ -65,6 +65,10 @@
 !     Whether a pair of nodes can be joined by a chord (see isBridge)
 !
       INTEGER, PARAMETER, PRIVATE :: BRIDGE_UNCHECKED = 0, BRIDGE_VALID = 1, BRIDGE_INVALID = -1
+!
+!     How a front node of a paving row is meshed (see PaveRowOnce)
+!
+      INTEGER, PARAMETER, PRIVATE :: SIDE_NODE = 0, WEDGE = 1, FAN3 = 2, IN_WEDGE = 3
 
 !
 !     ========
@@ -591,7 +595,10 @@
 !           ------------------------------------------------------
 !
             paved = .FALSE.
-            IF ( model % interfacePaving )     CALL PaveInterface( mesh, model, sizer, list, paved )
+            IF ( model % interfacePaving )     THEN
+               CALL PaveInterface( mesh, model, sizer, list, paved )
+               IF ( .NOT.paved .AND. printMessage )     CALL ReportPavingFallback( model, list )
+            END IF
             IF ( .NOT.paved )     CALL MoveInterfaceNodesToImages( list, model )
          END IF
       END DO
@@ -3641,17 +3648,21 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      RECURSIVE SUBROUTINE SplitFill( x, nAll, ids, nIds, h, quads, nQuads, ok, nChords )
+      RECURSIVE SUBROUTINE SplitFill( x, nAll, ids, nIds, quads, nQuads, ok, nChords )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
 !        Fill a counterclockwise polygon with an even number of nodes
 !        with quads by cutting it along the chord that best splits the
-!        corner angles at its ends. The chord gets new nodes about h apart,
-!        as many as make both halves even. New nodes are appended to x.
+!        corner angles at its ends. The chord gets new nodes spaced like
+!        the polygon edges at its ends (the mean of the lengths of the
+!        edges there), as many as make both halves even. A spacing from
+!        the whole front would put fine nodes into large regions, e.g.,
+!        regions paved over, where the polygon edges are coarse.
+!        New nodes are appended to x.
 !        ---------------------------------------------------------------
 !
-         REAL(KIND=RP) :: x(:,:), h
+         REAL(KIND=RP) :: x(:,:)
          INTEGER       :: nAll, nIds, nQuads
          INTEGER       :: ids(nIds), quads(:,:), nChords(:)
          LOGICAL       :: ok
@@ -3659,6 +3670,7 @@
          INTEGER       :: i, j, d, k, kBest, iBest, jBest, n1, n2, c
          INTEGER       :: half1(nIds+2*nIds), half2(nIds+2*nIds)
          REAL(KIND=RP) :: len, score, best, bound, angI(2), angJ(2), interior(nIds), dirNext(nIds)
+         REAL(KIND=RP) :: hLocal(nIds), hc
          REAL(KIND=RP), PARAMETER :: valencePenalty = 15.0_RP
          REAL(KIND=RP), PARAMETER :: BOUND_SLACK    = 1.0d-6
          INTEGER, EXTERNAL :: Loop
@@ -3675,15 +3687,18 @@
          DO i = 1, nIds
             interior(i) = cornerAngle( x(:,ids(Loop(i-1,nIds))), x(:,ids(i)), x(:,ids(Loop(i+1,nIds))) )
             dirNext(i)  = ATAN2(x(2,ids(Loop(i+1,nIds))) - x(2,ids(i)), x(1,ids(Loop(i+1,nIds))) - x(1,ids(i)))
+            hLocal(i)   = 0.5_RP*( NORM2(x(:,ids(Loop(i+1,nIds))) - x(:,ids(i))) &
+                                 + NORM2(x(:,ids(i)) - x(:,ids(Loop(i-1,nIds)))) )
          END DO
          best = -HUGE(best)
          DO i = 1, nIds
             DO d = 2, MIN(nIds - 2, nIds - i)
                j   = i + d
                len = NORM2(x(:,ids(j)) - x(:,ids(i)))
-               k   = MAX(0, NINT(len/h) - 1)
+               hc  = 0.5_RP*(hLocal(i) + hLocal(j))
+               k   = MAX(0, NINT(len/hc) - 1)
                IF ( MODULO(d + 1 + k, 2) /= 0 )     THEN
-                  IF ( len/h - 1.0_RP > k .OR. k == 0 )     THEN
+                  IF ( len/hc - 1.0_RP > k .OR. k == 0 )     THEN
                      k = k + 1
                   ELSE
                      k = k - 1
@@ -3711,14 +3726,14 @@
 !              --------------------------------------------------------
 !
                bound = 0.5_RP*MIN(interior(i), interior(j)) - 0.1_RP*MAX(interior(i), interior(j)) &
-                     - 10.0_RP*ABS(len/h - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
+                     - 10.0_RP*ABS(len/hc - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
                IF ( bound + BOUND_SLACK <= best )     CYCLE
                angI(1) = angleFromDirection( x(:,ids(j)), x(:,ids(i)), dirNext(i) )
                angI(2) = interior(i) - angI(1)
                angJ(1) = angleFromDirection( x(:,ids(i)), x(:,ids(j)), dirNext(j) )
                angJ(2) = interior(j) - angJ(1)
                score = MIN(MINVAL(angI), MINVAL(angJ)) - 0.2_RP*MAX(MAXVAL(angI), MAXVAL(angJ)) &
-                     - 10.0_RP*ABS(len/h - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
+                     - 10.0_RP*ABS(len/hc - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
                IF ( .NOT.(score > best) )     CYCLE
                IF ( .NOT.chordInside( x, ids, nIds, i, j ) )     CYCLE
                best  = score
@@ -3760,9 +3775,9 @@
             n2 = n2 + 1
             half2(n2) = nAll - k + c
          END DO
-         CALL SplitFill( x, nAll, half1(1:n1), n1, h, quads, nQuads, ok, nChords )
+         CALL SplitFill( x, nAll, half1(1:n1), n1, quads, nQuads, ok, nChords )
          IF ( .NOT.ok )     RETURN
-         CALL SplitFill( x, nAll, half2(1:n2), n2, h, quads, nQuads, ok, nChords )
+         CALL SplitFill( x, nAll, half2(1:n2), n2, quads, nQuads, ok, nChords )
 
       END SUBROUTINE SplitFill
 !
@@ -3864,6 +3879,11 @@
          TYPE (MeshSizer)   , POINTER :: sizer
          CLASS(FTLinkedList), POINTER :: list
          LOGICAL                      :: paved
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          INTEGER, PARAMETER           :: NUMBER_OF_WIDTHS = 3
          REAL(KIND=RP), PARAMETER     :: BAND_SCALES(NUMBER_OF_WIDTHS) = [1.0_RP, 4.0_RP/3.0_RP, 1.5_RP]
          TYPE(PavePlan)               :: plan, bestPlan
@@ -3884,6 +3904,32 @@
          paved = bestPlan % ok
          IF ( paved )     CALL CommitPavePlan( mesh, model, bestPlan )
       END SUBROUTINE PaveInterface
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE ReportPavingFallback( model, list )
+         IMPLICIT NONE
+!
+!        --------------------------------------------------------------
+!        With -verbose, name the interface chain whose nodes are in list
+!        when paving it failed and its nodes are moved onto the curve
+!        instead. The fallback otherwise goes unnoticed.
+!        --------------------------------------------------------------
+!
+         TYPE (SMModel)               , POINTER :: model
+         CLASS(FTLinkedList)          , POINTER :: list
+
+         TYPE(SMNodePtr), DIMENSION(:), POINTER :: seq
+         CLASS(SMChainedCurve)        , POINTER :: chain
+         INTEGER                                :: chainID
+
+         seq => GatheredNodes(list)
+         chainID = seq(1) % node % bCurveChainID
+         DEALLOCATE(seq)
+         chain => model % chainWithID(chainID)
+         PRINT*, "      Interface paving failed for ", TRIM(chain % curveName()), &
+                 ". Its nodes are moved onto the curve instead"
+      END SUBROUTINE ReportPavingFallback
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -4034,8 +4080,9 @@
 !        Mesh the band around an interface curve from the curve outward,
 !        as boundary-first meshers do:
 !          1. Remove the elements within bandScale*paveBandWidth local
-!             element sizes of the curve, on both sides. Where the band
-!             cuts parts of the mesh off, pave over them.
+!             element sizes of the curve, on both sides, except those
+!             with a node on another curve. Where the band cuts parts
+!             of the mesh off, pave over them.
 !          2. Put new nodes on the curve, spaced by the size hs taken
 !             from the curve geometry (SampleInterfaceChain), with a node
 !             at each joint and corner. Both sides share them.
@@ -4066,7 +4113,7 @@
          TYPE(SMElementPtr), ALLOCATABLE :: elems(:)
          TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:)
          INTEGER           , ALLOCATABLE :: nodeElCount(:), nodeEl(:,:), nOut(:), cnt(:)
-         LOGICAL           , ALLOCATABLE :: removed(:), used(:)
+         LOGICAL           , ALLOCATABLE :: removed(:), used(:), onOtherCurve(:), atCurve(:)
          REAL(KIND=RP)     , ALLOCATABLE :: cx(:,:), cg(:), sx(:,:,:), wSeg(:)
          INTEGER           , ALLOCATABLE :: featureIdx(:), nSeg(:)
          INTEGER           , ALLOCATABLE :: eFrom(:), eTo(:), loopNodes(:), quads(:,:,:), newFront(:,:)
@@ -4153,8 +4200,9 @@
 !           than bandFactor local sizes
 !        -----------------------------------------------------
 !
-         ALLOCATE( removed(nE), cnt(nE) )
+         ALLOCATE( removed(nE), cnt(nE), atCurve(nE) )
          removed   = .FALSE.
+         atCurve   = .FALSE.
          bandReach = bandFactor*MAXVAL(hBand)
          xMin = MINVAL(xs, DIM = 2) - bandReach
          xMax = MAXVAL(xs, DIM = 2) + bandReach
@@ -4173,8 +4221,38 @@
             nid = seq(i) % node % id
             DO k = 1, nodeElCount(nid)
                removed(nodeEl(k,nid)) = .TRUE.
+               atCurve(nodeEl(k,nid)) = .TRUE.
             END DO
          END DO
+!
+!        --------------------------------------------------------------
+!        Elements with a node on another curve stay out of the band.
+!        Paving would take those nodes from their curve, whose boundary
+!        edges were gathered before this chain was paved, and the
+!        nodes would be left with that curve's labels in the wrong
+!        place. A band wider than the default must not reach another
+!        curve at all. Between curves close together, the paved regions
+!        would meet in the gap and squeeze the elements there. The
+!        elements at the nodes of this curve are always in the band,
+!        even where another curve is closer than an element.
+!        --------------------------------------------------------------
+!
+         ALLOCATE( onOtherCurve(nE) )
+         onOtherCurve = .FALSE.
+         DO f = 1, nE
+            DO k = 1, 4
+               node => elems(f) % element % nodes(k) % node
+               IF ( node % bCurveChainID > 0 .AND. node % bCurveChainID /= seq(1) % node % bCurveChainID )     THEN
+                  IF ( node % distToBoundary == 0.0_RP )     onOtherCurve(f) = .TRUE.
+               END IF
+            END DO
+         END DO
+         IF ( bandScale > 1.0_RP .AND. ANY(removed .AND. onOtherCurve) )     THEN
+            DEALLOCATE(seq)
+            RETURN
+         END IF
+         onOtherCurve = onOtherCurve .AND. .NOT.atCurve
+         removed      = removed .AND. .NOT.onOtherCurve
 !
 !        -----------------------------------------------------
 !        Keep the elements with a side on the edge of the mesh
@@ -4221,14 +4299,20 @@
             changed = .FALSE.
             DO f = 1, nE
                IF ( .NOT.removed(f) .AND. cnt(f) >= 3 )     THEN
-                  removed(f) = .TRUE.
-                  changed    = .TRUE.
+                  IF ( .NOT.onOtherCurve(f) )     THEN
+                     removed(f) = .TRUE.
+                     changed    = .TRUE.
+                  END IF
                END IF
             END DO
             DO i = 1, nF
                IF ( nOut(eFrom(i)) > 1 )     THEN
                   DO k = 1, nodeElCount(eFrom(i))
                      IF ( .NOT.removed(nodeEl(k,eFrom(i))) )     THEN
+                        IF ( onOtherCurve(nodeEl(k,eFrom(i))) )     THEN
+                           DEALLOCATE(seq)
+                           RETURN
+                        END IF
                         removed(nodeEl(k,eFrom(i))) = .TRUE.
                         changed = .TRUE.
                      END IF
@@ -4296,7 +4380,8 @@
 !        -------------------------------------------------------------
 !        Islands of elements cut off by the band: keep the largest
 !        group of connected elements on each side of the curve and
-!        pave over the others.
+!        pave over the others, also an island with an element on
+!        another curve. That curve is paved later from its geometry.
 !        -------------------------------------------------------------
 !
          comp = 0
@@ -4464,27 +4549,6 @@
             END IF
          END DO
 !
-!        -----------------------------------------------------------
-!        A band wider than the default must not reach another curve:
-!        between curves close together the paved regions would meet
-!        in the gap and squeeze the elements there
-!        -----------------------------------------------------------
-!
-         IF ( bandScale > 1.0_RP )     THEN
-            DO f = 1, nE
-               IF ( .NOT.removed(f) )     CYCLE
-               DO k = 1, 4
-                  node => elems(f) % element % nodes(k) % node
-                  IF ( node % bCurveChainID > 0 .AND. node % bCurveChainID /= seq(1) % node % bCurveChainID )     THEN
-                     IF ( node % distToBoundary == 0.0_RP )     THEN
-                        DEALLOCATE(seq)
-                        RETURN
-                     END IF
-                  END IF
-               END DO
-            END DO
-         END IF
-!
 !        ----
 !        Plan
 !        ----
@@ -4548,6 +4612,14 @@
             NULLIFY(curveNodes(m) % node)
             IF ( ABS(gNode - NINT(gNode)) <= 1.0e-12_RP )     THEN
                DO i = 1, SIZE(plan % seq)
+!
+!                 ---------------------------------------------------------
+!                 Where another curve is closer than an element, the edges
+!                 gathered for this chain can have nodes of that curve.
+!                 Their parameter is on the other curve: never reuse them
+!                 ---------------------------------------------------------
+!
+                  IF ( plan % seq(i) % node % bCurveChainID /= plan % chainID )     CYCLE
                   d = plan % seq(i) % node % gWhereOnBoundary*plan % nCurves
                   IF ( ABS(MODULO(d - gNode + 0.5_RP*plan % nCurves, REAL(plan % nCurves,RP)) &
                        - 0.5_RP*plan % nCurves) <= 1.0e-12_RP )     THEN
@@ -4596,13 +4668,14 @@
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
-!        One row of quads along the closed front x(:,1:nf), which has the
-!        region to mesh on its left. x(:,nf+1:nf+nfr) is the closed edge
-!        of the remaining mesh, which the row must not cross. A front node
-!        with an angle below wedgeAngle is the corner of one wedge quad
-!        (and the row nodes of its neighbors merge), one above fanAngle
-!        gets three quads, the others two. New nodes are appended to x;
-!        newFront lists the nodes of the new front, region on its left.
+!        One row of quads along the closed front x(:,1:nf) (PaveRowOnce).
+!        A wedge puts its row node where the front would be if it went on
+!        straight past both neighbors of the corner. When the front turns
+!        sharply again at a neighbor, e.g. a 90 degree corner followed one
+!        short edge later by a second sharp corner, the quad next to the
+!        wedge folds, whatever the row height. Then pave the row again
+!        without a wedge at that corner, so that the neighbor, if it is
+!        sharp enough, gets the wedge instead.
 !        ---------------------------------------------------------------
 !
          REAL(KIND=RP) :: x(:,:), wedgeAngle, fanAngle, rowScale
@@ -4614,20 +4687,64 @@
 !        Local variables
 !        ---------------
 !
-         INTEGER, PARAMETER       :: SIDE_NODE = 0, WEDGE = 1, FAN3 = 2, IN_WEDGE = 3
+         INTEGER, PARAMETER :: MAX_ATTEMPTS = 3
+         LOGICAL            :: noWedge(nf)
+         INTEGER            :: attempt, nAllStart, foldedWedge
+
+         nAllStart = nAll
+         noWedge   = .FALSE.
+         DO attempt = 1, MAX_ATTEMPTS
+            nAll = nAllStart
+            CALL PaveRowOnce( x, nf, nfr, wedgeAngle, fanAngle, rowScale, noWedge, nAll, quads, nQ, &
+                              newFront, nNew, ok, foldedWedge )
+            IF ( ok .OR. foldedWedge == 0 )     RETURN
+            noWedge(foldedWedge) = .TRUE.
+         END DO
+
+      END SUBROUTINE PaveRow
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE PaveRowOnce( x, nf, nfr, wedgeAngle, fanAngle, rowScale, noWedge, nAll, quads, nQ, &
+                              newFront, nNew, ok, foldedWedge )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        One row of quads along the closed front x(:,1:nf), which has the
+!        region to mesh on its left. x(:,nf+1:nf+nfr) is the closed edge
+!        of the remaining mesh, which the row must not cross. A front node
+!        with an angle below wedgeAngle is the corner of one wedge quad
+!        (and the row nodes of its neighbors merge), unless noWedge is set
+!        for it, one above fanAngle gets three quads, the others two. New
+!        nodes are appended to x; newFront lists the nodes of the new
+!        front, region on its left. If the row fails because a quad folds
+!        next to a wedge, foldedWedge is the corner of that wedge, else 0.
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: x(:,:), wedgeAngle, fanAngle, rowScale
+         INTEGER       :: nf, nfr, nAll, nQ, nNew, foldedWedge
+         INTEGER       :: quads(:,:), newFront(:)
+         LOGICAL       :: noWedge(nf), ok
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
          REAL(KIND=RP), PARAMETER :: DEG = 180.0_RP/PI
          INTEGER       :: typ(nf), rowIdx(nf), s1(nf), s2(nf), jn(nf)
          INTEGER       :: j, k, jp, jq, left, right, a1, a2, b1, b2
          REAL(KIND=RP) :: theta(nf), un(2), h, sp, dmin, phi, corners(2,4)
          INTEGER, EXTERNAL :: Loop
-         ok  = .FALSE.
-         nQ  = 0
-         nNew = 0
+         ok          = .FALSE.
+         foldedWedge = 0
+         nQ          = 0
+         nNew        = 0
          DO j = 1, nf
             theta(j) = cornerAngle( x(:,Loop(j-1,nf)), x(:,j), x(:,Loop(j+1,nf)) )
          END DO
          typ = SIDE_NODE
          DO j = 1, nf
+            IF ( noWedge(j) )     CYCLE
             jp = Loop(j-1,nf)
             jq = Loop(j+1,nf)
             IF ( theta(j) < wedgeAngle .AND. typ(j) == SIDE_NODE .AND. typ(jp) == SIDE_NODE .AND. typ(jq) == SIDE_NODE )     THEN
@@ -4738,8 +4855,10 @@
             DO j = 1, 4
                corners(:,j) = x(:,quads(j,k))
             END DO
-            IF ( smallestCornerSine(corners) < -0.5_RP )     RETURN
-            IF ( polygonArea(corners, 4) <= 0.0_RP )     RETURN
+            IF ( smallestCornerSine(corners) < -0.5_RP .OR. polygonArea(corners, 4) <= 0.0_RP )     THEN
+               foldedWedge = wedgeNextToQuad( quads(:,k), nf, typ )
+               RETURN
+            END IF
          END DO
          DO j = 1, nNew
             a1 = newFront(j)
@@ -4758,7 +4877,36 @@
          END DO
          ok = .TRUE.
 
-      END SUBROUTINE PaveRow
+      END SUBROUTINE PaveRowOnce
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      INTEGER FUNCTION wedgeNextToQuad( quad, nf, typ )
+         IMPLICIT NONE
+!
+!        ------------------------------------------------------------
+!        The wedge corner (typ WEDGE) among the front nodes of quad
+!        and their neighbors on the front, 0 if there is none. Nodes
+!        of quad above nf are row nodes, not on the front.
+!        ------------------------------------------------------------
+!
+         INTEGER :: quad(4), nf, typ(nf)
+         INTEGER :: m, d, w
+         INTEGER, EXTERNAL :: Loop
+
+         wedgeNextToQuad = 0
+         DO m = 1, 4
+            IF ( quad(m) > nf )     CYCLE
+            DO d = -1, 1
+               w = Loop(quad(m) + d, nf)
+               IF ( typ(w) == WEDGE )     THEN
+                  wedgeNextToQuad = w
+                  RETURN
+               END IF
+            END DO
+         END DO
+
+      END FUNCTION wedgeNextToQuad
 !
 !////////////////////////////////////////////////////////////////////////
 !
@@ -4990,19 +5138,14 @@
          INTEGER       :: nShort, nSorted
          INTEGER       :: brI(nFront*nB), brJ(nFront*nB), order(nFront*nB), bridgeState(nFront*nB)
          INTEGER, ALLOCATABLE :: shortPairs(:)
-         REAL(KIND=RP) :: h, shortLen, brLen(nFront*nB)
+         REAL(KIND=RP) :: shortLen, brLen(nFront*nB)
          INTEGER       :: nChords(SIZE(x,2))
          INTEGER, EXTERNAL :: Loop
 
          ok      = .FALSE.
          nChords = 0
-         h  = 0.0_RP
-         DO i = 1, nFront
-            h = h + NORM2(x(:,front(Loop(i+1,nFront))) - x(:,front(i)))
-         END DO
-         h = h/nFront
          IF ( nB == 0 )     THEN
-            CALL SplitFill( x, nAll, front(1:nFront), nFront, h, quads, nQ, ok, nChords )
+            CALL SplitFill( x, nAll, front(1:nFront), nFront, quads, nQ, ok, nChords )
             RETURN
          END IF
 !
@@ -5078,7 +5221,7 @@
                nAll    = nAll0
                nQ      = nQ0
                nChords = 0
-               CALL FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, h, quads, nQ, ok, nChords )
+               CALL FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, quads, nQ, ok, nChords )
                IF ( ok )     RETURN
                nTried = nTried + 1
                IF ( nTried >= MAX_TRIES )     EXIT
@@ -5205,20 +5348,20 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, h, quads, nQ, ok, nChords )
+      SUBROUTINE FillWithTwoChords( x, nAll, front, nFront, b0, nB, i1, j1, i2, j2, quads, nQ, ok, nChords )
          IMPLICIT NONE
 !
 !        ---------------------------------------------------------------
 !        Cut the region between the front and the loop along the chords
-!        front(i1)-loop(j1) and front(i2)-loop(j2), with nodes about h
-!        apart and the parity that makes both polygons even, and split
-!        both polygons into quads.
+!        front(i1)-loop(j1) and front(i2)-loop(j2), with nodes spaced like
+!        the front and loop edges at the chord ends and the parity that
+!        makes both polygons even, and split both polygons into quads.
 !        Polygon 1: front i1 -> i2, chord 2, loop j2 -> j1, chord 1.
 !        Polygon 2: front i2 -> i1, chord 1 back, loop j1 -> j2, chord 2
 !        back.
 !        ---------------------------------------------------------------
 !
-         REAL(KIND=RP) :: x(:,:), h
+         REAL(KIND=RP) :: x(:,:)
          INTEGER       :: nAll, nFront, b0, nB, i1, j1, i2, j2, nQ
          INTEGER       :: front(:), quads(:,:), nChords(:)
          LOGICAL       :: ok
@@ -5229,16 +5372,30 @@
 !
          INTEGER       :: k1, k2, c, n1, n2, kChord1, kChord2
          INTEGER       :: poly1(2*(nFront + nB) + 200), poly2(2*(nFront + nB) + 200)
-         REAL(KIND=RP) :: len1, len2
+         REAL(KIND=RP) :: len1, len2, h1, h2
          INTEGER, EXTERNAL :: Loop
 
          len1 = NORM2(x(:,b0+j1) - x(:,front(i1)))
          len2 = NORM2(x(:,b0+j2) - x(:,front(i2)))
-         k1 = MAX(0, NINT(len1/h) - 1)
-         k2 = MAX(0, NINT(len2/h) - 1)
+!
+!        -------------------------------------------------------------
+!        Node spacing on each chord: the mean length of the front and
+!        loop edges at its ends
+!        -------------------------------------------------------------
+!
+         h1 = 0.25_RP*( NORM2(x(:,front(Loop(i1+1,nFront))) - x(:,front(i1)))      &
+                      + NORM2(x(:,front(i1)) - x(:,front(Loop(i1-1,nFront))))      &
+                      + NORM2(x(:,b0+Loop(j1+1,nB)) - x(:,b0+j1))                  &
+                      + NORM2(x(:,b0+j1) - x(:,b0+Loop(j1-1,nB))) )
+         h2 = 0.25_RP*( NORM2(x(:,front(Loop(i2+1,nFront))) - x(:,front(i2)))      &
+                      + NORM2(x(:,front(i2)) - x(:,front(Loop(i2-1,nFront))))      &
+                      + NORM2(x(:,b0+Loop(j2+1,nB)) - x(:,b0+j2))                  &
+                      + NORM2(x(:,b0+j2) - x(:,b0+Loop(j2-1,nB))) )
+         k1 = MAX(0, NINT(len1/h1) - 1)
+         k2 = MAX(0, NINT(len2/h2) - 1)
          n1 = MODULO(i2 - i1, nFront) + 1 + MODULO(j1 - j2, nB) + 1 + k1 + k2
          IF ( MODULO(n1, 2) /= 0 )     THEN
-            IF ( len2/h - 1.0_RP > k2 .OR. k2 == 0 )     THEN
+            IF ( len2/h2 - 1.0_RP > k2 .OR. k2 == 0 )     THEN
                k2 = k2 + 1
             ELSE
                k2 = k2 - 1
@@ -5291,9 +5448,9 @@
             poly2(n2) = kChord2 + c
          END DO
 
-         CALL SplitFill( x, nAll, poly1(1:n1), n1, h, quads, nQ, ok, nChords )
+         CALL SplitFill( x, nAll, poly1(1:n1), n1, quads, nQ, ok, nChords )
          IF ( .NOT.ok )     RETURN
-         CALL SplitFill( x, nAll, poly2(1:n2), n2, h, quads, nQ, ok, nChords )
+         CALL SplitFill( x, nAll, poly2(1:n2), n2, quads, nQ, ok, nChords )
 
       END SUBROUTINE FillWithTwoChords
 !
@@ -5312,9 +5469,12 @@
 !            limited so that minNumberOfElementsInsideArea fit across,
 !          - the size with turnMax turning per element, where the turning
 !            is measured between features so a corner does not shrink it,
-!          - the distance, over closeCurveFactor, to a part of the curve
-!            that is near in space but far along the curve, with no
-!            feature between, or to a node on another curve, xOther.
+!          - the distance, over SELF_CLOSE_FACTOR, to a part of the
+!            curve that is near in space but far along the curve, unless
+!            the two are the legs of one corner. Such a strip or slot
+!            needs elements that fit across, but not several,
+!          - the distance, over closeCurveFactor, to a node on another
+!            curve, xOther.
 !        hBand is that size, graded. hs is also at most the length of the
 !        piece between two features, so that each piece gets an edge,
 !        then graded.
@@ -5330,6 +5490,7 @@
 !        ---------------
 !
          REAL(KIND=RP), PARAMETER :: GROWTH = 0.5_RP, NEAR_RATIO = 3.0_RP
+         REAL(KIND=RP), PARAMETER :: SELF_CLOSE_FACTOR = 2.0_RP
          INTEGER, PARAMETER       :: MAX_COARSE = 2000, CURVATURE_ITERATIONS = 6, CORNER_SAMPLES = 2
          REAL(KIND=RP) :: arc(nS+1), absTurn(nS), hBase(nS), hCurv(nS), hProx(nS), hNew(nS)
          REAL(KIND=RP) :: reach, xMin(2), xMax(2), perimeter, aSize, x3(3), u(2), v(2), d, dArc, turnSum, covered, dFwd, dBack
@@ -5419,10 +5580,15 @@
             hCurv = hNew
          END DO
 !
-!        ----------------------------------------------------------
+!        --------------------------------------------------------------
 !        Proximity, on a coarser set of samples: parts of the curve
-!        near in space but far along it, not separated by a feature
-!        ----------------------------------------------------------
+!        near in space but far along it. Parts with exactly one feature
+!        between them are the two legs of a corner like near the tip of
+!        a sharp corner they are arbitrarily close, so they are left
+!        out. With no feature or with two or more between them, they are
+!        the sides of a narrow strip, channel or slot of the chain, e.g.,
+!        of a polyline trace, which need elements that fit across.
+!        --------------------------------------------------------------
 !
          featureCount(0) = 0
          DO i = 1, nS
@@ -5442,9 +5608,9 @@
                   dArc = perimeter - dArc
                   k = nFeatures - featureCount(j) + featureCount(i-1)
                END IF
-               IF ( dArc > NEAR_RATIO*d .AND. k == 0 )     THEN
-                  hProx(i) = MIN(hProx(i), d/closeCurveFactor)
-                  hProx(j) = MIN(hProx(j), d/closeCurveFactor)
+               IF ( dArc > NEAR_RATIO*d .AND. k /= 1 )     THEN
+                  hProx(i) = MIN(hProx(i), d/SELF_CLOSE_FACTOR)
+                  hProx(j) = MIN(hProx(j), d/SELF_CLOSE_FACTOR)
                END IF
             END DO
          END DO

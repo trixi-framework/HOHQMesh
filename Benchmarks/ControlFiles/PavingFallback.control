@@ -1,0 +1,63 @@
+%
+% ---------------------------------------------------------------------
+% Not a benchmark: an interface chain that interface paving cannot pave,
+% used by Utilities/exercisecommandlineargs to check that -verbose
+% reports the fallback. The left side of the square Square is only
+% 0.005, a fifth of a background grid cell, from the left side of the
+% background grid. The paving row outside the square has no room
+% there, so filling between it and the remaining elements fails for
+% every band width. Paving fails for the whole chain and its nodes are
+% moved onto the curve instead.
+% ---------------------------------------------------------------------
+%
+\begin{CONTROL_INPUT}
+   \begin{RUN_PARAMETERS}
+      mesh file name   = Benchmarks/MeshFiles/Tests/PavingFallback.mesh
+      plot file name   = Benchmarks/PlotFiles/Tests/PavingFallback.tec
+      stats file name  = none
+      mesh file format = ISM-MM
+      polynomial order = 1
+      plot file format = sem
+   \end{RUN_PARAMETERS}
+   \begin{BACKGROUND_GRID}
+      x0 = [-0.1, -0.05, 0.0]
+      dx = [0.025, 0.025, 0.0]
+      N  = [10, 10, 1]
+   \end{BACKGROUND_GRID}
+   \begin{SPRING_SMOOTHER}
+      smoothing            = ON
+      smoothing type       = LinearAndCrossbarSpring
+      number of iterations = 25
+   \end{SPRING_SMOOTHER}
+\end{CONTROL_INPUT}
+\begin{MODEL}
+   \begin{MATERIALS}
+      background material name = Base
+   \end{MATERIALS}
+   \begin{INTERFACE_BOUNDARIES}
+      \begin{CHAIN}
+         name = Square
+         \begin{END_POINTS_LINE}
+            name   = Bottom
+            xStart = [-0.095, -0.0313, 0.0]
+            xEnd   = [0.0513, -0.0313, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = Right
+            xStart = [0.0513, -0.0313, 0.0]
+            xEnd   = [0.0513, 0.1012, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = Top
+            xStart = [0.0513, 0.1012, 0.0]
+            xEnd   = [-0.095, 0.1012, 0.0]
+         \end{END_POINTS_LINE}
+         \begin{END_POINTS_LINE}
+            name   = Left
+            xStart = [-0.095, 0.1012, 0.0]
+            xEnd   = [-0.095, -0.0313, 0.0]
+         \end{END_POINTS_LINE}
+      \end{CHAIN}
+   \end{INTERFACE_BOUNDARIES}
+\end{MODEL}
+\end{FILE}
