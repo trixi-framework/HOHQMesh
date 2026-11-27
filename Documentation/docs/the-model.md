@@ -280,18 +280,24 @@ If the control file does not contain a model block, a Cartesian mesh will be gen
 The model contains at most one outer boundary chain and any number of inner boundary chains. The outer boundary chain (if there is one) is defined by
 
 	\begin{OUTER_BOUNDARY}
+		paving = ON **or** OFF (Optional)
 	...
 	\end{OUTER_BOUNDARY}
 
 Within the `OUTER_BOUNDARY` block is a list of boundary curves that form a chain. There is no need to explicitly chain (by way of `\begin{CHAIN}`...`\end{CHAIN}`) the curves for the outer boundary, as that is implied.
 
+The optional `paving` key selects how the elements along the outer boundary are made. With `paving = ON`, the default, the elements in a band inside the boundary are removed and the band is [paved](interface-meshing.md#paving-the-outer-and-inner-boundaries) again from the curve inward. If paving fails, or with `paving = OFF`, the elements next to the boundary are made by projecting the nearby mesh edges onto the curve. The key must come before the first curve in the block.
+
 Inner boundaries (if any) are defined within the block
 
 	\begin{INNER_BOUNDARIES}
+		paving = ON **or** OFF (Optional)
 	...
 	\end{INNER_BOUNDARIES}
 
 Within this block one defines as many curves or `CHAIN`s as there are inner boundaries. The order in which the `CHAIN`s or curves are defined is not important. Use a CHAIN if you want to chain multiple curves together to create a single inner boundary. Outside of a chain, a curve will define a single inner boundary by itself. Note that a standalone curve must close on itself.
+
+The optional `paving` key works as for the outer boundary, for all of the inner boundaries in the block: with `paving = ON`, the default, they are paved from the curve outward, and with `paving = OFF` the elements next to them are made by projection. It must come before the first `CHAIN` or curve in the block.
 
 Interior interface boundary curves are defined inside the `INTERFACE_BOUNDARIES` block, as if they are interior boundaries,
 

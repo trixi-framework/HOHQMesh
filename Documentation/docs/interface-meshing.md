@@ -19,9 +19,11 @@ HOHQMesh has three types of boundary curves, each defined as a closed chain of c
   used to separate materials (see the [ISM-MM format](TheISMMeshFileFormats.md#BaseMaterialDefinition)),
   but they can also be used only to align the mesh with a curve.
 
-Outer and inner boundaries are meshed with a "cookie cutter" approach. After elements of the background grid
-are created, those that are outside of the domain or too close to a boundary are removed, and the ragged boundary
-edges that are left are projected onto the curve to create a new layer of boundary elements.
+Outer and inner boundaries are [paved from one side](#paving-the-outer-and-inner-boundaries), like
+an interface. If that fails, they are meshed with a "cookie cutter" approach. After elements of the
+background grid are created, those that are outside of the domain or too close to a boundary are
+removed, and the ragged boundary edges that are left are projected onto the curve to create a new
+layer of boundary elements.
 
 Generally, this cookie cutter strategy does not work for an interface boundary, because both
 sides must share the boundary nodes for the mesh to stay conforming.
@@ -50,7 +52,7 @@ The elements around the path are then replaced, and only the nodes pinned to the
 - The background grid (possibly together with targeted `REFINEMENT_REGIONS`) is fine enough to resolve the curve.
   For example, small features, like a thin tip or a narrow gap between two curves, must span a few elements. The sizer uses the distance across the inside and the outside of an interface to make sure of this.
   A curve segment that is smaller than the local element size cannot be resolved, which can lead to poor meshes or failure.
-  For the template (fallback) methodology this is especially important along the outer and inner boundaries, which are not paved.
+  For the template (fallback) methodology this is especially important.
   Paving sizes the elements along an interface from the curve itself and its local behavior (see below).
 - With the fallback strategy, acute corners of an interface (below about 75°, i.e. a reflex angle above about 285° on the other side)
   are not handled well. The elements near the tip or such corners in the domain can be poorly shaped or folded, and folds there are not
@@ -134,7 +136,7 @@ a chain of many curves so that the total number of samples stays near 40,000 (at
 - the **control size** of the sizer (the base size and the refinement regions), limited so that
   at least `minNumberOfElementsInsideArea` elements fit across the extent of the curve,
 - the **curvature size**, at which an element spans at most `paveMaxTurn` (30°) of turning of the
-  curve. The turning is summed over a window one size long, which is found iteratively, and it is
+  curve (`paveBoundaryMaxTurn` for an outer or inner boundary, see below). The turning is summed over a window one size long, which is found iteratively, and it is
   not summed across a joint, so a corner of the chain does not make the elements next to it small,
 - the **proximity size**, either
     - the distance divided by 2 to a part of the same curve that is near in space but at least three
@@ -268,8 +270,6 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
 
 ### Limitations
 
-- Only interface curves are paved. The outer and inner boundaries use the cookie cutter together with Schneiders template approach. The element size along them comes from the background grid and the refinement regions. Where, for
-  example, a short arc of the outer boundary meets a long straight line, the closely spaced nodes along the arc can meet coarse elements in a fan of thin elements. A refinement center at the arc helps there.
 - Paving is not guaranteed to succeed. A chain for which all three band widths fail (see the
   [list of failure cases](#interface-paving)) is meshed with the fallback strategy. Its mesh then has
   the quality of the fallback, not of paving.
@@ -278,6 +278,8 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
   own elements, but its shape can change.
 - Paving is switched on or off for all interfaces with the `paving = ON` or `OFF` key at the top of the
   `INTERFACE_BOUNDARIES` block (default `ON`). It sets `interfacePaving` of the model (`SMModel`).
+  The same key in the `OUTER_BOUNDARY` and `INNER_BOUNDARIES` blocks sets `outerPaving` and
+  `innerPaving`, see [below](#paving-the-outer-and-inner-boundaries).
   The remaining settings are in `ProgramGlobals.f90` only, not in the control file:
 
     | Setting | Default | Meaning |
@@ -286,7 +288,40 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
     | `paveWedgeAngle` | 120° | below this angle, a curve node gets one element |
     | `paveFanAngle` | 240° | above this angle, a curve node gets three elements |
     | `paveMaxTurn` | 30° | the most turning of the curve along one element |
+    | `paveBoundaryMaxTurn` | 30° | the same for the outer and inner boundaries |
+    | `paveBoundaryMinSizeFraction` | 0.6 | the turning limit of a boundary does not make elements smaller than this fraction of the quadtree size |
     | `paveSamplesPerCurve` | 0 | samples of each curve; 0 chooses them from the number of curves in the chain |
+
+### Paving the outer and inner boundaries
+
+The outer and inner boundaries are paved by the same steps, before the interfaces, so that the
+interface bands keep clear of their new nodes. Paving is switched on or off for the outer boundary with
+`paving = ON` or `OFF` at the top of the `OUTER_BOUNDARY` block, and for all inner boundaries with the
+same key in the `INNER_BOUNDARIES` block (default `ON` for both, see [The Model](the-model.md)).
+The differences are:
+
+- The mesh is on one side of the curve only: the side of most of the nodes of the ragged boundary edges
+  of the chain. Only that side gets a band edge loop, a paving row and a fill. The band may not reach the
+  other side, since there are no elements there.
+- The element size along the curve (step 1) is also at most the size of the cell of the quadtree grid at
+  the curve. The sizer refined the grid for the curvature of the boundary curves and the distances
+  between them, so the paving follows the same sizes as the elements it replaces. The curvature size
+  uses `paveBoundaryMaxTurn` (30°), but it never makes an element smaller than
+  `paveBoundaryMinSizeFraction` of the cell size. It refines only where a tight bend falls
+  inside one cell, e.g., the nose of an airfoil, which would otherwise be wrapped by one or two element
+  sides. Without the lower limit, the curvature next to a sharp joint gives rings of tiny elements.
+  An interface keeps the full curvature size: where curves are close, the grid is finer than the curve
+  itself needs, which would give many more elements along the interface.
+- The new nodes on the chords of the fill (step 5) are spaced like the edges at the ends of the chord
+  and grow from there to the size of the grid cell inside: at a distance $s$ from an end with edges of
+  length $h_e$, the size is at most $h_e + s/2$ (`chordSpacing`), and the nodes are placed at equal steps
+  of the number of elements along the chord. This matters where the band removes all elements of a
+  region, e.g. across a narrow channel: spacing the chord like its ends alone would keep the size at the
+  curve across the whole region, where the grid grows away from the curve.
+- The grid itself is released before paving. Its cell sizes are kept in a `QuadTreeSizes` copy of
+  plain arrays, which `quadTreeSizeAt` searches.
+- A boundary for which paving fails, or is switched off, is meshed by projection, as before. With
+  `-verbose`, a failure is reported as `Boundary paving failed for <chain name>`.
 
 ## Fallback: moving grid nodes onto the curve
 

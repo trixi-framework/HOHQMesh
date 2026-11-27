@@ -51,7 +51,7 @@
       USE MeshQualityAnalysisClass
       USE MeshCleaner
       USE InterfaceElementMethods, ONLY : SplitInterfaceElements
-      USE MeshGenerationMethods  , ONLY : smallestCornerSine, cyclicSum, RemoveDoublets
+      USE MeshGenerationMethods  , ONLY : smallestCornerSine, cyclicSum, AddChordNodes, CHORD_SAMPLES, RemoveDoublets
       USE ProgramGlobals         , ONLY : printMessage, QUAD, A_OK_ERROR_CODE, UNDEFINED
       IMPLICIT NONE
 
@@ -597,7 +597,9 @@
 !     ------------------------------------------------------------------
 !     Small functions used by the interface paving. The smallest corner
 !     sine of a quad (also for a quad with a side of zero length), the
-!     sum over a range of a closed sequence that wraps past its end, and
+!     sum over a range of a closed sequence that wraps past its end, the
+!     nodes put on a chord of a fill at equal steps of its element count
+!     (AddChordNodes), for a uniform and a graded count, and
 !     RemoveDoublets, which must merge the two quads at a doublet only
 !     if the merged quad has no flat corner. The flat corner is put off
 !     the straight line by roundoff, so its sine is positive but tiny.
@@ -606,8 +608,8 @@
          IMPLICIT NONE
          CHARACTER(LEN=1), POINTER, OPTIONAL :: optData(:)  ! Required by the test suite interface; unused
 
-         REAL(KIND=RP) :: corners(2,4), sumBefore(0:5), x(2,5)
-         INTEGER       :: quads(4,2), nQ, k
+         REAL(KIND=RP) :: corners(2,4), sumBefore(0:5), x(2,5), cnt(0:CHORD_SAMPLES), xc(2,3)
+         INTEGER       :: quads(4,2), nQ, k, nAll
 
          corners = RESHAPE([0.0_RP,0.0_RP, 1.0_RP,0.0_RP, 1.0_RP,1.0_RP, 0.0_RP,1.0_RP], [2,4])
          CALL FTAssertEqual(expectedValue = 1.0_RP, actualValue = smallestCornerSine(corners), &
@@ -624,6 +626,30 @@
                             relTol = 1.0e-14_RP, absTol = 1.0e-14_RP, msg = "Cyclic sum of values 2 to 4")
          CALL FTAssertEqual(expectedValue = 10.0_RP, actualValue = cyclicSum(sumBefore, 5, 4, 3), &
                             relTol = 1.0e-14_RP, absTol = 1.0e-14_RP, msg = "Cyclic sum of values 4, 5 and 1, past the end")
+!
+!        ---------------------------------------------------------------
+!        Three nodes on the chord from (0,0) to (4,0). With the same
+!        element count on each part they are evenly spaced. With twice
+!        as many elements per part on the first half of the chord as on
+!        the second, the elements there are smaller, so the nodes at
+!        counts 1/4, 1/2 and 3/4 of the total move towards the start.
+!        ---------------------------------------------------------------
+!
+         DO k = 0, CHORD_SAMPLES
+            cnt(k) = 0.25_RP*k
+         END DO
+         nAll = 0
+         CALL AddChordNodes( xc, nAll, [0.0_RP, 0.0_RP], [4.0_RP, 0.0_RP], cnt, 3 )
+         CALL FTAssertEqual(expectedValue = 3, actualValue = nAll, msg = "Three nodes are put on the chord")
+         CALL FTAssert(test = MAXVAL(ABS(xc(1,:) - [1.0_RP, 2.0_RP, 3.0_RP])) < 1.0e-13_RP .AND. &
+                              MAXVAL(ABS(xc(2,:))) < 1.0e-13_RP, msg = "Nodes for a uniform element count are evenly spaced")
+         DO k = 0, CHORD_SAMPLES
+            cnt(k) = 2.0_RP*MIN(k, CHORD_SAMPLES/2) + 1.0_RP*MAX(0, k - CHORD_SAMPLES/2)
+         END DO
+         nAll = 0
+         CALL AddChordNodes( xc, nAll, [0.0_RP, 0.0_RP], [4.0_RP, 0.0_RP], cnt, 3 )
+         CALL FTAssert(test = MAXVAL(ABS(xc(1,:) - [0.75_RP, 1.5_RP, 2.5_RP])) < 1.0e-13_RP, &
+                       msg = "Nodes for a graded element count follow the element sizes")
 !
 !        -----------------------------------------------------------------
 !        Nodes a, p, b, q (fixed) and the doublet node v. The quads

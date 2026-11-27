@@ -2,6 +2,10 @@
 
 ## Changes in the v1.7 lifecycle
 
+- Pave the outer and inner boundaries (#202). The elements along the `OUTER_BOUNDARY` and `INNER_BOUNDARIES` are
+  paved from the curve, one-sided, at the size of the quadtree grid at the curve, before the interfaces are paved.
+  Paving is ON by default and is switched off with `paving = OFF` in the `OUTER_BOUNDARY` or `INNER_BOUNDARIES`
+  block. A boundary for which paving fails or is switched off is meshed by projection, as before.
 - Improve interface paving (#201). A wedge that would fold the row is moved to the neighboring corner, the band
   keeps out elements with nodes on other curves, narrow strips and slots of a curve get elements that fit
   across, and the gap fill is spaced by the local edge lengths to avoid over-refined regions.

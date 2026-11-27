@@ -76,7 +76,7 @@
          CHARACTER(LEN=LL), ALLOCATABLE :: text(:)
 
          text = [CHARACTER(LEN=LL) :: "\begin{MODEL}", "\begin{OUTER_BOUNDARY}",                        &
-                                      "optimize = H1Norm", "continuity = 2", "tolerance = 1.0e-2",       &
+                                      "optimize = H1Norm", "continuity = 2", "tolerance = 1.0e-3",       &
                                       "\begin{PARAMETRIC_EQUATION_CURVE}", "name = blob",                &
                                       "xEqn = x(t) = 4*cos(2*pi*t) - 3/5*cos(8*pi*t)^3",                 &
                                       "yEqn = y(t) = 4*sin(2*pi*t) - 0.5*sin(11*pi*t)^2",                &
@@ -84,7 +84,7 @@
                                       "\end{OUTER_BOUNDARY}", "\begin{INNER_BOUNDARIES}"]
          text = [CHARACTER(LEN=LL) :: text,                                                             &
                  chainText("flower", [CHARACTER(LEN=LL) ::                                              &
-                           "optimize = H1Norm", "continuity = 2", "tolerance = 1.0e-3",                  &
+                           "optimize = H1Norm", "continuity = 2", "tolerance = 5.0e-5",                  &
                            "\begin{PARAMETRIC_EQUATION_CURVE}", "name = flower",                         &
                            "xEqn = x(t) = (1.5 + 0.4*cos(10*pi*t))*cos(2*pi*t)",                         &
                            "yEqn = y(t) = (1.5 + 0.4*cos(10*pi*t))*sin(2*pi*t)",                         &
@@ -212,8 +212,7 @@
 !        ------------------------------------------------------
 !        The remesh, as in GenerateQuadMesh, is finer and has
 !        smaller errors on both chains. It meets the tolerance
-!        too, but the inner boundary only just (0.98), so that is
-!        not asserted
+!        too (0.54 and 0.24 of it), but that is not asserted
 !        ------------------------------------------------------
 !
          CALL ResetProject(project)
