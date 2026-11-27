@@ -335,6 +335,7 @@
       INTEGER                                          :: idOfOuterBoundary
       INTEGER                                          :: numberOfMaterials
       INTEGER                                          :: numberOfDetachedElements, pass
+      INTEGER                                          :: numberOfExceptions
       INTEGER, PARAMETER                               :: MAX_BOUNDARY_CLEANUP_PASSES = 5
       CHARACTER(LEN=SM_CURVE_NAME_LENGTH)              :: materialName
       CHARACTER(LEN=SM_CURVE_NAME_LENGTH), ALLOCATABLE :: materialNames(:)
@@ -526,11 +527,21 @@
             RETURN
          END IF
 
+!
+!        ---------------------------------------------------------------
+!        OrderBoundaryEdges posts a warning if it cannot close a loop.
+!        Compare the number of posted exceptions, not catch(WARNING...),
+!        since warnings from earlier steps (e.g. the valence cleanup of
+!        an earlier attempt before the background grid retry) are still
+!        on the stack and would make a good mesh look like a failure.
+!        Leave the warning on the stack so that it is reported.
+!        ---------------------------------------------------------------
+!
+         numberOfExceptions = errorCount()
          CALL OrderBoundaryEdges( mesh )
 
-         IF ( catch(WARNING_ERROR_EXCEPTION) )     THEN  ! Pass the error up the chain
-            exception => errorObject()
-            CALL throw(exception)
+         IF ( errorCount() > numberOfExceptions )     THEN
+            errorCode = BOUNDARY_LOOP_OPEN_ERROR_CODE
             RETURN
          END IF
 !
