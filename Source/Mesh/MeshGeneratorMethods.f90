@@ -3593,82 +3593,6 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE BridgeIsland( island, target, comp, removed, atCurve, elems, nodeEl, nodeElCount, nE, bridge, nBridge )
-         IMPLICIT NONE
-!
-!        --------------------------------------------------------------
-!        The shortest path of band elements (removed) from the elements
-!        of the group island (comp = island) to those of the group
-!        target, through element sides, without the elements at the
-!        nodes of the curve being paved (atCurve). bridge(1:nBridge)
-!        are the band elements on the path, nBridge = 0 if there is no
-!        path.
-!        --------------------------------------------------------------
-!
-         INTEGER              :: island, target, nE
-         INTEGER              :: comp(nE), nodeEl(:,:), nodeElCount(:)
-         LOGICAL              :: removed(nE), atCurve(nE)
-         TYPE(SMElementPtr)   :: elems(:)
-         INTEGER, INTENT(OUT) :: bridge(nE), nBridge
-!
-!        ---------------
-!        Local variables
-!        ---------------
-!
-         INTEGER, ALLOCATABLE      :: parent(:), queue(:)
-         INTEGER                   :: head, tail, f, g, k, last
-         TYPE (SMElement), POINTER :: e
-         INTEGER, EXTERNAL         :: Loop
-
-         nBridge = 0
-         IF ( target == 0 )     RETURN
-         ALLOCATE( parent(nE), queue(nE) )
-         parent = 0
-         head   = 1
-         tail   = 0
-         DO f = 1, nE
-            IF ( removed(f) )     CYCLE
-            IF ( comp(f) /= island )     CYCLE
-            tail        = tail + 1
-            queue(tail) = f
-            parent(f)   = -1
-         END DO
-
-         last = 0
-         DO WHILE ( head <= tail .AND. last == 0 )
-            f    = queue(head)
-            head = head + 1
-            e => elems(f) % element
-            DO k = 1, 4
-               g = elementWithDirectedEdge( e % nodes(Loop(k+1,4)) % node % id, e % nodes(k) % node % id, &
-                                            elems, nodeEl, nodeElCount )
-               IF ( g == 0 )     CYCLE
-               IF ( parent(g) /= 0 )     CYCLE
-               IF ( .NOT.removed(g) )     THEN
-                  IF ( comp(g) == target .AND. removed(f) )     THEN
-                     last = f
-                     EXIT
-                  END IF
-                  CYCLE
-               END IF
-               IF ( atCurve(g) )     CYCLE
-               parent(g)   = f
-               tail        = tail + 1
-               queue(tail) = g
-            END DO
-         END DO
-
-         f = last
-         DO WHILE ( f > 0 )
-            nBridge         = nBridge + 1
-            bridge(nBridge) = f
-            f               = parent(f)
-         END DO
-
-      END SUBROUTINE BridgeIsland
-!
-!////////////////////////////////////////////////////////////////////////
-!
       FUNCTION newInteriorNode( mesh, x2 ) RESULT(node)
          IMPLICIT NONE
          TYPE (SMMesh), POINTER :: mesh
@@ -4190,8 +4114,6 @@
          TYPE(SMNodePtr)   , ALLOCATABLE :: nodeForID(:)
          INTEGER           , ALLOCATABLE :: nodeElCount(:), nodeEl(:,:), nOut(:), cnt(:)
          LOGICAL           , ALLOCATABLE :: removed(:), used(:), onOtherCurve(:), atCurve(:)
-         INTEGER           , ALLOCATABLE :: bridge(:)
-         INTEGER                         :: nBridge
          REAL(KIND=RP)     , ALLOCATABLE :: cx(:,:), cg(:), sx(:,:,:), wSeg(:)
          INTEGER           , ALLOCATABLE :: featureIdx(:), nSeg(:)
          INTEGER           , ALLOCATABLE :: eFrom(:), eTo(:), loopNodes(:), quads(:,:,:), newFront(:,:)
@@ -4458,11 +4380,8 @@
 !        -------------------------------------------------------------
 !        Islands of elements cut off by the band: keep the largest
 !        group of connected elements on each side of the curve and
-!        pave over the others. An island with an element on another
-!        curve stays if a bridge of band elements can join it to the
-!        group kept on its side (BridgeIsland), so that the band edge
-!        goes around both. Otherwise it is paved over too. The other
-!        curve is paved later from its geometry.
+!        pave over the others, also an island with an element on
+!        another curve. That curve is paved later from its geometry.
 !        -------------------------------------------------------------
 !
          comp = 0
@@ -4505,19 +4424,6 @@
                keep(side) = i
             END IF
          END DO
-         ALLOCATE( bridge(nE) )
-         DO i = 1, nComp
-            IF ( i == keep(1) .OR. i == keep(2) )     CYCLE
-            IF ( .NOT.ANY(onOtherCurve .AND. comp == i) )     CYCLE
-            side = MERGE(1, 2, compInside(i))
-            CALL BridgeIsland( i, keep(side), comp, removed, atCurve, elems, nodeEl, nodeElCount, nE, bridge, nBridge )
-            IF ( nBridge == 0 )     CYCLE
-            removed(bridge(1:nBridge))      = .FALSE.
-            onOtherCurve(bridge(1:nBridge)) = .TRUE.
-            comp(bridge(1:nBridge))         = keep(side)
-            WHERE ( comp == i )     comp = keep(side)
-         END DO
-         DEALLOCATE( bridge )
          DO f = 1, nE
             IF ( removed(f) )     CYCLE
             IF ( comp(f) /= keep(1) .AND. comp(f) /= keep(2) )     removed(f) = .TRUE.

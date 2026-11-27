@@ -2,6 +2,10 @@
 
 ## Changes in the v1.7 lifecycle
 
+- Improve interface paving (#201). A wedge that would fold the row is moved to the neighboring corner, the band
+  keeps out elements with nodes on other curves, narrow strips and slots of a curve get elements that fit
+  across, and the gap fill is spaced by the local edge lengths to avoid over-refined regions.
+
 ## Changes in the v1.6 lifecycle
 
 - Fix and speed up boundary curve optimization (#196). A new bracketed root finder gives the same results on every

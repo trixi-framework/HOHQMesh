@@ -136,9 +136,12 @@ a chain of many curves so that the total number of samples stays near 40,000 (at
 - the **curvature size**, at which an element spans at most `paveMaxTurn` (30°) of turning of the
   curve. The turning is summed over a window one size long, which is found iteratively, and it is
   not summed across a joint, so a corner of the chain does not make the elements next to it small,
-- the **proximity size**, the distance divided by `closeCurveFactor` to a part of the same curve that
-  is near in space but at least three times as far along the curve, with no joint in between (e.g.
-  across a thin tip or a narrow gap), or to a node of another curve that is still in the mesh.
+- the **proximity size**, either
+    - the distance divided by 2 to a part of the same curve that is near in space but at least three
+      times as far along the curve, e.g. across a thin strip, a slot or a narrow channel. A strip
+      then gets about two elements across. The two parts are left out if exactly one joint lies between
+      them: they are then the two sides of one corner, which come arbitrarily close near its tip, or
+    - the distance divided by `closeCurveFactor` (3.25) to a node of another curve that is still in the mesh.
 
 The sizes are then graded so that they grow by at most half the distance along the curve. The
 sizes used for the band (`hBand`) end here. The sizes used to place the nodes on the curve (`hs`)
@@ -149,10 +152,14 @@ curve of the chain gets at least one edge, and graded again.
 
 All elements with a node closer to the curve than `paveBandWidth` (1.5) times `hBand` at the nearest
 point of the curve are removed, together with all elements that touch a node of the interface path.
+Elements with a node on another curve stay out of the band, unless they also touch a node of this
+curve. Paving would otherwise move those nodes off their own curve, whose boundary edges have already
+been gathered.
 The band is then made "simple", so that its edge forms clean loops:
 
 - An element with three or more sides on the band is added to it.
 - At a node where the edge of the band touches itself, all elements around the node are added to the band.
+  If one of them has a node on another curve, paving fails for this band width.
 - Elements with a side on the edge of the mesh, i.e. at an outer or inner boundary, are kept. A band
   can therefore reach the boundary, but it does not remove the elements there, and the boundary
   elements are generated later as usual.
@@ -161,9 +168,10 @@ The edge of the band **must** then be one loop outside of the curve and at most 
 No loop inside means that the entire inside of the curve is in the band. If there are more loops, the
 band has cut the elements on one side of the curve into separate islands, e.g. where the curve passes
 close to a boundary. The largest group of connected elements on each side of the curve is kept. The
-other islands are added to the band and paved over. The fill step meshes them at about the element size
-along the curve. Where an island is coarser than that, e.g. in an open region of the background grid
-next to the outer boundary, paving it over adds elements there.
+other islands are added to the band and paved over, also an island with a node on another curve,
+since that curve is paved later from its geometry. The [fill step](#5-filling-the-gap) spaces its
+new nodes like the edges around them, so an island paved over is meshed again at about the size
+of its own elements.
 
 The band is then made "simple" again, where its loops are checked. This is done up to four times
 for one band width before paving fails for this band width.
@@ -200,6 +208,10 @@ How many elements a curve node gets depends on $\theta$, the angle on the side b
 At a wedge, the two neighbors of the corner node do not get nodes of their own.
 The wedge element is completed by the node opposite to the corner, at the fourth corner of a parallelogram.
 Two wedges are not put next to each other.
+A wedge assumes that the front goes on straight past both neighbors of the corner. If the front turns
+sharply again one short edge later, the element next to the wedge folds whatever the distance from the curve.
+The row is then paved again without a wedge at that corner, so that its neighbor gets the wedge if
+its angle is small enough.
 
 The new row is rejected if one of its elements is folded, or if the new front crosses itself or the
 band edge.
@@ -213,12 +225,13 @@ The region between the new front and the band edge is filled with quadrilaterals
   itself is the polygon to fill.
 - Otherwise, two chords connect the front to the band edge, roughly opposite to each other, which cuts the
   region into two polygons. The chords are tried from the shortest pairs of nodes, and a chord must not
-  cross either loop. New nodes are placed along each chord, about as far apart as the edges of the front, with the parity that gives both polygons an even number of nodes.
+  cross either loop. New nodes are placed along each chord, about as far apart as the edges of the front and of the band edge at the
+  two ends of the chord, with the parity that gives both polygons an even number of nodes.
 
 Each polygon is then split into quadrilaterals by `SplitFill`. It cuts the polygon recursively along
-the chord that best splits the angles at its two ends, with a length close to a whole number of
-edges, which gets new nodes along it. Nodes that already end a chord are penalized, which keeps the
-valence low. A four-sided polygon is an element. Finally, `RemoveDoublets` merges the two elements at
+the chord that best splits the angles at its two ends. The new nodes along the chord are spaced like
+the polygon edges at its ends, and a chord whose length is close to a whole number of those spacings
+is preferred. Nodes that already end a chord are penalized, which keeps the valence low. A four-sided polygon is an element. Finally, `RemoveDoublets` merges the two elements at
 a new node that has only two elements, since its angles would be near 180° in both and
 smoothing cannot fix that.
 
@@ -261,9 +274,8 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
   [list of failure cases](#interface-paving)) is meshed with the fallback strategy. Its mesh then has
   the quality of the fallback, not of paving.
 - Where the band of a chain cuts part of the mesh off from the rest, e.g. between a curve and the
-  outer boundary, that part is [paved over](#2-the-band) at the element size along the curve. In a
-  region that the background grid and the refinement regions leave coarse, this can add many elements.
-  A refinement center there, or a smaller background grid, keeps the sizes closer.
+  outer boundary, that part is [paved over](#2-the-band). It is meshed again at about the size of its
+  own elements, but its shape can change.
 - Paving is switched on or off for all interfaces with the `paving = ON` or `OFF` key at the top of the
   `INTERFACE_BOUNDARIES` block (default `ON`). It sets `interfacePaving` of the model (`SMModel`).
   The remaining settings are in `ProgramGlobals.f90` only, not in the control file:
