@@ -4,11 +4,12 @@ Benchmarks/ControlFiles/SplineGeometryF.control
 Benchmarks/ControlFiles/NACA0012.control             
 Benchmarks/ControlFiles/HalfCircleArc.control        
 Benchmarks/ControlFiles/Circles3.control             
-Benchmarks/ControlFiles/Circles3NoPaving.control
 Benchmarks/ControlFiles/AllFeatures.control          
 Benchmarks/ControlFiles/IceCreamConeWHole.control          
+Benchmarks/ControlFiles/IceCreamConeWHoleNoPaving.control
 Benchmarks/ControlFiles/IceCreamConeCommented.control          
 Benchmarks/ControlFiles/Segmented.control            
+Benchmarks/ControlFiles/SegmentedNoPaving.control
 Benchmarks/ControlFiles/GingerbreadManGeometry.control
 Benchmarks/ControlFiles/sigmoidScale.control         
 Benchmarks/ControlFiles/HalfCircle3DRot.control      
