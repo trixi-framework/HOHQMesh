@@ -96,6 +96,22 @@
          TYPE (QuadTreeGrid), POINTER :: grid => NULL()
       END TYPE NestedQuadTreeGridPtr
 !
+!     ------------------------------------------------------------------
+!     The cell sizes of a quadtree grid, kept in plain arrays so that
+!     they can be looked up after the grid itself has been released.
+!     Grid g has its lower left corner at x0(:,g), spacing dx(:,g) and
+!     N(:,g) cells. Cell (i,j) of grid g is numbered
+!     firstCell(g) + (j-1)*N(1,g) + i - 1, and child(cell) is the grid
+!     that refines the cell, or 0 for a leaf cell.
+!     ------------------------------------------------------------------
+!
+      TYPE QuadTreeSizes
+         INTEGER                                     :: nGrids = 0
+         REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE  :: x0, dx
+         INTEGER      , DIMENSION(:,:), ALLOCATABLE  :: N
+         INTEGER      , DIMENSION(:)  , ALLOCATABLE  :: firstCell, child
+      END TYPE QuadTreeSizes
+!
 !     --------------
 !     MODULE Globals
 !     --------------
@@ -1105,4 +1121,134 @@
          WRITE(iUnit, *) "QuadTreeGrid object"
          WRITE(iUnit,*) "Level = ", self % level, "Template type = ", self % templateType
       END SUBROUTINE printQuadTreeGridDescription
+
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE BuildQuadTreeSizes( sizes, grid )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------
+!        Copy the cell sizes of the quadtree grid into sizes.
+!        The top grid is grid 1.
+!        ----------------------------------------------------
+!
+         TYPE (QuadTreeSizes)         :: sizes
+         TYPE (QuadTreeGrid), POINTER :: grid
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER :: nGrids, nCells, g
+
+         nGrids = 0
+         nCells = 0
+         CALL CountQuadTreeCells( grid, nGrids, nCells )
+
+         IF ( ALLOCATED(sizes % x0) )     DEALLOCATE(sizes % x0, sizes % dx, sizes % N, sizes % firstCell, sizes % child)
+         ALLOCATE( sizes % x0(2,nGrids), sizes % dx(2,nGrids), sizes % N(2,nGrids) )
+         ALLOCATE( sizes % firstCell(nGrids), sizes % child(nCells) )
+         sizes % nGrids = 0
+         nCells         = 0
+         CALL AddQuadTreeSizes( sizes, grid, g, nCells )
+
+      END SUBROUTINE BuildQuadTreeSizes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      RECURSIVE SUBROUTINE CountQuadTreeCells( grid, nGrids, nCells )
+         IMPLICIT NONE
+         TYPE (QuadTreeGrid), POINTER :: grid
+         INTEGER                      :: nGrids, nCells
+         INTEGER                      :: i, j
+
+         nGrids = nGrids + 1
+         nCells = nCells + grid % N(1)*grid % N(2)
+         IF ( .NOT.ASSOCIATED(grid % children) )     RETURN
+         DO j = 1, grid % N(2)
+            DO i = 1, grid % N(1)
+               IF ( ASSOCIATED(grid % children(i,j) % grid) )     &
+                  CALL CountQuadTreeCells( grid % children(i,j) % grid, nGrids, nCells )
+            END DO
+         END DO
+
+      END SUBROUTINE CountQuadTreeCells
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      RECURSIVE SUBROUTINE AddQuadTreeSizes( sizes, grid, g, nCells )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        Add grid and, below it, its children to sizes. g returns the
+!        number of the grid. nCells is the number of cells added so far.
+!        ---------------------------------------------------------------
+!
+         TYPE (QuadTreeSizes)         :: sizes
+         TYPE (QuadTreeGrid), POINTER :: grid
+         INTEGER                      :: g, nCells
+         INTEGER                      :: i, j, cell, gChild
+
+         sizes % nGrids        = sizes % nGrids + 1
+         g                     = sizes % nGrids
+         sizes % x0(:,g)       = grid % x0(1:2)
+         sizes % dx(:,g)       = grid % dx(1:2)
+         sizes % N(:,g)        = grid % N(1:2)
+         sizes % firstCell(g)  = nCells + 1
+         nCells                = nCells + grid % N(1)*grid % N(2)
+         sizes % child(sizes % firstCell(g):nCells) = 0
+         IF ( .NOT.ASSOCIATED(grid % children) )     RETURN
+         DO j = 1, grid % N(2)
+            DO i = 1, grid % N(1)
+               IF ( .NOT.ASSOCIATED(grid % children(i,j) % grid) )     CYCLE
+               cell = sizes % firstCell(g) + (j-1)*grid % N(1) + i - 1
+               CALL AddQuadTreeSizes( sizes, grid % children(i,j) % grid, gChild, nCells )
+               sizes % child(cell) = gChild
+            END DO
+         END DO
+
+      END SUBROUTINE AddQuadTreeSizes
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION quadTreeSizeAt( sizes, x, start )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        The size of the leaf cell of the quadtree that holds x, or of
+!        the nearest cell for an x outside the quadtree. The search goes
+!        down from grid start if x is inside it, else from the top grid.
+!        start is set to the grid of the leaf cell, so that a search for
+!        a nearby x, e.g., the next sample on a chord, is short. Begin
+!        with start = 0.
+!        ---------------------------------------------------------------
+!
+         TYPE (QuadTreeSizes) :: sizes
+         REAL(KIND=RP)        :: x(2)
+         INTEGER              :: start
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER :: g, i, j, cell
+         LOGICAL :: inStart
+
+         g = 1
+         IF ( start > 0 )     THEN
+            inStart = ALL(x >= sizes % x0(:,start)) .AND. &
+                      ALL(x <  sizes % x0(:,start) + sizes % N(:,start)*sizes % dx(:,start))
+            IF ( inStart )     g = start
+         END IF
+         DO
+            i    = MIN(sizes % N(1,g), MAX(1, FLOOR((x(1) - sizes % x0(1,g))/sizes % dx(1,g)) + 1))
+            j    = MIN(sizes % N(2,g), MAX(1, FLOOR((x(2) - sizes % x0(2,g))/sizes % dx(2,g)) + 1))
+            cell = sizes % firstCell(g) + (j-1)*sizes % N(1,g) + i - 1
+            IF ( sizes % child(cell) == 0 )     EXIT
+            g = sizes % child(cell)
+         END DO
+         start          = g
+         quadTreeSizeAt = MAX(sizes % dx(1,g), sizes % dx(2,g))
+
+      END FUNCTION quadTreeSizeAt
       END Module QuadTreeGridClass

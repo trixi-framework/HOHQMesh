@@ -207,8 +207,8 @@
          localNumElementsForNode = numElementsForNode
 !
 !        ------------------------------------------------------------
-!        The cleanup needs the node to element and node to edge
-!        connections of the current mesh. They are made by the first
+!        The cleanup needs the node to element connections of the
+!        current mesh. They are made by the first
 !        cleanup and again after each one that changes the mesh.
 !        ------------------------------------------------------------
 !
@@ -452,10 +452,10 @@
 !     (nodesOnInterfaces = .TRUE.) or only one that is not on
 !     any boundary or interface curve (nodesOnInterfaces = .FALSE.)
 !     is changed. wasChanged tells whether the node was changed.
-!     The node to element and node to edge connections are made
-!     unless connectionsAreCurrent, which is then set. A change to
-!     the mesh unsets it. The connections are left for the next
-!     call and must be deallocated by the caller.
+!     The node to element connections are made unless
+!     connectionsAreCurrent, which is then set. A change to the mesh
+!     unsets it. The connections are left for the next call and must
+!     be deallocated by the caller.
 !     ----------------------------------------------------------
 !
          IMPLICIT NONE
@@ -487,23 +487,23 @@
          TYPE (SMNode)     , POINTER :: node => NULL(), nodeForThisID => NULL(), newNode => NULL()
          TYPE (SMNode)     , POINTER :: neighbor => NULL()
          TYPE (SMElement)  , POINTER :: e => NULL(), eTarget => NULL()
-         TYPE (SMEdge)     , POINTER :: edge => NULL()
          CLASS(FTObject)   , POINTER :: obj => NULL()
 
          TYPE(SMNodePtr), DIMENSION(4) :: elementNodes
          TYPE(SMElementPtr)            :: eNeighbors(2)
-         TYPE(SMEdgePtr)               :: sharedEdgePointers(2), newEdgePointers(2)
+         TYPE(SMNodePtr)               :: sideNodes(2), farNodes(2)
 
          CHARACTER(LEN=ERROR_EXCEPTION_MSG_LENGTH) :: msg
-         LOGICAL                                   :: isOnNeighbor
 !
-!        ------------------------
-!        Make current connections
-!        ------------------------
+!        ---------------------------------------------------------------
+!        Make current connections. Only the node to element connections
+!        are used: the edges of the mesh are not updated by a change and
+!        would give the wrong elements next to an earlier change, which
+!        leaves a hole in the mesh.
+!        ---------------------------------------------------------------
 !
          IF ( .NOT.connectionsAreCurrent )     THEN
             CALL MakeNodeToElementConnections( mesh, errorCode )
-            CALL MakeNodeToEdgeConnections   ( mesh )
             connectionsAreCurrent = .TRUE.
          END IF
 !
@@ -570,33 +570,31 @@
             RETURN
          END IF
 !
-!        -----------------------------------------
-!        Find the elements that flank this element
-!        -----------------------------------------
+!        ---------------------------------------------------------------
+!        Find the elements that flank this element: the neighbor across
+!        each of its two sides at the node. The new element gets the
+!        other side of each neighbor at the node, given here by its far
+!        node. A side on a boundary has no neighbor.
+!        ---------------------------------------------------------------
 !
+         sideNodes(1) % node => eTarget % nodes(Loop(localIDForTarget-1,4)) % node
+         sideNodes(2) % node => eTarget % nodes(Loop(localIDForTarget+1,4)) % node
          cnt = 0
-         DO k = 1, numEdgesForNodes(id)
-            edge => edgesForNodes(k,id) % edge
-!
-!           ----------------------------------------------------
-!           See if this edge is along the target element
-!           A boundary edge has only one element, so elements(2)
-!           must be checked before it is used. A boundary edge
-!           cannot flank the target.
-!           ----------------------------------------------------
-!
-            IF ( .NOT.ASSOCIATED(edge % elements(2) % element) )             CYCLE
-
-            IF ( edge % elements(1) % element % id == eTarget % id )          THEN
-               cnt                       = cnt + 1
-               eNeighbors(cnt) % element => edge % elements(2) % element
-               sharedEdgePointers(cnt) % edge => edge
-            ELSE IF ( edge % elements(2) % element % id == eTarget % id )   THEN
-               cnt                     = cnt + 1
-               eNeighbors(cnt) % element => edge % elements(1) % element
-               sharedEdgePointers(cnt) % edge => edge
-            END IF
-            IF(cnt == 2) EXIT
+         DO k = 1, numElementsForNode(id)
+            e => elementsForNodes(k,id) % element
+            IF ( e % id == eTarget % id )     CYCLE
+            localID = ElementLocalNodeIDForNodeID(id, e)
+            DO j = 1, 2
+               IF ( e % nodes(Loop(localID-1,4)) % node % id == sideNodes(j) % node % id )     THEN
+                  cnt = cnt + 1
+                  eNeighbors(j) % element => e
+                  farNodes(j) % node      => e % nodes(Loop(localID+1,4)) % node
+               ELSE IF ( e % nodes(Loop(localID+1,4)) % node % id == sideNodes(j) % node % id )     THEN
+                  cnt = cnt + 1
+                  eNeighbors(j) % element => e
+                  farNodes(j) % node      => e % nodes(Loop(localID-1,4)) % node
+               END IF
+            END DO
          END DO
 !
 !        --------------------------------------------------------
@@ -611,50 +609,15 @@
             RETURN
          END IF
 !
-!        -------------------------------------------------------------
-!        Find the edges that are in the two neighbor elements, but are
-!        not the shared edges.
-!        -------------------------------------------------------------
-!
-         cnt = 0
-         DO k = 1, numEdgesForNodes(id)
-            edge => edgesForNodes(k,id) % edge
-            IF ( ASSOCIATED(edge,sharedEdgePointers(1) % edge) .OR. &
-                 ASSOCIATED(edge,sharedEdgePointers(2) % edge))              CYCLE
-!
-!           ------------------------------------------------------
-!           See if this edge is along one of the neighbor elements
-!           ------------------------------------------------------
-!
-            DO j = 1, 2
-               isOnNeighbor = edge % elements(1) % element % id == eNeighbors(j) % element % id
-               IF ( ASSOCIATED(edge % elements(2) % element) )     THEN ! Not a boundary edge
-                  isOnNeighbor = isOnNeighbor .OR. edge % elements(2) % element % id == eNeighbors(j) % element % id
-               END IF
-               IF ( isOnNeighbor ) THEN
-                  cnt                       = cnt + 1
-                  newEdgePointers(cnt) % edge => edge
-               END IF
-            END DO
-            IF(cnt == 2) EXIT
-         END DO
-         IF( cnt /= 2 )     THEN
-            PRINT *, "Bad element topology in CleanUp7ValenceNode_InMesh for node at ", &
-                     eTarget % nodes(localIDForTarget) % node % x
-            RETURN
-         END IF
-!
 !        ---------------------------------------------------------------
-!        The new element gets these two edges. If both lie along the
+!        The new element gets the two far sides. If both lie along the
 !        curve, it would have three nodes in a row on the curve and be
 !        degenerate, so leave the node alone.
 !        ---------------------------------------------------------------
 !
          IF ( nodeIsOnCurve )     THEN
-            IF ( isEdgeAlongCurve(newEdgePointers(1) % edge % nodes(1) % node,   &
-                                  newEdgePointers(1) % edge % nodes(2) % node) .AND. &
-                 isEdgeAlongCurve(newEdgePointers(2) % edge % nodes(1) % node,   &
-                                  newEdgePointers(2) % edge % nodes(2) % node) )     THEN
+            IF ( isEdgeAlongCurve(node, farNodes(1) % node) .AND. &
+                 isEdgeAlongCurve(node, farNodes(2) % node) )     THEN
                RETURN
             END IF
          END IF
@@ -700,20 +663,9 @@
 !        --------------------
 !
          elementNodes(1) % node => nodeForThisID
-
-         IF ( newEdgePointers(1) % edge % nodes(1) % node % id == id )     THEN
-            elementNodes(2) % node => newEdgePointers(1) % edge % nodes(2) % node
-         ELSE
-            elementNodes(2) % node => newEdgePointers(1) % edge % nodes(1) % node
-         END IF
-
+         elementNodes(2) % node => farNodes(1) % node
          elementNodes(3) % node => newNode
-
-         IF ( newEdgePointers(2) % edge % nodes(1) % node % id == id )     THEN
-            elementNodes(4) % node => newEdgePointers(2) % edge % nodes(2) % node
-         ELSE
-            elementNodes(4) % node => newEdgePointers(2) % edge % nodes(1) % node
-         END IF
+         elementNodes(4) % node => farNodes(2) % node
 
 !
 !        ----------------------------------------------------------
