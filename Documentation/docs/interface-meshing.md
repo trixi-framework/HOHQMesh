@@ -136,7 +136,7 @@ a chain of many curves so that the total number of samples stays near 40,000 (at
 - the **control size** of the sizer (the base size and the refinement regions), limited so that
   at least `minNumberOfElementsInsideArea` elements fit across the extent of the curve,
 - the **curvature size**, at which an element spans at most `paveMaxTurn` (30°) of turning of the
-  curve. The turning is summed over a window one size long, which is found iteratively, and it is
+  curve (`paveBoundaryMaxTurn` for an outer or inner boundary, see below). The turning is summed over a window one size long, which is found iteratively, and it is
   not summed across a joint, so a corner of the chain does not make the elements next to it small,
 - the **proximity size**, either
     - the distance divided by 2 to a part of the same curve that is near in space but at least three
@@ -288,6 +288,8 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
     | `paveWedgeAngle` | 120° | below this angle, a curve node gets one element |
     | `paveFanAngle` | 240° | above this angle, a curve node gets three elements |
     | `paveMaxTurn` | 30° | the most turning of the curve along one element |
+    | `paveBoundaryMaxTurn` | 30° | the same for the outer and inner boundaries |
+    | `paveBoundaryMinSizeFraction` | 0.6 | the turning limit of a boundary does not make elements smaller than this fraction of the quadtree size |
     | `paveSamplesPerCurve` | 0 | samples of each curve; 0 chooses them from the number of curves in the chain |
 
 ### Paving the outer and inner boundaries
@@ -302,10 +304,14 @@ The differences are:
   of the chain. Only that side gets a band edge loop, a paving row and a fill. The band may not reach the
   other side, since there are no elements there.
 - The element size along the curve (step 1) is also at most the size of the cell of the quadtree grid at
-  the curve, but the curvature size is not used. The sizer refined the grid for the curvature of the
-  boundary curves and the distances between them, so the paving follows the same sizes as the elements
-  it replaces. An interface keeps the curvature size: where curves are close, the grid is finer than
-  the curve itself needs, which would give many more elements along the interface.
+  the curve. The sizer refined the grid for the curvature of the boundary curves and the distances
+  between them, so the paving follows the same sizes as the elements it replaces. The curvature size
+  uses `paveBoundaryMaxTurn` (30°), but it never makes an element smaller than
+  `paveBoundaryMinSizeFraction` of the cell size. It refines only where a tight bend falls
+  inside one cell, e.g., the nose of an airfoil, which would otherwise be wrapped by one or two element
+  sides. Without the lower limit, the curvature next to a sharp joint gives rings of tiny elements.
+  An interface keeps the full curvature size: where curves are close, the grid is finer than the curve
+  itself needs, which would give many more elements along the interface.
 - The new nodes on the chords of the fill (step 5) are spaced like the edges at the ends of the chord
   and grow from there to the size of the grid cell inside: at a distance $s$ from an end with edges of
   length $h_e$, the size is at most $h_e + s/2$ (`chordSpacing`), and the nodes are placed at equal steps

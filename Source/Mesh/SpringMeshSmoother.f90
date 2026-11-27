@@ -99,6 +99,18 @@
       REAL(KIND=RP), DIMENSION(:)  , ALLOCATABLE, PRIVATE :: cornerMinDistance
       LOGICAL      , DIMENSION(:)  , ALLOCATABLE, PRIVATE :: hasCornerConstraint
 !
+!     Fold guard at sharp corners of paved outer and inner boundaries, see
+!     BuildFoldGuard. isGuardedPoint marks the corner nodes and their two
+!     neighbors along the curve, and guardElements(1:numGuardElements(j),j)
+!     are the elements near the j-th guarded point guardPoints(j)
+!
+      LOGICAL      , DIMENSION(:)  , ALLOCATABLE, PRIVATE :: isGuardedPoint
+      INTEGER      , DIMENSION(:)  , ALLOCATABLE, PRIVATE :: guardPoints, numGuardElements
+      INTEGER      , DIMENSION(:,:), ALLOCATABLE, PRIVATE :: guardElements
+      REAL(KIND=RP), DIMENSION(:,:), ALLOCATABLE, PRIVATE :: guardOrientation
+      INTEGER      , PARAMETER                  , PRIVATE :: MAX_GUARD_ELEMENTS = 64
+      REAL(KIND=RP), PARAMETER                  , PRIVATE :: FOLD_GUARD_RADIUS  = 4.0_RP
+!
 !     How the acceleration of a node is constrained, see ConstrainBoundaryNodes
 !
       INTEGER      , PARAMETER, PRIVATE :: FREE_NODE = 0, INACTIVE_NODE = 1, NODE_ON_CURVE = 2, NODE_ON_CORNER_LINE = 3
@@ -206,6 +218,8 @@
          CALL SetNodeActiveStatus( mesh, model, errorCode )
 
          ALLOCATE( cornerDirection(3,N), cornerOrigin(3,N), cornerMinDistance(N), hasCornerConstraint(N) )
+         ALLOCATE( isGuardedPoint(N) )
+         isGuardedPoint = .FALSE.
 !
 !        -------------------------------------------------------------
 !        The nodes next to a corner are held on the extensions of its
@@ -232,6 +246,7 @@
          CALL GatherSmoothingArrays( mesh, model, nodePointers, x, edgeNodes, elementNodes, &
                                      getsEdgeForce, getsCrossForce, constraintType, tangent )
          CALL GatherPavedCurveEdges( nodePointers, x, edgeNodes, constraintType, pavedEdges, minPavedEdgeLength )
+         CALL BuildFoldGuard( x, edgeNodes, elementNodes )
          ALLOCATE( xPrevious(3,N) )
 
          DO k = 1, self % numSmoothingSteps
@@ -250,6 +265,7 @@
                maxV = MAX(maxV, ABS(nodeVelocity(1,nodeID)), ABS(nodeVelocity(2,nodeID)) )
             END DO
             CALL KeepPavedCurveNodesApart( x, xPrevious, pavedEdges, minPavedEdgeLength )
+            CALL UndoFolds( x, xPrevious, elementNodes, constraintType )
 
          END DO
 
@@ -264,6 +280,7 @@
          DEALLOCATE( nodeAcceleration )
          DEALLOCATE( nodeVelocity )
          DEALLOCATE( cornerDirection, cornerOrigin, cornerMinDistance, hasCornerConstraint )
+         DEALLOCATE( isGuardedPoint, guardPoints, numGuardElements, guardElements, guardOrientation )
 !
 !        --------------------------------------------------------------------
 !        The boundary nodes have been moved. Find their parameterized location
@@ -547,7 +564,8 @@
          IMPLICIT NONE
 !
 !     ---------------------------------------------------------------------
-!     At a sharp corner of an interface curve the corner node is pinned and
+!     At a sharp corner of an interface curve, or of a paved outer or inner
+!     boundary, the corner node is pinned and
 !     the region on the reflex angle side of the corner is shared by three
 !     elements. The two edges from the corner into that region should
 !     continue the two sides of the corner, so that the three elements have
@@ -594,6 +612,7 @@
          INTEGER                       :: reflexNodes(MAX_NEIGHBORS)
          REAL(KIND=RP)                 :: xC(2), d(2,2), u(2), cornerAngle, a1, a2, dots(2,2), s
          REAL(KIND=RP)                 :: bisector(2), minDistance
+         LOGICAL                       :: sidesHeld
 
          n = SIZE(hasCornerConstraint)
          hasCornerConstraint = .FALSE.
@@ -622,8 +641,13 @@
             nodeForID(node % id) % node => node
             chainID = node % bCurveChainID
             IF ( node % distToBoundary == 0.0_RP .AND. chainID >= 1 .AND. chainID <= SIZE(boundaryEdgesType) )     THEN
-               IF ( boundaryEdgesType(chainID) == INTERFACE_EDGES .AND. &
-                    (node % whereOnBoundary == 0.0_RP .OR. node % whereOnBoundary == 1.0_RP) )     isCorner(node % id) = .TRUE.
+               IF ( (node % whereOnBoundary == 0.0_RP .OR. node % whereOnBoundary == 1.0_RP) )     THEN
+                  IF ( boundaryEdgesType(chainID) == INTERFACE_EDGES )     THEN
+                     isCorner(node % id) = .TRUE.
+                  ELSE IF ( chainID <= MAX_PAVED_CHAIN_ID )     THEN
+                     isCorner(node % id) = chainWasPaved(chainID)
+                  END IF
+               END IF
             END IF
             CALL mesh % nodesIterator % moveToNext()
          END DO
@@ -687,6 +711,16 @@
             cornerAngle = angleBetween(-d(:,1), -d(:,2))
             IF ( cornerAngle > MAX_CONSTRAINED_CORNER_ANGLE )     CYCLE
 !
+!           At a sharp corner of a paved outer or inner boundary there are
+!           no elements in the wedge. The springs can pull an element across
+!           it, which no element angle shows, so guard against that
+!
+            IF ( boundaryEdgesType(node % bCurveChainID) /= INTERFACE_EDGES )     THEN
+               isGuardedPoint(id)           = .TRUE.
+               isGuardedPoint(sideNodes(1)) = .TRUE.
+               isGuardedPoint(sideNodes(2)) = .TRUE.
+            END IF
+!
 !           ---------------------------------------------------------------
 !           Free neighbors on the reflex side, i.e. outside the sharp wedge
 !           between the two sides
@@ -724,7 +758,34 @@
                CALL SetCornerConstraint( nb % id, xC, bisector, minDistance )
                CYCLE
             END IF
-            IF ( numReflex /= 2 .OR. .NOT.constrainToSides )     CYCLE
+!
+!           ------------------------------------------------------------
+!           The elements at a corner of a paved outer or inner boundary
+!           are never split, so its nodes are held on the extensions of
+!           the sides in every smoothing. Otherwise the springs pull them
+!           into a sharp wedge, e.g. past the trailing edge of an airfoil
+!           ------------------------------------------------------------
+!
+            sidesHeld = constrainToSides .OR. boundaryEdgesType(node % bCurveChainID) /= INTERFACE_EDGES
+            IF ( numReflex /= 2 .OR. .NOT.sidesHeld )     CYCLE
+!
+!           ------------------------------------------------------------
+!           At a corner of a paved outer or inner boundary, split the
+!           reflex angle into three equal angles instead. That is the
+!           same as continuing the sides at a 90 degree corner, but at a
+!           sharp corner, e.g. the trailing edge of an airfoil, the
+!           extensions of the sides are nearly parallel and would squeeze
+!           the middle element into a sliver.
+!           ------------------------------------------------------------
+!
+            IF ( boundaryEdgesType(node % bCurveChainID) /= INTERFACE_EDGES )     THEN
+               bisector = d(:,1) + d(:,2)
+               IF ( NORM2(bisector) < 1.0E-6_RP )     CYCLE
+               bisector = bisector/NORM2(bisector)
+               DO k = 1, 2
+                  d(:,k) = equalSplitRay( -d(:,k), bisector, cornerAngle )
+               END DO
+            END IF
 !
 !           -----------------------------------------------------
 !           Pair the two nodes with the two directions, then move
@@ -998,5 +1059,223 @@
 
       END SUBROUTINE SetSpringSmootherBlock
 
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE BuildFoldGuard( x, edgeNodes, elementNodes )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------------
+!        For each guarded point (see SetInterfaceCornerConstraints), list
+!        the elements that have a node within FOLD_GUARD_RADIUS times its
+!        longest edge. Only those elements can be pulled across the corner
+!        or folded at it during one smoothing. For each, keep the sign of
+!        its orientation if it is convex now, else 0 (not checked).
+!        -----------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         REAL(KIND=RP) :: x(:,:)
+         INTEGER       :: edgeNodes(:,:), elementNodes(:,:)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER                    :: j, k, e, m, p, numPoints
+         INTEGER      , ALLOCATABLE :: pointIndex(:)
+         REAL(KIND=RP), ALLOCATABLE :: radius(:)
+         REAL(KIND=RP)              :: d, quad(2,4)
+         LOGICAL                    :: near, containsPoint
+
+         numPoints = 0
+         DO k = 1, SIZE(isGuardedPoint)
+            IF ( isGuardedPoint(k) )     numPoints = numPoints + 1
+         END DO
+         ALLOCATE( guardPoints(numPoints), numGuardElements(numPoints), &
+                   guardElements(MAX_GUARD_ELEMENTS, numPoints), guardOrientation(MAX_GUARD_ELEMENTS, numPoints) )
+         guardOrientation = 0.0_RP
+         numGuardElements = 0
+         IF ( numPoints == 0 )     RETURN
+
+         ALLOCATE( pointIndex(SIZE(isGuardedPoint)), radius(numPoints) )
+         pointIndex = 0
+         j = 0
+         DO k = 1, SIZE(isGuardedPoint)
+            IF ( isGuardedPoint(k) )     THEN
+               j              = j + 1
+               guardPoints(j) = k
+               pointIndex(k)  = j
+            END IF
+         END DO
+!
+!        Radius from the longest edge at each guarded point
+!
+         radius = 0.0_RP
+         DO k = 1, SIZE(edgeNodes,2)
+            d = NORM2(x(1:2,edgeNodes(1,k)) - x(1:2,edgeNodes(2,k)))
+            DO m = 1, 2
+               j = pointIndex(edgeNodes(m,k))
+               IF ( j > 0 )     radius(j) = MAX(radius(j), FOLD_GUARD_RADIUS*d)
+            END DO
+         END DO
+
+         DO e = 1, SIZE(elementNodes,2)
+            DO j = 1, numPoints
+               p             = guardPoints(j)
+               containsPoint = .FALSE.
+               near          = .FALSE.
+               DO m = 1, 4
+                  IF ( elementNodes(m,e) == p )     containsPoint = .TRUE.
+                  IF ( NORM2(x(1:2,elementNodes(m,e)) - x(1:2,p)) < radius(j) )     near = .TRUE.
+               END DO
+               IF ( near .OR. containsPoint )     THEN
+                  IF ( numGuardElements(j) < MAX_GUARD_ELEMENTS )     THEN
+                     numGuardElements(j)                      = numGuardElements(j) + 1
+                     guardElements(numGuardElements(j), j)    = e
+                     DO m = 1, 4
+                        quad(:,m) = x(1:2,elementNodes(m,e))
+                     END DO
+                     guardOrientation(numGuardElements(j), j) = convexOrientation(quad)
+                  END IF
+               END IF
+            END DO
+         END DO
+
+      END SUBROUTINE BuildFoldGuard
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      SUBROUTINE UndoFolds( x, xPrevious, elementNodes, constraintType )
+         IMPLICIT NONE
+!
+!        -----------------------------------------------------------------
+!        If a smoothing step has moved a guarded point inside an element
+!        that does not contain it, the element has been pulled across the
+!        sharp corner. If it has made a convex element near the corner
+!        non-convex, the element has folded. Move the free nodes of that
+!        element back to where they were before the step and hold them
+!        there for the rest of this smoothing.
+!        -----------------------------------------------------------------
+!
+!        ---------
+!        Arguments
+!        ---------
+!
+         REAL(KIND=RP) :: x(:,:), xPrevious(:,:)
+         INTEGER       :: elementNodes(:,:), constraintType(:)
+!
+!        ---------------
+!        Local variables
+!        ---------------
+!
+         INTEGER       :: j, k, e, m, id
+         REAL(KIND=RP) :: quad(2,4)
+         LOGICAL       :: containsPoint, folded
+
+         DO j = 1, SIZE(guardPoints)
+            DO k = 1, numGuardElements(j)
+               e = guardElements(k,j)
+               DO m = 1, 4
+                  quad(:,m) = x(1:2,elementNodes(m,e))
+               END DO
+               containsPoint = .FALSE.
+               DO m = 1, 4
+                  IF ( elementNodes(m,e) == guardPoints(j) )     containsPoint = .TRUE.
+               END DO
+               folded = .FALSE.
+               IF ( guardOrientation(k,j) /= 0.0_RP )     THEN
+                  folded = convexOrientation(quad) /= guardOrientation(k,j)
+               END IF
+               IF ( .NOT.containsPoint )     THEN
+                  IF ( pointIsInQuad(x(1:2,guardPoints(j)), quad) )     folded = .TRUE.
+               END IF
+               IF ( .NOT.folded )     CYCLE
+               DO m = 1, 4
+                  id = elementNodes(m,e)
+                  IF ( constraintType(id) == INACTIVE_NODE )     CYCLE
+                  x(:,id)            = xPrevious(:,id)
+                  nodeVelocity(:,id) = 0.0_RP
+                  constraintType(id) = INACTIVE_NODE
+               END DO
+            END DO
+         END DO
+
+      END SUBROUTINE UndoFolds
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      LOGICAL FUNCTION pointIsInQuad( p, quad )
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------
+!        Crossing number test of the point p against the
+!        straight-sided quadrilateral quad (any orientation)
+!        ---------------------------------------------------
+!
+         REAL(KIND=RP) :: p(2), quad(2,4)
+         INTEGER       :: m, n
+         REAL(KIND=RP) :: xCross
+
+         pointIsInQuad = .FALSE.
+         DO m = 1, 4
+            n = MOD(m, 4) + 1
+            IF ( (quad(2,m) > p(2)) .NEQV. (quad(2,n) > p(2)) )     THEN
+               xCross = quad(1,m) + (p(2) - quad(2,m))*(quad(1,n) - quad(1,m))/(quad(2,n) - quad(2,m))
+               IF ( p(1) < xCross )     pointIsInQuad = .NOT.pointIsInQuad
+            END IF
+         END DO
+
+      END FUNCTION pointIsInQuad
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      FUNCTION equalSplitRay( side, bisector, cornerAngle )  RESULT(ray)
+         IMPLICIT NONE
+!
+!        ---------------------------------------------------------------
+!        The ray that is one third of the reflex angle, 360 - cornerAngle
+!        degrees, away from the side direction side (a unit vector from
+!        the corner along one side), turned towards the unit bisector of
+!        the reflex angle
+!        ---------------------------------------------------------------
+!
+         REAL(KIND=RP) :: side(2), bisector(2), cornerAngle
+         REAL(KIND=RP) :: ray(2)
+         REAL(KIND=RP) :: theta, turn
+
+         theta = (360.0_RP - cornerAngle)/3.0_RP*PI/180.0_RP
+         turn  = SIGN(1.0_RP, side(1)*bisector(2) - side(2)*bisector(1))
+         ray   = [COS(theta)*side(1) - turn*SIN(theta)*side(2), &
+                  turn*SIN(theta)*side(1) + COS(theta)*side(2)]
+
+      END FUNCTION equalSplitRay
+!
+!////////////////////////////////////////////////////////////////////////
+!
+      REAL(KIND=RP) FUNCTION convexOrientation( quad )
+         IMPLICIT NONE
+!
+!        ----------------------------------------------------------
+!        +1 or -1 if the quadrilateral quad is strictly convex with
+!        counterclockwise or clockwise nodes, 0 otherwise
+!        ----------------------------------------------------------
+!
+         REAL(KIND=RP) :: quad(2,4)
+         INTEGER       :: m, n, l
+         REAL(KIND=RP) :: c(4)
+
+         DO m = 1, 4
+            n    = MOD(m, 4) + 1
+            l    = MOD(m + 1, 4) + 1
+            c(m) = (quad(1,n) - quad(1,m))*(quad(2,l) - quad(2,n)) - (quad(2,n) - quad(2,m))*(quad(1,l) - quad(1,n))
+         END DO
+         convexOrientation = 0.0_RP
+         IF ( ALL(c > 0.0_RP) )     convexOrientation =  1.0_RP
+         IF ( ALL(c < 0.0_RP) )     convexOrientation = -1.0_RP
+
+      END FUNCTION convexOrientation
       END Module SpringMeshSmootherClass
 

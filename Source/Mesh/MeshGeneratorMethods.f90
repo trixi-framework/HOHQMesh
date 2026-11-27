@@ -4147,6 +4147,7 @@
 
          nPer    = paveSamplesPerCurve
          turnMax = paveMaxTurn*PI/180.0_RP
+         IF ( oneSided )     turnMax = paveBoundaryMaxTurn*PI/180.0_RP
 
          seq => GatheredNodes(list)
          chainID = seq(1) % node % bCurveChainID
@@ -5746,10 +5747,14 @@
 !            and distances between the boundary curves, so the paving
 !            follows the strategy of the sizes, like the elements it
 !            replaces,
-!          - for an interface, sizes taken from the curve geometry, which
-!            are coarser than the sizes where curves are close: the size
-!            with turnMax turning per element, where the turning is
-!            measured between features so a corner does not shrink it,
+!          - the size with turnMax turning per element, where the turning
+!            is measured between features so a corner does not shrink it.
+!            For an interface, these sizes taken from the curve geometry
+!            are coarser than the sizes where curves are close. For an
+!            outer or inner boundary they only refine where a tight bend
+!            falls inside a cell, e.g., the nose of an airfoil, and never
+!            below paveBoundaryMinSizeFraction of the cell size, so that
+!            a sharp joint does not get rings of tiny elements,
 !          - the sizer's control size (base size, centers and lines),
 !            limited so that minNumberOfElementsInsideArea fit across,
 !          - the distance, over SELF_CLOSE_FACTOR, to a part of the
@@ -5835,11 +5840,11 @@
          END DO
 !
 !        ---------------------------------------------------------------
-!        Curvature of an interface: the turning over a window one size
-!        long, not crossing a feature, sets the size to turnMax per
-!        element. The window ends are found by bisection and the turning
-!        in it from its sums. An outer or inner boundary has the sizes
-!        size, which already follows the curvature.
+!        Curvature: the turning over a window one size long, not crossing
+!        a feature, sets the size to turnMax per element. The window ends
+!        are found by bisection and the turning in it from its sums. For
+!        an outer or inner boundary, the size stays at least
+!        paveBoundaryMinSizeFraction of the quadtree size.
 !        ---------------------------------------------------------------
 !
          turnBefore(0) = 0.0_RP
@@ -5849,7 +5854,7 @@
          CALL StepsToFeatures( isFeature, nS, stepsForward, stepsBack )
 
          hCurv = hBase
-         DO iter = 1, MERGE(0, CURVATURE_ITERATIONS, oneSided)
+         DO iter = 1, CURVATURE_ITERATIONS
             DO i = 1, nS
                turnSum = 0.0_RP
                IF ( .NOT.isFeature(i) )     turnSum = absTurn(i)
@@ -5868,6 +5873,7 @@
                covered = dFwd + dBack
                IF ( turnSum > 0.0_RP .AND. covered > 0.0_RP )     THEN
                   hNew(i) = MIN(hBase(i), turnMax*covered/turnSum)
+                  IF ( oneSided )     hNew(i) = MAX(hNew(i), paveBoundaryMinSizeFraction*hBase(i))
                ELSE
                   hNew(i) = hBase(i)
                END IF
