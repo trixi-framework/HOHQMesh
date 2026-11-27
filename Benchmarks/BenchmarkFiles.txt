@@ -4,6 +4,7 @@ Benchmarks/ControlFiles/SplineGeometryF.control
 Benchmarks/ControlFiles/NACA0012.control             
 Benchmarks/ControlFiles/HalfCircleArc.control        
 Benchmarks/ControlFiles/Circles3.control             
+Benchmarks/ControlFiles/Circles3NoPaving.control
 Benchmarks/ControlFiles/AllFeatures.control          
 Benchmarks/ControlFiles/IceCreamConeWHole.control          
 Benchmarks/ControlFiles/IceCreamConeCommented.control          
