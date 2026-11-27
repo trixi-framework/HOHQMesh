@@ -66,6 +66,11 @@
 !
       INTEGER, PARAMETER, PRIVATE :: BRIDGE_UNCHECKED = 0, BRIDGE_VALID = 1, BRIDGE_INVALID = -1
 !
+!     Relative size below which two chord lengths count as equal when the
+!     chords of FillBetweenLoops are ordered (see there)
+!
+      REAL(KIND=RP), PARAMETER, PRIVATE :: LENGTH_TIE_TOLERANCE = 1.0E-9_RP
+!
 !     How a front node of a paving row is meshed (see PaveRowOnce)
 !
       INTEGER, PARAMETER, PRIVATE :: SIDE_NODE = 0, WEDGE = 1, FAN3 = 2, IN_WEDGE = 3
@@ -3814,6 +3819,13 @@
          REAL(KIND=RP) :: hLocal(nIds), cnt(0:CHORD_SAMPLES)
          REAL(KIND=RP), PARAMETER :: valencePenalty = 15.0_RP
          REAL(KIND=RP), PARAMETER :: BOUND_SLACK    = 1.0d-6
+!
+!        A chord replaces the best so far only if its score is larger by
+!        more than SCORE_TIE_TOLERANCE. In a symmetric polygon, mirror
+!        image chords have the same score up to rounding, and the first
+!        one found is kept whatever the rounding.
+!
+         REAL(KIND=RP), PARAMETER :: SCORE_TIE_TOLERANCE = 1.0d-9
          INTEGER, EXTERNAL :: Loop
 
          ok = .FALSE.
@@ -3859,7 +3871,7 @@
                angJ(2) = interior(j) - angJ(1)
                score = MIN(MINVAL(angI), MINVAL(angJ)) - 0.2_RP*MAX(MAXVAL(angI), MAXVAL(angJ)) &
                      - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
-               IF ( .NOT.(score > best) )     CYCLE
+               IF ( .NOT.(score > best + SCORE_TIE_TOLERANCE) )     CYCLE
                steps = chordSpacing( sizes, x(:,ids(i)), x(:,ids(j)), hLocal(i), hLocal(j), cnt )
                k     = MAX(0, NINT(steps) - 1)
                IF ( MODULO(d + 1 + k, 2) /= 0 )     THEN
@@ -3880,7 +3892,7 @@
                IF ( k < 0 )     CYCLE
                score = MIN(MINVAL(angI), MINVAL(angJ)) - 0.2_RP*MAX(MAXVAL(angI), MAXVAL(angJ)) &
                      - 10.0_RP*ABS(steps - (k + 1)) - valencePenalty*(nChords(ids(i)) + nChords(ids(j)))
-               IF ( .NOT.(score > best) )     CYCLE
+               IF ( .NOT.(score > best + SCORE_TIE_TOLERANCE) )     CYCLE
                IF ( .NOT.chordInside( x, ids, nIds, i, j ) )     CYCLE
                best  = score
                iBest = i
@@ -5401,7 +5413,7 @@
          INTEGER       :: nShort, nSorted, relax
          INTEGER       :: brI(nFront*nB), brJ(nFront*nB), order(nFront*nB), bridgeState(nFront*nB)
          INTEGER, ALLOCATABLE :: shortPairs(:)
-         REAL(KIND=RP) :: shortLen, brLen(nFront*nB)
+         REAL(KIND=RP) :: shortLen, brLen(nFront*nB), lenUnit
          INTEGER       :: nChords(SIZE(x,2))
          INTEGER, EXTERNAL :: Loop
 
@@ -5416,7 +5428,11 @@
 !        All pairs of a front and a loop node, shortest first. Pairs
 !        of the same length keep their order (front node, then loop
 !        node), so the chords are tried in the same order as when the
-!        valid ones are found first and then sorted.
+!        valid ones are found first and then sorted. The lengths are
+!        rounded to a small fraction of the longest one first: pairs that
+!        are mirror images in a symmetric region have the same length
+!        up to rounding, and the rounding error must not decide which is
+!        tried first.
 !        ----------------------------------------------------------
 !
          nBr = 0
@@ -5428,6 +5444,8 @@
                brLen(nBr) = NORM2(x(:,b0+j) - x(:,front(i)))
             END DO
          END DO
+         lenUnit = LENGTH_TIE_TOLERANCE*MAX(MAXVAL(brLen(1:nBr)), TINY(lenUnit))
+         brLen(1:nBr) = ANINT(brLen(1:nBr)/lenUnit)
 !
 !        -------------------------------------------------------------
 !        The search nearly always ends among the short pairs. Sort first
