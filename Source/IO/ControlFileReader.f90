@@ -427,8 +427,9 @@
               CALL newDict % addObjectForKey(obj,"LIST")
               CALL releaseFTLinkedListClass(self = newList)
               
-              IF( objectName == "CHAIN"          .OR. &
-                  objectName == "OUTER_BOUNDARY" .OR. &
+              IF( objectName == "CHAIN"            .OR. &
+                  objectName == "OUTER_BOUNDARY"   .OR. &
+                  objectName == "INNER_BOUNDARIES" .OR. &
                   objectName == "INTERFACE_BOUNDARIES" )     THEN ! Read (possible) block parameters
                  DO 
                     READ(fileUnit,"(A)", END = 1000) line

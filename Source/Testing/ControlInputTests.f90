@@ -232,6 +232,24 @@
                                        "\end{FILE}"],                              &
                  "Unexpected line in the INTERFACE_BOUNDARIES block: paving = OFF")
 
+         CALL CheckReaderError("Key after the first inner chain",                   &
+                 [CHARACTER(LEN=LL) :: "\begin{MODEL}",                            &
+                                       "   \begin{INNER_BOUNDARIES}",              &
+                                       "      \begin{CHAIN}",                      &
+                                       "         name = hole",                     &
+                                       "         \begin{PARAMETRIC_EQUATION_CURVE}", &
+                                       "            name = hole",                  &
+                                       "            xEqn = x(t) = cos(2*pi*t)",    &
+                                       "            yEqn = y(t) = sin(2*pi*t)",    &
+                                       "            zEqn = z(t) = 0.0",            &
+                                       "         \end{PARAMETRIC_EQUATION_CURVE}", &
+                                       "      \end{CHAIN}",                        &
+                                       "      paving = OFF",                       &
+                                       "   \end{INNER_BOUNDARIES}",                &
+                                       "\end{MODEL}",                              &
+                                       "\end{FILE}"],                              &
+                 "Unexpected line in the INNER_BOUNDARIES block: paving = OFF")
+
          CALL CheckReaderError("Spline without nKnots", splineText(nKnots = "", endMarker = .TRUE.), &
                                "Malformed Spline data. No nKnots")
          CALL CheckReaderError("Spline without end marker", splineText(nKnots = "nKnots = 3", endMarker = .FALSE.), &

@@ -145,8 +145,8 @@
 !        -----------------------------------------------------
 !        Interface paving parameters. See interface-meshing.md
 !        in the Documentation for a description. The ON/OFF
-!        switch is SMModel % interfacePaving, read from the
-!        control file.
+!        switches are SMModel % interfacePaving, outerPaving and
+!        innerPaving, read from the control file.
 !        -----------------------------------------------------
 !
          REAL(KIND=RP)      :: paveBandWidth       = 1.5_RP
@@ -154,7 +154,6 @@
          REAL(KIND=RP)      :: paveFanAngle        = 240.0_RP
          REAL(KIND=RP)      :: paveMaxTurn         = 30.0_RP   ! Interfaces only
          INTEGER            :: paveSamplesPerCurve = 0
-         LOGICAL            :: paveBoundaries      = .TRUE.   ! Pave outer and inner boundaries (prototype)
          INTEGER, PARAMETER :: MAX_PAVED_CHAIN_ID  = 9999
          LOGICAL            :: chainWasPaved(0:MAX_PAVED_CHAIN_ID) = .FALSE.
          INTEGER            :: boundarySmoothingPasses = 1

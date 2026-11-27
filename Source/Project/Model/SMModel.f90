@@ -105,6 +105,8 @@
          INTEGER, DIMENSION(:)      , ALLOCATABLE :: curveType           ! Either a boundary or an interface
          TYPE(CurveAndChain)        , ALLOCATABLE :: curveForID(:)       ! Built on the first curveWithID
          LOGICAL                                  :: interfacePaving     ! paving = ON/OFF in INTERFACE_BOUNDARIES
+         LOGICAL                                  :: outerPaving         ! paving = ON/OFF in OUTER_BOUNDARY
+         LOGICAL                                  :: innerPaving         ! paving = ON/OFF in INNER_BOUNDARIES
 !
 !        ========
          CONTAINS
@@ -143,6 +145,8 @@
          self % numberOfInnerCurves         =  0
          self % numberOfInterfaceCurves     =  0
          self % interfacePaving             = .TRUE.
+         self % outerPaving                 = .TRUE.
+         self % innerPaving                 = .TRUE.
 
          IF( .NOT.ASSOCIATED(modelDict)) RETURN
          CALL constructModelFromDictionary( self, modelDict )
@@ -271,6 +275,7 @@
 
             obj               => modelDict % objectForKey(key = OUTER_BOUNDARY_BLOCK_KEY)
             outerBoundaryDict => valueDictionaryFromObject(obj)
+            self % outerPaving = pavingSwitch( outerBoundaryDict, OUTER_BOUNDARY_BLOCK_KEY )
 
             CALL ConstructOuterBoundary( self, outerBoundaryDict )
             IF(ReturnOnFatalError())     RETURN
@@ -289,6 +294,7 @@
 
             obj                 => modelDict % objectForKey(key = INNER_BOUNDARIES_BLOCK_KEY)
             innerBoundariesDict => valueDictionaryFromObject(obj)
+            self % innerPaving  =  pavingSwitch( innerBoundariesDict, INNER_BOUNDARIES_BLOCK_KEY )
             obj                 => innerBoundariesDict % objectForKey(key = "LIST")
             innerBoundariesList => linkedListFromObject(obj)
 
@@ -306,8 +312,7 @@
 !        Import interface boundaries, if any
 !        -----------------------------------
 !
-!        Paving is ON (set in initWithContentsOfDictionary) unless the
-!        INTERFACE_BOUNDARIES block switches it off.
+!        Paving is ON unless the INTERFACE_BOUNDARIES block switches it off.
 !
          IF ( modelDict% containsKey(key = INTERFACE_BOUNDARIES_BLOCK_KEY) )     THEN
             ALLOCATE( self % interfaceBoundaries )
@@ -315,7 +320,7 @@
 
             obj                 => modelDict % objectForKey(key = INTERFACE_BOUNDARIES_BLOCK_KEY)
             innerBoundariesDict => valueDictionaryFromObject(obj)
-            CALL SetInterfacePaving( self, innerBoundariesDict )
+            self % interfacePaving = pavingSwitch( innerBoundariesDict, INTERFACE_BOUNDARIES_BLOCK_KEY )
 
             obj                 => innerBoundariesDict % objectForKey(key = "LIST")
             innerBoundariesList => linkedListFromObject(obj)
@@ -393,18 +398,19 @@
 !
 !////////////////////////////////////////////////////////////////////////
 !
-      SUBROUTINE SetInterfacePaving( self, interfaceBoundariesDict )
+      LOGICAL FUNCTION pavingSwitch( boundaryDict, blockName )
 !
-!        Reads the optional paving switch, which must come before the
-!        first chain or curve in the block:
+!        Reads the optional paving switch of an OUTER_BOUNDARY,
+!        INNER_BOUNDARIES or INTERFACE_BOUNDARIES block, which must come
+!        before the first chain or curve in the block:
 !
-!         \begin{INTERFACE_BOUNDARIES}
+!         \begin{INNER_BOUNDARIES}
 !            paving = ON OR OFF (optional, default ON)
 !            \begin{CHAIN}
 !            ...
-!         \end{INTERFACE_BOUNDARIES}
+!         \end{INNER_BOUNDARIES}
 !
-!        The switch applies to all interface chains of the model.
+!        The switch applies to all chains of the block.
 !
          IMPLICIT NONE
 !
@@ -412,8 +418,8 @@
 !        Arguments
 !        ---------
 !
-         CLASS(SMModel)                    :: self
-         CLASS(FTValueDictionary), POINTER :: interfaceBoundariesDict
+         CLASS(FTValueDictionary), POINTER :: boundaryDict
+         CHARACTER(LEN=*)                  :: blockName
 !
 !        ---------------
 !        Local variables
@@ -421,23 +427,24 @@
 !
          CHARACTER(LEN=LINE_LENGTH) :: str
 
-         IF ( .NOT. interfaceBoundariesDict % containsKey(key = PAVING_KEY) )     RETURN
+         pavingSwitch = .TRUE.
+         IF ( .NOT. boundaryDict % containsKey(key = PAVING_KEY) )     RETURN
 
-         str = interfaceBoundariesDict % stringValueForKey(key             = PAVING_KEY, &
-                                                           requestedLength = LINE_LENGTH)
+         str = boundaryDict % stringValueForKey(key             = PAVING_KEY, &
+                                                requestedLength = LINE_LENGTH)
          SELECT CASE ( TRIM(ADJUSTL(str)) )
             CASE ( "ON" )
-               self % interfacePaving = .TRUE.
+               pavingSwitch = .TRUE.
             CASE ( "OFF" )
-               self % interfacePaving = .FALSE.
+               pavingSwitch = .FALSE.
             CASE DEFAULT
-               CALL ThrowErrorExceptionOfType(poster = "SetInterfacePaving",                                 &
-                                              msg    = "Unknown value for paving in INTERFACE_BOUNDARIES: " &
-                                                       // TRIM(str) // ". Use ON or OFF. Using ON.",        &
+               CALL ThrowErrorExceptionOfType(poster = "pavingSwitch",                                         &
+                                              msg    = "Unknown value for paving in " // TRIM(blockName) //   &
+                                                       ": " // TRIM(str) // ". Use ON or OFF. Using ON.",     &
                                               typ    = FT_ERROR_WARNING)
          END SELECT
 
-      END SUBROUTINE SetInterfacePaving
+      END FUNCTION pavingSwitch
 !
 !////////////////////////////////////////////////////////////////////////
 !

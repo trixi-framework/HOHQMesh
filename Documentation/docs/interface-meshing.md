@@ -278,6 +278,8 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
   own elements, but its shape can change.
 - Paving is switched on or off for all interfaces with the `paving = ON` or `OFF` key at the top of the
   `INTERFACE_BOUNDARIES` block (default `ON`). It sets `interfacePaving` of the model (`SMModel`).
+  The same key in the `OUTER_BOUNDARY` and `INNER_BOUNDARIES` blocks sets `outerPaving` and
+  `innerPaving`, see [below](#paving-the-outer-and-inner-boundaries).
   The remaining settings are in `ProgramGlobals.f90` only, not in the control file:
 
     | Setting | Default | Meaning |
@@ -287,12 +289,14 @@ can pull a node along the curve almost onto its neighbor and leave a sliver ther
     | `paveFanAngle` | 240° | above this angle, a curve node gets three elements |
     | `paveMaxTurn` | 30° | the most turning of the curve along one element |
     | `paveSamplesPerCurve` | 0 | samples of each curve; 0 chooses them from the number of curves in the chain |
-    | `paveBoundaries` | `.TRUE.` | also pave the outer and inner boundaries, see below |
 
 ### Paving the outer and inner boundaries
 
 The outer and inner boundaries are paved by the same steps, before the interfaces, so that the
-interface bands keep clear of their new nodes. The differences are:
+interface bands keep clear of their new nodes. Paving is switched on or off for the outer boundary with
+`paving = ON` or `OFF` at the top of the `OUTER_BOUNDARY` block, and for all inner boundaries with the
+same key in the `INNER_BOUNDARIES` block (default `ON` for both, see [The Model](the-model.md)).
+The differences are:
 
 - The mesh is on one side of the curve only: the side of most of the nodes of the ragged boundary edges
   of the chain. Only that side gets a band edge loop, a paving row and a fill. The band may not reach the
@@ -310,7 +314,8 @@ interface bands keep clear of their new nodes. The differences are:
   curve across the whole region, where the grid grows away from the curve.
 - The grid itself is released before paving. Its cell sizes are kept in a `QuadTreeSizes` copy of
   plain arrays, which `quadTreeSizeAt` searches.
-- A boundary for which paving fails is meshed by projection, as before.
+- A boundary for which paving fails, or is switched off, is meshed by projection, as before. With
+  `-verbose`, a failure is reported as `Boundary paving failed for <chain name>`.
 
 ## Fallback: moving grid nodes onto the curve
 
